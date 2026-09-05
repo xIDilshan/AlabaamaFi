@@ -1,9 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useSwitchChain,
+} from "wagmi";
+import { arcTestnet } from "@/lib/wagmi";
 
 export default function Home() {
-  const [connected, setConnected] = useState(false);
+  const [showWallets, setShowWallets] = useState(false);
+
+  const { address, isConnected, chainId } = useAccount();
+  const { connectors, connect, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { switchChain } = useSwitchChain();
+
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : "";
+
+  const handleConnect = (connector: (typeof connectors)[number]) => {
+    connect({ connector });
+    setShowWallets(false);
+  };
+
+  const handleWalletButton = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      setShowWallets(true);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -14,19 +43,69 @@ export default function Home() {
             <h1 className="text-2xl font-bold tracking-tight">
               AlabaamaFi
             </h1>
+
             <p className="text-xs text-white/40">
               Powered by Arc
             </p>
           </div>
 
           <button
-            onClick={() => setConnected(!connected)}
+            onClick={handleWalletButton}
             className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
           >
-            {connected ? "Connected" : "Connect Wallet"}
+            {isConnected ? shortAddress : "Connect Wallet"}
           </button>
         </div>
       </header>
+
+      {/* Wallet Modal */}
+      {showWallets && !isConnected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold">
+                  Connect Wallet
+                </h3>
+
+                <p className="mt-1 text-sm text-white/40">
+                  Choose a wallet to continue
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowWallets(false)}
+                className="rounded-lg px-3 py-2 text-white/50 hover:bg-white/10 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {connectors.map((connector) => (
+                <button
+                  key={connector.uid}
+                  onClick={() => handleConnect(connector)}
+                  disabled={isPending}
+                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className="font-medium">
+                    {connector.name}
+                  </span>
+
+                  <span className="text-sm text-white/30">
+                    →
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-5 text-center text-xs leading-5 text-white/30">
+              WalletConnect supports many mobile and desktop wallets.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-24 text-center">
@@ -38,7 +117,9 @@ export default function Home() {
           <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
             Simple.
             <br />
-            <span className="text-white/40">On-chain.</span>
+            <span className="text-white/40">
+              On-chain.
+            </span>
           </h2>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/50">
@@ -59,7 +140,6 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Recipient */}
           <label className="mb-2 block text-sm text-white/50">
             Recipient
           </label>
@@ -70,7 +150,6 @@ export default function Home() {
             className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
           />
 
-          {/* Amount */}
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm text-white/50">
               Amount
@@ -93,13 +172,26 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Send button */}
           <button
-            disabled={!connected}
+            disabled={!isConnected}
             className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
           >
-            {connected ? "Send USDC" : "Connect Wallet First"}
+            {isConnected
+              ? "Send USDC"
+              : "Connect Wallet First"}
           </button>
+
+          {/* Wrong network warning */}
+          {isConnected && chainId !== arcTestnet.id && (
+            <button
+              onClick={() =>
+                switchChain({ chainId: arcTestnet.id })
+              }
+              className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              Switch to Arc Testnet
+            </button>
+          )}
         </div>
       </section>
 
@@ -111,4 +203,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}
+    }
