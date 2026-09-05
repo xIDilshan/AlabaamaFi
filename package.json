@@ -12,7 +12,9 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "viem": "latest"
+    "viem": "latest",
+    "wagmi": "latest",
+    "@tanstack/react-query": "latest"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "latest",
