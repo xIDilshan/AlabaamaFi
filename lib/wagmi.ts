@@ -1,5 +1,9 @@
 import { createConfig, http } from "wagmi";
-import { injected, walletConnect, coinbaseWallet } from "wagmi/connectors";
+import {
+  coinbaseWallet,
+  injected,
+  walletConnect,
+} from "wagmi/connectors";
 import { defineChain } from "viem";
 
 export const arcTestnet = defineChain({
@@ -26,7 +30,9 @@ export const arcTestnet = defineChain({
 export const config = createConfig({
   chains: [arcTestnet],
   connectors: [
-    injected(),
+    injected({
+      shimDisconnect: true,
+    }),
     walletConnect({
       projectId: "7446a3643b847491e6e35af95995715e",
     }),
