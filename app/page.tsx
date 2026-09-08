@@ -1,12 +1,22 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   useAccount,
   useConnect,
   useDisconnect,
   useSwitchChain,
+  useBalance,
+  useWriteContract,
+  useWaitForTransactionReceipt,
 } from "wagmi";
+
+import {
+  isAddress,
+  parseUnits,
+} from "viem";
+
 import { arcTestnet } from "@/lib/wagmi";
 
 export default function Home() {
