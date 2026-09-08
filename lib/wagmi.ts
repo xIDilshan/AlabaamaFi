@@ -33,12 +33,28 @@ export const config = createConfig({
   connectors: [
     injected({
       shimDisconnect: true,
+      target: "metaMask",
+    }),
+
+    injected({
+      shimDisconnect: true,
+      target: "braveWallet",
+    }),
+
+    injected({
+      shimDisconnect: true,
+      target: "rabby",
+    }),
+
+    injected({
+      shimDisconnect: true,
+      target: "okxWallet",
     }),
 
     walletConnect({
-  projectId: "7446a3643b847491e6e35af95995715e",
-  showQrModal: true,
-}),
+      projectId: "7446a3643b847491e6e35af95995715e",
+      showQrModal: true,
+    }),
 
     coinbaseWallet({
       appName: "AlabaamaFi",
@@ -46,6 +62,8 @@ export const config = createConfig({
   ],
 
   transports: {
-    [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
+    [arcTestnet.id]: http(
+      "https://rpc.testnet.arc.network"
+    ),
   },
 });
