@@ -4,43 +4,163 @@ import { useState } from "react";
 
 import {
   useAccount,
+  useBalance,
   useConnect,
   useDisconnect,
   useSwitchChain,
-  useBalance,
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
 
-import {
-  isAddress,
-  parseUnits,
-} from "viem";
+import { isAddress, parseUnits } from "viem";
 
 import { arcTestnet } from "@/lib/wagmi";
 
+const USDC_ADDRESS =
+  "0x3600000000000000000000000000000000000000";
+
+const USDC_ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "transfer",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "to",
+        type: "address",
+      },
+      {
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
+  },
+] as const;
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState("");
 
   const { address, isConnected, chainId } = useAccount();
+
   const { connectors, connect, isPending } = useConnect();
+
   const { disconnect } = useDisconnect();
+
   const { switchChain } = useSwitchChain();
+
+  const {
+    data: usdcBalance,
+    isLoading: isBalanceLoading,
+  } = useBalance({
+    address,
+    token: USDC_ADDRESS,
+    chainId: arcTestnet.id,
+  });
+
+  const {
+    writeContract,
+    data: hash,
+    isPending: isSending,
+    error: sendError,
+  } = useWriteContract();
+
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+  } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "";
 
-  const handleConnect = (connector: (typeof connectors)[number]) => {
+  const formattedBalance = usdcBalance
+    ? Number(usdcBalance.formatted).toFixed(2)
+    : "0.00";
+
+  const handleConnect = (
+    connector: (typeof connectors)[number]
+  ) => {
+    setError("");
+
     connect({ connector });
+
     setShowWallets(false);
   };
 
   const handleWalletButton = () => {
     if (isConnected) {
       disconnect();
+      setRecipient("");
+      setAmount("");
+      setError("");
     } else {
       setShowWallets(true);
+    }
+  };
+
+  const handleSend = () => {
+    setError("");
+
+    if (!isConnected || !address) {
+      setError("Please connect your wallet first.");
+      return;
+    }
+
+    if (chainId !== arcTestnet.id) {
+      setError("Please switch to Arc Testnet.");
+      return;
+    }
+
+    if (!isAddress(recipient)) {
+      setError("Please enter a valid wallet address.");
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid USDC amount.");
+      return;
+    }
+
+    try {
+      const value = parseUnits(amount, 6);
+
+      writeContract({
+        address: USDC_ADDRESS,
+        abi: USDC_ABI,
+        functionName: "transfer",
+        args: [recipient, value],
+        chainId: arcTestnet.id,
+      });
+    } catch {
+      setError("Unable to send USDC.");
     }
   };
 
@@ -92,22 +212,54 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              {connectors.map((connector) => (
-                <button
-                  key={connector.uid}
-                  onClick={() => handleConnect(connector)}
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <span className="font-medium">
-                    {connector.name}
-                  </span>
+              {connectors.map((connector) => {
+                const connectorName =
+                  connector.name.toLowerCase();
 
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
-                </button>
-              ))}
+                const displayName =
+                  connectorName.includes("coinbase")
+                    ? "Coinbase Wallet"
+                    : connectorName.includes("walletconnect")
+                    ? "WalletConnect"
+                    : "Browser Wallet";
+
+                return (
+                  <button
+                    key={connector.uid}
+                    onClick={() => handleConnect(connector)}
+                    disabled={isPending}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {displayName}
+                      </p>
+
+                      {displayName === "Browser Wallet" && (
+                        <p className="mt-1 text-xs text-white/30">
+                          MetaMask and other browser wallets
+                        </p>
+                      )}
+
+                      {displayName === "Coinbase Wallet" && (
+                        <p className="mt-1 text-xs text-white/30">
+                          Connect with Coinbase Wallet
+                        </p>
+                      )}
+
+                      {displayName === "WalletConnect" && (
+                        <p className="mt-1 text-xs text-white/30">
+                          Scan with a mobile wallet
+                        </p>
+                      )}
+                    </div>
+
+                    <span className="text-sm text-white/30">
+                      →
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             <p className="mt-5 text-center text-xs leading-5 text-white/30">
@@ -127,6 +279,7 @@ export default function Home() {
           <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
             Simple.
             <br />
+
             <span className="text-white/40">
               On-chain.
             </span>
@@ -150,6 +303,7 @@ export default function Home() {
             </span>
           </div>
 
+          {/* Recipient */}
           <label className="mb-2 block text-sm text-white/50">
             Recipient
           </label>
@@ -157,23 +311,33 @@ export default function Home() {
           <input
             type="text"
             placeholder="0x..."
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
             className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
           />
 
+          {/* Amount */}
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm text-white/50">
               Amount
             </label>
 
             <span className="text-xs text-white/30">
-              Balance: 0 USDC
+              Balance:{" "}
+              {isBalanceLoading
+                ? "Loading..."
+                : `${formattedBalance} USDC`}
             </span>
           </div>
 
           <div className="relative">
             <input
               type="number"
+              min="0"
+              step="0.000001"
               placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
             />
 
@@ -182,25 +346,74 @@ export default function Home() {
             </span>
           </div>
 
+          {/* Send Button */}
           <button
-            disabled={!isConnected}
+            onClick={handleSend}
+            disabled={
+              !isConnected ||
+              isSending ||
+              isConfirming
+            }
             className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
           >
-            {isConnected
-              ? "Send USDC"
-              : "Connect Wallet First"}
+            {!isConnected
+              ? "Connect Wallet First"
+              : isSending
+              ? "Confirm in Wallet..."
+              : isConfirming
+              ? "Confirming..."
+              : "Send USDC"}
           </button>
 
-          {/* Wrong network warning */}
-          {isConnected && chainId !== arcTestnet.id && (
-            <button
-              onClick={() =>
-                switchChain({ chainId: arcTestnet.id })
-              }
-              className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Switch to Arc Testnet
-            </button>
+          {/* Wrong Network */}
+          {isConnected &&
+            chainId !== arcTestnet.id && (
+              <button
+                onClick={() =>
+                  switchChain({
+                    chainId: arcTestnet.id,
+                  })
+                }
+                className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Switch to Arc Testnet
+              </button>
+            )}
+
+          {/* Error */}
+          {error && (
+            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+              <p className="text-sm text-red-400">
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Transaction Error */}
+          {sendError && (
+            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+              <p className="break-words text-sm text-red-400">
+                {sendError.message}
+              </p>
+            </div>
+          )}
+
+          {/* Transaction Success */}
+          {isConfirmed && hash && (
+            <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+              <p className="text-sm font-medium text-green-400">
+                Transaction confirmed ✓
+              </p>
+
+              <a
+                href={`https://testnet.arcscan.app/tx/${hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
+              >
+                View on Arc Explorer →
+              </a>
+            </div>
           )}
         </div>
       </section>
