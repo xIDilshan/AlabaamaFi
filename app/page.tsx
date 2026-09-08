@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import {
   useAccount,
-  useBalance,
   useConnect,
   useDisconnect,
   useSwitchChain,
+  useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
@@ -75,13 +75,15 @@ export default function Home() {
   const { switchChain } = useSwitchChain();
 
   const {
-    data: usdcBalance,
-    isLoading: isBalanceLoading,
-  } = useBalance({
-    address,
-    token: USDC_ADDRESS,
-    chainId: arcTestnet.id,
-  });
+  data: usdcBalance,
+  isLoading: isBalanceLoading,
+} = useReadContract({
+  address: USDC_ADDRESS,
+  abi: USDC_ABI,
+  functionName: "balanceOf",
+  args: address ? [address] : undefined,
+  chainId: arcTestnet.id,
+});
 
   const {
     writeContract,
@@ -102,8 +104,8 @@ export default function Home() {
     : "";
 
   const formattedBalance = usdcBalance
-    ? Number(usdcBalance.formatted).toFixed(2)
-    : "0.00";
+  ? (Number(usdcBalance) / 1_000_000).toFixed(2)
+  : "0.00";
 
   const handleConnect = (
     connector: (typeof connectors)[number]
