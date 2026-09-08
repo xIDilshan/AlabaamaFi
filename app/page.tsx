@@ -16,6 +16,12 @@ import { isAddress, parseUnits } from "viem";
 
 import { arcTestnet } from "@/lib/wagmi";
 
+declare global {
+  interface Window {
+    ethereum?: unknown;
+  }
+}
+
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
 
