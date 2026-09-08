@@ -45,7 +45,8 @@ function getWalletLogo(name: string, id?: string) {
 
   if (
     walletName.includes("metamask") ||
-    walletId.includes("metamask")
+    walletId.includes("metamask") ||
+    walletId === "io.metamask"
   ) {
     return "/wallets/metamask.svg";
   }
@@ -109,6 +110,11 @@ function WalletLogo({
         src={localLogo}
         alt={name}
         className={`${className} object-contain`}
+        onError={(event) => {
+          if (icon) {
+            event.currentTarget.src = icon;
+          }
+        }}
       />
     );
   }
@@ -182,6 +188,11 @@ export default function Home() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
+  /*
+   * Generic injected connector always exists in Wagmi.
+   * Therefore we DO NOT use it to decide whether a wallet
+   * is actually installed.
+   */
   const browserConnector = useMemo(() => {
     return connectors.find(
       (connector) => connector.id === "injected"
@@ -192,7 +203,9 @@ export default function Home() {
     return connectors.find(
       (connector) =>
         connector.id === "walletConnect" ||
-        connector.name.toLowerCase().includes("walletconnect")
+        connector.name
+          .toLowerCase()
+          .includes("walletconnect")
     );
   }, [connectors]);
 
@@ -205,6 +218,9 @@ export default function Home() {
     );
   }, [connectors]);
 
+  /*
+   * MetaMask is discovered through EIP-6963.
+   */
   const metaMaskConnector = useMemo(() => {
     return connectors.find((connector) => {
       const name = connector.name.toLowerCase();
@@ -218,6 +234,10 @@ export default function Home() {
     });
   }, [connectors]);
 
+  /*
+   * These are ACTUALLY discovered browser wallets.
+   * The generic "injected" connector is excluded.
+   */
   const detectedWallets = useMemo(() => {
     const excludedIds = new Set(
       [
@@ -236,16 +256,14 @@ export default function Home() {
       const name = connector.name.toLowerCase();
       const id = connector.id.toLowerCase();
 
-      const isInjectedWallet =
+      return (
         name.includes("wallet") ||
-        name.includes("metamask") ||
         name.includes("brave") ||
         name.includes("rabby") ||
         name.includes("okx") ||
         id.includes(".") ||
-        id.includes("wallet");
-
-      return isInjectedWallet;
+        id.includes("wallet")
+      );
     });
   }, [
     connectors,
@@ -254,6 +272,16 @@ export default function Home() {
     baseConnector,
     metaMaskConnector,
   ]);
+
+  /*
+   * IMPORTANT:
+   * "injected" by itself does NOT mean a wallet exists.
+   *
+   * Browser Wallet gets a green dot only if an actual
+   * EIP-6963 wallet was discovered.
+   */
+  const browserWalletAvailable =
+    !!metaMaskConnector || detectedWallets.length > 0;
 
   const formattedBalance = useMemo(() => {
     if (balance === undefined) return "0.00";
@@ -269,7 +297,9 @@ export default function Home() {
   const isWrongNetwork =
     isConnected && chain?.id !== arcTestnet.id;
 
-  const handleConnect = async (connector: typeof connectors[number]) => {
+  const handleConnect = async (
+    connector: typeof connectors[number]
+  ) => {
     try {
       connect({ connector });
 
@@ -353,6 +383,7 @@ export default function Home() {
             <h1 className="text-xl font-bold tracking-tight">
               AlabaamaFi
             </h1>
+
             <p className="text-xs text-white/40">
               Built on Arc
             </p>
@@ -429,6 +460,7 @@ export default function Home() {
 
                   <h3 className="mt-3 text-4xl font-bold">
                     {formattedBalance}
+
                     <span className="ml-2 text-lg font-medium text-white/40">
                       USDC
                     </span>
@@ -615,71 +647,71 @@ export default function Home() {
                   </p>
 
                   <p className="mt-1 text-xs text-white/40">
-                    {browserConnector
+                    {browserWalletAvailable
                       ? "Available in your browser"
                       : "No browser wallet detected"}
                   </p>
                 </div>
 
-                {/* ONLY show green dot when browser wallet exists */}
-                {browserConnector && (
+                {/* Green only when an actual wallet is detected */}
+                {browserWalletAvailable && (
                   <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
                 )}
               </button>
 
               {/* WalletConnect */}
-              {walletConnectConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(walletConnectConnector)
-                  }
-                  disabled={isConnecting}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:opacity-60"
-                >
-                  <WalletLogo
-                    name="WalletConnect"
-                    id={walletConnectConnector.id}
-                    icon={walletConnectConnector.icon}
-                  />
+              <button
+                onClick={() =>
+                  walletConnectConnector &&
+                  handleConnect(walletConnectConnector)
+                }
+                disabled={
+                  !walletConnectConnector || isConnecting
+                }
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <WalletLogo
+                  name="WalletConnect"
+                  id={walletConnectConnector?.id}
+                  icon={walletConnectConnector?.icon}
+                />
 
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
-                      WalletConnect
-                    </p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    WalletConnect
+                  </p>
 
-                    <p className="mt-1 text-xs text-white/40">
-                      Connect with a mobile wallet
-                    </p>
-                  </div>
-                </button>
-              )}
+                  <p className="mt-1 text-xs text-white/40">
+                    Connect with a mobile wallet
+                  </p>
+                </div>
+              </button>
 
               {/* Base App */}
-              {baseConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(baseConnector)
-                  }
-                  disabled={isConnecting}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:opacity-60"
-                >
-                  <WalletLogo
-                    name="Base App"
-                    id={baseConnector.id}
-                    icon={baseConnector.icon}
-                  />
+              <button
+                onClick={() =>
+                  baseConnector &&
+                  handleConnect(baseConnector)
+                }
+                disabled={!baseConnector || isConnecting}
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <WalletLogo
+                  name="Base App"
+                  id={baseConnector?.id}
+                  icon={baseConnector?.icon}
+                />
 
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
-                      Base App
-                    </p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    Base App
+                  </p>
 
-                    <p className="mt-1 text-xs text-white/40">
-                      Coinbase Wallet
-                    </p>
-                  </div>
-                </button>
-              )}
+                  <p className="mt-1 text-xs text-white/40">
+                    Coinbase Wallet
+                  </p>
+                </div>
+              </button>
 
               {/* MetaMask */}
               <button
@@ -687,7 +719,9 @@ export default function Home() {
                   metaMaskConnector &&
                   handleConnect(metaMaskConnector)
                 }
-                disabled={!metaMaskConnector || isConnecting}
+                disabled={
+                  !metaMaskConnector || isConnecting
+                }
                 className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <WalletLogo
@@ -708,7 +742,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* MetaMask green dot ONLY when detected */}
                 {metaMaskConnector && (
                   <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
                 )}
