@@ -76,12 +76,19 @@ function getWalletLogo(name: string) {
     return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/metamask.svg";
   }
 
-  if (walletName.includes("coinbase")) {
-    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/coinbase.svg";
+  if (
+    walletName.includes("base") ||
+    walletName.includes("coinbase")
+  ) {
+    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/base.svg";
   }
 
   if (walletName.includes("walletconnect")) {
     return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/walletconnect.svg";
+  }
+
+  if (walletName.includes("browser wallet")) {
+    return "https://cdn.jsdelivr.net/gh/lucide-static/lucide-static/icons/monitor.svg";
   }
 
   return null;
@@ -319,12 +326,19 @@ export default function Home() {
                 const isWalletConnect =
                   connectorName.includes("walletconnect");
 
+                const isInjected =
+                  connector.id === "injected";
+
                 const isBrowserWallet =
-                  !isCoinbase && !isWalletConnect;
+                  !isCoinbase &&
+                  !isWalletConnect &&
+                  isInjected &&
+                  typeof window !== "undefined" &&
+                  !!window.ethereum;
 
                 const displayName =
                   isCoinbase
-                    ? "Coinbase Wallet"
+                    ? "Base App"
                     : isWalletConnect
                     ? "WalletConnect"
                     : connectorName.includes("injected")
@@ -332,7 +346,11 @@ export default function Home() {
                     : connector.name;
 
                 const walletLogo =
-                  getWalletLogo(displayName);
+                  getWalletLogo(
+                    isCoinbase
+                      ? "Base App"
+                      : displayName
+                  );
 
                 return (
                   <button
@@ -342,7 +360,6 @@ export default function Home() {
                     className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Wallet logo */}
                       <div className="relative">
                         {walletLogo ? (
                           <img
@@ -356,7 +373,7 @@ export default function Home() {
                           </div>
                         )}
 
-                        {/* Green availability dot */}
+                        {/* Green dot only when browser wallet is detected */}
                         {isBrowserWallet && (
                           <span
                             className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
@@ -376,9 +393,9 @@ export default function Home() {
                           </p>
                         )}
 
-                        {displayName === "Coinbase Wallet" && (
+                        {displayName === "Base App" && (
                           <p className="mt-1 text-xs text-white/30">
-                            Connect with Coinbase Wallet
+                            Connect with Base App
                           </p>
                         )}
 
@@ -584,4 +601,4 @@ export default function Home() {
       </footer>
     </main>
   );
-    }
+}
