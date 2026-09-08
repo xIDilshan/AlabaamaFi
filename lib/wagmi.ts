@@ -30,6 +30,9 @@ export const arcTestnet = defineChain({
 export const config = createConfig({
   chains: [arcTestnet],
 
+  // Enable EIP-6963 multi-wallet discovery.
+  multiInjectedProviderDiscovery: true,
+
   connectors: [
     injected({
       shimDisconnect: true,
