@@ -37,7 +37,6 @@ export const config = createConfig({
 
     walletConnect({
       projectId: "7446a3643b847491e6e35af95995715e",
-      showQrModal: true,
     }),
 
     coinbaseWallet({
