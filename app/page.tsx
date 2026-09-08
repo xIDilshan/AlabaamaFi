@@ -71,30 +71,30 @@ function getWalletLogo(name: string) {
   const walletName = name.toLowerCase();
 
   if (walletName.includes("brave")) {
-    return "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/brave/default.svg";
+    return "/wallets/brave.svg";
   }
 
   if (walletName.includes("rabby")) {
-    return "https://raw.githubusercontent.com/RabbyHub/logo/master/logo-square.svg";
+    return "/wallets/rabby.svg";
   }
 
   if (walletName.includes("metamask")) {
-    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/metamask.svg";
+    return "/wallets/metamask.svg";
   }
 
   if (
     walletName.includes("base") ||
     walletName.includes("coinbase")
   ) {
-    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/base.svg";
+    return "/wallets/base.svg";
   }
 
   if (walletName.includes("walletconnect")) {
-    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/walletconnect.svg";
+    return "/wallets/walletconnect.svg";
   }
 
   if (walletName.includes("browser wallet")) {
-    return "https://cdn.jsdelivr.net/gh/lucide-static/lucide-static/icons/monitor.svg";
+    return "/wallets/browser.svg";
   }
 
   return null;
