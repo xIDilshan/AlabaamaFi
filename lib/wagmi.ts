@@ -33,22 +33,6 @@ export const config = createConfig({
   connectors: [
     injected({
       shimDisconnect: true,
-      target: "metaMask",
-    }),
-
-    injected({
-      shimDisconnect: true,
-      target: "braveWallet",
-    }),
-
-    injected({
-      shimDisconnect: true,
-      target: "rabby",
-    }),
-
-    injected({
-      shimDisconnect: true,
-      target: "okxWallet",
     }),
 
     walletConnect({
