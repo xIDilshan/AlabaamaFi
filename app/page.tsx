@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   useAccount,
@@ -16,12 +16,6 @@ import { isAddress, parseUnits } from "viem";
 
 import { arcTestnet } from "@/lib/wagmi";
 
-declare global {
-  interface Window {
-    ethereum?: unknown;
-  }
-}
-
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
 
@@ -30,63 +24,52 @@ const USDC_ABI = [
     type: "function",
     name: "balanceOf",
     stateMutability: "view",
-    inputs: [
-      {
-        name: "account",
-        type: "address",
-      },
-    ],
-    outputs: [
-      {
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
     type: "function",
     name: "transfer",
     stateMutability: "nonpayable",
     inputs: [
-      {
-        name: "to",
-        type: "address",
-      },
-      {
-        name: "value",
-        type: "uint256",
-      },
+      { name: "to", type: "address" },
+      { name: "value", type: "uint256" },
     ],
-    outputs: [
-      {
-        name: "",
-        type: "bool",
-      },
-    ],
+    outputs: [{ name: "", type: "bool" }],
   },
 ] as const;
 
-/* Wallet logos */
-function getWalletLogo(name: string) {
+function getWalletLogo(name: string, id?: string) {
   const walletName = name.toLowerCase();
+  const walletId = id?.toLowerCase() ?? "";
 
-  if (walletName.includes("brave")) {
+  if (
+    walletName.includes("metamask") ||
+    walletId.includes("metamask")
+  ) {
+    return "/wallets/metamask.svg";
+  }
+
+  if (
+    walletName.includes("brave") ||
+    walletId.includes("brave")
+  ) {
     return "/wallets/brave.svg";
   }
 
-  if (walletName.includes("rabby")) {
+  if (
+    walletName.includes("rabby") ||
+    walletId.includes("rabby")
+  ) {
     return "/wallets/rabby.svg";
   }
 
   if (
     walletName.includes("okx") ||
-    walletName.includes("okx wallet")
+    walletId.includes("okx") ||
+    walletId.includes("okex")
   ) {
     return "/wallets/okx.svg";
-  }
-
-  if (walletName.includes("metamask")) {
-    return "/wallets/metamask.svg";
   }
 
   if (
@@ -107,91 +90,78 @@ function getWalletLogo(name: string) {
   return null;
 }
 
-/* User-friendly error messages */
-function getFriendlyErrorMessage(message: string): string {
-  const lowerMessage = message.toLowerCase();
+function WalletLogo({
+  name,
+  id,
+  icon,
+  className = "h-7 w-7",
+}: {
+  name: string;
+  id?: string;
+  icon?: string;
+  className?: string;
+}) {
+  const localLogo = getWalletLogo(name, id);
 
-  if (
-    lowerMessage.includes("user rejected") ||
-    lowerMessage.includes("user denied") ||
-    lowerMessage.includes("connection request reset")
-  ) {
-    return "Wallet connection rejected. Please try again.";
+  if (localLogo) {
+    return (
+      <img
+        src={localLogo}
+        alt={name}
+        className={`${className} object-contain`}
+      />
+    );
   }
 
-  if (
-    lowerMessage.includes("provider not found") ||
-    lowerMessage.includes("provider")
-  ) {
-    return "Wallet connection failed. Please make sure your wallet is installed and try again.";
+  if (icon) {
+    return (
+      <img
+        src={icon}
+        alt={name}
+        className={`${className} object-contain`}
+      />
+    );
   }
 
-  if (
-    lowerMessage.includes("insufficient funds") ||
-    lowerMessage.includes("insufficient balance")
-  ) {
-    return "Insufficient USDC balance.";
-  }
-
-  if (
-    lowerMessage.includes("invalid address") ||
-    lowerMessage.includes("invalid recipient")
-  ) {
-    return "Please enter a valid wallet address.";
-  }
-
-  if (
-    lowerMessage.includes("transaction rejected") ||
-    lowerMessage.includes("user rejected the request")
-  ) {
-    return "Transaction was rejected. Please try again.";
-  }
-
-  if (
-    lowerMessage.includes("network") ||
-    lowerMessage.includes("chain")
-  ) {
-    return "Network connection failed. Please try again.";
-  }
-
-  if (
-    lowerMessage.includes("execution reverted") ||
-    lowerMessage.includes("reverted")
-  ) {
-    return "Transaction could not be completed. Please try again.";
-  }
-
-  return "Something went wrong. Please try again.";
+  return (
+    <div
+      className={`${className} flex items-center justify-center rounded-full bg-white/10 text-xs text-white/60`}
+    >
+      W
+    </div>
+  );
 }
 
 export default function Home() {
-  const [showWallets, setShowWallets] = useState(false);
-  const [recipient, setRecipient] = useState("");
-  const [amount, setAmount] = useState("");
-  const [error, setError] = useState("");
-
-  const { address, isConnected, chainId } = useAccount();
+  const { address, isConnected, chain } = useAccount();
 
   const {
     connectors,
     connect,
-    isPending,
+    isPending: isConnecting,
     error: connectError,
   } = useConnect();
 
   const { disconnect } = useDisconnect();
 
-  const { switchChain } = useSwitchChain();
+  const {
+    switchChain,
+    isPending: isSwitching,
+    error: switchError,
+  } = useSwitchChain();
 
   const {
-    data: usdcBalance,
-    isLoading: isBalanceLoading,
+    data: balance,
+    refetch: refetchBalance,
   } = useReadContract({
     address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     chainId: arcTestnet.id,
+    query: {
+      enabled: !!address,
+    },
   });
 
   const {
@@ -208,61 +178,136 @@ export default function Home() {
     hash,
   });
 
-  const shortAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : "";
+  const [showWallets, setShowWallets] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
 
-  const formattedBalance = usdcBalance
-    ? (Number(usdcBalance) / 1_000_000).toFixed(2)
-    : "0.00";
-
-  const handleConnect = (
-    connector: (typeof connectors)[number]
-  ) => {
-    setError("");
-
-    connect(
-      { connector },
-      {
-        onSuccess: () => {
-          setShowWallets(false);
-        },
-      }
+  const browserConnector = useMemo(() => {
+    return connectors.find(
+      (connector) => connector.id === "injected"
     );
-  };
+  }, [connectors]);
 
-  const handleWalletButton = () => {
-    if (isConnected) {
-      disconnect();
-      setRecipient("");
-      setAmount("");
-      setError("");
-    } else {
-      setError("");
-      setShowWallets(true);
+  const walletConnectConnector = useMemo(() => {
+    return connectors.find(
+      (connector) =>
+        connector.id === "walletConnect" ||
+        connector.name.toLowerCase().includes("walletconnect")
+    );
+  }, [connectors]);
+
+  const baseConnector = useMemo(() => {
+    return connectors.find(
+      (connector) =>
+        connector.id === "coinbaseWalletSDK" ||
+        connector.name.toLowerCase().includes("base") ||
+        connector.name.toLowerCase().includes("coinbase")
+    );
+  }, [connectors]);
+
+  const metaMaskConnector = useMemo(() => {
+    return connectors.find((connector) => {
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
+
+      return (
+        name.includes("metamask") ||
+        id.includes("metamask") ||
+        id === "io.metamask"
+      );
+    });
+  }, [connectors]);
+
+  const detectedWallets = useMemo(() => {
+    const excludedIds = new Set(
+      [
+        browserConnector?.id,
+        walletConnectConnector?.id,
+        baseConnector?.id,
+        metaMaskConnector?.id,
+      ].filter(Boolean)
+    );
+
+    return connectors.filter((connector) => {
+      if (excludedIds.has(connector.id)) {
+        return false;
+      }
+
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
+
+      const isInjectedWallet =
+        name.includes("wallet") ||
+        name.includes("metamask") ||
+        name.includes("brave") ||
+        name.includes("rabby") ||
+        name.includes("okx") ||
+        id.includes(".") ||
+        id.includes("wallet");
+
+      return isInjectedWallet;
+    });
+  }, [
+    connectors,
+    browserConnector,
+    walletConnectConnector,
+    baseConnector,
+    metaMaskConnector,
+  ]);
+
+  const formattedBalance = useMemo(() => {
+    if (balance === undefined) return "0.00";
+
+    const value = Number(balance) / 1_000_000;
+
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    });
+  }, [balance]);
+
+  const isWrongNetwork =
+    isConnected && chain?.id !== arcTestnet.id;
+
+  const handleConnect = async (connector: typeof connectors[number]) => {
+    try {
+      connect({ connector });
+
+      setShowWallets(false);
+    } catch {
+      // Wagmi handles the connection error.
     }
   };
 
-  const handleSend = () => {
-    setError("");
+  const handleDisconnect = () => {
+    disconnect();
+  };
 
-    if (!isConnected || !address) {
-      setError("Please connect your wallet first.");
-      return;
+  const handleSwitchNetwork = async () => {
+    try {
+      switchChain({
+        chainId: arcTestnet.id,
+      });
+    } catch {
+      // Wagmi handles the error.
     }
+  };
 
-    if (chainId !== arcTestnet.id) {
-      setError("Please switch to Arc Testnet.");
-      return;
-    }
+  const handleSend = async () => {
+    if (!address) return;
 
     if (!isAddress(recipient)) {
-      setError("Please enter a valid wallet address.");
+      alert("Please enter a valid recipient address.");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError("Please enter a valid USDC amount.");
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    if (isWrongNetwork) {
+      await handleSwitchNetwork();
       return;
     }
 
@@ -273,177 +318,314 @@ export default function Home() {
         address: USDC_ADDRESS,
         abi: USDC_ABI,
         functionName: "transfer",
-        args: [recipient, value],
+        args: [recipient as `0x${string}`, value],
         chainId: arcTestnet.id,
       });
     } catch {
-      setError("Unable to send USDC. Please try again.");
+      // Wagmi handles the error.
     }
   };
 
-  /*
-   * Mandatory wallet connectors
-   */
-
-  const browserConnector = connectors.find(
-    (connector) => connector.id === "injected"
-  );
-
-  const walletConnectConnector = connectors.find(
-    (connector) =>
-      connector.id.toLowerCase().includes("walletconnect") ||
-      connector.name.toLowerCase().includes("walletconnect")
-  );
-
-  const baseConnector = connectors.find(
-    (connector) =>
-      connector.id.toLowerCase().includes("coinbase") ||
-      connector.name.toLowerCase().includes("coinbase")
-  );
-
-  /*
-   * MetaMask is mandatory.
-   *
-   * Wagmi's EIP-6963 discovery creates a connector
-   * using MetaMask's RDNS identifier.
-   */
-  const metaMaskConnector = connectors.find((connector) => {
-    const id = connector.id.toLowerCase();
-    const name = connector.name.toLowerCase();
-
-    return (
-      id.includes("metamask") ||
-      id === "io.metamask" ||
-      name.includes("metamask")
-    );
-  });
-
-  /*
-   * Other EIP-6963 browser wallets.
-   *
-   * MetaMask is removed because it already appears
-   * in the mandatory section.
-   */
-  const detectedWallets = connectors.filter((connector) => {
-    const id = connector.id.toLowerCase();
-    const name = connector.name.toLowerCase();
-
-    if (connector.id === "injected") {
-      return false;
+  const getErrorMessage = () => {
+    if (connectError) {
+      return connectError.message;
     }
 
-    if (
-      id.includes("walletconnect") ||
-      name.includes("walletconnect")
-    ) {
-      return false;
+    if (switchError) {
+      return switchError.message;
     }
 
-    if (
-      id.includes("coinbase") ||
-      name.includes("coinbase")
-    ) {
-      return false;
+    if (sendError) {
+      return sendError.message;
     }
 
-    if (
-      id.includes("metamask") ||
-      id === "io.metamask" ||
-      name.includes("metamask")
-    ) {
-      return false;
-    }
+    return null;
+  };
 
-    return true;
-  });
+  const errorMessage = getErrorMessage();
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-[#050505] text-white">
       {/* Header */}
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight">
               AlabaamaFi
             </h1>
-
             <p className="text-xs text-white/40">
-              Powered by Arc
+              Built on Arc
             </p>
           </div>
 
-          <button
-            onClick={handleWalletButton}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
-          >
-            {isConnected ? shortAddress : "Connect Wallet"}
-          </button>
+          {!isConnected ? (
+            <button
+              onClick={() => setShowWallets(true)}
+              className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
+            >
+              Connect Wallet
+            </button>
+          ) : (
+            <button
+              onClick={handleDisconnect}
+              className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-2.5 text-sm font-medium transition hover:bg-white/[0.08]"
+            >
+              {address
+                ? `${address.slice(0, 6)}...${address.slice(-4)}`
+                : "Disconnect"}
+            </button>
+          )}
         </div>
       </header>
 
+      {/* Hero */}
+      <section className="mx-auto max-w-6xl px-6 pb-12 pt-20">
+        <div className="max-w-3xl">
+          <div className="mb-5 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-white/60">
+            Arc Testnet
+          </div>
+
+          <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            Simple USDC
+            <br />
+            transfers on Arc.
+          </h2>
+
+          <p className="mt-6 max-w-2xl text-base leading-7 text-white/50 sm:text-lg">
+            Connect your wallet, check your Arc Testnet USDC
+            balance, and send USDC to another wallet.
+          </p>
+        </div>
+      </section>
+
+      {/* Main Card */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        {!isConnected ? (
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+            <h3 className="text-xl font-semibold">
+              Get started
+            </h3>
+
+            <p className="mt-2 text-sm text-white/50">
+              Connect a wallet to use AlabaamaFi.
+            </p>
+
+            <button
+              onClick={() => setShowWallets(true)}
+              className="mt-6 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Balance */}
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-white/40">
+                    Your balance
+                  </p>
+
+                  <h3 className="mt-3 text-4xl font-bold">
+                    {formattedBalance}
+                    <span className="ml-2 text-lg font-medium text-white/40">
+                      USDC
+                    </span>
+                  </h3>
+                </div>
+
+                <button
+                  onClick={() => refetchBalance()}
+                  className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 transition hover:bg-white/[0.05]"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs text-white/40">
+                  Connected wallet
+                </p>
+
+                <p className="mt-2 break-all text-sm text-white/80">
+                  {address}
+                </p>
+              </div>
+
+              {isWrongNetwork && (
+                <button
+                  onClick={handleSwitchNetwork}
+                  disabled={isSwitching}
+                  className="mt-5 w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-50"
+                >
+                  {isSwitching
+                    ? "Switching..."
+                    : "Switch to Arc Testnet"}
+                </button>
+              )}
+            </div>
+
+            {/* Send */}
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+              <h3 className="text-xl font-semibold">
+                Send USDC
+              </h3>
+
+              <p className="mt-2 text-sm text-white/50">
+                Send USDC directly on Arc Testnet.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="mb-2 block text-xs text-white/40">
+                    Recipient
+                  </label>
+
+                  <input
+                    value={recipient}
+                    onChange={(e) =>
+                      setRecipient(e.target.value)
+                    }
+                    placeholder="0x..."
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs text-white/40">
+                    Amount
+                  </label>
+
+                  <input
+                    value={amount}
+                    onChange={(e) =>
+                      setAmount(e.target.value)
+                    }
+                    type="number"
+                    min="0"
+                    step="0.000001"
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSend}
+                  disabled={
+                    isSending ||
+                    isConfirming ||
+                    isWrongNetwork
+                  }
+                  className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSending
+                    ? "Confirm in wallet..."
+                    : isConfirming
+                    ? "Confirming transaction..."
+                    : isWrongNetwork
+                    ? "Switch to Arc Testnet"
+                    : "Send USDC"}
+                </button>
+              </div>
+
+              {isConfirmed && hash && (
+                <div className="mt-5 rounded-xl border border-green-400/20 bg-green-400/5 p-4">
+                  <p className="text-sm font-medium text-green-400">
+                    Transaction confirmed ✓
+                  </p>
+
+                  <a
+                    href={`https://testnet.arcscan.app/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block text-xs text-white/50 underline"
+                  >
+                    View on Arcscan
+                  </a>
+                </div>
+              )}
+
+              {errorMessage && (
+                <div className="mt-5 rounded-xl border border-red-400/20 bg-red-400/5 p-4">
+                  <p className="break-words text-xs text-red-300">
+                    {errorMessage}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-8 text-center text-xs text-white/30">
+          AlabaamaFi · Arc Testnet
+        </div>
+      </footer>
+
       {/* Wallet Modal */}
-      {showWallets && !isConnected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
+      {showWallets && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+          onClick={() => setShowWallets(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b0b0b] p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold">
                   Connect Wallet
                 </h3>
 
-                <p className="mt-1 text-sm text-white/40">
-                  Choose a wallet to continue
+                <p className="mt-1 text-xs text-white/40">
+                  Choose how you want to connect
                 </p>
               </div>
 
               <button
                 onClick={() => setShowWallets(false)}
-                className="rounded-lg px-3 py-2 text-white/50 hover:bg-white/10 hover:text-white"
+                className="rounded-lg px-3 py-2 text-white/40 transition hover:bg-white/5 hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Browser Wallet */}
-              {browserConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(browserConnector)
-                  }
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img
-                        src="/wallets/browser.svg"
-                        alt=""
-                        className="h-8 w-8 rounded-lg object-contain"
-                      />
+              <button
+                onClick={() =>
+                  browserConnector &&
+                  handleConnect(browserConnector)
+                }
+                disabled={!browserConnector || isConnecting}
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <WalletLogo
+                  name="Browser Wallet"
+                  id="injected"
+                />
 
-                      <span
-                        className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                        title="Browser wallet available"
-                      />
-                    </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    Browser Wallet
+                  </p>
 
-                    <div>
-                      <p className="font-medium">
-                        Browser Wallet
-                      </p>
+                  <p className="mt-1 text-xs text-white/40">
+                    {browserConnector
+                      ? "Available in your browser"
+                      : "No browser wallet detected"}
+                  </p>
+                </div>
 
-                      <p className="mt-1 text-xs text-white/30">
-                        Use your browser wallet
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
-                </button>
-              )}
+                {/* ONLY show green dot when browser wallet exists */}
+                {browserConnector && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                )}
+              </button>
 
               {/* WalletConnect */}
               {walletConnectConnector && (
@@ -451,30 +633,24 @@ export default function Home() {
                   onClick={() =>
                     handleConnect(walletConnectConnector)
                   }
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isConnecting}
+                  className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:opacity-60"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="/wallets/walletconnect.svg"
-                      alt=""
-                      className="h-8 w-8 rounded-lg object-contain"
-                    />
+                  <WalletLogo
+                    name="WalletConnect"
+                    id={walletConnectConnector.id}
+                    icon={walletConnectConnector.icon}
+                  />
 
-                    <div>
-                      <p className="font-medium">
-                        WalletConnect
-                      </p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      WalletConnect
+                    </p>
 
-                      <p className="mt-1 text-xs text-white/30">
-                        Scan with a mobile wallet
-                      </p>
-                    </div>
+                    <p className="mt-1 text-xs text-white/40">
+                      Connect with a mobile wallet
+                    </p>
                   </div>
-
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
                 </button>
               )}
 
@@ -484,329 +660,103 @@ export default function Home() {
                   onClick={() =>
                     handleConnect(baseConnector)
                   }
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isConnecting}
+                  className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:opacity-60"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="/wallets/base.svg"
-                      alt=""
-                      className="h-8 w-8 rounded-lg object-contain"
-                    />
+                  <WalletLogo
+                    name="Base App"
+                    id={baseConnector.id}
+                    icon={baseConnector.icon}
+                  />
 
-                    <div>
-                      <p className="font-medium">
-                        Base App
-                      </p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      Base App
+                    </p>
 
-                      <p className="mt-1 text-xs text-white/30">
-                        Connect with Base App
-                      </p>
-                    </div>
+                    <p className="mt-1 text-xs text-white/40">
+                      Coinbase Wallet
+                    </p>
                   </div>
-
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
                 </button>
               )}
 
-              {/* MetaMask - Mandatory */}
+              {/* MetaMask */}
               <button
-                onClick={() => {
-                  if (metaMaskConnector) {
-                    handleConnect(metaMaskConnector);
-                  } else {
-                    setError(
-                      "MetaMask was not detected. Please install MetaMask and try again."
-                    );
-                  }
-                }}
-                disabled={isPending}
-                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  metaMaskConnector &&
+                  handleConnect(metaMaskConnector)
+                }
+                disabled={!metaMaskConnector || isConnecting}
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img
-                      src="/wallets/metamask.svg"
-                      alt=""
-                      className="h-8 w-8 rounded-lg object-contain"
-                    />
+                <WalletLogo
+                  name="MetaMask"
+                  id={metaMaskConnector?.id}
+                  icon={metaMaskConnector?.icon}
+                />
 
-                    {metaMaskConnector && (
-                      <span
-                        className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                        title="MetaMask available"
-                      />
-                    )}
-                  </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    MetaMask
+                  </p>
 
-                  <div>
-                    <p className="font-medium">
-                      MetaMask
-                    </p>
-
-                    <p className="mt-1 text-xs text-white/30">
-                      Connect with MetaMask
-                    </p>
-                  </div>
+                  <p className="mt-1 text-xs text-white/40">
+                    {metaMaskConnector
+                      ? "Available in your browser"
+                      : "Not detected"}
+                  </p>
                 </div>
 
-                <span className="text-sm text-white/30">
-                  →
-                </span>
+                {/* MetaMask green dot ONLY when detected */}
+                {metaMaskConnector && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                )}
               </button>
-
-              {/* Detected Browser Wallets */}
-              {detectedWallets.length > 0 && (
-                <>
-                  <div className="pt-3">
-                    <p className="px-1 text-xs font-medium uppercase tracking-wider text-white/30">
-                      Available in your browser
-                    </p>
-                  </div>
-
-                  {detectedWallets.map((connector) => {
-                    const connectorName =
-                      connector.name;
-
-                    const logo =
-                      getWalletLogo(connectorName) ??
-                      connector.icon ??
-                      "/wallets/browser.svg";
-
-                    return (
-                      <button
-                        key={connector.uid}
-                        onClick={() =>
-                          handleConnect(connector)
-                        }
-                        disabled={isPending}
-                        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <img
-                              src={logo}
-                              alt=""
-                              className="h-8 w-8 rounded-lg object-contain"
-                            />
-
-                            <span
-                              className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                              title="Wallet available"
-                            />
-                          </div>
-
-                          <div>
-                            <p className="font-medium">
-                              {connectorName}
-                            </p>
-
-                            <p className="mt-1 text-xs text-white/30">
-                              Detected browser wallet
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="text-sm text-white/30">
-                          →
-                        </span>
-                      </button>
-                    );
-                  })}
-                </>
-              )}
             </div>
 
-            {/* Connection Error */}
-            {connectError && (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm text-red-400">
-                  {getFriendlyErrorMessage(
-                    connectError.message
-                  )}
+            {/* Detected browser wallets */}
+            {detectedWallets.length > 0 && (
+              <div className="mt-6">
+                <p className="mb-3 px-1 text-xs font-medium text-white/40">
+                  Available in your browser
                 </p>
+
+                <div className="space-y-2">
+                  {detectedWallets.map((connector) => (
+                    <button
+                      key={connector.id}
+                      onClick={() =>
+                        handleConnect(connector)
+                      }
+                      disabled={isConnecting}
+                      className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.08] disabled:opacity-60"
+                    >
+                      <WalletLogo
+                        name={connector.name}
+                        id={connector.id}
+                        icon={connector.icon}
+                      />
+
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {connector.name}
+                        </p>
+
+                        <p className="mt-1 text-xs text-white/40">
+                          Available in your browser
+                        </p>
+                      </div>
+
+                      <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-
-            {/* General Error */}
-            {error && (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm text-red-400">
-                  {error}
-                </p>
-              </div>
-            )}
-
-            <p className="mt-5 text-center text-xs leading-5 text-white/30">
-              WalletConnect supports many mobile and desktop wallets.
-            </p>
           </div>
         </div>
       )}
-
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-24 text-center">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
-            Built on Arc Network
-          </div>
-
-          <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
-            Simple.
-            <br />
-
-            <span className="text-white/40">
-              On-chain.
-            </span>
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/50">
-            Send USDC between wallets with a simple and secure
-            Web3 experience powered by the Arc Network.
-          </p>
-        </div>
-
-        {/* Send Card */}
-        <div className="mx-auto mt-14 max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-left shadow-2xl">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              Send USDC
-            </h3>
-
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
-              Testnet
-            </span>
-          </div>
-
-          {/* Recipient */}
-          <label className="mb-2 block text-sm text-white/50">
-            Recipient
-          </label>
-
-          <input
-            type="text"
-            placeholder="0x..."
-            value={recipient}
-            onChange={(e) =>
-              setRecipient(e.target.value)
-            }
-            className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
-          />
-
-          {/* Amount */}
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-sm text-white/50">
-              Amount
-            </label>
-
-            <span className="text-xs text-white/30">
-              Balance:{" "}
-              {isBalanceLoading
-                ? "Loading..."
-                : `${formattedBalance} USDC`}
-            </span>
-          </div>
-
-          <div className="relative">
-            <input
-              type="number"
-              min="0"
-              step="0.000001"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) =>
-                setAmount(e.target.value)
-              }
-              className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
-            />
-
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
-              USDC
-            </span>
-          </div>
-
-          {/* Send Button */}
-          <button
-            onClick={handleSend}
-            disabled={
-              !isConnected ||
-              isSending ||
-              isConfirming
-            }
-            className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
-          >
-            {!isConnected
-              ? "Connect Wallet First"
-              : isSending
-              ? "Confirm in Wallet..."
-              : isConfirming
-              ? "Confirming..."
-              : "Send USDC"}
-          </button>
-
-          {/* Wrong Network */}
-          {isConnected &&
-            chainId !== arcTestnet.id && (
-              <button
-                onClick={() =>
-                  switchChain({
-                    chainId: arcTestnet.id,
-                  })
-                }
-                className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Switch to Arc Testnet
-              </button>
-            )}
-
-          {/* General Error */}
-          {error && (
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="break-words text-sm text-red-400">
-                {error}
-              </p>
-            </div>
-          )}
-
-          {/* Transaction Error */}
-          {sendError && (
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="break-words text-sm text-red-400">
-                {getFriendlyErrorMessage(
-                  sendError.message
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* Transaction Success */}
-          {isConfirmed && hash && (
-            <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-              <p className="text-sm font-medium text-green-400">
-                Transaction confirmed ✓
-              </p>
-
-              <a
-                href={`https://testnet.arcscan.app/tx/${hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
-              >
-                View on Arc Explorer →
-              </a>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center">
-        <p className="text-sm text-white/30">
-          AlabaamaFi • Built on Arc Network
-        </p>
-      </footer>
     </main>
   );
     }
