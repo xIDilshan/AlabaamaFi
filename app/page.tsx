@@ -60,6 +60,33 @@ const USDC_ABI = [
   },
 ] as const;
 
+/* Wallet logos */
+function getWalletLogo(name: string) {
+  const walletName = name.toLowerCase();
+
+  if (walletName.includes("brave")) {
+    return "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/brave/default.svg";
+  }
+
+  if (walletName.includes("rabby")) {
+    return "https://raw.githubusercontent.com/RabbyHub/logo/master/logo-square.svg";
+  }
+
+  if (walletName.includes("metamask")) {
+    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/metamask.svg";
+  }
+
+  if (walletName.includes("coinbase")) {
+    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/coinbase.svg";
+  }
+
+  if (walletName.includes("walletconnect")) {
+    return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/walletconnect.svg";
+  }
+
+  return null;
+}
+
 /* User-friendly error messages */
 function getFriendlyErrorMessage(message: string): string {
   const lowerMessage = message.toLowerCase();
@@ -286,12 +313,26 @@ export default function Home() {
                 const connectorName =
                   connector.name.toLowerCase();
 
+                const isCoinbase =
+                  connectorName.includes("coinbase");
+
+                const isWalletConnect =
+                  connectorName.includes("walletconnect");
+
+                const isBrowserWallet =
+                  !isCoinbase && !isWalletConnect;
+
                 const displayName =
-                  connectorName.includes("coinbase")
+                  isCoinbase
                     ? "Coinbase Wallet"
-                    : connectorName.includes("walletconnect")
+                    : isWalletConnect
                     ? "WalletConnect"
-                    : "Browser Wallet";
+                    : connectorName.includes("injected")
+                    ? "Browser Wallet"
+                    : connector.name;
+
+                const walletLogo =
+                  getWalletLogo(displayName);
 
                 return (
                   <button
@@ -300,28 +341,53 @@ export default function Home() {
                     disabled={isPending}
                     className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <div>
-                      <p className="font-medium">
-                        {displayName}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      {/* Wallet logo */}
+                      <div className="relative">
+                        {walletLogo ? (
+                          <img
+                            src={walletLogo}
+                            alt=""
+                            className="h-8 w-8 rounded-lg object-contain"
+                          />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
+                            ◇
+                          </div>
+                        )}
 
-                      {displayName === "Browser Wallet" && (
-                        <p className="mt-1 text-xs text-white/30">
-                          MetaMask and other browser wallets
-                        </p>
-                      )}
+                        {/* Green availability dot */}
+                        {isBrowserWallet && (
+                          <span
+                            className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
+                            title="Wallet available"
+                          />
+                        )}
+                      </div>
 
-                      {displayName === "Coinbase Wallet" && (
-                        <p className="mt-1 text-xs text-white/30">
-                          Connect with Coinbase Wallet
+                      <div>
+                        <p className="font-medium">
+                          {displayName}
                         </p>
-                      )}
 
-                      {displayName === "WalletConnect" && (
-                        <p className="mt-1 text-xs text-white/30">
-                          Scan with a mobile wallet
-                        </p>
-                      )}
+                        {displayName === "Browser Wallet" && (
+                          <p className="mt-1 text-xs text-white/30">
+                            MetaMask and other browser wallets
+                          </p>
+                        )}
+
+                        {displayName === "Coinbase Wallet" && (
+                          <p className="mt-1 text-xs text-white/30">
+                            Connect with Coinbase Wallet
+                          </p>
+                        )}
+
+                        {displayName === "WalletConnect" && (
+                          <p className="mt-1 text-xs text-white/30">
+                            Scan with a mobile wallet
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <span className="text-sm text-white/30">
@@ -518,4 +584,4 @@ export default function Home() {
       </footer>
     </main>
   );
-      }
+    }
