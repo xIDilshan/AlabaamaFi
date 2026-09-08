@@ -60,6 +60,63 @@ const USDC_ABI = [
   },
 ] as const;
 
+/* User-friendly error messages */
+function getFriendlyErrorMessage(message: string): string {
+  const lowerMessage = message.toLowerCase();
+
+  if (
+    lowerMessage.includes("user rejected") ||
+    lowerMessage.includes("user denied") ||
+    lowerMessage.includes("connection request reset")
+  ) {
+    return "Wallet connection rejected. Please try again.";
+  }
+
+  if (
+    lowerMessage.includes("provider not found") ||
+    lowerMessage.includes("provider")
+  ) {
+    return "Wallet connection failed. Please make sure your wallet is installed and try again.";
+  }
+
+  if (
+    lowerMessage.includes("insufficient funds") ||
+    lowerMessage.includes("insufficient balance")
+  ) {
+    return "Insufficient USDC balance.";
+  }
+
+  if (
+    lowerMessage.includes("invalid address") ||
+    lowerMessage.includes("invalid recipient")
+  ) {
+    return "Please enter a valid wallet address.";
+  }
+
+  if (
+    lowerMessage.includes("user rejected the request") ||
+    lowerMessage.includes("transaction rejected")
+  ) {
+    return "Transaction was rejected. Please try again.";
+  }
+
+  if (
+    lowerMessage.includes("network") ||
+    lowerMessage.includes("chain")
+  ) {
+    return "Network connection failed. Please try again.";
+  }
+
+  if (
+    lowerMessage.includes("execution reverted") ||
+    lowerMessage.includes("reverted")
+  ) {
+    return "Transaction could not be completed. Please try again.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -134,6 +191,7 @@ export default function Home() {
       setAmount("");
       setError("");
     } else {
+      setError("");
       setShowWallets(true);
     }
   };
@@ -172,7 +230,7 @@ export default function Home() {
         chainId: arcTestnet.id,
       });
     } catch {
-      setError("Unable to send USDC.");
+      setError("Unable to send USDC. Please try again.");
     }
   };
 
@@ -278,7 +336,9 @@ export default function Home() {
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
                 <p className="break-words text-sm text-red-400">
-                  {connectError.message}
+                  {getFriendlyErrorMessage(
+                    connectError.message
+                  )}
                 </p>
               </div>
             )}
@@ -410,7 +470,7 @@ export default function Home() {
               </button>
             )}
 
-          {/* Error */}
+          {/* General Error */}
           {error && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
               <p className="break-words text-sm text-red-400">
@@ -423,7 +483,9 @@ export default function Home() {
           {sendError && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
               <p className="break-words text-sm text-red-400">
-                {sendError.message}
+                {getFriendlyErrorMessage(
+                  sendError.message
+                )}
               </p>
             </div>
           )}
@@ -456,4 +518,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}
+      }
