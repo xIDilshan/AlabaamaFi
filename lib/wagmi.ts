@@ -29,18 +29,23 @@ export const arcTestnet = defineChain({
 
 export const config = createConfig({
   chains: [arcTestnet],
+
   connectors: [
     injected({
       shimDisconnect: true,
     }),
+
     walletConnect({
       projectId: "7446a3643b847491e6e35af95995715e",
+      showQrModal: true,
     }),
+
     coinbaseWallet({
       appName: "AlabaamaFi",
     }),
   ],
+
   transports: {
-    [arcTestnet.id]: http(),
+    [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
   },
 });
