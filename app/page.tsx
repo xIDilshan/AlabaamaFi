@@ -68,22 +68,27 @@ export default function Home() {
 
   const { address, isConnected, chainId } = useAccount();
 
-  const { connectors, connect, isPending } = useConnect();
+  const {
+    connectors,
+    connect,
+    isPending,
+    error: connectError,
+  } = useConnect();
 
   const { disconnect } = useDisconnect();
 
   const { switchChain } = useSwitchChain();
 
   const {
-  data: usdcBalance,
-  isLoading: isBalanceLoading,
-} = useReadContract({
-  address: USDC_ADDRESS,
-  abi: USDC_ABI,
-  functionName: "balanceOf",
-  args: address ? [address] : undefined,
-  chainId: arcTestnet.id,
-});
+    data: usdcBalance,
+    isLoading: isBalanceLoading,
+  } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: arcTestnet.id,
+  });
 
   const {
     writeContract,
@@ -104,17 +109,25 @@ export default function Home() {
     : "";
 
   const formattedBalance = usdcBalance
-  ? (Number(usdcBalance) / 1_000_000).toFixed(2)
-  : "0.00";
+    ? (Number(usdcBalance) / 1_000_000).toFixed(2)
+    : "0.00";
 
   const handleConnect = (
     connector: (typeof connectors)[number]
   ) => {
     setError("");
 
-    connect({ connector });
-
-    setShowWallets(false);
+    connect(
+      { connector },
+      {
+        onSuccess: () => {
+          setShowWallets(false);
+        },
+        onError: (error) => {
+          setError(error.message);
+        },
+      }
+    );
   };
 
   const handleWalletButton = () => {
@@ -264,6 +277,24 @@ export default function Home() {
               })}
             </div>
 
+            {/* Connection Error */}
+            {connectError && (
+              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="break-words text-sm text-red-400">
+                  {connectError.message}
+                </p>
+              </div>
+            )}
+
+            {/* General Error */}
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="break-words text-sm text-red-400">
+                  {error}
+                </p>
+              </div>
+            )}
+
             <p className="mt-5 text-center text-xs leading-5 text-white/30">
               WalletConnect supports many mobile and desktop wallets.
             </p>
@@ -385,7 +416,7 @@ export default function Home() {
           {/* Error */}
           {error && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="text-sm text-red-400">
+              <p className="break-words text-sm text-red-400">
                 {error}
               </p>
             </div>
@@ -428,4 +459,4 @@ export default function Home() {
       </footer>
     </main>
   );
-    }
+}
