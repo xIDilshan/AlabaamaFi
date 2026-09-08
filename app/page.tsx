@@ -123,9 +123,6 @@ export default function Home() {
         onSuccess: () => {
           setShowWallets(false);
         },
-        onError: (error) => {
-          setError(error.message);
-        },
       }
     );
   };
