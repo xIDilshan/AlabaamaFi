@@ -403,7 +403,7 @@ export default function Home() {
    {
      id: "faucet",
      label: "Faucet",
-     icon: "🚰",
+     icon: "◌",
    },
  ];
 
@@ -980,7 +980,7 @@ export default function Home() {
             <div className="mx-auto max-w-md text-center">
 
               <div className="text-5xl">
-                🚰
+                ◌
               </div>
 
               <h2 className="mt-6 text-3xl font-bold">
