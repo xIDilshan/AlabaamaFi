@@ -309,87 +309,193 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              {connectors.map((connector) => {
-                const connectorName =
-                  connector.name.toLowerCase();
+  {(() => {
+    const coinbaseConnector = connectors.find((connector) =>
+      connector.name.toLowerCase().includes("coinbase")
+    );
 
-                const isCoinbase =
-                  connectorName.includes("coinbase");
+    const walletConnectConnector = connectors.find((connector) =>
+      connector.name.toLowerCase().includes("walletconnect")
+    );
 
-                const isWalletConnect =
-                  connectorName.includes("walletconnect");
+    const browserConnector = connectors.find((connector) =>
+      connector.name.toLowerCase().includes("injected")
+    );
 
-                const isBrowserWallet =
-                  !isCoinbase && !isWalletConnect;
+    const metaMaskConnector = connectors.find((connector) => {
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
-                const displayName =
-                  isCoinbase
-                    ? "Coinbase Wallet"
-                    : isWalletConnect
-                    ? "WalletConnect"
-                    : connectorName.includes("injected")
-                    ? "Browser Wallet"
-                    : connector.name;
+      return (
+        name.includes("metamask") ||
+        id.includes("metamask") ||
+        id === "io.metamask"
+      );
+    });
 
-                const walletLogo =
-                  getWalletLogo(displayName);
+    const detectedBrowserWallets = connectors.filter((connector) => {
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
-                return (
-                  <button
-                    key={connector.uid}
-                    onClick={() => handleConnect(connector)}
-                    disabled={isPending}
-                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Wallet logo */}
-                      <div className="relative">
-                        {walletLogo ? (
-                          <img
-                            src={walletLogo}
-                            alt=""
-                            className="h-8 w-8 rounded-lg object-contain"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
-                            ◇
-                          </div>
-                        )}
+      const isCoinbase =
+        name.includes("coinbase") ||
+        id.includes("coinbase");
 
-                        {/* Green availability dot */}
-                        {isBrowserWallet && (
-                          <span
-                            className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                            title="Wallet available"
-                          />
-                        )}
-                      </div>
+      const isWalletConnect =
+        name.includes("walletconnect") ||
+        id.includes("walletconnect");
 
-                      <div>
-                        <p className="font-medium">
-                          {displayName}
-                        </p>
+      const isBrowserConnector =
+        name.includes("injected") ||
+        id === "injected";
 
-                        {displayName === "Browser Wallet" && (
-                          <p className="mt-1 text-xs text-white/30">
-                            MetaMask and other browser wallets
-                          </p>
-                        )}
+      const isMetaMask =
+        name.includes("metamask") ||
+        id.includes("metamask") ||
+        id === "io.metamask";
 
-                        {displayName === "Coinbase Wallet" && (
-                          <p className="mt-1 text-xs text-white/30">
-                            Connect with Coinbase Wallet
-                          </p>
-                        )}
+      return (
+        !isCoinbase &&
+        !isWalletConnect &&
+        !isBrowserConnector &&
+        !isMetaMask
+      );
+    });
 
-                        {displayName === "WalletConnect" && (
-                          <p className="mt-1 text-xs text-white/30">
-                            Scan with a mobile wallet
-                          </p>
-                        )}
-                      </div>
-                    </div>
+    const renderWallet = (
+      connector: (typeof connectors)[number],
+      displayName: string,
+      logo: string | null,
+      isDetected = true,
+      description?: string
+    ) => (
+      <button
+        key={connector.uid}
+        onClick={() => handleConnect(connector)}
+        disabled={isPending || !isDetected}
+        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            {logo ? (
+              <img
+                src={logo}
+                alt=""
+                className="h-8 w-8 rounded-lg object-contain"
+              />
+            ) : connector.icon ? (
+              <img
+                src={connector.icon}
+                alt=""
+                className="h-8 w-8 rounded-lg object-contain"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
+                ◇
+              </div>
+            )}
 
+            {isDetected && (
+              <span
+                className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
+                title="Wallet available"
+              />
+            )}
+          </div>
+
+          <div>
+            <p className="font-medium">
+              {displayName}
+            </p>
+
+            {description && (
+              <p className="mt-1 text-xs text-white/30">
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <span className="text-sm text-white/30">
+          →
+        </span>
+      </button>
+    );
+
+    return (
+      <>
+        {/* Browser Wallet */}
+        {browserConnector &&
+          renderWallet(
+            browserConnector,
+            "Browser Wallet",
+            "/wallets/browser.svg",
+            detectedBrowserWallets.length > 0,
+            "MetaMask and other browser wallets"
+          )}
+
+        {/* Detected browser wallets */}
+        {detectedBrowserWallets.map((connector) => {
+          const name = connector.name.toLowerCase();
+
+          let displayName = connector.name;
+          let logo = connector.icon || null;
+
+          if (name.includes("brave")) {
+            displayName = "Brave Wallet";
+            logo = "/wallets/brave.svg";
+          } else if (name.includes("rabby")) {
+            displayName = "Rabby";
+            logo = "/wallets/rabby.svg";
+          } else if (name.includes("okx") || name.includes("okex")) {
+            displayName = "OKX Wallet";
+            logo = "/wallets/okx.svg";
+          }
+
+          return renderWallet(
+            connector,
+            displayName,
+            logo,
+            true,
+            "Available in your browser"
+          );
+        })}
+
+        {/* WalletConnect */}
+        {walletConnectConnector &&
+          renderWallet(
+            walletConnectConnector,
+            "WalletConnect",
+            "/wallets/walletconnect.svg",
+            true,
+            "Scan with a mobile wallet"
+          )}
+
+        {/* MetaMask */}
+        {metaMaskConnector &&
+          renderWallet(
+            metaMaskConnector,
+            "MetaMask",
+            "/wallets/metamask.svg",
+            true,
+            "Available in your browser"
+          )}
+
+        {/* Coinbase Wallet */}
+        {coinbaseConnector &&
+          renderWallet(
+            coinbaseConnector,
+            "Coinbase Wallet",
+            "/wallets/base.svg",
+            true,
+            "Connect with Coinbase Wallet"
+          )}
+      </>
+    );
+  })()}
+</div>
+
+            
                     <span className="text-sm text-white/30">
                       →
                     </span>
