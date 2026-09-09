@@ -1429,7 +1429,7 @@ export default function Home() {
                                       "CIRBTC"
                                         ? {
                                             transform:
-                                              "scale(0.8)",
+                                              "scale(0.75)",
                                           }
                                         : undefined
                                     }
