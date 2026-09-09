@@ -73,7 +73,7 @@ function getWalletLogo(name: string) {
     walletName.includes("okx") ||
     walletName.includes("okex")
   ) {
-    return "/wallets/okx.png";
+    return "/wallets/okx.svg";
   }
 
   if (walletName.includes("metamask")) {
