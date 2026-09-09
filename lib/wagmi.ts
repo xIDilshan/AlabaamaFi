@@ -51,5 +51,3 @@ transports: {
 [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
 },
 });
-
-wagmi code
