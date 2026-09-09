@@ -586,43 +586,87 @@ export default function Home() {
               )}
 
               {/* MetaMask */}
-              {metaMaskConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(metaMaskConnector)
-                  }
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+
+              <button
+
+                onClick={() =>
+
+                  metaMaskConnector &&
+
+                  handleConnect(metaMaskConnector)
+
+                }
+
+                disabled={!metaMaskConnector || isPending}
+
+                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img
-                        src="/wallets/metamask.svg"
-                        alt=""
-                        className="h-8 w-8 rounded-lg object-contain"
+
+                <div className="flex items-center gap-3">
+
+                  <div className="relative">
+
+                    <img
+
+                      src="/wallets/metamask.svg"
+
+                      alt=""
+
+                      className="h-8 w-8 rounded-lg object-contain"
+
                       />
 
-                      <span
-                        className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                        title="Wallet available"
-                      />
-                    </div>
 
-                    <div>
-                      <p className="font-medium">
-                        MetaMask
-                      </p>
+                    {/* Green dot only when MetaMask is detected */}
 
-                      <p className="mt-1 text-xs text-white/30">
-                        Available in your browser
-                      </p>
-                    </div>
+
+                    {metaMaskConnector && (
+
+                  <span
+
+                    className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
+
+                    title="MetaMask available"
+
+                    />
+
+                )}
+
                   </div>
 
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
-                </button>
+
+                  <div>
+
+                    <p className="font-medium">
+
+                      MetaMask
+
+                    </p>
+
+
+                    <p className="mt-1 text-xs text-white/30">
+
+                      {metaMaskConnector
+
+                        ? "Available in your browser"
+
+                      : "Not detected"}
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                <span className="text-sm text-white/30">
+
+                  →
+
+                </span>
+
+              </button>
               )}
 
               {/* Coinbase Wallet */}
