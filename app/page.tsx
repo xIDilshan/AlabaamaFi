@@ -223,7 +223,11 @@ export default function Home() {
   const [portfolioValue, setPortfolioValue] =
     useState<number | null>(null);
 
-  const { address, isConnected, chainId } = useAccount();
+  const {
+    address,
+    isConnected,
+    chainId,
+  } = useAccount();
 
   const {
     connectors,
@@ -573,13 +577,12 @@ export default function Home() {
           const tokenData =
             await tokensResponse.json();
 
-          const tokenItems =
-            Array.isArray(tokenData)
-              ? tokenData
-              : tokenData.items ||
-                tokenData.tokens ||
-                tokenData.data ||
-                [];
+          const tokenItems = Array.isArray(tokenData)
+            ? tokenData
+            : tokenData.items ||
+              tokenData.tokens ||
+              tokenData.data ||
+              [];
 
           apiTokens = tokenItems
             .map((token: any) => {
@@ -599,13 +602,12 @@ export default function Home() {
                   ? money?.raw
                   : money;
 
-              const decimals =
-                Number(
-                  money?.decimals ??
-                    token.decimals ??
-                    token.token?.decimals ??
-                    18
-                );
+              const decimals = Number(
+                money?.decimals ??
+                  token.decimals ??
+                  token.token?.decimals ??
+                  18
+              );
 
               const symbol =
                 token.symbol ||
@@ -669,7 +671,9 @@ export default function Home() {
 
               if (upperSymbol === "EUROC") {
                 displaySymbol = "EURC";
-              } else if (upperSymbol === "CIRBTC") {
+              } else if (
+                upperSymbol === "CIRBTC"
+              ) {
                 displaySymbol = "cirBTC";
               }
 
@@ -827,12 +831,16 @@ export default function Home() {
     }
 
     if (!isAddress(recipient)) {
-      setError("Please enter a valid wallet address.");
+      setError(
+        "Please enter a valid wallet address."
+      );
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError("Please enter a valid USDC amount.");
+      setError(
+        "Please enter a valid USDC amount."
+      );
       return;
     }
 
@@ -854,13 +862,11 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white">
-
+    <main>
       {/* Top Header */}
 
       <header className="border-b border-white/10">
         <div className="flex items-center justify-between px-5 py-4 lg:px-8">
-
           {/* Menu Button */}
 
           <button
@@ -900,7 +906,6 @@ export default function Home() {
 
       {showMenu && (
         <div className="fixed inset-0 z-40">
-
           {/* Background */}
 
           <button
@@ -912,11 +917,9 @@ export default function Home() {
           {/* Sidebar */}
 
           <aside className="relative z-50 flex min-h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 p-5 shadow-2xl">
-
             {/* Sidebar Header */}
 
             <div className="mb-10 flex items-center justify-between">
-
               <div>
                 <h2 className="text-xl font-bold">
                   AlabaamaFi
@@ -939,7 +942,6 @@ export default function Home() {
             {/* Navigation */}
 
             <nav className="space-y-2">
-
               {menuItems.map((item) => (
                 <button
                   key={item.id}
@@ -961,13 +963,11 @@ export default function Home() {
                   </span>
                 </button>
               ))}
-
             </nav>
 
             {/* Sidebar Wallet */}
 
             <div className="mt-auto">
-
               <button
                 onClick={handleWalletButton}
                 className="w-full rounded-xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
@@ -976,7 +976,6 @@ export default function Home() {
                   ? shortAddress
                   : "Connect Wallet"}
               </button>
-
             </div>
           </aside>
         </div>
@@ -985,14 +984,11 @@ export default function Home() {
       {/* Main Content */}
 
       <div className="min-w-0">
-
         {/* Home */}
 
         {activeSection === "home" && (
           <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-
             <div className="max-w-3xl">
-
               <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
                 Built on Arc Network
               </div>
@@ -1011,13 +1007,11 @@ export default function Home() {
                 swapping, bridging and exploring assets
                 on Arc.
               </p>
-
             </div>
 
             {/* Feature Cards */}
 
             <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
               {menuItems
                 .filter((item) => item.id !== "home")
                 .map((item) => (
@@ -1054,7 +1048,6 @@ export default function Home() {
                     </p>
                   </button>
                 ))}
-
             </div>
           </section>
         )}
@@ -1063,11 +1056,8 @@ export default function Home() {
 
         {activeSection === "send" && (
           <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
-
             <div className="mx-auto max-w-md">
-
               <div className="mb-8">
-
                 <p className="text-sm text-white/40">
                   AlabaamaFi
                 </p>
@@ -1080,13 +1070,10 @@ export default function Home() {
                   Send USDC to another wallet on Arc
                   Testnet.
                 </p>
-
               </div>
 
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
-
                 <div className="mb-6 flex items-center justify-between">
-
                   <h3 className="font-semibold">
                     Transfer
                   </h3>
@@ -1094,7 +1081,6 @@ export default function Home() {
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
                     Testnet
                   </span>
-
                 </div>
 
                 {/* Recipient */}
@@ -1116,7 +1102,6 @@ export default function Home() {
                 {/* Amount */}
 
                 <div className="mb-2 flex items-center justify-between">
-
                   <label className="text-sm text-white/50">
                     Amount
                   </label>
@@ -1127,11 +1112,9 @@ export default function Home() {
                       ? "Loading..."
                       : `${formattedBalance} USDC`}
                   </span>
-
                 </div>
 
                 <div className="relative">
-
                   <input
                     type="number"
                     min="0"
@@ -1147,7 +1130,6 @@ export default function Home() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
                     USDC
                   </span>
-
                 </div>
 
                 {/* Send */}
@@ -1212,7 +1194,6 @@ export default function Home() {
 
                 {isConfirmed && hash && (
                   <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-
                     <p className="text-sm font-medium text-green-400">
                       Transaction confirmed ✓
                     </p>
@@ -1225,10 +1206,8 @@ export default function Home() {
                     >
                       View on Arc Explorer →
                     </a>
-
                   </div>
                 )}
-
               </div>
             </div>
           </section>
@@ -1238,9 +1217,7 @@ export default function Home() {
 
         {activeSection === "swap" && (
           <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-
             <div className="mx-auto max-w-md">
-
               <p className="text-sm text-white/40">
                 AlabaamaFi
               </p>
@@ -1250,15 +1227,12 @@ export default function Home() {
               </h2>
 
               <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-
                 <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
-
                   <p className="text-xs text-white/40">
                     You pay
                   </p>
 
                   <div className="mt-3 flex items-center justify-between">
-
                     <span className="text-2xl font-semibold">
                       0.00
                     </span>
@@ -1266,9 +1240,7 @@ export default function Home() {
                     <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
                       USDC
                     </span>
-
                   </div>
-
                 </div>
 
                 <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/50">
@@ -1276,13 +1248,11 @@ export default function Home() {
                 </div>
 
                 <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
-
                   <p className="text-xs text-white/40">
                     You receive
                   </p>
 
                   <div className="mt-3 flex items-center justify-between">
-
                     <span className="text-2xl font-semibold">
                       0.00
                     </span>
@@ -1290,9 +1260,7 @@ export default function Home() {
                     <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
                       Token
                     </span>
-
                   </div>
-
                 </div>
 
                 <button
@@ -1301,7 +1269,6 @@ export default function Home() {
                 >
                   Swap coming soon
                 </button>
-
               </div>
             </div>
           </section>
@@ -1311,9 +1278,7 @@ export default function Home() {
 
         {activeSection === "bridge" && (
           <section className="mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-24">
-
             <div className="mx-auto max-w-md">
-
               <div className="text-4xl">
                 ⇅
               </div>
@@ -1331,7 +1296,6 @@ export default function Home() {
               <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-sm text-white/40">
                 Coming soon
               </div>
-
             </div>
           </section>
         )}
@@ -1340,9 +1304,7 @@ export default function Home() {
 
         {activeSection === "activity" && (
           <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
-
             <div className="mx-auto max-w-2xl">
-
               <p className="text-sm text-white/40">
                 AlabaamaFi
               </p>
@@ -1357,11 +1319,9 @@ export default function Home() {
               </p>
 
               <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-
                 {/* Connected Wallet Address */}
 
                 <div>
-
                   <label className="mb-2 block text-sm text-white/50">
                     Wallet Address
                   </label>
@@ -1374,7 +1334,6 @@ export default function Home() {
                     disabled={!isConnected}
                     className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white/70 outline-none placeholder:text-white/20 disabled:text-white/30"
                   />
-
                 </div>
 
                 {/* Activity Button */}
@@ -1408,7 +1367,6 @@ export default function Home() {
                     </p>
                   </div>
                 )}
-
               </div>
 
               {/* Portfolio */}
@@ -1416,13 +1374,9 @@ export default function Home() {
               {(activityTokens.length > 0 ||
                 activityTransactions.length > 0) && (
                 <div className="mt-8">
-
                   <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-
                     <div className="flex items-center justify-between">
-
                       <div>
-
                         <p className="text-xs text-white/30">
                           Portfolio
                         </p>
@@ -1432,24 +1386,19 @@ export default function Home() {
                             ? `$${portfolioValue.toFixed(2)}`
                             : "Value unavailable"}
                         </p>
-
                       </div>
 
                       <div className="rounded-xl bg-white/10 px-3 py-2 text-xs text-white/50">
                         Arc Testnet
                       </div>
-
                     </div>
-
                   </div>
 
                   {/* Token Holdings */}
 
                   {activityTokens.length > 0 && (
                     <div className="mt-8">
-
                       <div className="mb-4 flex items-center justify-between">
-
                         <h3 className="font-semibold">
                           Token Holdings
                         </h3>
@@ -1460,32 +1409,33 @@ export default function Home() {
                             ? "s"
                             : ""}
                         </span>
-
                       </div>
 
                       <div className="space-y-3">
-
                         {activityTokens.map((token) => (
                           <div
                             key={`${token.address}-${token.symbol}`}
                             className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4"
                           >
-
                             <div className="flex min-w-0 items-center gap-3">
-
                               {token.logo ? (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center">
                                   <img
                                     src={token.logo}
                                     alt={`${token.symbol} logo`}
-                                    className="h-full w-full object-contain"
+                                    className="h-10 w-10 rounded-full object-contain"
                                     style={
-                                      token.symbol.toUpperCase() === "CIRBTC"
-                                        ? { transform: "scale(0.65)" }
-                                        : undefined
+                                      token.symbol.toUpperCase() ===
+                                      "CIRBTC"
+                                        ? {
+                                            transform:
+                                              "scale(0.45)",
                                           }
+                                        : undefined
+                                    }
                                   />
-                             ) : (
+                                </div>
+                              ) : (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
                                   {token.symbol
                                     .slice(0, 1)
@@ -1494,7 +1444,6 @@ export default function Home() {
                               )}
 
                               <div className="min-w-0">
-
                                 <p className="font-medium">
                                   {token.symbol}
                                 </p>
@@ -1502,9 +1451,7 @@ export default function Home() {
                                 <p className="mt-1 truncate text-xs text-white/30">
                                   {token.name}
                                 </p>
-
                               </div>
-
                             </div>
 
                             <p className="ml-4 shrink-0 text-right font-semibold">
@@ -1518,10 +1465,8 @@ export default function Home() {
                                 }
                               )}
                             </p>
-
                           </div>
                         ))}
-
                       </div>
                     </div>
                   )}
@@ -1530,11 +1475,8 @@ export default function Home() {
 
                   {activityTransactions.length > 0 && (
                     <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-
                       <div className="flex items-center justify-between">
-
                         <div>
-
                           <p className="text-xs text-white/30">
                             Transactions
                           </p>
@@ -1542,18 +1484,14 @@ export default function Home() {
                           <p className="mt-2 text-2xl font-semibold">
                             {activityTransactions.length}
                           </p>
-
                         </div>
 
                         <span className="text-xs text-white/30">
                           Recent activity
                         </span>
-
                       </div>
-
                     </div>
                   )}
-
                 </div>
               )}
 
@@ -1561,9 +1499,7 @@ export default function Home() {
 
               {activityTransactions.length > 0 && (
                 <div className="mt-8">
-
                   <div className="mb-4 flex items-center justify-between">
-
                     <h3 className="font-semibold">
                       Recent Transactions
                     </h3>
@@ -1571,11 +1507,9 @@ export default function Home() {
                     <span className="text-xs text-white/30">
                       {activityTransactions.length} found
                     </span>
-
                   </div>
 
                   <div className="space-y-3">
-
                     {activityTransactions.map((tx) => (
                       <a
                         key={tx.hash}
@@ -1584,11 +1518,8 @@ export default function Home() {
                         rel="noopener noreferrer"
                         className="block rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08]"
                       >
-
                         <div className="flex items-center justify-between gap-4">
-
                           <div className="min-w-0">
-
                             <p className="text-sm font-medium">
                               Transaction
                             </p>
@@ -1596,17 +1527,14 @@ export default function Home() {
                             <p className="mt-1 truncate text-xs text-white/30">
                               {tx.hash}
                             </p>
-
                           </div>
 
                           <span className="shrink-0 text-sm text-white/40">
                             →
                           </span>
-
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
-
                           <div>
                             <p className="text-white/30">
                               From
@@ -1646,12 +1574,9 @@ export default function Home() {
                               {tx.status}
                             </p>
                           </div>
-
                         </div>
-
                       </a>
                     ))}
-
                   </div>
                 </div>
               )}
@@ -1663,15 +1588,12 @@ export default function Home() {
                 activityTokens.length === 0 &&
                 !activityError && (
                   <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
-
                     <p className="text-sm text-white/40">
                       No transactions or token holdings
                       found for this wallet.
                     </p>
-
                   </div>
                 )}
-
             </div>
           </section>
         )}
@@ -1680,9 +1602,7 @@ export default function Home() {
 
         {activeSection === "faucet" && (
           <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-
             <div className="mx-auto max-w-md text-center">
-
               <div className="text-5xl">
                 ◌
               </div>
@@ -1710,7 +1630,6 @@ export default function Home() {
                 Opens the official Circle faucet in a new
                 tab.
               </p>
-
             </div>
           </section>
         )}
@@ -1718,26 +1637,19 @@ export default function Home() {
         {/* Footer */}
 
         <footer className="border-t border-white/10 py-8 text-center">
-
           <p className="text-sm text-white/30">
             AlabaamaFi • Built on Arc Network
           </p>
-
         </footer>
-
       </div>
 
       {/* Wallet Modal */}
 
       {showWallets && !isConnected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
-
           <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
-
             <div className="mb-6 flex items-center justify-between">
-
               <div>
-
                 <h3 className="text-xl font-semibold">
                   Connect Wallet
                 </h3>
@@ -1745,20 +1657,19 @@ export default function Home() {
                 <p className="mt-1 text-sm text-white/40">
                   Choose a wallet to continue
                 </p>
-
               </div>
 
               <button
-                onClick={() => setShowWallets(false)}
+                onClick={() =>
+                  setShowWallets(false)
+                }
                 className="rounded-lg px-3 py-2 text-white/50 hover:bg-white/10 hover:text-white"
               >
                 ✕
               </button>
-
             </div>
 
             <div className="space-y-3">
-
               {/* Browser Wallet */}
 
               {browserConnector && (
@@ -1769,25 +1680,21 @@ export default function Home() {
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-
                   <div className="flex items-center gap-3">
-
                     <div className="relative">
-
                       <img
                         src="/wallets/browser.svg"
                         alt=""
                         className="h-8 w-8 rounded-lg object-contain"
                       />
 
-                      {detectedBrowserWallets.length > 0 && (
+                      {detectedBrowserWallets.length >
+                        0 && (
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                       )}
-
                     </div>
 
                     <div>
-
                       <p className="font-medium">
                         Browser Wallet
                       </p>
@@ -1795,110 +1702,102 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         MetaMask and other browser wallets
                       </p>
-
                     </div>
-
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
-
                 </button>
               )}
 
               {/* Detected Browser Wallets */}
 
-              {detectedBrowserWallets.map((connector) => {
+              {detectedBrowserWallets.map(
+                (connector) => {
+                  const name =
+                    connector.name.toLowerCase();
 
-                const name =
-                  connector.name.toLowerCase();
+                  let displayName =
+                    connector.name;
 
-                let displayName =
-                  connector.name;
+                  let logo =
+                    connector.icon || null;
 
-                let logo =
-                  connector.icon || null;
+                  if (name.includes("brave")) {
+                    displayName = "Brave Wallet";
+                    logo = "/wallets/brave.svg";
+                  } else if (
+                    name.includes("rabby")
+                  ) {
+                    displayName = "Rabby";
+                    logo = "/wallets/rabby.svg";
+                  } else if (
+                    name.includes("okx") ||
+                    name.includes("okex")
+                  ) {
+                    displayName = "OKX Wallet";
+                    logo = "/wallets/okx.svg";
+                  }
 
-                if (name.includes("brave")) {
-                  displayName = "Brave Wallet";
-                  logo = "/wallets/brave.svg";
-                } else if (name.includes("rabby")) {
-                  displayName = "Rabby";
-                  logo = "/wallets/rabby.svg";
-                } else if (
-                  name.includes("okx") ||
-                  name.includes("okex")
-                ) {
-                  displayName = "OKX Wallet";
-                  logo = "/wallets/okx.svg";
+                  return (
+                    <button
+                      key={connector.uid}
+                      onClick={() =>
+                        handleConnect(connector)
+                      }
+                      disabled={isPending}
+                      className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          {logo ? (
+                            <img
+                              src={logo}
+                              alt=""
+                              className="h-8 w-8 rounded-lg object-contain"
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
+                              ◇
+                            </div>
+                          )}
+
+                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
+                        </div>
+
+                        <div>
+                          <p className="font-medium">
+                            {displayName}
+                          </p>
+
+                          <p className="mt-1 text-xs text-white/30">
+                            Available in your browser
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-sm text-white/30">
+                        →
+                      </span>
+                    </button>
+                  );
                 }
-
-                return (
-                  <button
-                    key={connector.uid}
-                    onClick={() =>
-                      handleConnect(connector)
-                    }
-                    disabled={isPending}
-                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="relative">
-
-                        {logo ? (
-                          <img
-                            src={logo}
-                            alt=""
-                            className="h-8 w-8 rounded-lg object-contain"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
-                            ◇
-                          </div>
-                        )}
-
-                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
-
-                      </div>
-
-                      <div>
-
-                        <p className="font-medium">
-                          {displayName}
-                        </p>
-
-                        <p className="mt-1 text-xs text-white/30">
-                          Available in your browser
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    <span className="text-sm text-white/30">
-                      →
-                    </span>
-
-                  </button>
-                );
-              })}
+              )}
 
               {/* WalletConnect */}
 
               {walletConnectConnector && (
                 <button
                   onClick={() =>
-                    handleConnect(walletConnectConnector)
+                    handleConnect(
+                      walletConnectConnector
+                    )
                   }
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-
                   <div className="flex items-center gap-3">
-
                     <img
                       src="/wallets/walletconnect.svg"
                       alt=""
@@ -1906,7 +1805,6 @@ export default function Home() {
                     />
 
                     <div>
-
                       <p className="font-medium">
                         WalletConnect
                       </p>
@@ -1914,15 +1812,12 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         Scan with a mobile wallet
                       </p>
-
                     </div>
-
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
-
                 </button>
               )}
 
@@ -1933,11 +1828,8 @@ export default function Home() {
                 disabled={isPending}
                 className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
               >
-
                 <div className="flex items-center gap-3">
-
                   <div className="relative">
-
                     <img
                       src="/wallets/metamask.svg"
                       alt=""
@@ -1947,11 +1839,9 @@ export default function Home() {
                     {metaMaskConnector && (
                       <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                     )}
-
                   </div>
 
                   <div>
-
                     <p className="font-medium">
                       MetaMask
                     </p>
@@ -1963,15 +1853,12 @@ export default function Home() {
                         ? "Available in your browser"
                         : "Install MetaMask"}
                     </p>
-
                   </div>
-
                 </div>
 
                 <span className="text-sm text-white/30">
                   →
                 </span>
-
               </button>
 
               {/* Coinbase Wallet */}
@@ -1979,14 +1866,14 @@ export default function Home() {
               {coinbaseConnector && (
                 <button
                   onClick={() =>
-                    handleConnect(coinbaseConnector)
+                    handleConnect(
+                      coinbaseConnector
+                    )
                   }
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-
                   <div className="flex items-center gap-3">
-
                     <img
                       src="/wallets/base.svg"
                       alt=""
@@ -1994,7 +1881,6 @@ export default function Home() {
                     />
 
                     <div>
-
                       <p className="font-medium">
                         Coinbase Wallet
                       </p>
@@ -2002,41 +1888,33 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         Connect with Coinbase Wallet
                       </p>
-
                     </div>
-
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
-
                 </button>
               )}
-
             </div>
 
             {/* Connection Error */}
 
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-
                 <p className="break-words text-sm text-red-400">
                   {getFriendlyErrorMessage(
                     connectError.message
                   )}
                 </p>
-
               </div>
             )}
 
             {error && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-
                 <p className="break-words text-sm text-red-400">
                   {error}
                 </p>
-
               </div>
             )}
 
@@ -2044,11 +1922,9 @@ export default function Home() {
               WalletConnect supports many mobile and desktop
               wallets.
             </p>
-
           </div>
         </div>
       )}
-
     </main>
   );
 }
