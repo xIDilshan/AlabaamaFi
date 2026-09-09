@@ -140,7 +140,7 @@ export async function getWalletTransactions(
   address: string
 ): Promise<WalletTransaction[]> {
   const response = await fetch(
-    `${ARCSCAN_API}/addresses/${address}/transactions?filter=validated`,
+    `${ARCSCAN_API}/addresses/${address}/transactions`,
     {
       cache: "no-store",
     }
