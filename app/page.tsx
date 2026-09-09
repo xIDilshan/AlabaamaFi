@@ -155,8 +155,20 @@ function getFriendlyErrorMessage(message: string): string {
   return "Something went wrong. Please try again.";
 }
 
+type Section =
+  | "home"
+  | "send"
+  | "swap"
+  | "bridge"
+  | "activity"
+  | "faucet";
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [activeSection, setActiveSection] =
+    useState<Section>("home");
+
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -210,8 +222,6 @@ export default function Home() {
   /*
    * Wallet detection and ordering
    *
-   * Desired order:
-   *
    * Browser Wallet
    * Detected browser wallet
    * WalletConnect
@@ -258,9 +268,7 @@ export default function Home() {
   }, [connectors]);
 
   /*
-   * Detect other browser wallets.
-   *
-   * These are discovered dynamically through Wagmi/EIP-6963.
+   * Detect other browser wallets dynamically through EIP-6963.
    */
   const detectedBrowserWallets = useMemo(() => {
     const excludedIds = new Set(
@@ -316,9 +324,6 @@ export default function Home() {
     });
   }, [connectors]);
 
-  /*
-   * Detect mobile browser.
-   */
   const isMobileDevice = () => {
     if (typeof window === "undefined") {
       return false;
@@ -329,12 +334,6 @@ export default function Home() {
     );
   };
 
-  /*
-   * Open AlabaamaFi inside MetaMask Mobile.
-   *
-   * MetaMask Mobile supports opening dapps
-   * through its mobile dapp browser.
-   */
   const openMetaMaskMobile = () => {
     if (typeof window === "undefined") {
       return;
@@ -351,10 +350,6 @@ export default function Home() {
     window.location.href = metamaskUrl;
   };
 
-  /*
-   * Open official MetaMask installation page
-   * when MetaMask is not installed on desktop.
-   */
   const openMetaMaskInstall = () => {
     window.open(
       "https://metamask.io/download/",
@@ -363,18 +358,6 @@ export default function Home() {
     );
   };
 
-  /*
-   * MetaMask button behavior.
-   *
-   * Mobile:
-   * -> MetaMask Mobile
-   *
-   * Desktop + detected:
-   * -> MetaMask extension
-   *
-   * Desktop + not detected:
-   * -> MetaMask installation page
-   */
   const handleMetaMaskClick = () => {
     setError("");
 
@@ -418,6 +401,12 @@ export default function Home() {
     }
   };
 
+  const handleNavigation = (section: Section) => {
+    setActiveSection(section);
+    setShowMobileMenu(false);
+    setError("");
+  };
+
   const handleSend = () => {
     setError("");
 
@@ -456,29 +445,539 @@ export default function Home() {
     }
   };
 
+  const menuItems: {
+    id: Section;
+    label: string;
+    icon: string;
+  }[] = [
+    {
+      id: "home",
+      label: "Home",
+      icon: "⌂",
+    },
+    {
+      id: "send",
+      label: "Send",
+      icon: "↗",
+    },
+    {
+      id: "swap",
+      label: "Swap",
+      icon: "⇄",
+    },
+    {
+      id: "bridge",
+      label: "Bridge",
+      icon: "⇆",
+    },
+    {
+      id: "activity",
+      label: "Activity",
+      icon: "◷",
+    },
+    {
+      id: "faucet",
+      label: "Faucet",
+      icon: "♢",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="border-b border-white/10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              AlabaamaFi
-            </h1>
+      {/* Mobile Header */}
+      <header className="border-b border-white/10 lg:hidden">
+        <div className="flex items-center justify-between px-5 py-4">
+          <button
+            onClick={() =>
+              setShowMobileMenu(!showMobileMenu)
+            }
+            className="rounded-lg px-2 py-1 text-xl text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            ☰
+          </button>
 
-            <p className="text-xs text-white/40">
+          <div className="text-center">
+            <h1 className="font-bold">AlabaamaFi</h1>
+            <p className="text-[10px] text-white/40">
               Powered by Arc
             </p>
           </div>
 
           <button
             onClick={handleWalletButton}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
+            className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black"
           >
-            {isConnected ? shortAddress : "Connect Wallet"}
+            {isConnected ? shortAddress : "Connect"}
           </button>
         </div>
       </header>
+
+      {/* Mobile Menu */}
+      {showMobileMenu && (
+        <div className="border-b border-white/10 bg-zinc-950 px-4 py-4 lg:hidden">
+          <nav className="space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() =>
+                  handleNavigation(item.id)
+                }
+                className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition ${
+                  activeSection === item.id
+                    ? "bg-white text-black"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <span className="w-5 text-center">
+                  {item.icon}
+                </span>
+
+                <span className="text-sm font-medium">
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      <div className="flex min-h-screen">
+        {/* Desktop Sidebar */}
+        <aside className="hidden w-60 shrink-0 border-r border-white/10 lg:block">
+          <div className="sticky top-0 flex min-h-screen flex-col p-5">
+            <div className="mb-10 px-2">
+              <h1 className="text-xl font-bold">
+                AlabaamaFi
+              </h1>
+
+              <p className="mt-1 text-xs text-white/40">
+                Powered by Arc
+              </p>
+            </div>
+
+            <nav className="space-y-1">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() =>
+                    handleNavigation(item.id)
+                  }
+                  className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition ${
+                    activeSection === item.id
+                      ? "bg-white text-black"
+                      : "text-white/50 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span className="w-5 text-center text-lg">
+                    {item.icon}
+                  </span>
+
+                  <span className="text-sm font-medium">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="mt-auto">
+              <button
+                onClick={handleWalletButton}
+                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+              >
+                {isConnected
+                  ? shortAddress
+                  : "Connect Wallet"}
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="min-w-0 flex-1">
+          {/* Desktop Header */}
+          <header className="hidden border-b border-white/10 lg:block">
+            <div className="flex items-center justify-end px-8 py-4">
+              <button
+                onClick={handleWalletButton}
+                className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
+              >
+                {isConnected
+                  ? shortAddress
+                  : "Connect Wallet"}
+              </button>
+            </div>
+          </header>
+
+          {/* Home */}
+          {activeSection === "home" && (
+            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+              <div className="max-w-3xl">
+                <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
+                  Built on Arc Network
+                </div>
+
+                <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
+                  Simple.
+                  <br />
+
+                  <span className="text-white/40">
+                    On-chain.
+                  </span>
+                </h2>
+
+                <p className="mt-6 max-w-xl text-lg leading-8 text-white/50">
+                  A simple DeFi experience for sending,
+                  swapping, bridging and exploring assets
+                  on Arc.
+                </p>
+              </div>
+
+              <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {menuItems
+                  .filter((item) => item.id !== "home")
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() =>
+                        handleNavigation(item.id)
+                      }
+                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:bg-white/[0.08]"
+                    >
+                      <div className="mb-5 text-2xl">
+                        {item.icon}
+                      </div>
+
+                      <h3 className="font-semibold">
+                        {item.label}
+                      </h3>
+
+                      <p className="mt-2 text-sm text-white/40">
+                        {item.id === "send" &&
+                          "Send USDC to another wallet."}
+
+                        {item.id === "swap" &&
+                          "Swap tokens on Arc."}
+
+                        {item.id === "bridge" &&
+                          "Move assets across networks."}
+
+                        {item.id === "activity" &&
+                          "Explore wallet activity."}
+
+                        {item.id === "faucet" &&
+                          "Get testnet USDC."}
+                      </p>
+                    </button>
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* Send */}
+          {activeSection === "send" && (
+            <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
+              <div className="mx-auto max-w-md">
+                <div className="mb-8">
+                  <p className="text-sm text-white/40">
+                    AlabaamaFi
+                  </p>
+
+                  <h2 className="mt-1 text-3xl font-bold">
+                    Send USDC
+                  </h2>
+
+                  <p className="mt-2 text-sm text-white/40">
+                    Send USDC to another wallet on Arc
+                    Testnet.
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
+                  <div className="mb-6 flex items-center justify-between">
+                    <h3 className="font-semibold">
+                      Transfer
+                    </h3>
+
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
+                      Testnet
+                    </span>
+                  </div>
+
+                  <label className="mb-2 block text-sm text-white/50">
+                    Recipient
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="0x..."
+                    value={recipient}
+                    onChange={(e) =>
+                      setRecipient(e.target.value)
+                    }
+                    className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
+                  />
+
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm text-white/50">
+                      Amount
+                    </label>
+
+                    <span className="text-xs text-white/30">
+                      Balance:{" "}
+                      {isBalanceLoading
+                        ? "Loading..."
+                        : `${formattedBalance} USDC`}
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) =>
+                        setAmount(e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
+                    />
+
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
+                      USDC
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleSend}
+                    disabled={
+                      !isConnected ||
+                      isSending ||
+                      isConfirming
+                    }
+                    className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
+                  >
+                    {!isConnected
+                      ? "Connect Wallet First"
+                      : isSending
+                      ? "Confirm in Wallet..."
+                      : isConfirming
+                      ? "Confirming..."
+                      : "Send USDC"}
+                  </button>
+
+                  {isConnected &&
+                    chainId !== arcTestnet.id && (
+                      <button
+                        onClick={() =>
+                          switchChain({
+                            chainId: arcTestnet.id,
+                          })
+                        }
+                        className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                      >
+                        Switch to Arc Testnet
+                      </button>
+                    )}
+
+                  {error && (
+                    <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                      <p className="break-words text-sm text-red-400">
+                        {error}
+                      </p>
+                    </div>
+                  )}
+
+                  {sendError && (
+                    <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                      <p className="break-words text-sm text-red-400">
+                        {getFriendlyErrorMessage(
+                          sendError.message
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {isConfirmed && hash && (
+                    <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                      <p className="text-sm font-medium text-green-400">
+                        Transaction confirmed ✓
+                      </p>
+
+                      <a
+                        href={`https://testnet.arcscan.app/tx/${hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
+                      >
+                        View on Arc Explorer →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Swap */}
+          {activeSection === "swap" && (
+            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+              <div className="mx-auto max-w-md">
+                <p className="text-sm text-white/40">
+                  AlabaamaFi
+                </p>
+
+                <h2 className="mt-1 text-3xl font-bold">
+                  Token Swap
+                </h2>
+
+                <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                  <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+                    <p className="text-xs text-white/40">
+                      You pay
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-2xl font-semibold">
+                        0.00
+                      </span>
+
+                      <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+                        USDC
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/50">
+                    ↓
+                  </div>
+
+                  <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+                    <p className="text-xs text-white/40">
+                      You receive
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-2xl font-semibold">
+                        0.00
+                      </span>
+
+                      <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+                        Token
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    disabled
+                    className="w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
+                  >
+                    Swap coming soon
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Bridge */}
+          {activeSection === "bridge" && (
+            <section className="mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-24">
+              <div className="mx-auto max-w-md">
+                <div className="text-4xl">⇆</div>
+
+                <h2 className="mt-5 text-3xl font-bold">
+                  Bridge
+                </h2>
+
+                <p className="mt-4 leading-7 text-white/40">
+                  Bridge support will be added after we
+                  integrate a verified Arc-compatible
+                  bridge.
+                </p>
+
+                <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-sm text-white/40">
+                  Coming soon
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Activity */}
+          {activeSection === "activity" && (
+            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+              <div className="mx-auto max-w-md">
+                <p className="text-sm text-white/40">
+                  AlabaamaFi
+                </p>
+
+                <h2 className="mt-1 text-3xl font-bold">
+                  Wallet Activity
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-white/40">
+                  Enter an Arc wallet address to view its
+                  balance and recent transactions.
+                </p>
+
+                <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                  <input
+                    type="text"
+                    placeholder="0x wallet address"
+                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
+                  />
+
+                  <button
+                    disabled
+                    className="mt-4 w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
+                  >
+                    Check Activity — Coming Soon
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Faucet */}
+          {activeSection === "faucet" && (
+            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+              <div className="mx-auto max-w-md text-center">
+                <div className="text-5xl">🚰</div>
+
+                <h2 className="mt-6 text-3xl font-bold">
+                  Get Testnet USDC
+                </h2>
+
+                <p className="mt-4 leading-7 text-white/40">
+                  Get testnet USDC from the official Circle
+                  faucet and use it to test AlabaamaFi on
+                  Arc Testnet.
+                </p>
+
+                <a
+                  href="https://faucet.circle.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
+                >
+                  Get Testnet USDC →
+                </a>
+
+                <p className="mt-4 text-xs text-white/30">
+                  Opens the official Circle faucet in a new
+                  tab.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* Footer */}
+          <footer className="border-t border-white/10 py-8 text-center">
+            <p className="text-sm text-white/30">
+              AlabaamaFi • Built on Arc Network
+            </p>
+          </footer>
+        </div>
+      </div>
 
       {/* Wallet Modal */}
       {showWallets && !isConnected && (
@@ -522,10 +1021,7 @@ export default function Home() {
                       />
 
                       {detectedBrowserWallets.length > 0 && (
-                        <span
-                          className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                          title="Wallet available"
-                        />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                       )}
                     </div>
 
@@ -590,10 +1086,7 @@ export default function Home() {
                           </div>
                         )}
 
-                        <span
-                          className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                          title="Wallet available"
-                        />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                       </div>
 
                       <div>
@@ -662,10 +1155,7 @@ export default function Home() {
                     />
 
                     {metaMaskConnector && (
-                      <span
-                        className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                        title="MetaMask available"
-                      />
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                     )}
                   </div>
 
@@ -723,7 +1213,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Connection Error */}
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
                 <p className="break-words text-sm text-red-400">
@@ -734,7 +1223,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* General Error */}
             {error && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
                 <p className="break-words text-sm text-red-400">
@@ -744,169 +1232,12 @@ export default function Home() {
             )}
 
             <p className="mt-5 text-center text-xs leading-5 text-white/30">
-              WalletConnect supports many mobile and desktop wallets.
+              WalletConnect supports many mobile and desktop
+              wallets.
             </p>
           </div>
         </div>
       )}
-
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-24 text-center">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
-            Built on Arc Network
-          </div>
-
-          <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
-            Simple.
-            <br />
-
-            <span className="text-white/40">
-              On-chain.
-            </span>
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/50">
-            Send USDC between wallets with a simple and secure
-            Web3 experience powered by the Arc Network.
-          </p>
-        </div>
-
-        {/* Send Card */}
-        <div className="mx-auto mt-14 max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-left shadow-2xl">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              Send USDC
-            </h3>
-
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
-              Testnet
-            </span>
-          </div>
-
-          {/* Recipient */}
-          <label className="mb-2 block text-sm text-white/50">
-            Recipient
-          </label>
-
-          <input
-            type="text"
-            placeholder="0x..."
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-            className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
-          />
-
-          {/* Amount */}
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-sm text-white/50">
-              Amount
-            </label>
-
-            <span className="text-xs text-white/30">
-              Balance:{" "}
-              {isBalanceLoading
-                ? "Loading..."
-                : `${formattedBalance} USDC`}
-            </span>
-          </div>
-
-          <div className="relative">
-            <input
-              type="number"
-              min="0"
-              step="0.000001"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
-            />
-
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
-              USDC
-            </span>
-          </div>
-
-          {/* Send Button */}
-          <button
-            onClick={handleSend}
-            disabled={
-              !isConnected ||
-              isSending ||
-              isConfirming
-            }
-            className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
-          >
-            {!isConnected
-              ? "Connect Wallet First"
-              : isSending
-              ? "Confirm in Wallet..."
-              : isConfirming
-              ? "Confirming..."
-              : "Send USDC"}
-          </button>
-
-          {/* Wrong Network */}
-          {isConnected &&
-            chainId !== arcTestnet.id && (
-              <button
-                onClick={() =>
-                  switchChain({
-                    chainId: arcTestnet.id,
-                  })
-                }
-                className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Switch to Arc Testnet
-              </button>
-            )}
-
-          {/* General Error */}
-          {error && (
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="break-words text-sm text-red-400">
-                {error}
-              </p>
-            </div>
-          )}
-
-          {/* Transaction Error */}
-          {sendError && (
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="break-words text-sm text-red-400">
-                {getFriendlyErrorMessage(
-                  sendError.message
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* Transaction Success */}
-          {isConfirmed && hash && (
-            <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-              <p className="text-sm font-medium text-green-400">
-                Transaction confirmed ✓
-              </p>
-
-              <a
-                href={`https://testnet.arcscan.app/tx/${hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
-              >
-                View on Arc Explorer →
-              </a>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center">
-        <p className="text-sm text-white/30">
-          AlabaamaFi • Built on Arc Network
-        </p>
-      </footer>
     </main>
   );
 }
