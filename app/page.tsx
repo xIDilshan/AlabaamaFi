@@ -1474,12 +1474,14 @@ export default function Home() {
                             <div className="flex min-w-0 items-center gap-3">
 
                               {token.logo ? (
-                                <img
-                                  src={token.logo}
-                                  alt={`${token.symbol} logo`}
-                                  className="h-10 w-10 rounded-full object-contain"
-                                />
-                              ) : (
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                                  <img
+                                    src={token.logo}
+                                    alt={`${token.symbol} logo`}
+                                    className="h-10 w-10 rounded-full object-contain"
+                                  />
+                                </div>
+                             ) : (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
                                   {token.symbol
                                     .slice(0, 1)
