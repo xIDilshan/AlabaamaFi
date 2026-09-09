@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import {
   useAccount,
   useConnect,
@@ -11,9 +10,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-
 import { isAddress, parseUnits } from "viem";
-
 import { arcTestnet } from "@/lib/wagmi";
 
 const USDC_ADDRESS =
@@ -263,9 +260,7 @@ export default function Home() {
   /*
    * Detect other browser wallets.
    *
-   * This intentionally does NOT hardcode Brave/Rabby/OKX
-   * as connectors. Wagmi/EIP-6963 provides the detected
-   * connectors dynamically.
+   * These are discovered dynamically through Wagmi/EIP-6963.
    */
   const detectedBrowserWallets = useMemo(() => {
     const excludedIds = new Set(
@@ -284,10 +279,6 @@ export default function Home() {
       const name = connector.name.toLowerCase();
       const id = connector.id.toLowerCase();
 
-      /*
-       * The generic injected connector should represent
-       * Browser Wallet, not a separate wallet.
-       */
       if (
         id === "injected" ||
         name === "injected" ||
@@ -296,10 +287,6 @@ export default function Home() {
         return false;
       }
 
-      /*
-       * EIP-6963 injected wallets normally have their own
-       * connector identity/name.
-       */
       return (
         name.includes("wallet") ||
         name.includes("brave") ||
@@ -328,6 +315,81 @@ export default function Home() {
       );
     });
   }, [connectors]);
+
+  /*
+   * Detect mobile browser.
+   */
+  const isMobileDevice = () => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(
+      navigator.userAgent
+    );
+  };
+
+  /*
+   * Open AlabaamaFi inside MetaMask Mobile.
+   *
+   * MetaMask Mobile supports opening dapps
+   * through its mobile dapp browser.
+   */
+  const openMetaMaskMobile = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentUrl =
+      window.location.host +
+      window.location.pathname +
+      window.location.search;
+
+    const metamaskUrl =
+      `https://metamask.app.link/dapp/${currentUrl}`;
+
+    window.location.href = metamaskUrl;
+  };
+
+  /*
+   * Open official MetaMask installation page
+   * when MetaMask is not installed on desktop.
+   */
+  const openMetaMaskInstall = () => {
+    window.open(
+      "https://metamask.io/download/",
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  /*
+   * MetaMask button behavior.
+   *
+   * Mobile:
+   * -> MetaMask Mobile
+   *
+   * Desktop + detected:
+   * -> MetaMask extension
+   *
+   * Desktop + not detected:
+   * -> MetaMask installation page
+   */
+  const handleMetaMaskClick = () => {
+    setError("");
+
+    if (isMobileDevice()) {
+      openMetaMaskMobile();
+      return;
+    }
+
+    if (metaMaskConnector) {
+      handleConnect(metaMaskConnector);
+      return;
+    }
+
+    openMetaMaskInstall();
+  };
 
   const handleConnect = (
     connector: (typeof connectors)[number]
@@ -484,7 +546,7 @@ export default function Home() {
                 </button>
               )}
 
-              {/* Detected browser wallets */}
+              {/* Detected Browser Wallets */}
               {detectedBrowserWallets.map((connector) => {
                 const name = connector.name.toLowerCase();
 
@@ -586,44 +648,46 @@ export default function Home() {
               )}
 
               {/* MetaMask */}
-              {metaMaskConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(metaMaskConnector)
-                  }
-                  disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img
-                        src="/wallets/metamask.svg"
-                        alt=""
-                        className="h-8 w-8 rounded-lg object-contain"
-                      />
+              <button
+                onClick={handleMetaMaskClick}
+                disabled={isPending}
+                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img
+                      src="/wallets/metamask.svg"
+                      alt=""
+                      className="h-8 w-8 rounded-lg object-contain"
+                    />
 
+                    {metaMaskConnector && (
                       <span
                         className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500"
-                        title="Wallet available"
+                        title="MetaMask available"
                       />
-                    </div>
-
-                    <div>
-                      <p className="font-medium">
-                        MetaMask
-                      </p>
-
-                      <p className="mt-1 text-xs text-white/30">
-                        Available in your browser
-                      </p>
-                    </div>
+                    )}
                   </div>
 
-                  <span className="text-sm text-white/30">
-                    →
-                  </span>
-                </button>
-              )}
+                  <div>
+                    <p className="font-medium">
+                      MetaMask
+                    </p>
+
+                    <p className="mt-1 text-xs text-white/30">
+                      {isMobileDevice()
+                        ? "Open in MetaMask"
+                        : metaMaskConnector
+                        ? "Available in your browser"
+                        : "Install MetaMask"}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-sm text-white/30">
+                  →
+                </span>
+              </button>
 
               {/* Coinbase Wallet */}
               {coinbaseConnector && (
