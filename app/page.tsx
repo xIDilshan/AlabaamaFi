@@ -12,6 +12,10 @@ import {
 } from "wagmi";
 import { isAddress, parseUnits } from "viem";
 import { arcTestnet } from "@/lib/wagmi";
+import {
+  getWalletTransactions,
+  type WalletTransaction,
+} from "@/lib/arcscan";
 
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
@@ -131,6 +135,18 @@ export default function Home() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
+
+  /* Activity state */
+  const [activityAddress, setActivityAddress] =
+    useState("");
+  const [activityTransactions, setActivityTransactions] =
+    useState<WalletTransaction[]>([]);
+  const [activityLoading, setActivityLoading] =
+    useState(false);
+  const [activityError, setActivityError] =
+    useState("");
+  const [activityBalance, setActivityBalance] =
+    useState<string | null>(null);
 
   const { address, isConnected, chainId } = useAccount();
 
@@ -371,41 +387,110 @@ export default function Home() {
   };
 
   const menuItems: {
-   id: Section;
-   label: string;
-   icon: string;
- }[] = [
-   {
-     id: "home",
-     label: "Home",
-     icon: "⌂",
-   },
-   {
-     id: "send",
-     label: "Send",
-     icon: "↗",
-   },
-   {
-     id: "swap",
-     label: "Swap",
-     icon: "⇄",
-   },
-   {
-     id: "bridge",
-     label: "Bridge",
-     icon: "⇅",
-   },
-   {
-     id: "activity",
-     label: "Activity",
-     icon: "◷",
-   },
-   {
-     id: "faucet",
-     label: "Faucet",
-     icon: "◌",
-   },
- ];
+    id: Section;
+    label: string;
+    icon: string;
+  }[] = [
+    {
+      id: "home",
+      label: "Home",
+      icon: "⌂",
+    },
+    {
+      id: "send",
+      label: "Send",
+      icon: "↗",
+    },
+    {
+      id: "swap",
+      label: "Swap",
+      icon: "⇄",
+    },
+    {
+      id: "bridge",
+      label: "Bridge",
+      icon: "⇅",
+    },
+    {
+      id: "activity",
+      label: "Activity",
+      icon: "◷",
+    },
+    {
+      id: "faucet",
+      label: "Faucet",
+      icon: "◌",
+    },
+  ];
+
+  /*
+   * Wallet Activity
+   */
+
+  const handleCheckActivity = async () => {
+    setActivityError("");
+    setActivityTransactions([]);
+    setActivityBalance(null);
+
+    if (!isAddress(activityAddress)) {
+      setActivityError("Please enter a valid wallet address.");
+      return;
+    }
+
+    setActivityLoading(true);
+
+    try {
+      const transactions =
+        await getWalletTransactions(activityAddress);
+
+      setActivityTransactions(transactions);
+
+      try {
+        const response = await fetch(
+          `${arcTestnet.rpcUrls.default.http[0]}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "eth_call",
+              params: [
+                {
+                  to: USDC_ADDRESS,
+                  data:
+                    "0x70a08231000000000000000000000000" +
+                    activityAddress.slice(2),
+                },
+                "latest",
+              ],
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.result) {
+            const balance =
+              Number(BigInt(data.result)) / 1_000_000;
+
+            setActivityBalance(balance.toFixed(2));
+          }
+        }
+      } catch {
+        setActivityBalance(null);
+      }
+    } catch {
+      setActivityError(
+        "Unable to load wallet activity. Please try again."
+      );
+    } finally {
+      setActivityLoading(false);
+    }
+  };
 
   /*
    * Send USDC
@@ -911,7 +996,7 @@ export default function Home() {
             <div className="mx-auto max-w-md">
 
               <div className="text-4xl">
-                ⇆
+                ⇅
               </div>
 
               <h2 className="mt-5 text-3xl font-bold">
@@ -935,9 +1020,9 @@ export default function Home() {
         {/* Activity */}
 
         {activeSection === "activity" && (
-          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+          <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
 
-            <div className="mx-auto max-w-md">
+            <div className="mx-auto max-w-2xl">
 
               <p className="text-sm text-white/40">
                 AlabaamaFi
@@ -948,7 +1033,7 @@ export default function Home() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-white/40">
-                Enter an Arc wallet address to view its
+                Enter any Arc wallet address to view its
                 balance and recent transactions.
               </p>
 
@@ -957,17 +1042,183 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="0x wallet address"
+                  value={activityAddress}
+                  onChange={(e) =>
+                    setActivityAddress(e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleCheckActivity();
+                    }
+                  }}
                   className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
                 />
 
                 <button
-                  disabled
-                  className="mt-4 w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
+                  onClick={handleCheckActivity}
+                  disabled={activityLoading}
+                  className="mt-4 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
                 >
-                  Check Activity — Coming Soon
+                  {activityLoading
+                    ? "Checking..."
+                    : "Check Activity"}
                 </button>
 
+                {activityError && (
+                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm text-red-400">
+                      {activityError}
+                    </p>
+                  </div>
+                )}
+
               </div>
+
+              {/* Wallet Overview */}
+
+              {(activityBalance !== null ||
+                activityTransactions.length > 0) && (
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                    <p className="text-xs text-white/30">
+                      USDC Balance
+                    </p>
+
+                    <p className="mt-2 text-2xl font-semibold">
+                      {activityBalance !== null
+                        ? `${activityBalance} USDC`
+                        : "Unavailable"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                    <p className="text-xs text-white/30">
+                      Transactions
+                    </p>
+
+                    <p className="mt-2 text-2xl font-semibold">
+                      {activityTransactions.length}
+                    </p>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Transactions */}
+
+              {activityTransactions.length > 0 && (
+                <div className="mt-8">
+
+                  <div className="mb-4 flex items-center justify-between">
+
+                    <h3 className="font-semibold">
+                      Recent Transactions
+                    </h3>
+
+                    <span className="text-xs text-white/30">
+                      {activityTransactions.length} found
+                    </span>
+
+                  </div>
+
+                  <div className="space-y-3">
+
+                    {activityTransactions.map((tx) => (
+                      <a
+                        key={tx.hash}
+                        href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08]"
+                      >
+
+                        <div className="flex items-center justify-between gap-4">
+
+                          <div className="min-w-0">
+
+                            <p className="text-sm font-medium">
+                              Transaction
+                            </p>
+
+                            <p className="mt-1 truncate text-xs text-white/30">
+                              {tx.hash}
+                            </p>
+
+                          </div>
+
+                          <span className="shrink-0 text-sm text-white/40">
+                            →
+                          </span>
+
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+
+                          <div>
+                            <p className="text-white/30">
+                              From
+                            </p>
+
+                            <p className="mt-1 truncate text-white/60">
+                              {tx.from}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-white/30">
+                              To
+                            </p>
+
+                            <p className="mt-1 truncate text-white/60">
+                              {tx.to}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-white/30">
+                              Value
+                            </p>
+
+                            <p className="mt-1 text-white/60">
+                              {tx.value}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-white/30">
+                              Status
+                            </p>
+
+                            <p className="mt-1 text-green-400">
+                              {tx.status}
+                            </p>
+                          </div>
+
+                        </div>
+
+                        <p className="mt-4 text-xs text-white/30">
+                          View on Arc Explorer →
+                        </p>
+
+                      </a>
+                    ))}
+
+                  </div>
+                </div>
+              )}
+
+              {!activityLoading &&
+                activityAddress &&
+                activityTransactions.length === 0 &&
+                !activityError && (
+                  <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+                    <p className="text-sm text-white/40">
+                      No transactions found for this wallet.
+                    </p>
+                  </div>
+                )}
+
             </div>
           </section>
         )}
