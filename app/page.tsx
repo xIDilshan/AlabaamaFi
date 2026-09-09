@@ -57,47 +57,6 @@ const USDC_ABI = [
   },
 ] as const;
 
-/* Wallet logos */
-function getWalletLogo(name: string) {
-  const walletName = name.toLowerCase();
-
-  if (walletName.includes("brave")) {
-    return "/wallets/brave.svg";
-  }
-
-  if (walletName.includes("rabby")) {
-    return "/wallets/rabby.svg";
-  }
-
-  if (
-    walletName.includes("okx") ||
-    walletName.includes("okex")
-  ) {
-    return "/wallets/okx.svg";
-  }
-
-  if (walletName.includes("metamask")) {
-    return "/wallets/metamask.svg";
-  }
-
-  if (
-    walletName.includes("coinbase") ||
-    walletName.includes("base")
-  ) {
-    return "/wallets/base.svg";
-  }
-
-  if (walletName.includes("walletconnect")) {
-    return "/wallets/walletconnect.svg";
-  }
-
-  if (walletName.includes("browser wallet")) {
-    return "/wallets/browser.svg";
-  }
-
-  return null;
-}
-
 /* User-friendly error messages */
 function getFriendlyErrorMessage(message: string): string {
   const lowerMessage = message.toLowerCase();
@@ -165,7 +124,7 @@ type Section =
 
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [activeSection, setActiveSection] =
     useState<Section>("home");
 
@@ -220,13 +179,7 @@ export default function Home() {
     : "0.00";
 
   /*
-   * Wallet detection and ordering
-   *
-   * Browser Wallet
-   * Detected browser wallet
-   * WalletConnect
-   * MetaMask
-   * Coinbase Wallet
+   * Wallet detection
    */
 
   const walletConnectConnector = useMemo(() => {
@@ -268,8 +221,10 @@ export default function Home() {
   }, [connectors]);
 
   /*
-   * Detect other browser wallets dynamically through EIP-6963.
+   * Detect other browser wallets dynamically
+   * through EIP-6963.
    */
+
   const detectedBrowserWallets = useMemo(() => {
     const excludedIds = new Set(
       [
@@ -323,6 +278,10 @@ export default function Home() {
       );
     });
   }, [connectors]);
+
+  /*
+   * MetaMask mobile detection
+   */
 
   const isMobileDevice = () => {
     if (typeof window === "undefined") {
@@ -401,11 +360,56 @@ export default function Home() {
     }
   };
 
+  /*
+   * Navigation
+   */
+
   const handleNavigation = (section: Section) => {
     setActiveSection(section);
-    setShowMobileMenu(false);
+    setShowMenu(false);
     setError("");
   };
+
+  const menuItems: {
+   id: Section;
+   label: string;
+   icon: string;
+ }[] = [
+   {
+     id: "home",
+     label: "Home",
+     icon: "⌂",
+   },
+   {
+     id: "send",
+     label: "Send",
+     icon: "↗",
+   },
+   {
+     id: "swap",
+     label: "Swap",
+     icon: "⇄",
+   },
+   {
+     id: "bridge",
+     label: "Bridge",
+     icon: "⇅",
+   },
+   {
+     id: "activity",
+     label: "Activity",
+     icon: "◷",
+   },
+   {
+     id: "faucet",
+     label: "Faucet",
+     icon: "🚰",
+   },
+ ];
+
+  /*
+   * Send USDC
+   */
 
   const handleSend = () => {
     setError("");
@@ -445,130 +449,106 @@ export default function Home() {
     }
   };
 
-  const menuItems: {
-    id: Section;
-    label: string;
-    icon: string;
-  }[] = [
-    {
-      id: "home",
-      label: "Home",
-      icon: "⌂",
-    },
-    {
-      id: "send",
-      label: "Send",
-      icon: "↗",
-    },
-    {
-      id: "swap",
-      label: "Swap",
-      icon: "⇄",
-    },
-    {
-      id: "bridge",
-      label: "Bridge",
-      icon: "⇆",
-    },
-    {
-      id: "activity",
-      label: "Activity",
-      icon: "◷",
-    },
-    {
-      id: "faucet",
-      label: "Faucet",
-      icon: "♢",
-    },
-  ];
-
   return (
     <main className="min-h-screen bg-black text-white">
-      {/* Mobile Header */}
-      <header className="border-b border-white/10 lg:hidden">
-        <div className="flex items-center justify-between px-5 py-4">
+
+      {/* Top Header */}
+
+      <header className="border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 lg:px-8">
+
+          {/* Menu Button */}
+
           <button
-            onClick={() =>
-              setShowMobileMenu(!showMobileMenu)
-            }
-            className="rounded-lg px-2 py-1 text-xl text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={() => setShowMenu(true)}
+            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+            aria-label="Open menu"
           >
             ☰
           </button>
 
+          {/* Logo */}
+
           <div className="text-center">
-            <h1 className="font-bold">AlabaamaFi</h1>
-            <p className="text-[10px] text-white/40">
+            <h1 className="font-bold lg:text-xl">
+              AlabaamaFi
+            </h1>
+
+            <p className="text-[10px] text-white/40 lg:text-xs">
               Powered by Arc
             </p>
           </div>
 
+          {/* Wallet */}
+
           <button
             onClick={handleWalletButton}
-            className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black"
+            className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 lg:px-5 lg:py-2.5 lg:text-sm"
           >
-            {isConnected ? shortAddress : "Connect"}
+            {isConnected
+              ? shortAddress
+              : "Connect Wallet"}
           </button>
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="border-b border-white/10 bg-zinc-950 px-4 py-4 lg:hidden">
-          <nav className="space-y-1">
-            {menuItems.map((item) => (
+      {/* Menu Overlay */}
+
+      {showMenu && (
+        <div className="fixed inset-0 z-40">
+
+          {/* Background */}
+
+          <button
+            onClick={() => setShowMenu(false)}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+
+          {/* Sidebar */}
+
+          <aside className="relative z-50 flex min-h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 p-5 shadow-2xl">
+
+            {/* Sidebar Header */}
+
+            <div className="mb-10 flex items-center justify-between">
+
+              <div>
+                <h2 className="text-xl font-bold">
+                  AlabaamaFi
+                </h2>
+
+                <p className="mt-1 text-xs text-white/40">
+                  Powered by Arc
+                </p>
+              </div>
+
               <button
-                key={item.id}
-                onClick={() =>
-                  handleNavigation(item.id)
-                }
-                className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition ${
-                  activeSection === item.id
-                    ? "bg-white text-black"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                }`}
+                onClick={() => setShowMenu(false)}
+                className="rounded-xl px-3 py-2 text-lg text-white/50 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close menu"
               >
-                <span className="w-5 text-center">
-                  {item.icon}
-                </span>
-
-                <span className="text-sm font-medium">
-                  {item.label}
-                </span>
+                ✕
               </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <aside className="hidden w-60 shrink-0 border-r border-white/10 lg:block">
-          <div className="sticky top-0 flex min-h-screen flex-col p-5">
-            <div className="mb-10 px-2">
-              <h1 className="text-xl font-bold">
-                AlabaamaFi
-              </h1>
-
-              <p className="mt-1 text-xs text-white/40">
-                Powered by Arc
-              </p>
             </div>
 
-            <nav className="space-y-1">
+            {/* Navigation */}
+
+            <nav className="space-y-2">
+
               {menuItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() =>
                     handleNavigation(item.id)
                   }
-                  className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition ${
+                  className={`flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition ${
                     activeSection === item.id
                       ? "bg-white text-black"
-                      : "text-white/50 hover:bg-white/5 hover:text-white"
+                      : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <span className="w-5 text-center text-lg">
+                  <span className="w-6 text-center text-lg">
                     {item.icon}
                   </span>
 
@@ -577,414 +557,483 @@ export default function Home() {
                   </span>
                 </button>
               ))}
+
             </nav>
 
+            {/* Sidebar Wallet */}
+
             <div className="mt-auto">
+
               <button
                 onClick={handleWalletButton}
-                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+                className="w-full rounded-xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
               >
                 {isConnected
                   ? shortAddress
                   : "Connect Wallet"}
               </button>
+
             </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
+      )}
 
-        {/* Main Content */}
-        <div className="min-w-0 flex-1">
-          {/* Desktop Header */}
-          <header className="hidden border-b border-white/10 lg:block">
-            <div className="flex items-center justify-end px-8 py-4">
-              <button
-                onClick={handleWalletButton}
-                className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
-              >
-                {isConnected
-                  ? shortAddress
-                  : "Connect Wallet"}
-              </button>
-            </div>
-          </header>
+      {/* Main Content */}
 
-          {/* Home */}
-          {activeSection === "home" && (
-            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-              <div className="max-w-3xl">
-                <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
-                  Built on Arc Network
-                </div>
+      <div className="min-w-0">
 
-                <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
-                  Simple.
-                  <br />
+        {/* Home */}
 
-                  <span className="text-white/40">
-                    On-chain.
-                  </span>
-                </h2>
+        {activeSection === "home" && (
+          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
 
-                <p className="mt-6 max-w-xl text-lg leading-8 text-white/50">
-                  A simple DeFi experience for sending,
-                  swapping, bridging and exploring assets
-                  on Arc.
-                </p>
+            <div className="max-w-3xl">
+
+              <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
+                Built on Arc Network
               </div>
 
-              <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {menuItems
-                  .filter((item) => item.id !== "home")
-                  .map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() =>
-                        handleNavigation(item.id)
-                      }
-                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:bg-white/[0.08]"
-                    >
-                      <div className="mb-5 text-2xl">
-                        {item.icon}
-                      </div>
+              <h2 className="text-5xl font-bold tracking-tight sm:text-7xl">
+                Simple.
+                <br />
 
-                      <h3 className="font-semibold">
-                        {item.label}
-                      </h3>
+                <span className="text-white/40">
+                  On-chain.
+                </span>
+              </h2>
 
-                      <p className="mt-2 text-sm text-white/40">
-                        {item.id === "send" &&
-                          "Send USDC to another wallet."}
+              <p className="mt-6 max-w-xl text-lg leading-8 text-white/50">
+                A simple DeFi experience for sending,
+                swapping, bridging and exploring assets
+                on Arc.
+              </p>
 
-                        {item.id === "swap" &&
-                          "Swap tokens on Arc."}
+            </div>
 
-                        {item.id === "bridge" &&
-                          "Move assets across networks."}
+            {/* Feature Cards */}
 
-                        {item.id === "activity" &&
-                          "Explore wallet activity."}
+            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-                        {item.id === "faucet" &&
-                          "Get testnet USDC."}
-                      </p>
-                    </button>
-                  ))}
-              </div>
-            </section>
-          )}
+              {menuItems
+                .filter((item) => item.id !== "home")
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() =>
+                      handleNavigation(item.id)
+                    }
+                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:bg-white/[0.08]"
+                  >
+                    <div className="mb-5 text-2xl">
+                      {item.icon}
+                    </div>
 
-          {/* Send */}
-          {activeSection === "send" && (
-            <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
-              <div className="mx-auto max-w-md">
-                <div className="mb-8">
-                  <p className="text-sm text-white/40">
-                    AlabaamaFi
-                  </p>
-
-                  <h2 className="mt-1 text-3xl font-bold">
-                    Send USDC
-                  </h2>
-
-                  <p className="mt-2 text-sm text-white/40">
-                    Send USDC to another wallet on Arc
-                    Testnet.
-                  </p>
-                </div>
-
-                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
-                  <div className="mb-6 flex items-center justify-between">
                     <h3 className="font-semibold">
-                      Transfer
+                      {item.label}
                     </h3>
 
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
-                      Testnet
-                    </span>
-                  </div>
+                    <p className="mt-2 text-sm text-white/40">
+                      {item.id === "send" &&
+                        "Send USDC to another wallet."}
 
-                  <label className="mb-2 block text-sm text-white/50">
-                    Recipient
+                      {item.id === "swap" &&
+                        "Swap tokens on Arc."}
+
+                      {item.id === "bridge" &&
+                        "Move assets across networks."}
+
+                      {item.id === "activity" &&
+                        "Explore wallet activity."}
+
+                      {item.id === "faucet" &&
+                        "Get testnet USDC."}
+                    </p>
+                  </button>
+                ))}
+
+            </div>
+          </section>
+        )}
+
+        {/* Send */}
+
+        {activeSection === "send" && (
+          <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
+
+            <div className="mx-auto max-w-md">
+
+              <div className="mb-8">
+
+                <p className="text-sm text-white/40">
+                  AlabaamaFi
+                </p>
+
+                <h2 className="mt-1 text-3xl font-bold">
+                  Send USDC
+                </h2>
+
+                <p className="mt-2 text-sm text-white/40">
+                  Send USDC to another wallet on Arc
+                  Testnet.
+                </p>
+
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
+
+                <div className="mb-6 flex items-center justify-between">
+
+                  <h3 className="font-semibold">
+                    Transfer
+                  </h3>
+
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
+                    Testnet
+                  </span>
+
+                </div>
+
+                {/* Recipient */}
+
+                <label className="mb-2 block text-sm text-white/50">
+                  Recipient
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="0x..."
+                  value={recipient}
+                  onChange={(e) =>
+                    setRecipient(e.target.value)
+                  }
+                  className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
+                />
+
+                {/* Amount */}
+
+                <div className="mb-2 flex items-center justify-between">
+
+                  <label className="text-sm text-white/50">
+                    Amount
                   </label>
 
+                  <span className="text-xs text-white/30">
+                    Balance:{" "}
+                    {isBalanceLoading
+                      ? "Loading..."
+                      : `${formattedBalance} USDC`}
+                  </span>
+
+                </div>
+
+                <div className="relative">
+
                   <input
-                    type="text"
-                    placeholder="0x..."
-                    value={recipient}
+                    type="number"
+                    min="0"
+                    step="0.000001"
+                    placeholder="0.00"
+                    value={amount}
                     onChange={(e) =>
-                      setRecipient(e.target.value)
+                      setAmount(e.target.value)
                     }
-                    className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
+                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
 
-                  <div className="mb-2 flex items-center justify-between">
-                    <label className="text-sm text-white/50">
-                      Amount
-                    </label>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
+                    USDC
+                  </span>
 
-                    <span className="text-xs text-white/30">
-                      Balance:{" "}
-                      {isBalanceLoading
-                        ? "Loading..."
-                        : `${formattedBalance} USDC`}
-                    </span>
-                  </div>
+                </div>
 
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.000001"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) =>
-                        setAmount(e.target.value)
+                {/* Send */}
+
+                <button
+                  onClick={handleSend}
+                  disabled={
+                    !isConnected ||
+                    isSending ||
+                    isConfirming
+                  }
+                  className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
+                >
+                  {!isConnected
+                    ? "Connect Wallet First"
+                    : isSending
+                    ? "Confirm in Wallet..."
+                    : isConfirming
+                    ? "Confirming..."
+                    : "Send USDC"}
+                </button>
+
+                {/* Network */}
+
+                {isConnected &&
+                  chainId !== arcTestnet.id && (
+                    <button
+                      onClick={() =>
+                        switchChain({
+                          chainId: arcTestnet.id,
+                        })
                       }
-                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
-                    />
+                      className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                      Switch to Arc Testnet
+                    </button>
+                  )}
 
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
+                {/* Error */}
+
+                {error && (
+                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm text-red-400">
+                      {error}
+                    </p>
+                  </div>
+                )}
+
+                {/* Transaction Error */}
+
+                {sendError && (
+                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm text-red-400">
+                      {getFriendlyErrorMessage(
+                        sendError.message
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Success */}
+
+                {isConfirmed && hash && (
+                  <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+
+                    <p className="text-sm font-medium text-green-400">
+                      Transaction confirmed ✓
+                    </p>
+
+                    <a
+                      href={`https://testnet.arcscan.app/tx/${hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
+                    >
+                      View on Arc Explorer →
+                    </a>
+
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Swap */}
+
+        {activeSection === "swap" && (
+          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+
+            <div className="mx-auto max-w-md">
+
+              <p className="text-sm text-white/40">
+                AlabaamaFi
+              </p>
+
+              <h2 className="mt-1 text-3xl font-bold">
+                Token Swap
+              </h2>
+
+              <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+
+                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+
+                  <p className="text-xs text-white/40">
+                    You pay
+                  </p>
+
+                  <div className="mt-3 flex items-center justify-between">
+
+                    <span className="text-2xl font-semibold">
+                      0.00
+                    </span>
+
+                    <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
                       USDC
                     </span>
+
                   </div>
 
-                  <button
-                    onClick={handleSend}
-                    disabled={
-                      !isConnected ||
-                      isSending ||
-                      isConfirming
-                    }
-                    className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
-                  >
-                    {!isConnected
-                      ? "Connect Wallet First"
-                      : isSending
-                      ? "Confirm in Wallet..."
-                      : isConfirming
-                      ? "Confirming..."
-                      : "Send USDC"}
-                  </button>
-
-                  {isConnected &&
-                    chainId !== arcTestnet.id && (
-                      <button
-                        onClick={() =>
-                          switchChain({
-                            chainId: arcTestnet.id,
-                          })
-                        }
-                        className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-                      >
-                        Switch to Arc Testnet
-                      </button>
-                    )}
-
-                  {error && (
-                    <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                      <p className="break-words text-sm text-red-400">
-                        {error}
-                      </p>
-                    </div>
-                  )}
-
-                  {sendError && (
-                    <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                      <p className="break-words text-sm text-red-400">
-                        {getFriendlyErrorMessage(
-                          sendError.message
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {isConfirmed && hash && (
-                    <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-                      <p className="text-sm font-medium text-green-400">
-                        Transaction confirmed ✓
-                      </p>
-
-                      <a
-                        href={`https://testnet.arcscan.app/tx/${hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
-                      >
-                        View on Arc Explorer →
-                      </a>
-                    </div>
-                  )}
                 </div>
-              </div>
-            </section>
-          )}
 
-          {/* Swap */}
-          {activeSection === "swap" && (
-            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-              <div className="mx-auto max-w-md">
-                <p className="text-sm text-white/40">
-                  AlabaamaFi
-                </p>
+                <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/50">
+                  ↓
+                </div>
 
-                <h2 className="mt-1 text-3xl font-bold">
-                  Token Swap
-                </h2>
+                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
 
-                <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                  <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
-                    <p className="text-xs text-white/40">
-                      You pay
-                    </p>
+                  <p className="text-xs text-white/40">
+                    You receive
+                  </p>
 
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-2xl font-semibold">
-                        0.00
-                      </span>
+                  <div className="mt-3 flex items-center justify-between">
 
-                      <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
-                        USDC
-                      </span>
-                    </div>
+                    <span className="text-2xl font-semibold">
+                      0.00
+                    </span>
+
+                    <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+                      Token
+                    </span>
+
                   </div>
 
-                  <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/50">
-                    ↓
-                  </div>
-
-                  <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
-                    <p className="text-xs text-white/40">
-                      You receive
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-2xl font-semibold">
-                        0.00
-                      </span>
-
-                      <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
-                        Token
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    disabled
-                    className="w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
-                  >
-                    Swap coming soon
-                  </button>
                 </div>
-              </div>
-            </section>
-          )}
 
-          {/* Bridge */}
-          {activeSection === "bridge" && (
-            <section className="mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-24">
-              <div className="mx-auto max-w-md">
-                <div className="text-4xl">⇆</div>
-
-                <h2 className="mt-5 text-3xl font-bold">
-                  Bridge
-                </h2>
-
-                <p className="mt-4 leading-7 text-white/40">
-                  Bridge support will be added after we
-                  integrate a verified Arc-compatible
-                  bridge.
-                </p>
-
-                <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-sm text-white/40">
-                  Coming soon
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Activity */}
-          {activeSection === "activity" && (
-            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-              <div className="mx-auto max-w-md">
-                <p className="text-sm text-white/40">
-                  AlabaamaFi
-                </p>
-
-                <h2 className="mt-1 text-3xl font-bold">
-                  Wallet Activity
-                </h2>
-
-                <p className="mt-3 text-sm leading-6 text-white/40">
-                  Enter an Arc wallet address to view its
-                  balance and recent transactions.
-                </p>
-
-                <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                  <input
-                    type="text"
-                    placeholder="0x wallet address"
-                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
-                  />
-
-                  <button
-                    disabled
-                    className="mt-4 w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
-                  >
-                    Check Activity — Coming Soon
-                  </button>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Faucet */}
-          {activeSection === "faucet" && (
-            <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
-              <div className="mx-auto max-w-md text-center">
-                <div className="text-5xl">🚰</div>
-
-                <h2 className="mt-6 text-3xl font-bold">
-                  Get Testnet USDC
-                </h2>
-
-                <p className="mt-4 leading-7 text-white/40">
-                  Get testnet USDC from the official Circle
-                  faucet and use it to test AlabaamaFi on
-                  Arc Testnet.
-                </p>
-
-                <a
-                  href="https://faucet.circle.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
+                <button
+                  disabled
+                  className="w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
                 >
-                  Get Testnet USDC →
-                </a>
+                  Swap coming soon
+                </button>
 
-                <p className="mt-4 text-xs text-white/30">
-                  Opens the official Circle faucet in a new
-                  tab.
-                </p>
               </div>
-            </section>
-          )}
+            </div>
+          </section>
+        )}
 
-          {/* Footer */}
-          <footer className="border-t border-white/10 py-8 text-center">
-            <p className="text-sm text-white/30">
-              AlabaamaFi • Built on Arc Network
-            </p>
-          </footer>
-        </div>
+        {/* Bridge */}
+
+        {activeSection === "bridge" && (
+          <section className="mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-24">
+
+            <div className="mx-auto max-w-md">
+
+              <div className="text-4xl">
+                ⇆
+              </div>
+
+              <h2 className="mt-5 text-3xl font-bold">
+                Bridge
+              </h2>
+
+              <p className="mt-4 leading-7 text-white/40">
+                Bridge support will be added after we
+                integrate a verified Arc-compatible
+                bridge.
+              </p>
+
+              <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-sm text-white/40">
+                Coming soon
+              </div>
+
+            </div>
+          </section>
+        )}
+
+        {/* Activity */}
+
+        {activeSection === "activity" && (
+          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+
+            <div className="mx-auto max-w-md">
+
+              <p className="text-sm text-white/40">
+                AlabaamaFi
+              </p>
+
+              <h2 className="mt-1 text-3xl font-bold">
+                Wallet Activity
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-white/40">
+                Enter an Arc wallet address to view its
+                balance and recent transactions.
+              </p>
+
+              <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+
+                <input
+                  type="text"
+                  placeholder="0x wallet address"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
+                />
+
+                <button
+                  disabled
+                  className="mt-4 w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
+                >
+                  Check Activity — Coming Soon
+                </button>
+
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Faucet */}
+
+        {activeSection === "faucet" && (
+          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+
+            <div className="mx-auto max-w-md text-center">
+
+              <div className="text-5xl">
+                🚰
+              </div>
+
+              <h2 className="mt-6 text-3xl font-bold">
+                Get Testnet USDC
+              </h2>
+
+              <p className="mt-4 leading-7 text-white/40">
+                Get testnet USDC from the official Circle
+                faucet and use it to test AlabaamaFi on
+                Arc Testnet.
+              </p>
+
+              <a
+                href="https://faucet.circle.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
+              >
+                Get Testnet USDC →
+              </a>
+
+              <p className="mt-4 text-xs text-white/30">
+                Opens the official Circle faucet in a new
+                tab.
+              </p>
+
+            </div>
+          </section>
+        )}
+
+        {/* Footer */}
+
+        <footer className="border-t border-white/10 py-8 text-center">
+
+          <p className="text-sm text-white/30">
+            AlabaamaFi • Built on Arc Network
+          </p>
+
+        </footer>
+
       </div>
 
       {/* Wallet Modal */}
+
       {showWallets && !isConnected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
+
           <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
+
             <div className="mb-6 flex items-center justify-between">
+
               <div>
+
                 <h3 className="text-xl font-semibold">
                   Connect Wallet
                 </h3>
@@ -992,6 +1041,7 @@ export default function Home() {
                 <p className="mt-1 text-sm text-white/40">
                   Choose a wallet to continue
                 </p>
+
               </div>
 
               <button
@@ -1000,10 +1050,13 @@ export default function Home() {
               >
                 ✕
               </button>
+
             </div>
 
             <div className="space-y-3">
+
               {/* Browser Wallet */}
+
               {browserConnector && (
                 <button
                   onClick={() =>
@@ -1012,8 +1065,11 @@ export default function Home() {
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
+
                   <div className="flex items-center gap-3">
+
                     <div className="relative">
+
                       <img
                         src="/wallets/browser.svg"
                         alt=""
@@ -1023,9 +1079,11 @@ export default function Home() {
                       {detectedBrowserWallets.length > 0 && (
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                       )}
+
                     </div>
 
                     <div>
+
                       <p className="font-medium">
                         Browser Wallet
                       </p>
@@ -1033,21 +1091,30 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         MetaMask and other browser wallets
                       </p>
+
                     </div>
+
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
+
                 </button>
               )}
 
               {/* Detected Browser Wallets */}
-              {detectedBrowserWallets.map((connector) => {
-                const name = connector.name.toLowerCase();
 
-                let displayName = connector.name;
-                let logo = connector.icon || null;
+              {detectedBrowserWallets.map((connector) => {
+
+                const name =
+                  connector.name.toLowerCase();
+
+                let displayName =
+                  connector.name;
+
+                let logo =
+                  connector.icon || null;
 
                 if (name.includes("brave")) {
                   displayName = "Brave Wallet";
@@ -1072,8 +1139,11 @@ export default function Home() {
                     disabled={isPending}
                     className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                   >
+
                     <div className="flex items-center gap-3">
+
                       <div className="relative">
+
                         {logo ? (
                           <img
                             src={logo}
@@ -1087,9 +1157,11 @@ export default function Home() {
                         )}
 
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
+
                       </div>
 
                       <div>
+
                         <p className="font-medium">
                           {displayName}
                         </p>
@@ -1097,17 +1169,21 @@ export default function Home() {
                         <p className="mt-1 text-xs text-white/30">
                           Available in your browser
                         </p>
+
                       </div>
+
                     </div>
 
                     <span className="text-sm text-white/30">
                       →
                     </span>
+
                   </button>
                 );
               })}
 
               {/* WalletConnect */}
+
               {walletConnectConnector && (
                 <button
                   onClick={() =>
@@ -1116,7 +1192,9 @@ export default function Home() {
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
+
                   <div className="flex items-center gap-3">
+
                     <img
                       src="/wallets/walletconnect.svg"
                       alt=""
@@ -1124,6 +1202,7 @@ export default function Home() {
                     />
 
                     <div>
+
                       <p className="font-medium">
                         WalletConnect
                       </p>
@@ -1131,23 +1210,30 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         Scan with a mobile wallet
                       </p>
+
                     </div>
+
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
+
                 </button>
               )}
 
               {/* MetaMask */}
+
               <button
                 onClick={handleMetaMaskClick}
                 disabled={isPending}
                 className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
               >
+
                 <div className="flex items-center gap-3">
+
                   <div className="relative">
+
                     <img
                       src="/wallets/metamask.svg"
                       alt=""
@@ -1157,9 +1243,11 @@ export default function Home() {
                     {metaMaskConnector && (
                       <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                     )}
+
                   </div>
 
                   <div>
+
                     <p className="font-medium">
                       MetaMask
                     </p>
@@ -1171,15 +1259,19 @@ export default function Home() {
                         ? "Available in your browser"
                         : "Install MetaMask"}
                     </p>
+
                   </div>
+
                 </div>
 
                 <span className="text-sm text-white/30">
                   →
                 </span>
+
               </button>
 
               {/* Coinbase Wallet */}
+
               {coinbaseConnector && (
                 <button
                   onClick={() =>
@@ -1188,7 +1280,9 @@ export default function Home() {
                   disabled={isPending}
                   className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
+
                   <div className="flex items-center gap-3">
+
                     <img
                       src="/wallets/base.svg"
                       alt=""
@@ -1196,6 +1290,7 @@ export default function Home() {
                     />
 
                     <div>
+
                       <p className="font-medium">
                         Coinbase Wallet
                       </p>
@@ -1203,31 +1298,41 @@ export default function Home() {
                       <p className="mt-1 text-xs text-white/30">
                         Connect with Coinbase Wallet
                       </p>
+
                     </div>
+
                   </div>
 
                   <span className="text-sm text-white/30">
                     →
                   </span>
+
                 </button>
               )}
+
             </div>
+
+            {/* Connection Error */}
 
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+
                 <p className="break-words text-sm text-red-400">
                   {getFriendlyErrorMessage(
                     connectError.message
                   )}
                 </p>
+
               </div>
             )}
 
             {error && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+
                 <p className="break-words text-sm text-red-400">
                   {error}
                 </p>
+
               </div>
             )}
 
@@ -1235,9 +1340,11 @@ export default function Home() {
               WalletConnect supports many mobile and desktop
               wallets.
             </p>
+
           </div>
         </div>
       )}
+
     </main>
   );
 }
