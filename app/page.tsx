@@ -1478,11 +1478,12 @@ export default function Home() {
                                   <img
                                     src={token.logo}
                                     alt={`${token.symbol} logo`}
-                                    className={`h-full w-full object-contain ${
+                                    className="h-full w-full object-contain"
+                                    style={
                                       token.symbol.toUpperCase() === "CIRBTC"
-                                        ? "scale-[0.78]"
-                                        : ""
-                                    }`}
+                                        ? { transform: "scale(0.65)" }
+                                        : undefined
+                                          }
                                   />
                              ) : (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
