@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
   useConnect,
@@ -62,6 +62,7 @@ const USDC_ABI = [
 ] as const;
 
 /* User-friendly error messages */
+
 function getFriendlyErrorMessage(message: string): string {
   const lowerMessage = message.toLowerCase();
 
@@ -126,6 +127,72 @@ type Section =
   | "activity"
   | "faucet";
 
+type TokenHolding = {
+  address: string;
+  symbol: string;
+  name: string;
+  amount: string;
+  logo: string | null;
+  usdValue: number | null;
+};
+
+/* Token helpers */
+
+function getTokenLogo(
+  symbol: string,
+  apiLogo: string | null
+): string | null {
+  const upperSymbol = symbol.toUpperCase();
+
+  if (upperSymbol === "USDC") {
+    return "/tokens/usdc.svg";
+  }
+
+  if (
+    upperSymbol === "EURC" ||
+    upperSymbol === "EUROC"
+  ) {
+    return "/tokens/eurc.svg";
+  }
+
+  if (upperSymbol === "CIRBTC") {
+    return "/tokens/cirbtc.svg";
+  }
+
+  return apiLogo;
+}
+
+function getUsdValue(value: any): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    const nested =
+      value.formatted ??
+      value.value ??
+      value.amount ??
+      value.raw ??
+      null;
+
+    if (
+      nested !== null &&
+      nested !== undefined &&
+      Number.isFinite(Number(nested))
+    ) {
+      return Number(nested);
+    }
+
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue)
+    ? numberValue
+    : null;
+}
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -137,16 +204,24 @@ export default function Home() {
   const [error, setError] = useState("");
 
   /* Activity state */
+
   const [activityAddress, setActivityAddress] =
     useState("");
+
   const [activityTransactions, setActivityTransactions] =
     useState<WalletTransaction[]>([]);
+
   const [activityLoading, setActivityLoading] =
     useState(false);
+
   const [activityError, setActivityError] =
     useState("");
-  const [activityBalance, setActivityBalance] =
-    useState<string | null>(null);
+
+  const [activityTokens, setActivityTokens] =
+    useState<TokenHolding[]>([]);
+
+  const [portfolioValue, setPortfolioValue] =
+    useState<number | null>(null);
 
   const { address, isConnected, chainId } = useAccount();
 
@@ -193,6 +268,23 @@ export default function Home() {
   const formattedBalance = usdcBalance
     ? (Number(usdcBalance) / 1_000_000).toFixed(2)
     : "0.00";
+
+  /*
+   * Keep Activity address synced with
+   * the connected wallet.
+   */
+
+  useEffect(() => {
+    if (isConnected && address) {
+      setActivityAddress(address);
+    } else {
+      setActivityAddress("");
+      setActivityTransactions([]);
+      setActivityTokens([]);
+      setPortfolioValue(null);
+      setActivityError("");
+    }
+  }, [isConnected, address]);
 
   /*
    * Wallet detection
@@ -370,6 +462,11 @@ export default function Home() {
       setRecipient("");
       setAmount("");
       setError("");
+      setActivityAddress("");
+      setActivityTransactions([]);
+      setActivityTokens([]);
+      setPortfolioValue(null);
+      setActivityError("");
     } else {
       setError("");
       setShowWallets(true);
@@ -430,24 +527,189 @@ export default function Home() {
   const handleCheckActivity = async () => {
     setActivityError("");
     setActivityTransactions([]);
-    setActivityBalance(null);
+    setActivityTokens([]);
+    setPortfolioValue(null);
 
-    if (!isAddress(activityAddress)) {
-      setActivityError("Please enter a valid wallet address.");
+    if (!isConnected || !address) {
+      setActivityError(
+        "Please connect your wallet first."
+      );
+      return;
+    }
+
+    const walletAddress = address;
+
+    if (!isAddress(walletAddress)) {
+      setActivityError(
+        "Invalid connected wallet address."
+      );
       return;
     }
 
     setActivityLoading(true);
 
     try {
+      /*
+       * Get transaction history.
+       */
+
       const transactions =
-        await getWalletTransactions(activityAddress);
+        await getWalletTransactions(walletAddress);
 
       setActivityTransactions(transactions);
 
+      /*
+       * Get token balances from Arcscan.
+       */
+
+      let apiTokens: TokenHolding[] = [];
+
+      try {
+        const tokensResponse = await fetch(
+          `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
+        );
+
+        if (tokensResponse.ok) {
+          const tokenData =
+            await tokensResponse.json();
+
+          const tokenItems =
+            Array.isArray(tokenData)
+              ? tokenData
+              : tokenData.items ||
+                tokenData.tokens ||
+                tokenData.data ||
+                [];
+
+          apiTokens = tokenItems
+            .map((token: any) => {
+              const money =
+                token.balance ||
+                token.amount ||
+                token.money ||
+                {};
+
+              const formatted =
+                typeof money === "object"
+                  ? money?.formatted
+                  : null;
+
+              const raw =
+                typeof money === "object"
+                  ? money?.raw
+                  : money;
+
+              const decimals =
+                Number(
+                  money?.decimals ??
+                    token.decimals ??
+                    token.token?.decimals ??
+                    18
+                );
+
+              const symbol =
+                token.symbol ||
+                token.token_symbol ||
+                token.token?.symbol ||
+                money?.symbol ||
+                "";
+
+              const name =
+                token.name ||
+                token.token_name ||
+                token.token?.name ||
+                symbol;
+
+              const tokenAddress =
+                token.address ||
+                token.token_address ||
+                token.token?.address ||
+                "";
+
+              const usd =
+                money?.usd ??
+                token.usd ??
+                token.usd_value ??
+                token.value_usd ??
+                token.value?.usd ??
+                null;
+
+              let tokenAmount = "0";
+
+              if (
+                formatted !== null &&
+                formatted !== undefined
+              ) {
+                tokenAmount = String(formatted);
+              } else if (
+                raw !== null &&
+                raw !== undefined
+              ) {
+                try {
+                  tokenAmount = (
+                    Number(raw) /
+                    10 ** decimals
+                  ).toString();
+                } catch {
+                  tokenAmount = String(raw);
+                }
+              }
+
+              const logo =
+                token.logo ||
+                token.logo_url ||
+                token.token?.logo ||
+                null;
+
+              const upperSymbol =
+                String(symbol).toUpperCase();
+
+              let displaySymbol =
+                String(symbol);
+
+              if (upperSymbol === "EUROC") {
+                displaySymbol = "EURC";
+              } else if (upperSymbol === "CIRBTC") {
+                displaySymbol = "cirBTC";
+              }
+
+              return {
+                address: tokenAddress,
+                symbol: displaySymbol,
+                name: String(name),
+                amount: tokenAmount,
+                logo: getTokenLogo(
+                  String(symbol),
+                  logo
+                ),
+                usdValue: getUsdValue(usd),
+              };
+            })
+            .filter(
+              (token: TokenHolding) =>
+                token.symbol &&
+                Number(token.amount) > 0
+            );
+        }
+      } catch {
+        /*
+         * Token API failure should not prevent
+         * transaction history from loading.
+         */
+      }
+
+      /*
+       * Get USDC balance directly from Arc RPC.
+       *
+       * This guarantees USDC appears even when
+       * Arcscan token API does not return it.
+       */
+
+      let usdcAmount = 0;
+
       try {
         const response = await fetch(
-          `${arcTestnet.rpcUrls.default.http[0]}`,
+          arcTestnet.rpcUrls.default.http[0],
           {
             method: "POST",
             headers: {
@@ -462,7 +724,7 @@ export default function Home() {
                   to: USDC_ADDRESS,
                   data:
                     "0x70a08231000000000000000000000000" +
-                    activityAddress.slice(2),
+                    walletAddress.slice(2),
                 },
                 "latest",
               ],
@@ -474,14 +736,69 @@ export default function Home() {
           const data = await response.json();
 
           if (data.result) {
-            const balance =
-              Number(BigInt(data.result)) / 1_000_000;
-
-            setActivityBalance(balance.toFixed(2));
+            usdcAmount =
+              Number(BigInt(data.result)) /
+              1_000_000;
           }
         }
       } catch {
-        setActivityBalance(null);
+        usdcAmount = 0;
+      }
+
+      /*
+       * Remove USDC returned by Arcscan.
+       * We use the direct RPC balance instead.
+       */
+
+      const nonUsdcTokens = apiTokens.filter(
+        (token) =>
+          token.symbol.toUpperCase() !== "USDC"
+      );
+
+      const usdcToken: TokenHolding = {
+        address: USDC_ADDRESS,
+        symbol: "USDC",
+        name: "USD Coin",
+        amount: usdcAmount.toFixed(6),
+        logo: "/tokens/usdc.svg",
+        usdValue: usdcAmount,
+      };
+
+      /*
+       * USDC always appears first.
+       */
+
+      const holdings = [
+        usdcToken,
+        ...nonUsdcTokens,
+      ];
+
+      setActivityTokens(holdings);
+
+      /*
+       * Calculate one combined portfolio value.
+       *
+       * USDC = $1.
+       * Other tokens use their Arcscan USD value.
+       */
+
+      let totalPortfolio = 0;
+      let hasPortfolioValue = false;
+
+      for (const token of holdings) {
+        if (
+          token.usdValue !== null &&
+          Number.isFinite(token.usdValue)
+        ) {
+          totalPortfolio += token.usdValue;
+          hasPortfolioValue = true;
+        }
+      }
+
+      if (hasPortfolioValue) {
+        setPortfolioValue(totalPortfolio);
+      } else {
+        setPortfolioValue(null);
       }
     } catch {
       setActivityError(
@@ -530,7 +847,9 @@ export default function Home() {
         chainId: arcTestnet.id,
       });
     } catch {
-      setError("Unable to send USDC. Please try again.");
+      setError(
+        "Unable to send USDC. Please try again."
+      );
     }
   };
 
@@ -731,7 +1050,7 @@ export default function Home() {
                         "Explore wallet activity."}
 
                       {item.id === "faucet" &&
-                        "Get testnet USDC."}
+                        "Get testnet tokens."}
                     </p>
                   </button>
                 ))}
@@ -1033,35 +1352,53 @@ export default function Home() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-white/40">
-                Enter any Arc wallet address to view its
-                balance and recent transactions.
+                Connect your wallet to view its token
+                holdings and recent transactions.
               </p>
 
               <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
 
-                <input
-                  type="text"
-                  placeholder="0x wallet address"
-                  value={activityAddress}
-                  onChange={(e) =>
-                    setActivityAddress(e.target.value)
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleCheckActivity();
-                    }
-                  }}
-                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none placeholder:text-white/20 focus:border-white/30"
-                />
+                {/* Connected Wallet Address */}
+
+                <div>
+
+                  <label className="mb-2 block text-sm text-white/50">
+                    Wallet Address
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Connect wallet first"
+                    value={activityAddress}
+                    readOnly
+                    disabled={!isConnected}
+                    className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white/70 outline-none placeholder:text-white/20 disabled:text-white/30"
+                  />
+
+                </div>
+
+                {/* Activity Button */}
 
                 <button
-                  onClick={handleCheckActivity}
-                  disabled={activityLoading}
+                  onClick={() => {
+                    if (!isConnected) {
+                      setError("");
+                      setShowWallets(true);
+                      return;
+                    }
+
+                    handleCheckActivity();
+                  }}
+                  disabled={
+                    isConnected && activityLoading
+                  }
                   className="mt-4 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
                 >
                   {activityLoading
                     ? "Checking..."
-                    : "Check Activity"}
+                    : isConnected
+                    ? "Check Activity"
+                    : "Connect Wallet"}
                 </button>
 
                 {activityError && (
@@ -1074,33 +1411,142 @@ export default function Home() {
 
               </div>
 
-              {/* Wallet Overview */}
+              {/* Portfolio */}
 
-              {(activityBalance !== null ||
+              {(activityTokens.length > 0 ||
                 activityTransactions.length > 0) && (
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <div className="mt-8">
 
                   <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                    <p className="text-xs text-white/30">
-                      USDC Balance
-                    </p>
 
-                    <p className="mt-2 text-2xl font-semibold">
-                      {activityBalance !== null
-                        ? `${activityBalance} USDC`
-                        : "Unavailable"}
-                    </p>
+                    <div className="flex items-center justify-between">
+
+                      <div>
+
+                        <p className="text-xs text-white/30">
+                          Portfolio
+                        </p>
+
+                        <p className="mt-2 text-3xl font-semibold">
+                          {portfolioValue !== null
+                            ? `$${portfolioValue.toFixed(2)}`
+                            : "Value unavailable"}
+                        </p>
+
+                      </div>
+
+                      <div className="rounded-xl bg-white/10 px-3 py-2 text-xs text-white/50">
+                        Arc Testnet
+                      </div>
+
+                    </div>
+
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                    <p className="text-xs text-white/30">
-                      Transactions
-                    </p>
+                  {/* Token Holdings */}
 
-                    <p className="mt-2 text-2xl font-semibold">
-                      {activityTransactions.length}
-                    </p>
-                  </div>
+                  {activityTokens.length > 0 && (
+                    <div className="mt-8">
+
+                      <div className="mb-4 flex items-center justify-between">
+
+                        <h3 className="font-semibold">
+                          Token Holdings
+                        </h3>
+
+                        <span className="text-xs text-white/30">
+                          {activityTokens.length} token
+                          {activityTokens.length !== 1
+                            ? "s"
+                            : ""}
+                        </span>
+
+                      </div>
+
+                      <div className="space-y-3">
+
+                        {activityTokens.map((token) => (
+                          <div
+                            key={`${token.address}-${token.symbol}`}
+                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+                          >
+
+                            <div className="flex min-w-0 items-center gap-3">
+
+                              {token.logo ? (
+                                <img
+                                  src={token.logo}
+                                  alt={`${token.symbol} logo`}
+                                  className="h-10 w-10 rounded-full object-contain"
+                                />
+                              ) : (
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
+                                  {token.symbol
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                </div>
+                              )}
+
+                              <div className="min-w-0">
+
+                                <p className="font-medium">
+                                  {token.symbol}
+                                </p>
+
+                                <p className="mt-1 truncate text-xs text-white/30">
+                                  {token.name}
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                            <p className="ml-4 shrink-0 text-right font-semibold">
+                              {Number(
+                                token.amount
+                              ).toLocaleString(
+                                undefined,
+                                {
+                                  maximumFractionDigits:
+                                    6,
+                                }
+                              )}
+                            </p>
+
+                          </div>
+                        ))}
+
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Transaction Count */}
+
+                  {activityTransactions.length > 0 && (
+                    <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+
+                      <div className="flex items-center justify-between">
+
+                        <div>
+
+                          <p className="text-xs text-white/30">
+                            Transactions
+                          </p>
+
+                          <p className="mt-2 text-2xl font-semibold">
+                            {activityTransactions.length}
+                          </p>
+
+                        </div>
+
+                        <span className="text-xs text-white/30">
+                          Recent activity
+                        </span>
+
+                      </div>
+
+                    </div>
+                  )}
 
                 </div>
               )}
@@ -1197,10 +1643,6 @@ export default function Home() {
 
                         </div>
 
-                        <p className="mt-4 text-xs text-white/30">
-                          View on Arc Explorer →
-                        </p>
-
                       </a>
                     ))}
 
@@ -1209,13 +1651,18 @@ export default function Home() {
               )}
 
               {!activityLoading &&
+                isConnected &&
                 activityAddress &&
                 activityTransactions.length === 0 &&
+                activityTokens.length === 0 &&
                 !activityError && (
                   <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+
                     <p className="text-sm text-white/40">
-                      No transactions found for this wallet.
+                      No transactions or token holdings
+                      found for this wallet.
                     </p>
+
                   </div>
                 )}
 
@@ -1235,11 +1682,11 @@ export default function Home() {
               </div>
 
               <h2 className="mt-6 text-3xl font-bold">
-                Get Testnet USDC
+                Get Testnet Tokens
               </h2>
 
               <p className="mt-4 leading-7 text-white/40">
-                Get testnet USDC from the official Circle
+                Get testnet tokens from the official Circle
                 faucet and use it to test AlabaamaFi on
                 Arc Testnet.
               </p>
@@ -1250,7 +1697,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
               >
-                Get Testnet USDC →
+                Get Testnet Tokens ▸
               </a>
 
               <p className="mt-4 text-xs text-white/30">
