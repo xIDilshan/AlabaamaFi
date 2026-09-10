@@ -1044,7 +1044,7 @@ export default function Home() {
                     }
                     className="rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
                   >
-                    Send USDC →
+                    Send USDC
                   </button>
 
                   <button
@@ -1111,13 +1111,10 @@ export default function Home() {
 
             <div className="mt-10">
               <div className="mb-4">
-                <p className="text-xs uppercase tracking-widest text-white/30">
+                <p className="text-xs uppercase tracking-widest text-white/30 font-semibold">
                   Quick Actions
                 </p>
-
-                <h3 className="mt-1 text-xl font-semibold">
-                  What do you want to do?
-                </h3>
+                
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1283,7 +1280,7 @@ export default function Home() {
                 }
                 className="shrink-0 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
               >
-                Get Testnet Tokens →
+                Get Testnet Tokens
               </button>
             </div>
           </section>
