@@ -207,18 +207,37 @@ function getNativeValue(tx: any): string {
 }
 
 function normalizeTimestamp(value: any): string {
-  if (value === null || value === undefined || value === "") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return "";
   }
 
-  // Already a Date object
-  if (value instanceof Date) {
-    return value.toISOString();
+  // Arcscan may return an object containing
+  // the actual timestamp.
+  if (typeof value === "object") {
+    const nested =
+      value.timestamp ??
+      value.time ??
+      value.value ??
+      value.seconds ??
+      value.unix ??
+      value.date;
+
+    if (
+      nested !== undefined &&
+      nested !== value
+    ) {
+      return normalizeTimestamp(nested);
+    }
+
+    return "";
   }
 
   // Numeric Unix timestamp
   if (typeof value === "number") {
-    // Seconds → milliseconds
     const milliseconds =
       value < 100000000000
         ? value * 1000
@@ -233,7 +252,7 @@ function normalizeTimestamp(value: any): string {
 
   const stringValue = String(value).trim();
 
-  // Numeric timestamp returned as a string
+  // Numeric Unix timestamp as a string
   if (/^\d+$/.test(stringValue)) {
     const numericValue = Number(stringValue);
 
@@ -248,6 +267,14 @@ function normalizeTimestamp(value: any): string {
       ? ""
       : date.toISOString();
   }
+
+  // ISO / standard date string
+  const date = new Date(stringValue);
+
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toISOString();
+}
 
   // ISO / normal date string
   const date = new Date(stringValue);
@@ -310,11 +337,12 @@ export async function getWalletTransactions(
         tx.block ||
         0,
 
-      timestamp:
-        tx.timestamp ||
-        tx.time ||
-        tx.block_time ||
-        "",
+      timestamp: normalizeTimestamp(
+  tx.timestamp ||
+    tx.time ||
+    tx.block_time ||
+    ""
+),
 
       from:
         tx.from?.address ||
