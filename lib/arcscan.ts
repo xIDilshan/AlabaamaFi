@@ -8,8 +8,203 @@ export type WalletTransaction = {
   from: string;
   to: string;
   value: string;
+  tokenSymbol: string;
   status: string;
 };
+
+/*
+ * Convert Arcscan amount objects into a
+ * human-readable value.
+ */
+function formatAmount(value: any): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    if (
+      value.formatted !== undefined &&
+      value.formatted !== null
+    ) {
+      return String(value.formatted);
+    }
+
+    if (
+      value.amount !== undefined &&
+      value.amount !== null
+    ) {
+      return formatAmount(value.amount);
+    }
+
+    if (
+      value.raw !== undefined &&
+      value.raw !== null
+    ) {
+      const raw = String(value.raw);
+
+      const decimals = Number(
+        value.decimals ?? 18
+      );
+
+      if (
+        Number.isFinite(decimals) &&
+        decimals >= 0
+      ) {
+        try {
+          const divisor = 10 ** decimals;
+
+          return (
+            Number(raw) / divisor
+          ).toString();
+        } catch {
+          return raw;
+        }
+      }
+
+      return raw;
+    }
+
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      return formatAmount(value.value);
+    }
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    return String(value);
+  }
+
+  return null;
+}
+
+/*
+ * Find a token amount inside an Activity item.
+ *
+ * ERC-20 activity can have the native transaction
+ * value set to 0 while the actual token transfer
+ * amount is stored in another nested object.
+ */
+function findTokenAmount(tx: any): {
+  value: string;
+  symbol: string;
+} | null {
+  const candidates = [
+    tx.amount,
+    tx.token_amount,
+    tx.tokenAmount,
+    tx.token_transfer,
+    tx.tokenTransfer,
+    tx.transfer,
+    tx.asset,
+    tx.token,
+    tx.action,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const symbol =
+      candidate.symbol ||
+      candidate.token_symbol ||
+      candidate.tokenSymbol ||
+      candidate.token?.symbol ||
+      candidate.asset?.symbol ||
+      "";
+
+    const amount =
+      candidate.amount ??
+      candidate.value ??
+      candidate.balance ??
+      candidate.quantity ??
+      candidate.token?.amount ??
+      candidate.asset?.amount ??
+      null;
+
+    const formatted =
+      formatAmount(amount);
+
+    if (
+      formatted !== null &&
+      formatted !== "0"
+    ) {
+      return {
+        value: formatted,
+        symbol: String(symbol || ""),
+      };
+    }
+
+    /*
+     * Sometimes the candidate itself is the
+     * Arcscan amount object.
+     */
+    const directFormatted =
+      formatAmount(candidate);
+
+    if (
+      directFormatted !== null &&
+      directFormatted !== "0" &&
+      (
+        candidate.raw !== undefined ||
+        candidate.formatted !== undefined ||
+        candidate.decimals !== undefined
+      )
+    ) {
+      return {
+        value: directFormatted,
+        symbol: String(symbol || ""),
+      };
+    }
+  }
+
+  /*
+   * Check arrays such as transfers or
+   * token_transfers.
+   */
+  const arrays = [
+    tx.transfers,
+    tx.token_transfers,
+    tx.tokenTransfers,
+    tx.events,
+    tx.actions,
+  ];
+
+  for (const list of arrays) {
+    if (!Array.isArray(list)) {
+      continue;
+    }
+
+    for (const item of list) {
+      const result = findTokenAmount(item);
+
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getNativeValue(tx: any): string {
+  const formatted =
+    formatAmount(tx.value);
+
+  if (
+    formatted !== null &&
+    formatted !== "0"
+  ) {
+    return formatted;
+  }
+
+  return "0";
+}
 
 export async function getWalletTransactions(
   address: string
@@ -26,36 +221,71 @@ export async function getWalletTransactions(
 
   const data = await response.json();
 
-  const items = data.items || data.activity || [];
+  const items =
+    data.items ||
+    data.activity ||
+    data.data ||
+    [];
 
-  return items.map((tx: any) => ({
-    hash:
-      tx.tx_hash ||
-      tx.hash ||
-      "",
-    block:
-      tx.block_number ||
-      tx.block ||
-      0,
-    timestamp:
-      tx.timestamp ||
-      tx.time ||
-      "",
-    from:
-      tx.from?.address ||
-      tx.from ||
-      "",
-    to:
-      tx.to?.address ||
-      tx.to ||
-      "",
-    value:
-      tx.value?.formatted ||
-      tx.value?.raw ||
-      tx.value ||
-      "0",
-    status:
-      tx.status ||
-      "success",
-  }));
+  return items.map((tx: any) => {
+    const tokenTransfer =
+      findTokenAmount(tx);
+
+    const nativeValue =
+      getNativeValue(tx);
+
+    const value =
+      tokenTransfer?.value ??
+      nativeValue;
+
+    const tokenSymbol =
+      tokenTransfer?.symbol ||
+      tx.symbol ||
+      tx.token_symbol ||
+      tx.token?.symbol ||
+      "";
+
+    return {
+      hash:
+        tx.tx_hash ||
+        tx.hash ||
+        tx.transaction_hash ||
+        "",
+
+      block:
+        tx.block_number ||
+        tx.block ||
+        0,
+
+      timestamp:
+        tx.timestamp ||
+        tx.time ||
+        tx.block_time ||
+        "",
+
+      from:
+        tx.from?.address ||
+        tx.from ||
+        tx.sender?.address ||
+        tx.sender ||
+        "",
+
+      to:
+        tx.to?.address ||
+        tx.to ||
+        tx.receiver?.address ||
+        tx.receiver ||
+        "",
+
+      value,
+
+      tokenSymbol:
+        String(tokenSymbol),
+
+      status:
+        tx.status ||
+        tx.tx_status ||
+        "success",
+    };
+  });
 }
