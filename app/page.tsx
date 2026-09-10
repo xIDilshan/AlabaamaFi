@@ -869,7 +869,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowMenu(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-lg text-white/70 transition hover:bg-white/10 hover:text-white active:scale-95"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-lg text-white/70 transition hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95"
               aria-label="Open menu"
             >
               ☰
@@ -896,26 +896,12 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Wallet + Balance */}
+          {/* Wallet */}
 
           <div className="flex min-w-0 items-center justify-end gap-2">
-            {isConnected && (
-              <div className="hidden text-right md:block">
-                <p className="text-xs font-semibold text-white">
-                  {isBalanceLoading
-                    ? "Loading..."
-                    : `${formattedBalance} USDC`}
-                </p>
-
-                <p className="mt-0.5 text-[10px] text-white/30">
-                  Balance
-                </p>
-              </div>
-            )}
-
             <button
               onClick={handleWalletButton}
-              className="max-w-[135px] truncate rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-black transition hover:bg-white/90 active:scale-[0.98] sm:max-w-none sm:px-4 lg:px-5 lg:text-sm"
+              className="max-w-[135px] truncate rounded-xl border border-white/10 bg-white px-3 py-2.5 text-xs font-semibold text-black shadow-sm transition hover:bg-white/90 active:scale-[0.98] sm:max-w-none sm:px-4 lg:px-5 lg:text-sm"
             >
               {isConnected
                 ? shortAddress
@@ -1013,14 +999,22 @@ export default function Home() {
           <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-10 lg:py-16">
             {/* Hero */}
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-10 lg:p-14 xl:p-16">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-black/20 sm:p-10 lg:p-14 xl:p-16">
               <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/[0.04] blur-3xl sm:h-80 sm:w-80" />
 
               <div className="pointer-events-none absolute -bottom-32 -left-20 h-56 w-56 rounded-full bg-white/[0.025] blur-3xl" />
 
               <div className="relative max-w-4xl">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+
+                  <span className="text-[11px] font-medium text-white/50">
+                    Live on Arc Testnet
+                  </span>
+                </div>
+
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/30 sm:mb-5 sm:text-sm">
-                  Arc Testnet
+                  Arc Network
                 </p>
 
                 <h2 className="text-[2.75rem] font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
@@ -1038,97 +1032,73 @@ export default function Home() {
                   and managing assets on Arc Network.
                 </p>
 
-                <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row">
+                {/* Professional Hero Buttons */}
+
+                <div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row">
                   <button
                     onClick={() =>
                       handleNavigation("send")
                     }
-                    className="w-full rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] sm:w-auto"
+                    className="group relative flex min-h-12 w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-black shadow-lg shadow-white/5 transition duration-200 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-xl hover:shadow-white/10 active:translate-y-0 sm:w-auto"
                   >
-                    Send USDC
+                    <span>Send USDC</span>
+
+                    <span className="text-base transition-transform duration-200 group-hover:translate-x-0.5">
+                      ↗
+                    </span>
                   </button>
 
                   <button
                     onClick={() =>
                       handleNavigation("activity")
                     }
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] active:scale-[0.99] sm:w-auto"
+                    className="group flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 px-6 py-3.5 text-sm font-semibold text-white/80 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07] hover:text-white active:translate-y-0 sm:w-auto"
                   >
-                    Explore Activity
+                    <span>Explore Activity</span>
+
+                    <span className="text-base text-white/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-white/70">
+                      →
+                    </span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Connected Wallet Summary */}
-
-            {isConnected && (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:mt-5 sm:p-5">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-xs text-white/30">
-                      Connected Wallet
-                    </p>
-
-                    <p className="mt-1 truncate text-sm font-medium text-white/80">
-                      {shortAddress}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-5 sm:gap-6">
-                    <div className="text-left sm:text-right">
-                      <p className="text-xs text-white/30">
-                        USDC Balance
-                      </p>
-
-                      <p className="mt-1 text-lg font-semibold">
-                        {isBalanceLoading
-                          ? "Loading..."
-                          : `${formattedBalance} USDC`}
-                      </p>
-                    </div>
-
-                    <div className="hidden h-10 w-px bg-white/10 sm:block" />
-
-                    <div>
-                      <p className="text-xs text-white/30">
-                        Network
-                      </p>
-
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
-
-                        <span className="text-sm font-medium">
-                          Arc Testnet
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Quick Actions */}
 
-            <div className="mt-8 sm:mt-10">
-              <div className="mb-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">
-                  Quick Actions
-                </p>
+            <div className="mt-10 sm:mt-12">
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/30">
+                    Quick Actions
+                  </p>
+
+                  <p className="mt-1.5 text-sm text-white/35">
+                    Access AlabaamaFi features
+                  </p>
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Send */}
+
                 <button
                   onClick={() =>
                     handleNavigation("send")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
+                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-left transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-xl hover:shadow-black/20 active:translate-y-0"
                 >
-                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
-                    ↗
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-xl text-white/80 transition group-hover:border-white/20 group-hover:bg-white/10">
+                      ↗
+                    </div>
+
+                    <span className="text-lg text-white/20 transition duration-200 group-hover:translate-x-1 group-hover:text-white/60">
+                      →
+                    </span>
                   </div>
 
-                  <h4 className="font-semibold">
+                  <h4 className="mt-5 font-semibold">
                     Send
                   </h4>
 
@@ -1137,17 +1107,25 @@ export default function Home() {
                   </p>
                 </button>
 
+                {/* Swap */}
+
                 <button
                   onClick={() =>
                     handleNavigation("swap")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
+                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-left transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-xl hover:shadow-black/20 active:translate-y-0"
                 >
-                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
-                    ⇄
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-xl text-white/80 transition group-hover:border-white/20 group-hover:bg-white/10">
+                      ⇄
+                    </div>
+
+                    <span className="text-lg text-white/20 transition duration-200 group-hover:translate-x-1 group-hover:text-white/60">
+                      →
+                    </span>
                   </div>
 
-                  <h4 className="font-semibold">
+                  <h4 className="mt-5 font-semibold">
                     Swap
                   </h4>
 
@@ -1156,17 +1134,25 @@ export default function Home() {
                   </p>
                 </button>
 
+                {/* Bridge */}
+
                 <button
                   onClick={() =>
                     handleNavigation("bridge")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
+                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-left transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-xl hover:shadow-black/20 active:translate-y-0"
                 >
-                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
-                    ⇅
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-xl text-white/80 transition group-hover:border-white/20 group-hover:bg-white/10">
+                      ⇅
+                    </div>
+
+                    <span className="text-lg text-white/20 transition duration-200 group-hover:translate-x-1 group-hover:text-white/60">
+                      →
+                    </span>
                   </div>
 
-                  <h4 className="font-semibold">
+                  <h4 className="mt-5 font-semibold">
                     Bridge
                   </h4>
 
@@ -1175,17 +1161,25 @@ export default function Home() {
                   </p>
                 </button>
 
+                {/* Activity */}
+
                 <button
                   onClick={() =>
                     handleNavigation("activity")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
+                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-left transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-xl hover:shadow-black/20 active:translate-y-0"
                 >
-                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
-                    ◷
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-xl text-white/80 transition group-hover:border-white/20 group-hover:bg-white/10">
+                      ◷
+                    </div>
+
+                    <span className="text-lg text-white/20 transition duration-200 group-hover:translate-x-1 group-hover:text-white/60">
+                      →
+                    </span>
                   </div>
 
-                  <h4 className="font-semibold">
+                  <h4 className="mt-5 font-semibold">
                     Activity
                   </h4>
 
@@ -1198,7 +1192,7 @@ export default function Home() {
 
             {/* Supported Assets */}
 
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:mt-10 sm:p-6">
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/10 sm:mt-10 sm:p-6">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-widest text-white/30">
@@ -1278,9 +1272,13 @@ export default function Home() {
                 onClick={() =>
                   handleNavigation("faucet")
                 }
-                className="w-full shrink-0 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white active:scale-[0.99] sm:w-auto"
+                className="group flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-white/70 transition hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-[0.99] sm:w-auto"
               >
-                Get Testnet Tokens
+                <span>Get Testnet Tokens</span>
+
+                <span className="text-sm text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/60">
+                  →
+                </span>
               </button>
             </div>
           </section>
