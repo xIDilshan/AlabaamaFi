@@ -1588,10 +1588,6 @@ export default function Home() {
                   {tx.hash}
                 </p>
               </div>
-
-              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-white/40">
-                {formattedDate}
-              </span>
             </div>
 
             {/* Date & Time */}
