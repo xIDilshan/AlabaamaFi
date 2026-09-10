@@ -193,6 +193,20 @@ function getUsdValue(value: any): number | null {
     : null;
 }
 
+/* Shorten wallet address */
+
+function shortenAddress(value: string): string {
+  if (!value) {
+    return "Unknown";
+  }
+
+  if (value.length <= 12) {
+    return value;
+  }
+
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -704,9 +718,6 @@ export default function Home() {
 
       /*
        * Get USDC balance directly from Arc RPC.
-       *
-       * This guarantees USDC appears even when
-       * Arcscan token API does not return it.
        */
 
       let usdcAmount = 0;
@@ -751,7 +762,6 @@ export default function Home() {
 
       /*
        * Remove USDC returned by Arcscan.
-       * We use the direct RPC balance instead.
        */
 
       const nonUsdcTokens = apiTokens.filter(
@@ -864,8 +874,6 @@ export default function Home() {
 
       <header className="border-b border-white/10">
         <div className="flex items-center justify-between px-5 py-4 lg:px-8">
-          {/* Left: Menu + Testnet */}
-
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowMenu(true)}
@@ -884,8 +892,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Logo */}
-
           <div className="text-center">
             <h1 className="font-bold lg:text-xl">
               AlabaamaFi
@@ -895,8 +901,6 @@ export default function Home() {
               Powered by Arc
             </p>
           </div>
-
-          {/* Wallet + Balance */}
 
           <div className="flex items-center gap-2">
             {isConnected && (
@@ -929,19 +933,13 @@ export default function Home() {
 
       {showMenu && (
         <div className="fixed inset-0 z-40">
-          {/* Background */}
-
           <button
             onClick={() => setShowMenu(false)}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             aria-label="Close menu"
           />
 
-          {/* Sidebar */}
-
           <aside className="relative z-50 flex min-h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 p-5 shadow-2xl">
-            {/* Sidebar Header */}
-
             <div className="mb-10 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">
@@ -961,8 +959,6 @@ export default function Home() {
                 ✕
               </button>
             </div>
-
-            {/* Navigation */}
 
             <nav className="space-y-2">
               {menuItems.map((item) => (
@@ -987,8 +983,6 @@ export default function Home() {
                 </button>
               ))}
             </nav>
-
-            {/* Sidebar Wallet */}
 
             <div className="mt-auto">
               <button
@@ -1031,8 +1025,6 @@ export default function Home() {
                 on Arc.
               </p>
             </div>
-
-            {/* Feature Cards */}
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {menuItems
@@ -1106,8 +1098,6 @@ export default function Home() {
                   </span>
                 </div>
 
-                {/* Recipient */}
-
                 <label className="mb-2 block text-sm text-white/50">
                   Recipient
                 </label>
@@ -1121,8 +1111,6 @@ export default function Home() {
                   }
                   className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
                 />
-
-                {/* Amount */}
 
                 <div className="mb-2 flex items-center justify-between">
                   <label className="text-sm text-white/50">
@@ -1155,8 +1143,6 @@ export default function Home() {
                   </span>
                 </div>
 
-                {/* Send */}
-
                 <button
                   onClick={handleSend}
                   disabled={
@@ -1175,8 +1161,6 @@ export default function Home() {
                     : "Send USDC"}
                 </button>
 
-                {/* Network */}
-
                 {isConnected &&
                   chainId !== arcTestnet.id && (
                     <button
@@ -1191,8 +1175,6 @@ export default function Home() {
                     </button>
                   )}
 
-                {/* Error */}
-
                 {error && (
                   <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
                     <p className="break-words text-sm text-red-400">
@@ -1200,8 +1182,6 @@ export default function Home() {
                     </p>
                   </div>
                 )}
-
-                {/* Transaction Error */}
 
                 {sendError && (
                   <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
@@ -1212,8 +1192,6 @@ export default function Home() {
                     </p>
                   </div>
                 )}
-
-                {/* Success */}
 
                 {isConfirmed && hash && (
                   <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
@@ -1342,8 +1320,6 @@ export default function Home() {
               </p>
 
               <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                {/* Connected Wallet Address */}
-
                 <div>
                   <label className="mb-2 block text-sm text-white/50">
                     Wallet Address
@@ -1358,8 +1334,6 @@ export default function Home() {
                     className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white/70 outline-none placeholder:text-white/20 disabled:text-white/30"
                   />
                 </div>
-
-                {/* Activity Button */}
 
                 <button
                   onClick={() => {
@@ -1477,8 +1451,6 @@ export default function Home() {
                               </div>
                             </div>
 
-                            {/* Amount + USD */}
-
                             <div className="ml-4 shrink-0 text-right">
                               <p className="font-semibold">
                                 {Number(
@@ -1528,159 +1500,203 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Transactions */}
+              {/* Recent Transactions */}
 
-{activityTransactions.length > 0 && (
-  <div className="mt-8">
-    <div className="mb-4 flex items-center justify-between">
-      <h3 className="font-semibold">
-        Recent Transactions
-      </h3>
+              {activityTransactions.length > 0 && (
+                <div className="mt-8">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="font-semibold">
+                      Recent Transactions
+                    </h3>
 
-      <span className="text-xs text-white/30">
-        {activityTransactions.length} found
-      </span>
-    </div>
+                    <span className="text-xs text-white/30">
+                      {activityTransactions.length} found
+                    </span>
+                  </div>
 
-    <div className="space-y-3">
-      {activityTransactions.map((tx) => {
-        const transactionDate = tx.timestamp
-          ? new Date(tx.timestamp)
-          : null;
+                  <div className="space-y-3">
+                    {activityTransactions.map((tx) => {
+                      const transactionDate =
+                        tx.timestamp
+                          ? new Date(tx.timestamp)
+                          : null;
 
-        const formattedDate =
-          transactionDate &&
-          !Number.isNaN(transactionDate.getTime())
-            ? transactionDate.toLocaleDateString(
-                undefined,
-                {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                }
-              )
-            : "Date unavailable";
+                      const formattedDate =
+                        transactionDate &&
+                        !Number.isNaN(
+                          transactionDate.getTime()
+                        )
+                          ? transactionDate.toLocaleDateString(
+                              undefined,
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
+                          : "Date unavailable";
 
-        const formattedTime =
-          transactionDate &&
-          !Number.isNaN(transactionDate.getTime())
-            ? transactionDate.toLocaleTimeString(
-                undefined,
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  hour12: false,
-                }
-              )
-            : "Time unavailable";
+                      const formattedTime =
+                        transactionDate &&
+                        !Number.isNaN(
+                          transactionDate.getTime()
+                        )
+                          ? transactionDate.toLocaleTimeString(
+                              undefined,
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                                hour12: false,
+                              }
+                            )
+                          : "Time unavailable";
 
-        return (
-          <div
-            key={tx.hash}
-            className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">
-                  Transaction
-                </p>
+                      const normalizedWallet =
+                        address?.toLowerCase();
 
-                <p className="mt-1 truncate text-xs text-white/30">
-                  {tx.hash}
-                </p>
-              </div>
-            </div>
+                      const fromAddress =
+                        tx.from?.toLowerCase();
 
-            {/* Date & Time */}
+                      const toAddress =
+                        tx.to?.toLowerCase();
 
-            <div className="mt-4 rounded-xl border border-white/5 bg-black/20 px-3 py-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/30">
-                  Date
-                </span>
+                      const isReceive =
+                        normalizedWallet &&
+                        toAddress ===
+                          normalizedWallet;
 
-                <span className="text-xs text-white/60">
-                  {formattedDate}
-                </span>
-              </div>
+                      const transactionType =
+                        isReceive
+                          ? "Receive"
+                          : "Send";
 
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-xs text-white/30">
-                  Time
-                </span>
+                      return (
+                        <div
+                          key={tx.hash}
+                          className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
+                        >
+                          {/* Transaction Header */}
 
-                <span className="text-xs text-white/60">
-                  {formattedTime || "Time unavailable"}
-                </span>
-              </div>
-            </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg ${
+                                  isReceive
+                                    ? "bg-green-500/10 text-green-400"
+                                    : "bg-white/10 text-white/60"
+                                }`}
+                              >
+                                {isReceive
+                                  ? "↓"
+                                  : "↑"}
+                              </div>
 
-            {/* Transaction Details */}
+                              <div className="min-w-0">
+                                <p className="font-medium">
+                                  {transactionType}
+                                </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <p className="text-white/30">
-                  From
-                </p>
+                                <p className="mt-1 text-xs text-white/30">
+                                  {tx.tokenSymbol ||
+                                    "Transaction"}
+                                </p>
+                              </div>
+                            </div>
 
-                <p className="mt-1 truncate text-white/60">
-                  {tx.from}
-                </p>
-              </div>
+                            <div className="shrink-0 text-right">
+                              <p className="font-semibold text-white">
+                                {tx.value}
+                              </p>
 
-              <div>
-                <p className="text-white/30">
-                  To
-                </p>
+                              {tx.tokenSymbol && (
+                                <p className="mt-1 text-xs text-white/30">
+                                  {tx.tokenSymbol}
+                                </p>
+                              )}
+                            </div>
+                          </div>
 
-                <p className="mt-1 truncate text-white/60">
-                  {tx.to}
-                </p>
-              </div>
+                          {/* Date & Time */}
 
-              <div>
-                <p className="text-white/30">
-                  Value
-                </p>
+                          <div className="mt-4 rounded-xl border border-white/5 bg-black/20 px-3 py-2.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-xs text-white/30">
+                                Date
+                              </span>
 
-                <p className="mt-1 font-medium text-white/70">
-                  {tx.value}
-                  {tx.tokenSymbol
-                    ? ` ${tx.tokenSymbol}`
-                    : ""}
-                </p>
-              </div>
+                              <span className="text-right text-xs text-white/60">
+                                {formattedDate}
+                              </span>
+                            </div>
 
-              <div>
-                <p className="text-white/30">
-                  Status
-                </p>
+                            <div className="mt-1.5 flex items-center justify-between gap-3">
+                              <span className="text-xs text-white/30">
+                                Time
+                              </span>
 
-                <p className="mt-1 text-green-400">
-                  {tx.status}
-                </p>
-              </div>
-            </div>
+                              <span className="text-right text-xs text-white/60">
+                                {formattedTime}
+                              </span>
+                            </div>
+                          </div>
 
-            {/* ArcScan */}
+                          {/* Transaction Details */}
 
-            <div className="mt-4 border-t border-white/10 pt-3">
-              <a
-                href={`https://testnet.arcscan.app/tx/${tx.hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-white/40 transition hover:text-white"
-              >
-                View on ArcScan ↗
-              </a>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+                          <div className="mt-4 space-y-3 text-xs">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="shrink-0 text-white/30">
+                                From
+                              </span>
+
+                              <span className="min-w-0 truncate text-right text-white/60">
+                                {shortenAddress(
+                                  tx.from
+                                )}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="shrink-0 text-white/30">
+                                To
+                              </span>
+
+                              <span className="min-w-0 truncate text-right text-white/60">
+                                {shortenAddress(
+                                  tx.to
+                                )}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-white/30">
+                                Status
+                              </span>
+
+                              <span className="text-green-400">
+                                {tx.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* ArcScan */}
+
+                          <div className="mt-4 border-t border-white/10 pt-3">
+                            <a
+                              href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-white/40 transition hover:text-white"
+                            >
+                              View on ArcScan ↗
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {!activityLoading &&
                 isConnected &&
@@ -1724,7 +1740,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
               >
-                Get Testnet Tokens 
+                Get Testnet Tokens
               </a>
 
               <p className="mt-4 text-xs text-white/30">
@@ -1998,8 +2014,6 @@ export default function Home() {
                 </button>
               )}
             </div>
-
-            {/* Connection Error */}
 
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
