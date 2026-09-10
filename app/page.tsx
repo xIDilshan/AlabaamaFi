@@ -867,15 +867,25 @@ export default function Home() {
 
       <header className="border-b border-white/10">
         <div className="flex items-center justify-between px-5 py-4 lg:px-8">
-          {/* Menu Button */}
+          {/* Left: Menu + Testnet */}
 
-          <button
-            onClick={() => setShowMenu(true)}
-            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xl text-white/70 transition hover:bg-white/10 hover:text-white"
-            aria-label="Open menu"
-          >
-            ☰
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowMenu(true)}
+              className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+
+              <span className="text-xs font-medium text-white/70">
+                Testnet
+              </span>
+            </div>
+          </div>
 
           {/* Logo */}
 
@@ -889,16 +899,32 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Wallet */}
+          {/* Wallet + Balance */}
 
-          <button
-            onClick={handleWalletButton}
-            className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 lg:px-5 lg:py-2.5 lg:text-sm"
-          >
-            {isConnected
-              ? shortAddress
-              : "Connect Wallet"}
-          </button>
+          <div className="flex items-center gap-2">
+            {isConnected && (
+              <div className="hidden text-right sm:block">
+                <p className="text-xs font-semibold text-white">
+                  {isBalanceLoading
+                    ? "Loading..."
+                    : `${formattedBalance} USDC`}
+                </p>
+
+                <p className="mt-0.5 text-[10px] text-white/30">
+                  Balance
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={handleWalletButton}
+              className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 lg:px-5 lg:py-2.5 lg:text-sm"
+            >
+              {isConnected
+                ? shortAddress
+                : "Connect Wallet"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1007,47 +1033,6 @@ export default function Home() {
                 swapping, bridging and exploring assets
                 on Arc.
               </p>
-            </div>
-
-            {/* Wallet Balance */}
-
-            <div className="mt-10 max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-white/30">
-                    Your Balance
-                  </p>
-
-                  <p className="mt-2 text-3xl font-semibold">
-                    {isConnected
-                      ? `${formattedBalance} USDC`
-                      : "—"}
-                  </p>
-
-                  <p className="mt-2 text-xs text-white/30">
-                    {isConnected
-                      ? "Arc Testnet"
-                      : "Connect your wallet to see your balance"}
-                  </p>
-                </div>
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
-                  <img
-                    src="/tokens/usdc.svg"
-                    alt="USDC"
-                    className="h-8 w-8 rounded-full object-contain"
-                  />
-                </div>
-              </div>
-
-              {!isConnected && (
-                <button
-                  onClick={handleWalletButton}
-                  className="mt-5 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
-                >
-                  Connect Wallet
-                </button>
-              )}
             </div>
 
             {/* Feature Cards */}
