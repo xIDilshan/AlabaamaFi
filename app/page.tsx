@@ -987,7 +987,7 @@ export default function Home() {
         {/* Home */}
 
         {activeSection === "home" && (
-          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+          <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
             <div className="max-w-3xl">
               <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
                 Built on Arc Network
@@ -1009,9 +1009,50 @@ export default function Home() {
               </p>
             </div>
 
+            {/* Wallet Balance */}
+
+            <div className="mt-10 max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-white/30">
+                    Your Balance
+                  </p>
+
+                  <p className="mt-2 text-3xl font-semibold">
+                    {isConnected
+                      ? `${formattedBalance} USDC`
+                      : "—"}
+                  </p>
+
+                  <p className="mt-2 text-xs text-white/30">
+                    {isConnected
+                      ? "Arc Testnet"
+                      : "Connect your wallet to see your balance"}
+                  </p>
+                </div>
+
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                  <img
+                    src="/tokens/usdc.svg"
+                    alt="USDC"
+                    className="h-8 w-8 rounded-full object-contain"
+                  />
+                </div>
+              </div>
+
+              {!isConnected && (
+                <button
+                  onClick={handleWalletButton}
+                  className="mt-5 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
+                >
+                  Connect Wallet
+                </button>
+              )}
+            </div>
+
             {/* Feature Cards */}
 
-            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {menuItems
                 .filter((item) => item.id !== "home")
                 .map((item) => (
