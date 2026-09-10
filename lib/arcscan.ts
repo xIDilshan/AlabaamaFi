@@ -272,7 +272,7 @@ export async function getWalletTransactions(
 
   const data = await response.json();
   
-  console.log("ARCSCAN ACTIVITY DATA:", data);
+  console.log("ARCSCAN DATA:", JSON.stringify(data, null, 2));
 
   const items =
     data.items ||
