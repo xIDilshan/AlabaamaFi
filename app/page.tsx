@@ -61,8 +61,6 @@ const USDC_ABI = [
   },
 ] as const;
 
-/* User-friendly error messages */
-
 function getFriendlyErrorMessage(message: string): string {
   const lowerMessage = message.toLowerCase();
 
@@ -96,7 +94,6 @@ function getFriendlyErrorMessage(message: string): string {
   }
 
   if (
-    lowerMessage.includes("user rejected the request") ||
     lowerMessage.includes("transaction rejected")
   ) {
     return "Transaction was rejected. Please try again.";
@@ -135,8 +132,6 @@ type TokenHolding = {
   logo: string | null;
   usdValue: number | null;
 };
-
-/* Token helpers */
 
 function getTokenLogo(
   symbol: string,
@@ -202,8 +197,6 @@ export default function Home() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
-
-  /* Activity state */
 
   const [activityAddress, setActivityAddress] =
     useState("");
@@ -284,10 +277,6 @@ export default function Home() {
       setActivityError("");
     }
   }, [isConnected, address]);
-
-  /*
-   * Wallet detection
-   */
 
   const walletConnectConnector = useMemo(() => {
     return connectors.find((connector) => {
@@ -381,10 +370,6 @@ export default function Home() {
     });
   }, [connectors]);
 
-  /*
-   * MetaMask mobile detection
-   */
-
   const isMobileDevice = () => {
     if (typeof window === "undefined") {
       return false;
@@ -467,10 +452,6 @@ export default function Home() {
     }
   };
 
-  /*
-   * Navigation
-   */
-
   const handleNavigation = (section: Section) => {
     setActiveSection(section);
     setShowMenu(false);
@@ -513,10 +494,6 @@ export default function Home() {
       icon: "◌",
     },
   ];
-
-  /*
-   * Wallet Activity
-   */
 
   const handleCheckActivity = async () => {
     setActivityError("");
@@ -767,10 +744,6 @@ export default function Home() {
     }
   };
 
-  /*
-   * Send USDC
-   */
-
   const handleSend = () => {
     setError("");
 
@@ -817,48 +790,42 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#020202] text-white">
-      {/* Top Header */}
+      {/* HEADER */}
 
       <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
         <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          {/* Left: Menu + Testnet */}
-
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowMenu(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-[#060709] text-lg font-semibold text-white/70 transition duration-200 hover:border-[#2b6cff]/20 hover:bg-[#0a0d12] hover:text-white active:scale-95"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
               aria-label="Open menu"
             >
               ☰
             </button>
 
-            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/[0.07] bg-[#060709] px-2.5 py-2 sm:px-3">
+            <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
               <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
 
-              <span className="text-[11px] font-semibold text-white/70 sm:text-xs">
+              <span className="text-[11px] font-bold text-white/70 sm:text-xs">
                 Testnet
               </span>
             </div>
           </div>
-
-          {/* Logo */}
 
           <div className="min-w-0 text-center">
             <h1 className="truncate text-sm font-bold sm:text-base lg:text-xl">
               AlabaamaFi
             </h1>
 
-            <p className="mt-0.5 text-[9px] font-medium text-white/30 sm:text-[10px] lg:text-xs">
+            <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px] lg:text-xs">
               Powered by Arc
             </p>
           </div>
 
-          {/* Wallet */}
-
-          <div className="flex min-w-0 items-center justify-end gap-2">
+          <div className="flex min-w-0 items-center justify-end">
             <button
               onClick={handleWalletButton}
-              className="max-w-[150px] truncate rounded-xl border border-white/[0.14] bg-white/[0.055] px-3 py-2.5 text-xs font-semibold tracking-tight text-white shadow-lg shadow-black/30 backdrop-blur-xl transition duration-200 hover:border-white/[0.24] hover:bg-white/[0.10] hover:shadow-xl hover:shadow-black/40 active:scale-[0.98] sm:max-w-none sm:px-4 lg:px-5 lg:text-sm"
+              className="max-w-[155px] truncate rounded-2xl border border-white/[0.15] bg-white/[0.055] px-3.5 py-2.5 text-xs font-bold tracking-tight text-white shadow-lg shadow-black/30 backdrop-blur-xl transition-all duration-200 hover:border-white/[0.24] hover:bg-white/[0.10] hover:shadow-xl hover:shadow-black/40 active:scale-[0.98] sm:max-w-none sm:px-5 sm:py-3 lg:text-sm"
             >
               {isConnected
                 ? shortAddress
@@ -868,7 +835,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Menu Overlay */}
+      {/* MENU */}
 
       {showMenu && (
         <div className="fixed inset-0 z-40">
@@ -879,20 +846,20 @@ export default function Home() {
           />
 
           <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
-            <div className="mb-8 flex items-center justify-between sm:mb-10">
+            <div className="mb-8 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">
                   AlabaamaFi
                 </h2>
 
-                <p className="mt-1 text-xs font-medium text-white/30">
+                <p className="mt-1 text-xs font-semibold text-white/30">
                   Powered by Arc
                 </p>
               </div>
 
               <button
                 onClick={() => setShowMenu(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-lg font-semibold text-white/50 transition duration-200 hover:bg-white/[0.04] hover:text-white active:scale-95"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close menu"
               >
                 ✕
@@ -906,17 +873,17 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation(item.id)
                   }
-                  className={`flex min-h-12 w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition duration-200 active:scale-[0.99] ${
+                  className={`flex min-h-12 w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
                     activeSection === item.id
                       ? "bg-white text-black shadow-lg shadow-black/30"
                       : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
                   }`}
                 >
-                  <span className="w-6 shrink-0 text-center text-lg font-semibold">
+                  <span className="w-6 shrink-0 text-center text-lg font-bold">
                     {item.icon}
                   </span>
 
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-bold">
                     {item.label}
                   </span>
                 </button>
@@ -926,7 +893,7 @@ export default function Home() {
             <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className="w-full rounded-xl border border-white/[0.12] bg-white/[0.92] px-4 py-3.5 text-sm font-semibold tracking-tight text-black shadow-lg shadow-black/30 transition duration-200 hover:bg-white hover:shadow-xl hover:shadow-black/40 active:scale-[0.99]"
+                className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-4 py-3.5 text-sm font-bold tracking-tight text-black shadow-lg shadow-black/30 transition-all duration-200 hover:bg-white hover:shadow-xl hover:shadow-black/40 active:scale-[0.99]"
               >
                 {isConnected
                   ? shortAddress
@@ -937,271 +904,482 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* CONTENT */}
 
       <div className="min-w-0">
-        {/* Home */}
+        {/* HOME */}
 
         {activeSection === "home" && (
-          <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-10 lg:py-16">
-            {/* Hero */}
+          <section>
+            {/* HERO */}
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a1017] via-[#050608] to-[#020202] p-6 shadow-2xl shadow-black/70 sm:p-10 lg:p-14 xl:p-16">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#163a72]/[0.07] blur-3xl sm:h-80 sm:w-80" />
+            <div className="relative overflow-hidden border-b border-white/[0.06] bg-[#030507]">
+              <div className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-[#14376a]/[0.09] blur-[120px]" />
 
-              <div className="pointer-events-none absolute -bottom-32 -left-20 h-56 w-56 rounded-full bg-[#0b1c35]/[0.07] blur-3xl" />
+              <div className="pointer-events-none absolute left-1/2 top-[45%] h-40 w-80 -translate-x-1/2 rounded-full bg-white/[0.015] blur-3xl" />
 
-              <div className="relative max-w-4xl">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/30 sm:mb-5 sm:text-sm">
-                  Arc Network
-                </p>
+              <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-16 text-center sm:px-6 sm:pb-24 sm:pt-24 lg:px-10 lg:pb-28 lg:pt-28">
+                <div className="mx-auto max-w-5xl">
+                  <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 backdrop-blur-xl">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
 
-                <h2 className="text-[2.75rem] font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
-                  Simple.
-                  <br />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50 sm:text-xs">
+                      Arc Testnet
+                    </span>
+                  </div>
 
-                  <span className="text-white/30">
-                    On-chain.
-                  </span>
-                </h2>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/30 sm:text-sm">
+                    A simple interface for Arc
+                  </p>
 
-                <p className="mt-6 max-w-2xl text-sm leading-6 text-white/45 sm:mt-7 sm:text-lg sm:leading-8">
-                  AlabaamaFi is a simple DeFi
-                  experience for sending, exploring
-                  and managing assets on Arc Network.
-                </p>
+                  <h2 className="mx-auto mt-7 max-w-4xl text-center text-[3.7rem] font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
+                    Simple.
+                    <br />
+                    <span className="text-white/30">
+                      On-chain.
+                    </span>
+                  </h2>
 
-                <div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row">
-                  <button
-                    onClick={() =>
-                      handleNavigation("send")
-                    }
-                    className="group relative flex min-h-12 w-full items-center justify-center overflow-hidden rounded-xl border border-white/[0.12] bg-white/[0.92] px-6 py-3.5 text-sm font-semibold tracking-tight text-black shadow-xl shadow-black/40 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0 sm:w-auto"
-                  >
-                    <span>Send USDC</span>
-                  </button>
+                  <p className="mx-auto mt-8 max-w-2xl text-sm font-medium leading-7 text-white/45 sm:mt-9 sm:text-lg sm:leading-8">
+                    Explore, send and manage digital
+                    assets on Arc through a clean,
+                    simple and user-focused DeFi
+                    experience.
+                  </p>
 
-                  <button
-                    onClick={() =>
-                      handleNavigation("activity")
-                    }
-                    className="group flex min-h-12 w-full items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.035] px-6 py-3.5 text-sm font-semibold tracking-tight text-white/75 shadow-lg shadow-black/30 backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white active:translate-y-0 sm:w-auto"
-                  >
-                    <span>View Wallet Activity</span>
-                  </button>
+                  <div className="mt-9 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row">
+                    <button
+                      onClick={() =>
+                        handleNavigation("send")
+                      }
+                      className="min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0 sm:w-auto"
+                    >
+                      Send USDC
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleNavigation("activity")
+                      }
+                      className="min-h-13 w-full rounded-2xl border border-white/[0.10] bg-white/[0.045] px-7 py-4 text-sm font-black tracking-tight text-white/80 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0 sm:w-auto"
+                    >
+                      Check Wallet Activity
+                    </button>
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-white/25">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    Connected to Arc Testnet
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* QUICK ACTIONS */}
 
-            <div className="mt-10 sm:mt-12">
-              <div className="mb-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/30">
-                  Quick Actions
+            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10">
+              <div className="mb-6 text-center sm:mb-8">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                  Explore AlabaamaFi
                 </p>
 
-                <p className="mt-1.5 text-sm font-medium text-white/30">
-                  Access AlabaamaFi features
+                <h3 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                  Everything in one place
+                </h3>
+
+                <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-white/30">
+                  Simple tools for interacting with
+                  assets and activity on Arc Testnet.
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Send */}
-
-                <button
-                  onClick={() =>
-                    handleNavigation("send")
-                  }
-                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-5 text-left shadow-lg shadow-black/40 transition duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-[#080a0d] text-xl font-semibold text-white/70 transition group-hover:border-[#2b6cff]/18 group-hover:bg-[#0b1017]">
-                      ↗
+                {[
+                  {
+                    id: "send" as Section,
+                    icon: "↗",
+                    title: "Send USDC",
+                    text: "Send USDC to another wallet.",
+                  },
+                  {
+                    id: "swap" as Section,
+                    icon: "⇄",
+                    title: "Swap Tokens",
+                    text: "Swap supported assets on Arc.",
+                  },
+                  {
+                    id: "bridge" as Section,
+                    icon: "⇅",
+                    title: "Bridge USDC",
+                    text: "Move assets across networks.",
+                  },
+                  {
+                    id: "activity" as Section,
+                    icon: "◷",
+                    title: "Wallet Activity",
+                    text: "Explore wallet activity and assets.",
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() =>
+                      handleNavigation(item.id)
+                    }
+                    className="group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
+                      {item.icon}
                     </div>
-                  </div>
 
-                  <h4 className="mt-5 font-semibold tracking-tight">
-                    Send USDC
-                  </h4>
+                    <h4 className="mt-6 font-black tracking-tight">
+                      {item.title}
+                    </h4>
 
-                  <p className="mt-2 text-sm font-medium leading-6 text-white/35">
-                    Send USDC to another wallet.
-                  </p>
-                </button>
-
-                {/* Swap */}
-
-                <button
-                  onClick={() =>
-                    handleNavigation("swap")
-                  }
-                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-5 text-left shadow-lg shadow-black/40 transition duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-[#080a0d] text-xl font-semibold text-white/70 transition group-hover:border-[#2b6cff]/18 group-hover:bg-[#0b1017]">
-                      ⇄
-                    </div>
-                  </div>
-
-                  <h4 className="mt-5 font-semibold tracking-tight">
-                    Swap Tokens
-                  </h4>
-
-                  <p className="mt-2 text-sm font-medium leading-6 text-white/35">
-                    Swap supported assets on Arc.
-                  </p>
-                </button>
-
-                {/* Bridge */}
-
-                <button
-                  onClick={() =>
-                    handleNavigation("bridge")
-                  }
-                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-5 text-left shadow-lg shadow-black/40 transition duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-[#080a0d] text-xl font-semibold text-white/70 transition group-hover:border-[#2b6cff]/18 group-hover:bg-[#0b1017]">
-                      ⇅
-                    </div>
-                  </div>
-
-                  <h4 className="mt-5 font-semibold tracking-tight">
-                    Bridge USDC
-                  </h4>
-
-                  <p className="mt-2 text-sm font-medium leading-6 text-white/35">
-                    Move assets across networks.
-                  </p>
-                </button>
-
-                {/* Activity */}
-
-                <button
-                  onClick={() =>
-                    handleNavigation("activity")
-                  }
-                  className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-5 text-left shadow-lg shadow-black/40 transition duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-[#080a0d] text-xl font-semibold text-white/70 transition group-hover:border-[#2b6cff]/18 group-hover:bg-[#0b1017]">
-                      ◷
-                    </div>
-                  </div>
-
-                  <h4 className="mt-5 font-semibold tracking-tight">
-                    Check Activity
-                  </h4>
-
-                  <p className="mt-2 text-sm font-medium leading-6 text-white/35">
-                    Explore wallet activity and assets.
-                  </p>
-                </button>
+                    <p className="mt-2 text-sm font-medium leading-6 text-white/30">
+                      {item.text}
+                    </p>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Supported Assets */}
+            {/* WHY ARC */}
 
-            <div className="mt-8 rounded-2xl border border-white/[0.07] bg-gradient-to-r from-[#090e14] via-[#06080b] to-[#030303] p-5 shadow-lg shadow-black/40 sm:mt-10 sm:p-6">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/30">
-                    Supported Assets
+            <div className="border-y border-white/[0.06] bg-[#030405]">
+              <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
+                <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                      Why Arc?
+                    </p>
+
+                    <h3 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                      Built around
+                      <br />
+                      stablecoin finance.
+                    </h3>
+
+                    <p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/35 sm:text-base">
+                      Arc is designed as an open
+                      Layer-1 for stablecoin-powered
+                      financial activity, giving builders
+                      infrastructure focused on
+                      predictable transactions and
+                      real-world financial applications.
+                    </p>
+
+                    <a
+                      href="https://www.arc.network/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-7 inline-flex rounded-2xl border border-white/[0.09] bg-white/[0.035] px-5 py-3 text-sm font-bold text-white/70 backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] hover:text-white"
+                    >
+                      Explore Arc
+                    </a>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      {
+                        number: "01",
+                        title: "USDC as Gas",
+                        text: "Arc uses USDC for network gas, keeping transaction costs dollar-denominated and predictable.",
+                      },
+                      {
+                        number: "02",
+                        title: "Fast Finality",
+                        text: "Arc is designed for deterministic, sub-second transaction finality.",
+                      },
+                      {
+                        number: "03",
+                        title: "EVM Compatible",
+                        text: "Builders can use familiar Ethereum-compatible tools and development workflows.",
+                      },
+                      {
+                        number: "04",
+                        title: "Financial Infrastructure",
+                        text: "Arc is purpose-built for payments, FX, capital markets and stablecoin-based applications.",
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.number}
+                        className="rounded-3xl border border-white/[0.07] bg-[#07090c] p-6 shadow-lg shadow-black/30"
+                      >
+                        <span className="text-xs font-black tracking-[0.18em] text-white/20">
+                          {item.number}
+                        </span>
+
+                        <h4 className="mt-5 text-lg font-black tracking-tight">
+                          {item.title}
+                        </h4>
+
+                        <p className="mt-2 text-sm font-medium leading-6 text-white/30">
+                          {item.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SUPPORTED ASSETS */}
+
+            <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
+              <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-6 shadow-xl shadow-black/40 sm:p-8 lg:p-10">
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                      Supported Assets
+                    </p>
+
+                    <h3 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+                      Explore assets on Arc
+                    </h3>
+
+                    <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
+                      AlabaamaFi currently displays
+                      USDC, EURC and cirBTC balances
+                      available on Arc Testnet.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[460px]">
+                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                      <img
+                        src="/tokens/usdc.svg"
+                        alt="USDC"
+                        className="h-9 w-9 rounded-full object-contain"
+                      />
+
+                      <div>
+                        <p className="font-black">
+                          USDC
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                          USD Coin
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                      <img
+                        src="/tokens/eurc.svg"
+                        alt="EURC"
+                        className="h-9 w-9 rounded-full object-contain"
+                      />
+
+                      <div>
+                        <p className="font-black">
+                          EURC
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                          Euro Coin
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+                        <img
+                          src="/tokens/cirbtc.svg"
+                          alt="cirBTC"
+                          className="h-9 w-9 rounded-full object-contain"
+                          style={{
+                            transform: "scale(0.75)",
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <p className="font-black">
+                          cirBTC
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                          Bitcoin
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* BUILT FOR ARC */}
+
+            <div className="border-y border-white/[0.06] bg-[#030405]">
+              <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
+                <div className="text-center">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                    Built for builders
                   </p>
 
-                  <h3 className="mt-1 text-xl font-semibold">
-                    Built for Arc
+                  <h3 className="mx-auto mt-3 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                    Simple interfaces.
+                    <br />
+                    Powerful infrastructure.
                   </h3>
 
-                  <p className="mt-2 max-w-lg text-sm font-medium leading-6 text-white/35">
-                    Explore assets available on Arc
-                    Testnet through AlabaamaFi.
+                  <p className="mx-auto mt-5 max-w-2xl text-sm font-medium leading-7 text-white/35 sm:text-base">
+                    AlabaamaFi keeps the user experience
+                    simple while connecting directly to
+                    Arc Testnet infrastructure.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2.5">
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-[#040506] px-3 py-2">
-                    <img
-                      src="/tokens/usdc.svg"
-                      alt="USDC"
-                      className="h-7 w-7 rounded-full object-contain"
-                    />
-
-                    <span className="text-sm font-semibold">
-                      USDC
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-[#040506] px-3 py-2">
-                    <img
-                      src="/tokens/eurc.svg"
-                      alt="EURC"
-                      className="h-7 w-7 rounded-full object-contain"
-                    />
-
-                    <span className="text-sm font-semibold">
-                      EURC
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-[#040506] px-3 py-2">
-                    <div className="flex h-7 w-7 items-center justify-center">
-                      <img
-                        src="/tokens/cirbtc.svg"
-                        alt="cirBTC"
-                        className="h-7 w-7 rounded-full object-contain"
-                        style={{
-                          transform: "scale(0.75)",
-                        }}
-                      />
+                <div className="mx-auto mt-10 grid max-w-5xl gap-3 sm:grid-cols-3">
+                  <div className="rounded-3xl border border-white/[0.07] bg-[#07090c] p-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#0a0d12] text-lg font-black">
+                      01
                     </div>
 
-                    <span className="text-sm font-semibold">
-                      cirBTC
-                    </span>
+                    <h4 className="mt-5 font-black">
+                      Connect
+                    </h4>
+
+                    <p className="mt-2 text-sm font-medium leading-6 text-white/30">
+                      Connect your preferred EVM
+                      wallet.
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl border border-white/[0.07] bg-[#07090c] p-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#0a0d12] text-lg font-black">
+                      02
+                    </div>
+
+                    <h4 className="mt-5 font-black">
+                      Explore
+                    </h4>
+
+                    <p className="mt-2 text-sm font-medium leading-6 text-white/30">
+                      Check balances and on-chain
+                      activity.
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl border border-white/[0.07] bg-[#07090c] p-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#0a0d12] text-lg font-black">
+                      03
+                    </div>
+
+                    <h4 className="mt-5 font-black">
+                      Transact
+                    </h4>
+
+                    <p className="mt-2 text-sm font-medium leading-6 text-white/30">
+                      Send assets directly on Arc.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Testnet Notice */}
+            {/* ARC ECOSYSTEM */}
 
-            <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 shadow-lg shadow-black/30 sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">
-                  You are using Arc Testnet
-                </p>
+            <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
+              <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-6 shadow-xl shadow-black/40 sm:p-8 lg:p-10">
+                <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                      Arc Ecosystem
+                    </p>
 
-                <p className="mt-1 text-xs font-medium leading-5 text-white/30">
-                  Use testnet assets only. Nothing here
-                  represents real mainnet funds.
-                </p>
+                    <h3 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
+                      Stay connected to Arc
+                    </h3>
+
+                    <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
+                      Learn more about Arc, explore
+                      the ecosystem and connect with
+                      the wider community of builders.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                    <a
+                      href="https://www.arc.network/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                    >
+                      Arc Network
+                    </a>
+
+                    <a
+                      href="https://community.arc.network/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                    >
+                      Arc Community
+                    </a>
+
+                    <a
+                      href="https://discord.com/invite/buildoncircle"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                    >
+                      Community Discord
+                    </a>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <button
-                onClick={() =>
-                  handleNavigation("faucet")
-                }
-                className="flex w-full shrink-0 items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-xs font-semibold tracking-tight text-white/70 shadow-sm backdrop-blur-xl transition duration-200 hover:border-white/[0.17] hover:bg-white/[0.08] hover:text-white active:scale-[0.99] sm:w-auto"
-              >
-                <span>Get Faucet</span>
-              </button>
+            {/* TESTNET CTA */}
+
+            <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-20 lg:px-10">
+              <div className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-[#06080b] p-7 text-center shadow-2xl shadow-black/50 sm:p-10 lg:p-14">
+                <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-96 -translate-x-1/2 rounded-full bg-[#173a70]/[0.08] blur-3xl" />
+
+                <div className="relative">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-xl font-bold text-white/60">
+                    ◌
+                  </div>
+
+                  <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+                    Arc Testnet
+                  </p>
+
+                  <h3 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
+                    Ready to try it?
+                  </h3>
+
+                  <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
+                    Get testnet tokens and start
+                    exploring AlabaamaFi on Arc.
+                  </p>
+
+                  <button
+                    onClick={() =>
+                      handleNavigation("faucet")
+                    }
+                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-3.5 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0"
+                  >
+                    Get Faucet
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         )}
 
-        {/* Send */}
+        {/* SEND */}
 
         {activeSection === "send" && (
           <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
             <div className="mx-auto max-w-md">
               <div className="mb-6 sm:mb-8">
-                <p className="text-sm font-medium text-white/35">
+                <p className="text-sm font-semibold text-white/35">
                   AlabaamaFi
                 </p>
 
-                <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
+                <h2 className="mt-1 text-3xl font-black sm:text-4xl">
                   Send USDC
                 </h2>
 
@@ -1213,16 +1391,16 @@ export default function Home() {
 
               <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6">
                 <div className="mb-6 flex items-center justify-between gap-3">
-                  <h3 className="font-semibold">
+                  <h3 className="font-black">
                     Transfer
                   </h3>
 
-                  <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-semibold text-white/45">
+                  <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
                     Testnet
                   </span>
                 </div>
 
-                <label className="mb-2 block text-sm font-semibold text-white/50">
+                <label className="mb-2 block text-sm font-bold text-white/50">
                   Recipient
                 </label>
 
@@ -1233,15 +1411,15 @@ export default function Home() {
                   onChange={(e) =>
                     setRecipient(e.target.value)
                   }
-                  className="mb-5 min-h-12 w-full rounded-xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
+                  className="mb-5 min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
                 />
 
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <label className="text-sm font-semibold text-white/50">
+                  <label className="text-sm font-bold text-white/50">
                     Amount
                   </label>
 
-                  <span className="text-xs font-medium text-white/25">
+                  <span className="text-xs font-semibold text-white/25">
                     Balance:{" "}
                     {isBalanceLoading
                       ? "Loading..."
@@ -1259,10 +1437,10 @@ export default function Home() {
                     onChange={(e) =>
                       setAmount(e.target.value)
                     }
-                    className="min-h-12 w-full rounded-xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-semibold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
+                    className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-bold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
                   />
 
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/45">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-white/45">
                     USDC
                   </span>
                 </div>
@@ -1274,7 +1452,7 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className="mt-6 min-h-12 w-full rounded-xl border border-white/[0.12] bg-white/[0.92] py-3.5 font-semibold tracking-tight text-black shadow-lg shadow-black/40 transition duration-200 hover:bg-white hover:shadow-xl active:scale-[0.99] disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
+                  className="mt-6 min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-5 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
                 >
                   {!isConnected
                     ? "Connect Wallet"
@@ -1293,23 +1471,23 @@ export default function Home() {
                           chainId: arcTestnet.id,
                         })
                       }
-                      className="mt-3 min-h-12 w-full rounded-xl border border-white/[0.09] bg-white/[0.045] py-3 text-sm font-semibold tracking-tight text-white backdrop-blur-xl transition hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
+                      className="mt-3 min-h-13 w-full rounded-2xl border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-black tracking-tight text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
                     >
                       Switch to Arc Testnet
                     </button>
                   )}
 
                 {error && (
-                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm font-medium leading-5 text-red-400">
+                  <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm font-semibold leading-5 text-red-400">
                       {error}
                     </p>
                   </div>
                 )}
 
                 {sendError && (
-                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm font-medium leading-5 text-red-400">
+                  <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm font-semibold leading-5 text-red-400">
                       {getFriendlyErrorMessage(
                         sendError.message
                       )}
@@ -1318,8 +1496,8 @@ export default function Home() {
                 )}
 
                 {isConfirmed && hash && (
-                  <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-                    <p className="text-sm font-semibold text-green-400">
+                  <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
+                    <p className="text-sm font-bold text-green-400">
                       Transaction confirmed ✓
                     </p>
 
@@ -1327,7 +1505,7 @@ export default function Home() {
                       href={`https://testnet.arcscan.app/tx/${hash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 block break-words text-sm font-medium text-white/50 underline transition hover:text-white"
+                      className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
                     >
                       View Transaction on ArcScan
                     </a>
@@ -1338,16 +1516,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Swap */}
+        {/* SWAP */}
 
         {activeSection === "swap" && (
           <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
             <div className="mx-auto max-w-md">
-              <p className="text-sm font-medium text-white/35">
+              <p className="text-sm font-semibold text-white/35">
                 AlabaamaFi
               </p>
 
-              <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
+              <h2 className="mt-1 text-3xl font-black sm:text-4xl">
                 Token Swap
               </h2>
 
@@ -1357,36 +1535,36 @@ export default function Home() {
 
               <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
                 <div className="mb-6 rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
-                  <p className="text-xs font-semibold text-white/35">
+                  <p className="text-xs font-bold text-white/35">
                     You pay
                   </p>
 
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-2xl font-semibold">
+                    <span className="text-2xl font-black">
                       0.00
                     </span>
 
-                    <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-4 py-2 text-sm font-semibold">
+                    <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-4 py-2 text-sm font-black">
                       USDC
                     </span>
                   </div>
                 </div>
 
-                <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-[#060709] text-sm font-semibold text-white/45">
+                <div className="mx-auto -my-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-[#060709] text-sm font-bold text-white/45">
                   ↓
                 </div>
 
                 <div className="mb-6 rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
-                  <p className="text-xs font-semibold text-white/35">
+                  <p className="text-xs font-bold text-white/35">
                     You receive
                   </p>
 
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-2xl font-semibold">
+                    <span className="text-2xl font-black">
                       0.00
                     </span>
 
-                    <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-4 py-2 text-sm font-semibold">
+                    <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-4 py-2 text-sm font-black">
                       Token
                     </span>
                   </div>
@@ -1394,7 +1572,7 @@ export default function Home() {
 
                 <button
                   disabled
-                  className="min-h-12 w-full rounded-xl border border-white/[0.07] bg-[#080a0d] py-3.5 font-semibold tracking-tight text-white/20"
+                  className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#080a0d] py-3.5 text-sm font-black tracking-tight text-white/20"
                 >
                   Swap Coming Soon
                 </button>
@@ -1403,16 +1581,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Bridge */}
+        {/* BRIDGE */}
 
         {activeSection === "bridge" && (
           <section className="mx-auto max-w-5xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-10 lg:py-24">
             <div className="mx-auto max-w-md">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080d14] text-3xl font-semibold text-white/60 shadow-lg shadow-black/50">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/[0.07] bg-[#080d14] text-3xl font-bold text-white/60 shadow-lg shadow-black/50">
                 ⇅
               </div>
 
-              <h2 className="mt-5 text-3xl font-bold sm:text-4xl">
+              <h2 className="mt-5 text-3xl font-black sm:text-4xl">
                 Bridge
               </h2>
 
@@ -1422,23 +1600,23 @@ export default function Home() {
                 bridge.
               </p>
 
-              <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 text-sm font-semibold text-white/35">
+              <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 text-sm font-black text-white/35">
                 Coming Soon
               </div>
             </div>
           </section>
         )}
 
-        {/* Activity */}
+        {/* ACTIVITY */}
 
         {activeSection === "activity" && (
           <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
             <div className="mx-auto max-w-2xl">
-              <p className="text-sm font-medium text-white/35">
+              <p className="text-sm font-semibold text-white/35">
                 AlabaamaFi
               </p>
 
-              <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
+              <h2 className="mt-1 text-3xl font-black sm:text-4xl">
                 Wallet Activity
               </h2>
 
@@ -1449,7 +1627,7 @@ export default function Home() {
 
               <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-white/50">
+                  <label className="mb-2 block text-sm font-bold text-white/50">
                     Wallet Address
                   </label>
 
@@ -1459,7 +1637,7 @@ export default function Home() {
                     value={activityAddress}
                     readOnly
                     disabled={!isConnected}
-                    className="min-h-12 w-full cursor-not-allowed rounded-xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
+                    className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
                   />
                 </div>
 
@@ -1476,18 +1654,18 @@ export default function Home() {
                   disabled={
                     isConnected && activityLoading
                   }
-                  className="mt-4 min-h-12 w-full rounded-xl border border-white/[0.12] bg-white/[0.92] py-3.5 font-semibold tracking-tight text-black shadow-lg shadow-black/40 transition duration-200 hover:bg-white hover:shadow-xl active:scale-[0.99] disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
+                  className="mt-4 min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-5 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
                 >
                   {activityLoading
-                    ? "Checking Activity"
+                    ? "Checking Wallet Activity"
                     : isConnected
                     ? "Check Wallet Activity"
                     : "Connect Wallet"}
                 </button>
 
                 {activityError && (
-                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm font-medium leading-5 text-red-400">
+                  <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                    <p className="break-words text-sm font-semibold leading-5 text-red-400">
                       {activityError}
                     </p>
                   </div>
@@ -1500,18 +1678,18 @@ export default function Home() {
                   <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-xs font-semibold text-white/25">
+                        <p className="text-xs font-bold text-white/25">
                           Portfolio
                         </p>
 
-                        <p className="mt-2 text-3xl font-semibold">
+                        <p className="mt-2 text-3xl font-black">
                           {portfolioValue !== null
                             ? `$${portfolioValue.toFixed(2)}`
                             : "Value unavailable"}
                         </p>
                       </div>
 
-                      <div className="w-fit rounded-xl border border-white/[0.07] bg-[#080a0d] px-3 py-2 text-xs font-semibold text-white/40">
+                      <div className="w-fit rounded-xl border border-white/[0.07] bg-[#080a0d] px-3 py-2 text-xs font-bold text-white/40">
                         Arc Testnet
                       </div>
                     </div>
@@ -1520,11 +1698,11 @@ export default function Home() {
                   {activityTokens.length > 0 && (
                     <div className="mt-7 sm:mt-8">
                       <div className="mb-4 flex items-center justify-between gap-3">
-                        <h3 className="font-semibold">
+                        <h3 className="font-black">
                           Token Holdings
                         </h3>
 
-                        <span className="shrink-0 text-xs font-semibold text-white/25">
+                        <span className="shrink-0 text-xs font-bold text-white/25">
                           {activityTokens.length} token
                           {activityTokens.length !== 1
                             ? "s"
@@ -1557,7 +1735,7 @@ export default function Home() {
                                   />
                                 </div>
                               ) : (
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-semibold">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
                                   {token.symbol
                                     .slice(0, 1)
                                     .toUpperCase()}
@@ -1565,7 +1743,7 @@ export default function Home() {
                               )}
 
                               <div className="min-w-0">
-                                <p className="font-semibold">
+                                <p className="font-black">
                                   {token.symbol}
                                 </p>
 
@@ -1576,7 +1754,7 @@ export default function Home() {
                             </div>
 
                             <div className="ml-2 shrink-0 text-right sm:ml-4">
-                              <p className="font-semibold">
+                              <p className="font-black">
                                 {Number(
                                   token.amount
                                 ).toLocaleString(
@@ -1588,7 +1766,7 @@ export default function Home() {
                                 )}
                               </p>
 
-                              <p className="mt-1 text-xs font-medium text-white/25">
+                              <p className="mt-1 text-xs font-semibold text-white/25">
                                 {token.usdValue !== null
                                   ? `$${token.usdValue.toFixed(2)}`
                                   : "USD value unavailable"}
@@ -1604,16 +1782,16 @@ export default function Home() {
                     <div className="mt-7 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 sm:mt-8">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-xs font-semibold text-white/25">
+                          <p className="text-xs font-bold text-white/25">
                             Transactions
                           </p>
 
-                          <p className="mt-2 text-2xl font-semibold">
+                          <p className="mt-2 text-2xl font-black">
                             {activityTransactions.length}
                           </p>
                         </div>
 
-                        <span className="text-right text-xs font-medium text-white/25">
+                        <span className="text-right text-xs font-semibold text-white/25">
                           Recent activity
                         </span>
                       </div>
@@ -1625,11 +1803,11 @@ export default function Home() {
               {activityTransactions.length > 0 && (
                 <div className="mt-7 sm:mt-8">
                   <div className="mb-4 flex items-center justify-between gap-3">
-                    <h3 className="font-semibold">
+                    <h3 className="font-black">
                       Recent Transactions
                     </h3>
 
-                    <span className="shrink-0 text-xs font-semibold text-white/25">
+                    <span className="shrink-0 text-xs font-bold text-white/25">
                       {activityTransactions.length} found
                     </span>
                   </div>
@@ -1678,7 +1856,7 @@ export default function Home() {
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold">
+                              <p className="text-sm font-black">
                                 Transaction
                               </p>
 
@@ -1690,54 +1868,53 @@ export default function Home() {
 
                           <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
                             <div className="flex items-center justify-between gap-4">
-                              <span className="text-xs font-semibold text-white/25">
+                              <span className="text-xs font-bold text-white/25">
                                 Date
                               </span>
 
-                              <span className="text-right text-xs font-medium text-white/55">
+                              <span className="text-right text-xs font-semibold text-white/55">
                                 {formattedDate}
                               </span>
                             </div>
 
                             <div className="mt-1.5 flex items-center justify-between gap-4">
-                              <span className="text-xs font-semibold text-white/25">
+                              <span className="text-xs font-bold text-white/25">
                                 Time
                               </span>
 
-                              <span className="text-right text-xs font-medium text-white/55">
-                                {formattedTime ||
-                                  "Time unavailable"}
+                              <span className="text-right text-xs font-semibold text-white/55">
+                                {formattedTime}
                               </span>
                             </div>
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
                             <div className="min-w-0">
-                              <p className="font-semibold text-white/25">
+                              <p className="font-bold text-white/25">
                                 From
                               </p>
 
-                              <p className="mt-1 break-all font-medium text-white/55">
+                              <p className="mt-1 break-all font-semibold text-white/55">
                                 {tx.from}
                               </p>
                             </div>
 
                             <div className="min-w-0">
-                              <p className="font-semibold text-white/25">
+                              <p className="font-bold text-white/25">
                                 To
                               </p>
 
-                              <p className="mt-1 break-all font-medium text-white/55">
+                              <p className="mt-1 break-all font-semibold text-white/55">
                                 {tx.to}
                               </p>
                             </div>
 
                             <div>
-                              <p className="font-semibold text-white/25">
+                              <p className="font-bold text-white/25">
                                 Value
                               </p>
 
-                              <p className="mt-1 break-words font-semibold text-white/65">
+                              <p className="mt-1 break-words font-black text-white/65">
                                 {tx.value}
                                 {tx.tokenSymbol
                                   ? ` ${tx.tokenSymbol}`
@@ -1746,11 +1923,11 @@ export default function Home() {
                             </div>
 
                             <div>
-                              <p className="font-semibold text-white/25">
+                              <p className="font-bold text-white/25">
                                 Status
                               </p>
 
-                              <p className="mt-1 font-semibold text-green-400">
+                              <p className="mt-1 font-black text-green-400">
                                 {tx.status}
                               </p>
                             </div>
@@ -1761,7 +1938,7 @@ export default function Home() {
                               href={`https://testnet.arcscan.app/tx/${tx.hash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs font-semibold text-white/40 transition hover:text-white"
+                              className="text-xs font-black text-white/40 transition hover:text-white"
                             >
                               View Transaction on ArcScan
                             </a>
@@ -1790,7 +1967,7 @@ export default function Home() {
           </section>
         )}
 
-        {/* Faucet */}
+        {/* FAUCET */}
 
         {activeSection === "faucet" && (
           <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
@@ -1799,7 +1976,7 @@ export default function Home() {
                 ◌
               </div>
 
-              <h2 className="mt-6 text-3xl font-bold sm:text-4xl">
+              <h2 className="mt-6 text-3xl font-black sm:text-4xl">
                 Get Testnet Tokens
               </h2>
 
@@ -1813,12 +1990,12 @@ export default function Home() {
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 block min-h-12 w-full rounded-xl border border-white/[0.12] bg-white/[0.92] py-3.5 font-semibold tracking-tight text-black shadow-lg shadow-black/40 transition duration-200 hover:bg-white hover:shadow-xl active:scale-[0.99]"
+                className="mt-8 block min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0"
               >
                 Get Testnet Tokens
               </a>
 
-              <p className="mt-4 text-xs font-medium leading-5 text-white/25">
+              <p className="mt-4 text-xs font-semibold leading-5 text-white/25">
                 Opens the official Circle faucet in a new
                 tab.
               </p>
@@ -1826,23 +2003,66 @@ export default function Home() {
           </section>
         )}
 
-        {/* Footer */}
+        {/* FOOTER */}
 
-        <footer className="border-t border-white/[0.06] px-4 py-8 text-center sm:px-6">
-          <p className="text-xs font-medium text-white/25 sm:text-sm">
-            AlabaamaFi • Built on Arc Network
-          </p>
+        <footer className="border-t border-white/[0.06] bg-[#030405] px-4 py-10 sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black">
+                AlabaamaFi
+              </p>
+
+              <p className="mt-1 text-xs font-medium text-white/25">
+                A simple interface built on Arc Network.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-xs font-bold text-white/30">
+              <a
+                href="https://www.arc.network/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:text-white"
+              >
+                Arc Network
+              </a>
+
+              <a
+                href="https://community.arc.network/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:text-white"
+              >
+                Community
+              </a>
+
+              <a
+                href="https://discord.com/invite/buildoncircle"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:text-white"
+              >
+                Discord
+              </a>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-7 max-w-7xl border-t border-white/[0.05] pt-5">
+            <p className="text-center text-[11px] font-semibold text-white/20">
+              AlabaamaFi • Built on Arc Testnet
+            </p>
+          </div>
         </footer>
       </div>
 
-      {/* Wallet Modal */}
+      {/* WALLET MODAL */}
 
       {showWallets && !isConnected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
           <div className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-white/[0.07] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:max-h-[90vh] sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4 sm:mb-6">
               <div className="min-w-0">
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-xl font-black">
                   Connect Wallet
                 </h3>
 
@@ -1855,7 +2075,7 @@ export default function Home() {
                 onClick={() =>
                   setShowWallets(false)
                 }
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-semibold text-white/45 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white/45 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close wallet modal"
               >
                 ✕
@@ -1863,15 +2083,13 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              {/* Browser Wallet */}
-
               {browserConnector && (
                 <button
                   onClick={() =>
                     handleConnect(browserConnector)
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="relative shrink-0">
@@ -1888,7 +2106,7 @@ export default function Home() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="font-semibold">
+                      <p className="font-black">
                         Browser Wallet
                       </p>
 
@@ -1898,13 +2116,11 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <span className="shrink-0 text-sm font-semibold text-white/25">
+                  <span className="shrink-0 text-sm font-bold text-white/25">
                     •
                   </span>
                 </button>
               )}
-
-              {/* Detected Browser Wallets */}
 
               {detectedBrowserWallets.map(
                 (connector) => {
@@ -1940,7 +2156,7 @@ export default function Home() {
                         handleConnect(connector)
                       }
                       disabled={isPending}
-                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="relative shrink-0">
@@ -1951,7 +2167,7 @@ export default function Home() {
                               className="h-8 w-8 rounded-lg object-contain"
                             />
                           ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b1017] text-sm font-semibold">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b1017] text-sm font-bold">
                               ◇
                             </div>
                           )}
@@ -1960,7 +2176,7 @@ export default function Home() {
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">
+                          <p className="truncate font-black">
                             {displayName}
                           </p>
 
@@ -1970,15 +2186,13 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <span className="shrink-0 text-sm font-semibold text-white/25">
+                      <span className="shrink-0 text-sm font-bold text-white/25">
                         •
                       </span>
                     </button>
                   );
                 }
               )}
-
-              {/* WalletConnect */}
 
               {walletConnectConnector && (
                 <button
@@ -1988,7 +2202,7 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <img
@@ -1998,7 +2212,7 @@ export default function Home() {
                     />
 
                     <div className="min-w-0">
-                      <p className="font-semibold">
+                      <p className="font-black">
                         WalletConnect
                       </p>
 
@@ -2008,18 +2222,16 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <span className="shrink-0 text-sm font-semibold text-white/25">
+                  <span className="shrink-0 text-sm font-bold text-white/25">
                     •
                   </span>
                 </button>
               )}
 
-              {/* MetaMask */}
-
               <button
                 onClick={handleMetaMaskClick}
                 disabled={isPending}
-                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="relative shrink-0">
@@ -2035,7 +2247,7 @@ export default function Home() {
                   </div>
 
                   <div className="min-w-0">
-                    <p className="font-semibold">
+                    <p className="font-black">
                       MetaMask
                     </p>
 
@@ -2049,12 +2261,10 @@ export default function Home() {
                   </div>
                 </div>
 
-                <span className="shrink-0 text-sm font-semibold text-white/25">
+                <span className="shrink-0 text-sm font-bold text-white/25">
                   •
                 </span>
               </button>
-
-              {/* Coinbase Wallet */}
 
               {coinbaseConnector && (
                 <button
@@ -2064,7 +2274,7 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <img
@@ -2074,7 +2284,7 @@ export default function Home() {
                     />
 
                     <div className="min-w-0">
-                      <p className="font-semibold">
+                      <p className="font-black">
                         Coinbase Wallet
                       </p>
 
@@ -2084,7 +2294,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <span className="shrink-0 text-sm font-semibold text-white/25">
+                  <span className="shrink-0 text-sm font-bold text-white/25">
                     •
                   </span>
                 </button>
@@ -2092,8 +2302,8 @@ export default function Home() {
             </div>
 
             {connectError && (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm font-medium leading-5 text-red-400">
+              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="break-words text-sm font-semibold leading-5 text-red-400">
                   {getFriendlyErrorMessage(
                     connectError.message
                   )}
@@ -2102,8 +2312,8 @@ export default function Home() {
             )}
 
             {error && (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm font-medium leading-5 text-red-400">
+              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="break-words text-sm font-semibold leading-5 text-red-400">
                   {error}
                 </p>
               </div>
