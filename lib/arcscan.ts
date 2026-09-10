@@ -206,6 +206,57 @@ function getNativeValue(tx: any): string {
   return "0";
 }
 
+function normalizeTimestamp(value: any): string {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  // Already a Date object
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  // Numeric Unix timestamp
+  if (typeof value === "number") {
+    // Seconds → milliseconds
+    const milliseconds =
+      value < 100000000000
+        ? value * 1000
+        : value;
+
+    const date = new Date(milliseconds);
+
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toISOString();
+  }
+
+  const stringValue = String(value).trim();
+
+  // Numeric timestamp returned as a string
+  if (/^\d+$/.test(stringValue)) {
+    const numericValue = Number(stringValue);
+
+    const milliseconds =
+      numericValue < 100000000000
+        ? numericValue * 1000
+        : numericValue;
+
+    const date = new Date(milliseconds);
+
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toISOString();
+  }
+
+  // ISO / normal date string
+  const date = new Date(stringValue);
+
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toISOString();
+}
+
 export async function getWalletTransactions(
   address: string
 ): Promise<WalletTransaction[]> {
