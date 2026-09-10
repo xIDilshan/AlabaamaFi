@@ -769,7 +769,7 @@ export default function Home() {
       };
 
       /*
-       * USDC always appears first.
+       * USDC first.
        */
 
       const holdings = [
@@ -780,10 +780,7 @@ export default function Home() {
       setActivityTokens(holdings);
 
       /*
-       * Calculate one combined portfolio value.
-       *
-       * USDC = $1.
-       * Other tokens use their Arcscan USD value.
+       * Calculate total portfolio value.
        */
 
       let totalPortfolio = 0;
@@ -1480,17 +1477,27 @@ export default function Home() {
                               </div>
                             </div>
 
-                            <p className="ml-4 shrink-0 text-right font-semibold">
-                              {Number(
-                                token.amount
-                              ).toLocaleString(
-                                undefined,
-                                {
-                                  maximumFractionDigits:
-                                    6,
-                                }
-                              )}
-                            </p>
+                            {/* Amount + USD */}
+
+                            <div className="ml-4 shrink-0 text-right">
+                              <p className="font-semibold">
+                                {Number(
+                                  token.amount
+                                ).toLocaleString(
+                                  undefined,
+                                  {
+                                    maximumFractionDigits:
+                                      6,
+                                  }
+                                )}
+                              </p>
+
+                              <p className="mt-1 text-xs text-white/30">
+                                {token.usdValue !== null
+                                  ? `$${token.usdValue.toFixed(2)}`
+                                  : "USD value unavailable"}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1537,12 +1544,9 @@ export default function Home() {
 
                   <div className="space-y-3">
                     {activityTransactions.map((tx) => (
-                      <a
+                      <div
                         key={tx.hash}
-                        href={`https://testnet.arcscan.app/tx/${tx.hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08]"
+                        className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0">
@@ -1556,7 +1560,7 @@ export default function Home() {
                           </div>
 
                           <span className="shrink-0 text-sm text-white/40">
-                            →
+                            •
                           </span>
                         </div>
 
@@ -1586,8 +1590,11 @@ export default function Home() {
                               Value
                             </p>
 
-                            <p className="mt-1 text-white/60">
+                            <p className="mt-1 font-medium text-white/70">
                               {tx.value}
+                              {tx.tokenSymbol
+                                ? ` ${tx.tokenSymbol}`
+                                : ""}
                             </p>
                           </div>
 
@@ -1601,7 +1608,20 @@ export default function Home() {
                             </p>
                           </div>
                         </div>
-                      </a>
+
+                        {/* ArcScan Link */}
+
+                        <div className="mt-4 border-t border-white/10 pt-3">
+                          <a
+                            href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-white/40 transition hover:text-white"
+                          >
+                            View on ArcScan ↗
+                          </a>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
