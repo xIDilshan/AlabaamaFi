@@ -1530,102 +1530,159 @@ export default function Home() {
 
               {/* Transactions */}
 
-              {activityTransactions.length > 0 && (
-                <div className="mt-8">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-semibold">
-                      Recent Transactions
-                    </h3>
+{activityTransactions.length > 0 && (
+  <div className="mt-8">
+    <div className="mb-4 flex items-center justify-between">
+      <h3 className="font-semibold">
+        Recent Transactions
+      </h3>
 
-                    <span className="text-xs text-white/30">
-                      {activityTransactions.length} found
-                    </span>
-                  </div>
+      <span className="text-xs text-white/30">
+        {activityTransactions.length} found
+      </span>
+    </div>
 
-                  <div className="space-y-3">
-                    {activityTransactions.map((tx) => (
-                      <div
-                        key={tx.hash}
-                        className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium">
-                              Transaction
-                            </p>
+    <div className="space-y-3">
+      {activityTransactions.map((tx) => {
+        const transactionDate = tx.timestamp
+          ? new Date(tx.timestamp)
+          : null;
 
-                            <p className="mt-1 truncate text-xs text-white/30">
-                              {tx.hash}
-                            </p>
-                          </div>
+        const formattedDate =
+          transactionDate &&
+          !Number.isNaN(transactionDate.getTime())
+            ? transactionDate.toLocaleDateString(
+                undefined,
+                {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                }
+              )
+            : "Date unavailable";
 
-                          <span className="shrink-0 text-sm text-white/40">
-                            •
-                          </span>
-                        </div>
+        const formattedTime =
+          transactionDate &&
+          !Number.isNaN(transactionDate.getTime())
+            ? transactionDate.toLocaleTimeString(
+                undefined,
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )
+            : "";
 
-                        <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
-                          <div>
-                            <p className="text-white/30">
-                              From
-                            </p>
+        return (
+          <div
+            key={tx.hash}
+            className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  Transaction
+                </p>
 
-                            <p className="mt-1 truncate text-white/60">
-                              {tx.from}
-                            </p>
-                          </div>
+                <p className="mt-1 truncate text-xs text-white/30">
+                  {tx.hash}
+                </p>
+              </div>
 
-                          <div>
-                            <p className="text-white/30">
-                              To
-                            </p>
+              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-white/40">
+                {formattedDate}
+              </span>
+            </div>
 
-                            <p className="mt-1 truncate text-white/60">
-                              {tx.to}
-                            </p>
-                          </div>
+            {/* Date & Time */}
 
-                          <div>
-                            <p className="text-white/30">
-                              Value
-                            </p>
+            <div className="mt-4 rounded-xl border border-white/5 bg-black/20 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white/30">
+                  Date
+                </span>
 
-                            <p className="mt-1 font-medium text-white/70">
-                              {tx.value}
-                              {tx.tokenSymbol
-                                ? ` ${tx.tokenSymbol}`
-                                : ""}
-                            </p>
-                          </div>
+                <span className="text-xs text-white/60">
+                  {formattedDate}
+                </span>
+              </div>
 
-                          <div>
-                            <p className="text-white/30">
-                              Status
-                            </p>
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className="text-xs text-white/30">
+                  Time
+                </span>
 
-                            <p className="mt-1 text-green-400">
-                              {tx.status}
-                            </p>
-                          </div>
-                        </div>
+                <span className="text-xs text-white/60">
+                  {formattedTime || "Time unavailable"}
+                </span>
+              </div>
+            </div>
 
-                        {/* ArcScan Link */}
+            {/* Transaction Details */}
 
-                        <div className="mt-4 border-t border-white/10 pt-3">
-                          <a
-                            href={`https://testnet.arcscan.app/tx/${tx.hash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-medium text-white/40 transition hover:text-white"
-                          >
-                            View on ArcScan ↗
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <p className="text-white/30">
+                  From
+                </p>
+
+                <p className="mt-1 truncate text-white/60">
+                  {tx.from}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-white/30">
+                  To
+                </p>
+
+                <p className="mt-1 truncate text-white/60">
+                  {tx.to}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-white/30">
+                  Value
+                </p>
+
+                <p className="mt-1 font-medium text-white/70">
+                  {tx.value}
+                  {tx.tokenSymbol
+                    ? ` ${tx.tokenSymbol}`
+                    : ""}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-white/30">
+                  Status
+                </p>
+
+                <p className="mt-1 text-green-400">
+                  {tx.status}
+                </p>
+              </div>
+            </div>
+
+            {/* ArcScan */}
+
+            <div className="mt-4 border-t border-white/10 pt-3">
+              <a
+                href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-white/40 transition hover:text-white"
+              >
+                View on ArcScan ↗
+              </a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
 
               {!activityLoading &&
                 isConnected &&
@@ -1669,7 +1726,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
               >
-                Get Testnet Tokens ▸
+                Get Testnet Tokens 
               </a>
 
               <p className="mt-4 text-xs text-white/30">
