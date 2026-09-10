@@ -84,10 +84,6 @@ function formatAmount(value: any): string | null {
 
 /*
  * Find a token amount inside an Activity item.
- *
- * ERC-20 activity can have the native transaction
- * value set to 0 while the actual token transfer
- * amount is stored in another nested object.
  */
 function findTokenAmount(tx: any): {
   value: string;
@@ -140,10 +136,6 @@ function findTokenAmount(tx: any): {
       };
     }
 
-    /*
-     * Sometimes the candidate itself is the
-     * Arcscan amount object.
-     */
     const directFormatted =
       formatAmount(candidate);
 
@@ -163,10 +155,6 @@ function findTokenAmount(tx: any): {
     }
   }
 
-  /*
-   * Check arrays such as transfers or
-   * token_transfers.
-   */
   const arrays = [
     tx.transfers,
     tx.token_transfers,
@@ -181,7 +169,8 @@ function findTokenAmount(tx: any): {
     }
 
     for (const item of list) {
-      const result = findTokenAmount(item);
+      const result =
+        findTokenAmount(item);
 
       if (result) {
         return result;
@@ -192,6 +181,9 @@ function findTokenAmount(tx: any): {
   return null;
 }
 
+/*
+ * Get native transaction value.
+ */
 function getNativeValue(tx: any): string {
   const formatted =
     formatAmount(tx.value);
@@ -206,7 +198,20 @@ function getNativeValue(tx: any): string {
   return "0";
 }
 
-function normalizeTimestamp(value: any): string {
+/*
+ * Convert Arcscan timestamps into a standard
+ * ISO timestamp.
+ *
+ * Supports:
+ * - Unix seconds
+ * - Unix milliseconds
+ * - numeric strings
+ * - ISO date strings
+ * - nested timestamp objects
+ */
+function normalizeTimestamp(
+  value: any
+): string {
   if (
     value === null ||
     value === undefined ||
@@ -215,9 +220,13 @@ function normalizeTimestamp(value: any): string {
     return "";
   }
 
-  // Arcscan may return an object containing
-  // the actual timestamp.
-  if (typeof value === "object") {
+  /*
+   * Some APIs return timestamp information
+   * inside an object.
+   */
+  if (
+    typeof value === "object"
+  ) {
     const nested =
       value.timestamp ??
       value.time ??
@@ -230,66 +239,95 @@ function normalizeTimestamp(value: any): string {
       nested !== undefined &&
       nested !== value
     ) {
-      return normalizeTimestamp(nested);
+      return normalizeTimestamp(
+        nested
+      );
     }
 
     return "";
   }
 
-  // Numeric Unix timestamp
-  if (typeof value === "number") {
+  /*
+   * Numeric Unix timestamp.
+   */
+  if (
+    typeof value === "number"
+  ) {
     const milliseconds =
       value < 100000000000
         ? value * 1000
         : value;
 
-    const date = new Date(milliseconds);
+    const date =
+      new Date(milliseconds);
 
-    return Number.isNaN(date.getTime())
-      ? ""
-      : date.toISOString();
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return date.toISOString();
   }
 
-  const stringValue = String(value).trim();
+  const stringValue =
+    String(value).trim();
 
-  // Numeric Unix timestamp as a string
-  if (/^\d+$/.test(stringValue)) {
-    const numericValue = Number(stringValue);
+  /*
+   * Numeric Unix timestamp returned
+   * as a string.
+   */
+  if (
+    /^\d+$/.test(stringValue)
+  ) {
+    const numericValue =
+      Number(stringValue);
 
     const milliseconds =
       numericValue < 100000000000
         ? numericValue * 1000
         : numericValue;
 
-    const date = new Date(milliseconds);
+    const date =
+      new Date(milliseconds);
 
-    return Number.isNaN(date.getTime())
-      ? ""
-      : date.toISOString();
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return date.toISOString();
   }
 
-  // ISO / standard date string
-  const date = new Date(stringValue);
+  /*
+   * ISO / normal date string.
+   */
+  const date =
+    new Date(stringValue);
 
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toISOString();
-}
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "";
+  }
 
-  // ISO / normal date string
-  const date = new Date(stringValue);
-
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toISOString();
+  return date.toISOString();
 }
 
 export async function getWalletTransactions(
   address: string
 ): Promise<WalletTransaction[]> {
-  const response = await fetch(
-    `${ARCSCAN_API}/address/${address}/activity?limit=50`
-  );
+  const response =
+    await fetch(
+      `${ARCSCAN_API}/address/${address}/activity?limit=50`
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -297,9 +335,8 @@ export async function getWalletTransactions(
     );
   }
 
-  const data = await response.json();
-  
-  console.log("ARCSCAN DATA:", JSON.stringify(data, null, 2));
+  const data =
+    await response.json();
 
   const items =
     data.items ||
@@ -307,66 +344,74 @@ export async function getWalletTransactions(
     data.data ||
     [];
 
-  return items.map((tx: any) => {
-    const tokenTransfer =
-      findTokenAmount(tx);
+  return items.map(
+    (tx: any) => {
+      const tokenTransfer =
+        findTokenAmount(tx);
 
-    const nativeValue =
-      getNativeValue(tx);
+      const nativeValue =
+        getNativeValue(tx);
 
-    const value =
-      tokenTransfer?.value ??
-      nativeValue;
+      const value =
+        tokenTransfer?.value ??
+        nativeValue;
 
-    const tokenSymbol =
-      tokenTransfer?.symbol ||
-      tx.symbol ||
-      tx.token_symbol ||
-      tx.token?.symbol ||
-      "";
+      const tokenSymbol =
+        tokenTransfer?.symbol ||
+        tx.symbol ||
+        tx.token_symbol ||
+        tx.token?.symbol ||
+        "";
 
-    return {
-      hash:
-        tx.tx_hash ||
-        tx.hash ||
-        tx.transaction_hash ||
-        "",
+      const rawTimestamp =
+        tx.timestamp ??
+        tx.time ??
+        tx.block_time ??
+        tx.block_timestamp ??
+        tx.created_at ??
+        "";
 
-      block:
-        tx.block_number ||
-        tx.block ||
-        0,
+      return {
+        hash:
+          tx.tx_hash ||
+          tx.hash ||
+          tx.transaction_hash ||
+          "",
 
-      timestamp: normalizeTimestamp(
-  tx.timestamp ||
-    tx.time ||
-    tx.block_time ||
-    ""
-),
+        block:
+          tx.block_number ||
+          tx.block ||
+          0,
 
-      from:
-        tx.from?.address ||
-        tx.from ||
-        tx.sender?.address ||
-        tx.sender ||
-        "",
+        timestamp:
+          normalizeTimestamp(
+            rawTimestamp
+          ),
 
-      to:
-        tx.to?.address ||
-        tx.to ||
-        tx.receiver?.address ||
-        tx.receiver ||
-        "",
+        from:
+          tx.from?.address ||
+          tx.from ||
+          tx.sender?.address ||
+          tx.sender ||
+          "",
 
-      value,
+        to:
+          tx.to?.address ||
+          tx.to ||
+          tx.receiver?.address ||
+          tx.receiver ||
+          "",
 
-      tokenSymbol:
-        String(tokenSymbol),
+        value,
 
-      status:
-        tx.status ||
-        tx.tx_status ||
-        "success",
-    };
-  });
+        tokenSymbol:
+          String(tokenSymbol),
+
+        status:
+          tx.status ||
+          tx.tx_status ||
+          "success",
+      };
+    }
+  );
 }
