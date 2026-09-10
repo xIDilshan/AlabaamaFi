@@ -859,26 +859,26 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <main className="min-h-screen overflow-x-hidden">
       {/* Top Header */}
 
-      <header className="border-b border-white/10">
-        <div className="flex items-center justify-between px-5 py-4 lg:px-8">
+      <header className="border-b border-white/10 bg-black/20">
+        <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-8">
           {/* Left: Menu + Testnet */}
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowMenu(true)}
-              className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-lg text-white/70 transition hover:bg-white/10 hover:text-white active:scale-95"
               aria-label="Open menu"
             >
               ☰
             </button>
 
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 sm:px-3">
+              <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
 
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-[11px] font-medium text-white/70 sm:text-xs">
                 Testnet
               </span>
             </div>
@@ -886,21 +886,21 @@ export default function Home() {
 
           {/* Logo */}
 
-          <div className="text-center">
-            <h1 className="font-bold lg:text-xl">
+          <div className="min-w-0 text-center">
+            <h1 className="truncate text-sm font-bold sm:text-base lg:text-xl">
               AlabaamaFi
             </h1>
 
-            <p className="text-[10px] text-white/40 lg:text-xs">
+            <p className="mt-0.5 text-[9px] text-white/40 sm:text-[10px] lg:text-xs">
               Powered by Arc
             </p>
           </div>
 
           {/* Wallet + Balance */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center justify-end gap-2">
             {isConnected && (
-              <div className="hidden text-right sm:block">
+              <div className="hidden text-right md:block">
                 <p className="text-xs font-semibold text-white">
                   {isBalanceLoading
                     ? "Loading..."
@@ -915,7 +915,7 @@ export default function Home() {
 
             <button
               onClick={handleWalletButton}
-              className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 lg:px-5 lg:py-2.5 lg:text-sm"
+              className="max-w-[135px] truncate rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-black transition hover:bg-white/90 active:scale-[0.98] sm:max-w-none sm:px-4 lg:px-5 lg:text-sm"
             >
               {isConnected
                 ? shortAddress
@@ -939,10 +939,10 @@ export default function Home() {
 
           {/* Sidebar */}
 
-          <aside className="relative z-50 flex min-h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 p-5 shadow-2xl">
+          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-zinc-950 p-4 shadow-2xl sm:p-5">
             {/* Sidebar Header */}
 
-            <div className="mb-10 flex items-center justify-between">
+            <div className="mb-8 flex items-center justify-between sm:mb-10">
               <div>
                 <h2 className="text-xl font-bold">
                   AlabaamaFi
@@ -955,7 +955,7 @@ export default function Home() {
 
               <button
                 onClick={() => setShowMenu(false)}
-                className="rounded-xl px-3 py-2 text-lg text-white/50 transition hover:bg-white/10 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-lg text-white/50 transition hover:bg-white/10 hover:text-white active:scale-95"
                 aria-label="Close menu"
               >
                 ✕
@@ -971,13 +971,13 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation(item.id)
                   }
-                  className={`flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition ${
+                  className={`flex min-h-12 w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition active:scale-[0.99] ${
                     activeSection === item.id
                       ? "bg-white text-black"
                       : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <span className="w-6 text-center text-lg">
+                  <span className="w-6 shrink-0 text-center text-lg">
                     {item.icon}
                   </span>
 
@@ -990,10 +990,10 @@ export default function Home() {
 
             {/* Sidebar Wallet */}
 
-            <div className="mt-auto">
+            <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className="w-full rounded-xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
+                className="w-full rounded-xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.99]"
               >
                 {isConnected
                   ? shortAddress
@@ -1010,18 +1010,20 @@ export default function Home() {
         {/* Home */}
 
         {activeSection === "home" && (
-          <section className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-14 lg:px-10 lg:py-20">
+          <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-10 lg:py-16">
             {/* Hero */}
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-10 lg:p-14">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/[0.04] blur-3xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-10 lg:p-14 xl:p-16">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/[0.04] blur-3xl sm:h-80 sm:w-80" />
 
-              <div className="relative max-w-3xl">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-sm text-white/60">
-                  
-                </div>
+              <div className="pointer-events-none absolute -bottom-32 -left-20 h-56 w-56 rounded-full bg-white/[0.025] blur-3xl" />
 
-                <h2 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+              <div className="relative max-w-4xl">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/30 sm:mb-5 sm:text-sm">
+                  Arc Testnet
+                </p>
+
+                <h2 className="text-[2.75rem] font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
                   Simple.
                   <br />
 
@@ -1030,18 +1032,18 @@ export default function Home() {
                   </span>
                 </h2>
 
-                <p className="mt-6 max-w-2xl text-base leading-7 text-white/50 sm:text-lg sm:leading-8">
+                <p className="mt-6 max-w-2xl text-sm leading-6 text-white/50 sm:mt-7 sm:text-lg sm:leading-8">
                   AlabaamaFi is a simple DeFi
                   experience for sending, exploring
                   and managing assets on Arc Network.
                 </p>
 
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                   <button
                     onClick={() =>
                       handleNavigation("send")
                     }
-                    className="rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
+                    className="w-full rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] sm:w-auto"
                   >
                     Send USDC
                   </button>
@@ -1050,7 +1052,7 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation("activity")
                     }
-                    className="rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] active:scale-[0.99] sm:w-auto"
                   >
                     Explore Activity
                   </button>
@@ -1061,8 +1063,8 @@ export default function Home() {
             {/* Connected Wallet Summary */}
 
             {isConnected && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:mt-5 sm:p-5">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs text-white/30">
                       Connected Wallet
@@ -1073,7 +1075,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-5">
+                  <div className="flex flex-wrap items-center gap-5 sm:gap-6">
                     <div className="text-left sm:text-right">
                       <p className="text-xs text-white/30">
                         USDC Balance
@@ -1108,12 +1110,11 @@ export default function Home() {
 
             {/* Quick Actions */}
 
-            <div className="mt-10">
+            <div className="mt-8 sm:mt-10">
               <div className="mb-4">
-                <p className="text-xs uppercase tracking-widest text-white/30 font-semibold">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">
                   Quick Actions
                 </p>
-                
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1121,7 +1122,7 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation("send")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
                 >
                   <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
                     ↗
@@ -1140,7 +1141,7 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation("swap")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
                 >
                   <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
                     ⇄
@@ -1159,7 +1160,7 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation("bridge")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
                 >
                   <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
                     ⇅
@@ -1178,7 +1179,7 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation("activity")
                   }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] active:scale-[0.99]"
                 >
                   <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
                     ◷
@@ -1197,9 +1198,9 @@ export default function Home() {
 
             {/* Supported Assets */}
 
-            <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:mt-10 sm:p-6">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-widest text-white/30">
                     Supported Assets
                   </p>
@@ -1214,7 +1215,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2.5">
                   <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
                     <img
                       src="/tokens/usdc.svg"
@@ -1261,8 +1262,8 @@ export default function Home() {
 
             {/* Testnet Notice */}
 
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+            <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-sm font-medium">
                   You are using Arc Testnet
                 </p>
@@ -1277,7 +1278,7 @@ export default function Home() {
                 onClick={() =>
                   handleNavigation("faucet")
                 }
-                className="shrink-0 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+                className="w-full shrink-0 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white active:scale-[0.99] sm:w-auto"
               >
                 Get Testnet Tokens
               </button>
@@ -1288,30 +1289,30 @@ export default function Home() {
         {/* Send */}
 
         {activeSection === "send" && (
-          <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
+          <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
             <div className="mx-auto max-w-md">
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <p className="text-sm text-white/40">
                   AlabaamaFi
                 </p>
 
-                <h2 className="mt-1 text-3xl font-bold">
+                <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
                   Send USDC
                 </h2>
 
-                <p className="mt-2 text-sm text-white/40">
+                <p className="mt-2 text-sm leading-6 text-white/40">
                   Send USDC to another wallet on Arc
                   Testnet.
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
-                <div className="mb-6 flex items-center justify-between">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 shadow-2xl sm:p-6">
+                <div className="mb-6 flex items-center justify-between gap-3">
                   <h3 className="font-semibold">
                     Transfer
                   </h3>
 
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
+                  <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
                     Testnet
                   </span>
                 </div>
@@ -1329,12 +1330,12 @@ export default function Home() {
                   onChange={(e) =>
                     setRecipient(e.target.value)
                   }
-                  className="mb-5 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
+                  className="mb-5 min-h-12 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none transition placeholder:text-white/20 focus:border-white/30"
                 />
 
                 {/* Amount */}
 
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <label className="text-sm text-white/50">
                     Amount
                   </label>
@@ -1357,7 +1358,7 @@ export default function Home() {
                     onChange={(e) =>
                       setAmount(e.target.value)
                     }
-                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
+                    className="min-h-12 w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-20 text-lg outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
 
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
@@ -1374,7 +1375,7 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className="mt-6 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
+                  className="mt-6 min-h-12 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
                 >
                   {!isConnected
                     ? "Connect Wallet First"
@@ -1395,7 +1396,7 @@ export default function Home() {
                           chainId: arcTestnet.id,
                         })
                       }
-                      className="mt-3 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                      className="mt-3 min-h-12 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.99]"
                     >
                       Switch to Arc Testnet
                     </button>
@@ -1405,7 +1406,7 @@ export default function Home() {
 
                 {error && (
                   <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm text-red-400">
+                    <p className="break-words text-sm leading-5 text-red-400">
                       {error}
                     </p>
                   </div>
@@ -1415,7 +1416,7 @@ export default function Home() {
 
                 {sendError && (
                   <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm text-red-400">
+                    <p className="break-words text-sm leading-5 text-red-400">
                       {getFriendlyErrorMessage(
                         sendError.message
                       )}
@@ -1435,7 +1436,7 @@ export default function Home() {
                       href={`https://testnet.arcscan.app/tx/${hash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 block text-sm text-white/60 underline transition hover:text-white"
+                      className="mt-2 block break-words text-sm text-white/60 underline transition hover:text-white"
                     >
                       View on Arc Explorer →
                     </a>
@@ -1449,28 +1450,32 @@ export default function Home() {
         {/* Swap */}
 
         {activeSection === "swap" && (
-          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+          <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
             <div className="mx-auto max-w-md">
               <p className="text-sm text-white/40">
                 AlabaamaFi
               </p>
 
-              <h2 className="mt-1 text-3xl font-bold">
+              <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
                 Token Swap
               </h2>
 
-              <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+              <p className="mt-2 text-sm leading-6 text-white/40">
+                Swap supported assets on Arc Testnet.
+              </p>
+
+              <div className="mt-7 rounded-3xl border border-white/10 bg-white/[0.04] p-4 sm:mt-8 sm:p-6">
+                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-4 sm:p-5">
                   <p className="text-xs text-white/40">
                     You pay
                   </p>
 
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="text-2xl font-semibold">
                       0.00
                     </span>
 
-                    <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+                    <span className="shrink-0 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
                       USDC
                     </span>
                   </div>
@@ -1480,17 +1485,17 @@ export default function Home() {
                   ↓
                 </div>
 
-                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-5">
+                <div className="mb-6 rounded-2xl border border-white/10 bg-black p-4 sm:p-5">
                   <p className="text-xs text-white/40">
                     You receive
                   </p>
 
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="text-2xl font-semibold">
                       0.00
                     </span>
 
-                    <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+                    <span className="shrink-0 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
                       Token
                     </span>
                   </div>
@@ -1498,7 +1503,7 @@ export default function Home() {
 
                 <button
                   disabled
-                  className="w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
+                  className="min-h-12 w-full rounded-xl bg-white/10 py-3.5 font-semibold text-white/30"
                 >
                   Swap coming soon
                 </button>
@@ -1510,13 +1515,13 @@ export default function Home() {
         {/* Bridge */}
 
         {activeSection === "bridge" && (
-          <section className="mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-24">
+          <section className="mx-auto max-w-5xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-10 lg:py-24">
             <div className="mx-auto max-w-md">
-              <div className="text-4xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-3xl text-white/70">
                 ⇅
               </div>
 
-              <h2 className="mt-5 text-3xl font-bold">
+              <h2 className="mt-5 text-3xl font-bold sm:text-4xl">
                 Bridge
               </h2>
 
@@ -1536,13 +1541,13 @@ export default function Home() {
         {/* Activity */}
 
         {activeSection === "activity" && (
-          <section className="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-20">
+          <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
             <div className="mx-auto max-w-2xl">
               <p className="text-sm text-white/40">
                 AlabaamaFi
               </p>
 
-              <h2 className="mt-1 text-3xl font-bold">
+              <h2 className="mt-1 text-3xl font-bold sm:text-4xl">
                 Wallet Activity
               </h2>
 
@@ -1551,7 +1556,7 @@ export default function Home() {
                 holdings and recent transactions.
               </p>
 
-              <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+              <div className="mt-7 rounded-3xl border border-white/10 bg-white/[0.04] p-4 sm:mt-8 sm:p-6">
                 {/* Connected Wallet Address */}
 
                 <div>
@@ -1565,7 +1570,7 @@ export default function Home() {
                     value={activityAddress}
                     readOnly
                     disabled={!isConnected}
-                    className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white/70 outline-none placeholder:text-white/20 disabled:text-white/30"
+                    className="min-h-12 w-full cursor-not-allowed rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white/70 outline-none placeholder:text-white/20 disabled:text-white/30"
                   />
                 </div>
 
@@ -1584,7 +1589,7 @@ export default function Home() {
                   disabled={
                     isConnected && activityLoading
                   }
-                  className="mt-4 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
+                  className="mt-4 min-h-12 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
                 >
                   {activityLoading
                     ? "Checking..."
@@ -1595,7 +1600,7 @@ export default function Home() {
 
                 {activityError && (
                   <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm text-red-400">
+                    <p className="break-words text-sm leading-5 text-red-400">
                       {activityError}
                     </p>
                   </div>
@@ -1606,9 +1611,9 @@ export default function Home() {
 
               {(activityTokens.length > 0 ||
                 activityTransactions.length > 0) && (
-                <div className="mt-8">
+                <div className="mt-7 sm:mt-8">
                   <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-xs text-white/30">
                           Portfolio
@@ -1621,7 +1626,7 @@ export default function Home() {
                         </p>
                       </div>
 
-                      <div className="rounded-xl bg-white/10 px-3 py-2 text-xs text-white/50">
+                      <div className="w-fit rounded-xl bg-white/10 px-3 py-2 text-xs text-white/50">
                         Arc Testnet
                       </div>
                     </div>
@@ -1630,13 +1635,13 @@ export default function Home() {
                   {/* Token Holdings */}
 
                   {activityTokens.length > 0 && (
-                    <div className="mt-8">
-                      <div className="mb-4 flex items-center justify-between">
+                    <div className="mt-7 sm:mt-8">
+                      <div className="mb-4 flex items-center justify-between gap-3">
                         <h3 className="font-semibold">
                           Token Holdings
                         </h3>
 
-                        <span className="text-xs text-white/30">
+                        <span className="shrink-0 text-xs text-white/30">
                           {activityTokens.length} token
                           {activityTokens.length !== 1
                             ? "s"
@@ -1648,7 +1653,7 @@ export default function Home() {
                         {activityTokens.map((token) => (
                           <div
                             key={`${token.address}-${token.symbol}`}
-                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+                            className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
                           >
                             <div className="flex min-w-0 items-center gap-3">
                               {token.logo ? (
@@ -1689,7 +1694,7 @@ export default function Home() {
 
                             {/* Amount + USD */}
 
-                            <div className="ml-4 shrink-0 text-right">
+                            <div className="ml-2 shrink-0 text-right sm:ml-4">
                               <p className="font-semibold">
                                 {Number(
                                   token.amount
@@ -1717,8 +1722,8 @@ export default function Home() {
                   {/* Transaction Count */}
 
                   {activityTransactions.length > 0 && (
-                    <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                      <div className="flex items-center justify-between">
+                    <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:mt-8">
+                      <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-xs text-white/30">
                             Transactions
@@ -1729,7 +1734,7 @@ export default function Home() {
                           </p>
                         </div>
 
-                        <span className="text-xs text-white/30">
+                        <span className="text-right text-xs text-white/30">
                           Recent activity
                         </span>
                       </div>
@@ -1741,13 +1746,13 @@ export default function Home() {
               {/* Transactions */}
 
               {activityTransactions.length > 0 && (
-                <div className="mt-8">
-                  <div className="mb-4 flex items-center justify-between">
+                <div className="mt-7 sm:mt-8">
+                  <div className="mb-4 flex items-center justify-between gap-3">
                     <h3 className="font-semibold">
                       Recent Transactions
                     </h3>
 
-                    <span className="text-xs text-white/30">
+                    <span className="shrink-0 text-xs text-white/30">
                       {activityTransactions.length} found
                     </span>
                   </div>
@@ -1792,7 +1797,7 @@ export default function Home() {
                       return (
                         <div
                           key={tx.hash}
-                          className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
+                          className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06] sm:p-5"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
@@ -1800,7 +1805,7 @@ export default function Home() {
                                 Transaction
                               </p>
 
-                              <p className="mt-1 truncate text-xs text-white/30">
+                              <p className="mt-1 break-all text-xs leading-5 text-white/30">
                                 {tx.hash}
                               </p>
                             </div>
@@ -1809,22 +1814,22 @@ export default function Home() {
                           {/* Date & Time */}
 
                           <div className="mt-4 rounded-xl border border-white/5 bg-black/20 px-3 py-2.5">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-4">
                               <span className="text-xs text-white/30">
                                 Date
                               </span>
 
-                              <span className="text-xs text-white/60">
+                              <span className="text-right text-xs text-white/60">
                                 {formattedDate}
                               </span>
                             </div>
 
-                            <div className="mt-1.5 flex items-center justify-between">
+                            <div className="mt-1.5 flex items-center justify-between gap-4">
                               <span className="text-xs text-white/30">
                                 Time
                               </span>
 
-                              <span className="text-xs text-white/60">
+                              <span className="text-right text-xs text-white/60">
                                 {formattedTime ||
                                   "Time unavailable"}
                               </span>
@@ -1833,23 +1838,23 @@ export default function Home() {
 
                           {/* Transaction Details */}
 
-                          <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
-                            <div>
+                          <div className="mt-4 grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+                            <div className="min-w-0">
                               <p className="text-white/30">
                                 From
                               </p>
 
-                              <p className="mt-1 truncate text-white/60">
+                              <p className="mt-1 break-all text-white/60">
                                 {tx.from}
                               </p>
                             </div>
 
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-white/30">
                                 To
                               </p>
 
-                              <p className="mt-1 truncate text-white/60">
+                              <p className="mt-1 break-all text-white/60">
                                 {tx.to}
                               </p>
                             </div>
@@ -1859,7 +1864,7 @@ export default function Home() {
                                 Value
                               </p>
 
-                              <p className="mt-1 font-medium text-white/70">
+                              <p className="mt-1 break-words font-medium text-white/70">
                                 {tx.value}
                                 {tx.tokenSymbol
                                   ? ` ${tx.tokenSymbol}`
@@ -1904,7 +1909,7 @@ export default function Home() {
                 activityTokens.length === 0 &&
                 !activityError && (
                   <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
-                    <p className="text-sm text-white/40">
+                    <p className="text-sm leading-6 text-white/40">
                       No transactions or token holdings
                       found for this wallet.
                     </p>
@@ -1917,32 +1922,36 @@ export default function Home() {
         {/* Faucet */}
 
         {activeSection === "faucet" && (
-          <section className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-24">
+          <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
             <div className="mx-auto max-w-md text-center">
-              <div className="text-5xl">
-                ◌
+              {/* Balanced Faucet Icon */}
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-lg">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-2xl leading-none text-white/70">
+                  ◌
+                </span>
               </div>
 
-              <h2 className="mt-6 text-3xl font-bold">
+              <h2 className="mt-6 text-3xl font-bold sm:text-4xl">
                 Get Testnet Tokens
               </h2>
 
-              <p className="mt-4 leading-7 text-white/40">
-                Get testnet tokens from the official Circle
-                faucet and use it to test AlabaamaFi on
-                Arc Testnet.
+              <p className="mt-4 text-sm leading-7 text-white/40 sm:text-base">
+                Get testnet tokens from the official
+                Circle faucet and use them to test
+                AlabaamaFi on Arc Testnet.
               </p>
 
               <a
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 block w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90"
+                className="mt-8 block min-h-12 w-full rounded-xl bg-white py-3.5 font-semibold text-black transition hover:bg-white/90 active:scale-[0.99]"
               >
                 Get Testnet Tokens
               </a>
 
-              <p className="mt-4 text-xs text-white/30">
+              <p className="mt-4 text-xs leading-5 text-white/30">
                 Opens the official Circle faucet in a new
                 tab.
               </p>
@@ -1952,8 +1961,8 @@ export default function Home() {
 
         {/* Footer */}
 
-        <footer className="border-t border-white/10 py-8 text-center">
-          <p className="text-sm text-white/30">
+        <footer className="border-t border-white/10 px-4 py-8 text-center sm:px-6">
+          <p className="text-xs text-white/30 sm:text-sm">
             AlabaamaFi • Built on Arc Network
           </p>
         </footer>
@@ -1962,10 +1971,10 @@ export default function Home() {
       {/* Wallet Modal */}
 
       {showWallets && !isConnected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
+          <div className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-white/10 bg-zinc-950 p-4 shadow-2xl sm:max-h-[90vh] sm:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4 sm:mb-6">
+              <div className="min-w-0">
                 <h3 className="text-xl font-semibold">
                   Connect Wallet
                 </h3>
@@ -1979,7 +1988,8 @@ export default function Home() {
                 onClick={() =>
                   setShowWallets(false)
                 }
-                className="rounded-lg px-3 py-2 text-white/50 hover:bg-white/10 hover:text-white"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/10 hover:text-white active:scale-95"
+                aria-label="Close wallet modal"
               >
                 ✕
               </button>
@@ -1994,10 +2004,10 @@ export default function Home() {
                     handleConnect(browserConnector)
                   }
                   disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="relative shrink-0">
                       <img
                         src="/wallets/browser.svg"
                         alt=""
@@ -2010,18 +2020,18 @@ export default function Home() {
                       )}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">
                         Browser Wallet
                       </p>
 
-                      <p className="mt-1 text-xs text-white/30">
+                      <p className="mt-1 text-xs leading-5 text-white/30">
                         MetaMask and other browser wallets
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-sm text-white/30">
+                  <span className="shrink-0 text-sm text-white/30">
                     →
                   </span>
                 </button>
@@ -2063,10 +2073,10 @@ export default function Home() {
                         handleConnect(connector)
                       }
                       disabled={isPending}
-                      className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="relative shrink-0">
                           {logo ? (
                             <img
                               src={logo}
@@ -2082,18 +2092,18 @@ export default function Home() {
                           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-zinc-950 bg-green-500" />
                         </div>
 
-                        <div>
-                          <p className="font-medium">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">
                             {displayName}
                           </p>
 
-                          <p className="mt-1 text-xs text-white/30">
+                          <p className="mt-1 text-xs leading-5 text-white/30">
                             Available in your browser
                           </p>
                         </div>
                       </div>
 
-                      <span className="text-sm text-white/30">
+                      <span className="shrink-0 text-sm text-white/30">
                         →
                       </span>
                     </button>
@@ -2111,27 +2121,27 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <img
                       src="/wallets/walletconnect.svg"
                       alt=""
-                      className="h-8 w-8 rounded-lg object-contain"
+                      className="h-8 w-8 shrink-0 rounded-lg object-contain"
                     />
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">
                         WalletConnect
                       </p>
 
-                      <p className="mt-1 text-xs text-white/30">
+                      <p className="mt-1 text-xs leading-5 text-white/30">
                         Scan with a mobile wallet
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-sm text-white/30">
+                  <span className="shrink-0 text-sm text-white/30">
                     →
                   </span>
                 </button>
@@ -2142,10 +2152,10 @@ export default function Home() {
               <button
                 onClick={handleMetaMaskClick}
                 disabled={isPending}
-                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="relative shrink-0">
                     <img
                       src="/wallets/metamask.svg"
                       alt=""
@@ -2157,12 +2167,12 @@ export default function Home() {
                     )}
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">
                       MetaMask
                     </p>
 
-                    <p className="mt-1 text-xs text-white/30">
+                    <p className="mt-1 text-xs leading-5 text-white/30">
                       {isMobileDevice()
                         ? "Open in MetaMask"
                         : metaMaskConnector
@@ -2172,7 +2182,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <span className="text-sm text-white/30">
+                <span className="shrink-0 text-sm text-white/30">
                   →
                 </span>
               </button>
@@ -2187,27 +2197,27 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 text-left transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <img
                       src="/wallets/base.svg"
                       alt=""
-                      className="h-8 w-8 rounded-lg object-contain"
+                      className="h-8 w-8 shrink-0 rounded-lg object-contain"
                     />
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">
                         Coinbase Wallet
                       </p>
 
-                      <p className="mt-1 text-xs text-white/30">
+                      <p className="mt-1 text-xs leading-5 text-white/30">
                         Connect with Coinbase Wallet
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-sm text-white/30">
+                  <span className="shrink-0 text-sm text-white/30">
                     →
                   </span>
                 </button>
@@ -2218,7 +2228,7 @@ export default function Home() {
 
             {connectError && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm text-red-400">
+                <p className="break-words text-sm leading-5 text-red-400">
                   {getFriendlyErrorMessage(
                     connectError.message
                   )}
@@ -2228,7 +2238,7 @@ export default function Home() {
 
             {error && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm text-red-400">
+                <p className="break-words text-sm leading-5 text-red-400">
                   {error}
                 </p>
               </div>
