@@ -1018,8 +1018,7 @@ export default function Home() {
 
               <div className="relative max-w-3xl">
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-sm text-white/60">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                  Arc Testnet
+                  
                 </div>
 
                 <h2 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
