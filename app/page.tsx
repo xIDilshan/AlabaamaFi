@@ -1030,10 +1030,16 @@ export default function Home() {
               </div>
             </div>
 
+            {/* SILVER DIVIDER */}
+
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            </div>
+
             {/* SUPPORTED ASSETS */}
 
             <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
-              <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-6 shadow-xl shadow-black/40 sm:p-8 lg:p-10">
+              <div className="p-0">
                 <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
@@ -1200,50 +1206,76 @@ export default function Home() {
                     </h3>
 
                     <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
-                      Learn more about Arc, explore
-                      the ecosystem and connect with
-                      the wider community of builders.
+                      Explore Arc and connect with the
+                      community.
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                  <div className="flex items-center justify-center gap-3">
                     <a
                       href="https://www.arc.network/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      aria-label="Arc Network"
+                      title="Arc Network"
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-sm font-black">
-                        ◉
-                      </span>
-
-                      Arc Network
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="8"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="3"
+                          fill="currentColor"
+                        />
+                      </svg>
                     </a>
 
                     <a
                       href="https://x.com/arc"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      aria-label="Arc on X"
+                      title="Arc on X"
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-sm font-black">
-                        𝕏
-                      </span>
-
-                      Arc X
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.962 6.817H1.684l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+                      </svg>
                     </a>
 
                     <a
                       href="https://discord.com/invite/buildoncircle"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      aria-label="Arc Discord"
+                      title="Arc Discord"
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-xs font-black">
-                        ◇
-                      </span>
-
-                      Discord
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M19.54 5.12A16.3 16.3 0 0 0 15.48 4l-.5 1.02a15.2 15.2 0 0 0-5.96 0L8.52 4a16.3 16.3 0 0 0-4.06 1.12C1.9 8.9 1.2 12.6 1.55 16.25a16.5 16.5 0 0 0 4.98 2.52l1.2-1.64c-.66-.25-1.3-.56-1.9-.92l.46-.35a11.9 11.9 0 0 0 11.42 0l.46.35c-.6.36-1.24.67-1.9.92l1.2 1.64a16.5 16.5 0 0 0 4.98-2.52c.41-4.23-.7-7.9-2.91-11.13ZM8.4 14.42c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.2 0c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Z" />
+                      </svg>
                     </a>
                   </div>
                 </div>
