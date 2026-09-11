@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Manrope } from "next/font/google";
 import {
   useAccount,
   useConnect,
@@ -16,6 +17,11 @@ import {
   getWalletTransactions,
   type WalletTransaction,
 } from "@/lib/arcscan";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["600"],
+});
 
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
@@ -688,8 +694,8 @@ export default function Home() {
                 {
                   to: USDC_ADDRESS,
                   data:
-  "0x70a08231" +
-  walletAddress.slice(2).padStart(64, "0"),
+                    "0x70a08231" +
+                    walletAddress.slice(2).padStart(64, "0"),
                 },
                 "latest",
               ],
@@ -806,6 +812,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
+      <style jsx global>{`
+        button {
+          font-family: ${manrope.style.fontFamily} !important;
+          font-weight: 600 !important;
+          letter-spacing: normal !important;
+        }
+      `}</style>
+
       {/* HEADER */}
 
       <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
