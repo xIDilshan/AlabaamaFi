@@ -839,11 +839,9 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
   onClick={handleWalletButton}
-  className={`max-w-[125px] truncate rounded-full px-3 py-2 text-[11px] !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 sm:text-xs lg:text-sm ${connectGlassButton}`}
+  className={`max-w-[110px] truncate rounded-full px-2.5 py-2 text-[10px] !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 sm:text-xs lg:text-sm ${connectGlassButton}`}
 >
-  {isConnected
-    ? shortAddress
-    : "Connect Wallet"}
+  {isConnected ? shortAddress : "Connect Wallet"}
 </button>
           </div>
         </div>
