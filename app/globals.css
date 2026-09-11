@@ -33,3 +33,17 @@ button {
   background: #ffffff;
   color: #000000;
   }
+@media (max-width: 639px) {
+  .mobile-connect-wallet {
+    width: 82px;
+    height: 28px;
+    padding: 0 6px;
+    font-size: 7px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .mobile-connect-wallet {
+    font-size: 14px !important;
+  }
+}
