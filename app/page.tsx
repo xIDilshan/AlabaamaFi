@@ -818,6 +818,13 @@ export default function Home() {
           font-weight: 600 !important;
           letter-spacing: normal !important;
         }
+
+        .quick-access-button {
+          font-family: ui-sans-serif, system-ui, -apple-system,
+            BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+          font-weight: 700 !important;
+          letter-spacing: normal !important;
+        }
       `}</style>
 
       {/* HEADER */}
@@ -1042,7 +1049,7 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation(item.id)
                     }
-                    className="group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
+                    className="quick-access-button group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
                   >
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
                       {item.icon}
@@ -1993,7 +2000,10 @@ export default function Home() {
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`mt-8 block min-h-13 w-full rounded-full py-4 text-sm font-black tracking-tight ${silverGlassButton}`}
+                className={`mt-8 block min-h-13 w-full rounded-full py-4 text-sm !font-bold tracking-normal ${silverGlassButton}`}
+                style={{
+                  fontFamily: manrope.style.fontFamily,
+                }}
               >
                 Get Testnet Tokens
               </a>
