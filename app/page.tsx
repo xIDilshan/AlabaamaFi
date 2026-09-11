@@ -840,9 +840,10 @@ export default function Home() {
             <button
   onClick={handleWalletButton}
   className={`max-w-[105px] truncate rounded-full px-2 py-1.5 !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
-  style={{ fontSize: "10px" }}
 >
-  {isConnected ? shortAddress : "Connect Wallet"}
+  <span className="text-[10px] sm:text-xs lg:text-sm">
+    {isConnected ? shortAddress : "Connect Wallet"}
+  </span>
 </button>
           </div>
         </div>
