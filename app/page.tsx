@@ -443,6 +443,7 @@ export default function Home() {
       {
         onSuccess: () => {
           setShowWallets(false);
+          setShowMenu(false);
         },
       }
     );
@@ -469,6 +470,13 @@ export default function Home() {
     setActiveSection(section);
     setShowMenu(false);
     setError("");
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   const menuItems: {
@@ -806,40 +814,91 @@ export default function Home() {
     <main className="min-h-screen overflow-x-hidden bg-[#020202] text-white">
       {/* HEADER */}
 
-      <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
-        <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-[68px] max-w-[1600px] items-center justify-between gap-3 px-3 sm:min-h-[72px] sm:px-6 lg:px-8">
+
+          {/* LEFT SIDE */}
+
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+
+            {/* MOBILE MENU BUTTON */}
+
             <button
               onClick={() => setShowMenu(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-base font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95 lg:hidden"
               aria-label="Open menu"
             >
               ☰
             </button>
 
-            <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
+            {/* LOGO / NAME */}
+
+            <button
+              onClick={() =>
+                handleNavigation("home")
+              }
+              className="flex min-w-0 items-center gap-2 text-left"
+            >
+              <div className="min-w-0">
+                <h1 className="truncate text-sm font-bold sm:text-base lg:text-lg">
+                  AlabaamaFi
+                </h1>
+
+                <p className="hidden text-[9px] font-semibold text-white/30 sm:block sm:text-[10px]">
+                  Powered by Arc
+                </p>
+              </div>
+            </button>
+
+            {/* TESTNET */}
+
+            <div className="hidden items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2 sm:flex">
               <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
 
-              <span className="text-[11px] font-bold text-white/70 sm:text-xs">
+              <span className="text-[10px] font-bold text-white/60 sm:text-xs">
                 Testnet
               </span>
             </div>
           </div>
 
-          <div className="min-w-0 text-center">
-            <h1 className="truncate text-sm font-bold sm:text-base lg:text-xl">
-              AlabaamaFi
-            </h1>
+          {/* DESKTOP NAVIGATION */}
 
-            <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px] lg:text-xs">
-              Powered by Arc
-            </p>
-          </div>
+          <nav className="hidden items-center gap-1 lg:flex">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() =>
+                  handleNavigation(item.id)
+                }
+                className={`rounded-full px-3.5 py-2.5 text-xs font-bold transition-all duration-200 xl:px-4 xl:text-sm ${
+                  activeSection === item.id
+                    ? "bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.10)]"
+                    : "text-white/45 hover:bg-white/[0.05] hover:text-white"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-          <div className="flex min-w-0 items-center justify-end">
+          {/* RIGHT SIDE */}
+
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {/* TESTNET - MOBILE */}
+
+            <div className="flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#060709] px-2.5 py-2 sm:hidden">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+
+              <span className="text-[9px] font-bold text-white/55">
+                Testnet
+              </span>
+            </div>
+
+            {/* CONNECT WALLET */}
+
             <button
               onClick={handleWalletButton}
-              className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
+              className={`max-w-[118px] truncate rounded-full px-3 py-2 text-[10px] !font-black tracking-tight sm:max-w-[155px] sm:px-4 sm:py-2.5 sm:text-xs lg:max-w-none lg:px-5 lg:py-3 lg:text-sm ${connectGlassButton}`}
             >
               {isConnected
                 ? shortAddress
@@ -849,10 +908,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* MENU */}
+      {/* MOBILE MENU */}
 
       {showMenu && (
-        <div className="fixed inset-0 z-40">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <button
             onClick={() => setShowMenu(false)}
             className="absolute inset-0 bg-black/85 backdrop-blur-sm"
@@ -1993,7 +2052,7 @@ export default function Home() {
       {/* WALLET MODAL */}
 
       {showWallets && !isConnected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
           <div className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-white/[0.07] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:max-h-[90vh] sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4 sm:mb-6">
               <div className="min-w-0">
