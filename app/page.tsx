@@ -191,10 +191,10 @@ function getUsdValue(value: any): number | null {
 const connectGlassButton =
   "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
 
-/* LIGHT SILVER-WHITE GLASS */
+/* CLEAN PROFESSIONAL WHITE BUTTON */
 
 const silverGlassButton =
-  "border border-white/[0.20] bg-gradient-to-br from-white/[0.76] via-[#edf2f7]/[0.58] to-[#cbd5e1]/[0.46] text-black shadow-[0_8px_30px_rgba(255,255,255,0.05),0_12px_35px_rgba(0,0,0,0.36)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.32] hover:from-white/[0.84] hover:via-[#f4f7fa]/[0.68] hover:to-[#dbe4ef]/[0.56] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.44)] active:translate-y-0";
+  "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0";
 
 /* DISCONNECTED / UNAVAILABLE BUTTON */
 
@@ -811,7 +811,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => setShowMenu(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
               aria-label="Open menu"
             >
               ☰
@@ -839,7 +839,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
               onClick={handleWalletButton}
-              className={`max-w-[155px] truncate rounded-2xl px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
+              className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
             >
               {isConnected
                 ? shortAddress
@@ -873,7 +873,7 @@ export default function Home() {
 
               <button
                 onClick={() => setShowMenu(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close menu"
               >
                 ✕
@@ -887,7 +887,7 @@ export default function Home() {
                   onClick={() =>
                     handleNavigation(item.id)
                   }
-                  className={`flex min-h-12 w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
+                  className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
                     activeSection === item.id
                       ? `${silverGlassButton}`
                       : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
@@ -907,7 +907,7 @@ export default function Home() {
             <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className={`w-full rounded-2xl px-4 py-3.5 text-sm !font-black tracking-tight active:scale-[0.99] ${connectGlassButton}`}
+                className={`w-full rounded-full px-4 py-3.5 text-sm !font-black tracking-tight active:scale-[0.99] ${connectGlassButton}`}
               >
                 {isConnected
                   ? shortAddress
@@ -1423,7 +1423,7 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight ${
+                  className={`mt-6 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black tracking-tight ${
                     !isConnected
                       ? unavailableButton
                       : silverGlassButton
@@ -1450,7 +1450,7 @@ export default function Home() {
                           chainId: arcTestnet.id,
                         })
                       }
-                      className="mt-3 min-h-13 w-full rounded-2xl border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-black tracking-tight text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
+                      className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-black tracking-tight text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
                     >
                       Switch to Arc Testnet
                     </button>
@@ -1551,7 +1551,7 @@ export default function Home() {
 
                 <button
                   disabled
-                  className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#080a0d] py-3.5 text-sm font-black tracking-tight text-white/20"
+                  className="min-h-13 w-full rounded-full border border-white/[0.07] bg-[#080a0d] py-3.5 text-sm font-black tracking-tight text-white/20"
                 >
                   Swap Coming Soon
                 </button>
@@ -1632,7 +1632,7 @@ export default function Home() {
                     !isConnected ||
                     activityLoading
                   }
-                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight ${
+                  className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black tracking-tight ${
                     !isConnected
                       ? unavailableButton
                       : silverGlassButton
@@ -1976,7 +1976,7 @@ export default function Home() {
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`mt-8 block min-h-13 w-full rounded-2xl py-4 text-sm font-black tracking-tight ${silverGlassButton}`}
+                className={`mt-8 block min-h-13 w-full rounded-full py-4 text-sm font-black tracking-tight ${silverGlassButton}`}
               >
                 Get Testnet Tokens
               </a>
@@ -2010,7 +2010,7 @@ export default function Home() {
                 onClick={() =>
                   setShowWallets(false)
                 }
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white/45 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white/45 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close wallet modal"
               >
                 ✕
@@ -2024,7 +2024,7 @@ export default function Home() {
                     handleConnect(browserConnector)
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="relative shrink-0">
@@ -2091,7 +2091,7 @@ export default function Home() {
                         handleConnect(connector)
                       }
                       disabled={isPending}
-                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="relative shrink-0">
@@ -2137,7 +2137,7 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <img
@@ -2166,7 +2166,7 @@ export default function Home() {
               <button
                 onClick={handleMetaMaskClick}
                 disabled={isPending}
-                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="relative shrink-0">
@@ -2209,7 +2209,7 @@ export default function Home() {
                     )
                   }
                   disabled={isPending}
-                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <img
