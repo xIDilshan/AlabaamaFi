@@ -838,13 +838,13 @@ export default function Home() {
 
           <div className="flex min-w-0 items-center justify-end">
             <button
-  onClick={handleWalletButton}
-  className={`max-w-[125px] truncate rounded-full px-3 py-2 text-[11px] !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 sm:text-xs lg:text-sm ${connectGlassButton}`}
->
-  {isConnected
-    ? shortAddress
-    : "Connect Wallet"}
-</button>
+              onClick={handleWalletButton}
+              className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
+            >
+              {isConnected
+                ? shortAddress
+                : "Connect Wallet"}
+            </button>
           </div>
         </div>
       </header>
@@ -972,6 +972,10 @@ export default function Home() {
                       Check Wallet Activity
                     </button>
                   </div>
+
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.15em] text-white/20">
+                    Arc Testnet · No real funds required
+                  </p>
                 </div>
               </div>
             </div>
@@ -1007,12 +1011,14 @@ export default function Home() {
                     icon: "⇄",
                     title: "Swap Tokens",
                     text: "Swap supported assets on Arc.",
+                    badge: "Coming Soon",
                   },
                   {
                     id: "bridge" as Section,
                     icon: "⇅",
                     title: "Bridge USDC",
                     text: "Move assets across networks.",
+                    badge: "Coming Soon",
                   },
                   {
                     id: "activity" as Section,
@@ -1026,8 +1032,14 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation(item.id)
                     }
-                    className="group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
+                    className="group relative min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
                   >
+                    {item.badge && (
+                      <span className="absolute right-4 top-4 rounded-full border border-white/[0.10] bg-white/[0.06] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white/45">
+                        {item.badge}
+                      </span>
+                    )}
+
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
                       {item.icon}
                     </div>
@@ -1226,6 +1238,11 @@ export default function Home() {
                     <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
                       Explore Arc and connect with the
                       community.
+                    </p>
+
+                    <p className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-white/25">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Non-custodial · You stay in control of your funds
                     </p>
                   </div>
 
@@ -1511,6 +1528,10 @@ export default function Home() {
               <p className="mt-2 text-sm font-medium leading-6 text-white/35">
                 Swap supported assets on Arc Testnet.
               </p>
+
+              <span className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
+                Coming Soon
+              </span>
 
               <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
                 <div className="mb-6 rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
