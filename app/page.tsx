@@ -688,9 +688,8 @@ export default function Home() {
                 {
                   to: USDC_ADDRESS,
                   data:
-                    "0x70a08231000000000000" +
-                    "00000000000000000000" +
-                    walletAddress.slice(2),
+  "0x70a08231" +
+  walletAddress.slice(2).padStart(64, "0"),
                 },
                 "latest",
               ],
