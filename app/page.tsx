@@ -186,6 +186,11 @@ function getUsdValue(value: any): number | null {
     : null;
 }
 
+/* SILVER-WHITE GLASS BUTTON */
+
+const silverGlassButton =
+  "border border-white/[0.28] bg-gradient-to-br from-white/[0.92] via-white/[0.78] to-[#cbd5e1]/[0.82] text-black shadow-[0_8px_30px_rgba(255,255,255,0.08),0_12px_35px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.45] hover:from-white hover:via-white/[0.92] hover:to-[#dbe4ef] hover:shadow-[0_10px_35px_rgba(255,255,255,0.12),0_16px_40px_rgba(0,0,0,0.5)] active:translate-y-0";
+
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -824,7 +829,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
               onClick={handleWalletButton}
-              className="max-w-[155px] truncate rounded-2xl border border-white/[0.15] bg-white/[0.055] px-3.5 py-2.5 text-xs !font-black tracking-tight text-white shadow-lg shadow-black/30 backdrop-blur-xl transition-all duration-200 hover:border-white/[0.24] hover:bg-white/[0.10] hover:shadow-xl hover:shadow-black/40 active:scale-[0.98] sm:max-w-none sm:px-5 sm:py-3 lg:text-sm"
+              className={`max-w-[155px] truncate rounded-2xl px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${silverGlassButton}`}
             >
               {isConnected
                 ? shortAddress
@@ -874,7 +879,7 @@ export default function Home() {
                   }
                   className={`flex min-h-12 w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
                     activeSection === item.id
-                      ? "bg-white text-black shadow-lg shadow-black/30"
+                      ? `${silverGlassButton}`
                       : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
                   }`}
                 >
@@ -892,7 +897,7 @@ export default function Home() {
             <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-4 py-3.5 text-sm !font-black tracking-tight text-black shadow-lg shadow-black/30 transition-all duration-200 hover:bg-white hover:shadow-xl hover:shadow-black/40 active:scale-[0.99]"
+                className={`w-full rounded-2xl px-4 py-3.5 text-sm !font-black tracking-tight active:scale-[0.99] ${silverGlassButton}`}
               >
                 {isConnected
                   ? shortAddress
@@ -943,7 +948,7 @@ export default function Home() {
                       onClick={() =>
                         handleNavigation("send")
                       }
-                      className="min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-4 text-base !font-bold tracking-normal text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0 sm:w-auto"
+                      className={`min-h-13 w-full rounded-2xl px-7 py-4 text-base !font-bold tracking-normal sm:w-auto ${silverGlassButton}`}
                     >
                       Send Assets
                     </button>
@@ -1214,14 +1219,14 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center justify-center gap-5">
                     <a
                       href="https://www.arc.network/"
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Arc Network"
                       title="Arc Network"
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex items-center justify-center text-white/60 transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:translate-y-0"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1253,7 +1258,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       aria-label="Arc on X"
                       title="Arc on X"
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex items-center justify-center text-white/60 transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:translate-y-0"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1271,7 +1276,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       aria-label="Arc Discord"
                       title="Arc Discord"
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white/70 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex items-center justify-center text-white/60 transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:translate-y-0"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1315,7 +1320,7 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation("faucet")
                     }
-                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.16] bg-gradient-to-r from-white via-[#dfe8f5] to-[#8ea7c7] px-7 py-3.5 text-sm !font-bold tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:from-white hover:via-white hover:to-[#b8cbe2] hover:shadow-2xl active:translate-y-0"
+                    className={`mt-7 min-h-12 rounded-2xl px-7 py-3.5 text-sm !font-bold tracking-tight ${silverGlassButton}`}
                   >
                     Get Faucet
                   </button>
@@ -1408,7 +1413,7 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className="mt-6 min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-5 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
+                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20 ${silverGlassButton}`}
                 >
                   {!isConnected
                     ? "Connect Wallet"
@@ -1610,7 +1615,7 @@ export default function Home() {
                   disabled={
                     isConnected && activityLoading
                   }
-                  className="mt-4 min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-5 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20"
+                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20 ${silverGlassButton}`}
                 >
                   {activityLoading
                     ? "Checking Wallet Activity"
@@ -1946,7 +1951,7 @@ export default function Home() {
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 block min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl active:translate-y-0"
+                className={`mt-8 block min-h-13 w-full rounded-2xl py-4 text-sm font-black tracking-tight ${silverGlassButton}`}
               >
                 Get Testnet Tokens
               </a>
