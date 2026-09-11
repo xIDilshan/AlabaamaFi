@@ -920,14 +920,6 @@ export default function Home() {
 
               <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-16 text-center sm:px-6 sm:pb-24 sm:pt-24 lg:px-10 lg:pb-28 lg:pt-28">
                 <div className="mx-auto max-w-5xl">
-                  <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 backdrop-blur-xl">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50 sm:text-xs">
-                      Arc Testnet
-                    </span>
-                  </div>
-
                   <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/30 sm:text-sm">
                     A simple interface for Arc
                   </p>
@@ -965,11 +957,6 @@ export default function Home() {
                     >
                       Check Wallet Activity
                     </button>
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-white/25">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    Connected to Arc Testnet
                   </div>
                 </div>
               </div>
@@ -1040,86 +1027,6 @@ export default function Home() {
                     </p>
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* WHY ARC */}
-
-            <div className="border-y border-white/[0.06] bg-[#030405]">
-              <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
-                <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
-                      Why Arc?
-                    </p>
-
-                    <h3 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-                      Built around
-                      <br />
-                      stablecoin finance.
-                    </h3>
-
-                    <p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/35 sm:text-base">
-                      Arc is designed as an open
-                      Layer-1 for stablecoin-powered
-                      financial activity, giving builders
-                      infrastructure focused on
-                      predictable transactions and
-                      real-world financial applications.
-                    </p>
-
-                    <a
-                      href="https://www.arc.network/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-7 inline-flex rounded-2xl border border-white/[0.09] bg-white/[0.035] px-5 py-3 text-sm font-bold text-white/70 backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] hover:text-white"
-                    >
-                      Explore Arc
-                    </a>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {[
-                      {
-                        number: "01",
-                        title: "USDC as Gas",
-                        text: "Arc uses USDC for network gas, keeping transaction costs dollar-denominated and predictable.",
-                      },
-                      {
-                        number: "02",
-                        title: "Fast Finality",
-                        text: "Arc is designed for deterministic, sub-second transaction finality.",
-                      },
-                      {
-                        number: "03",
-                        title: "EVM Compatible",
-                        text: "Builders can use familiar Ethereum-compatible tools and development workflows.",
-                      },
-                      {
-                        number: "04",
-                        title: "Financial Infrastructure",
-                        text: "Arc is purpose-built for payments, FX, capital markets and stablecoin-based applications.",
-                      },
-                    ].map((item) => (
-                      <div
-                        key={item.number}
-                        className="rounded-3xl border border-white/[0.07] bg-[#07090c] p-6 shadow-lg shadow-black/30"
-                      >
-                        <span className="text-xs font-black tracking-[0.18em] text-white/20">
-                          {item.number}
-                        </span>
-
-                        <h4 className="mt-5 text-lg font-black tracking-tight">
-                          {item.title}
-                        </h4>
-
-                        <p className="mt-2 text-sm font-medium leading-6 text-white/30">
-                          {item.text}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -1208,13 +1115,13 @@ export default function Home() {
               </div>
             </div>
 
-            {/* BUILT FOR ARC */}
+            {/* ARC NETWORK */}
 
             <div className="border-y border-white/[0.06] bg-[#030405]">
               <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-10">
                 <div className="text-center">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
-                    Built for builders
+                    Arc Network
                   </p>
 
                   <h3 className="mx-auto mt-3 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
@@ -1304,27 +1211,39 @@ export default function Home() {
                       href="https://www.arc.network/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-sm font-black">
+                        ◉
+                      </span>
+
                       Arc Network
                     </a>
 
                     <a
-                      href="https://community.arc.network/"
+                      href="https://x.com/arc"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
-                      Arc Community
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-sm font-black">
+                        𝕏
+                      </span>
+
+                      Arc X
                     </a>
 
                     <a
                       href="https://discord.com/invite/buildoncircle"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex min-h-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
+                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.045] px-6 py-3.5 text-sm font-black text-white/75 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:translate-y-0"
                     >
-                      Community Discord
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.05] text-xs font-black">
+                        ◇
+                      </span>
+
+                      Discord
                     </a>
                   </div>
                 </div>
@@ -1338,7 +1257,7 @@ export default function Home() {
                 <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-96 -translate-x-1/2 rounded-full bg-[#173a70]/[0.08] blur-3xl" />
 
                 <div className="relative">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-xl font-bold text-white/60">
+                  <div className="text-4xl font-medium leading-none text-white/55">
                     ◌
                   </div>
 
@@ -1359,7 +1278,7 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation("faucet")
                     }
-                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-3.5 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0"
+                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.16] bg-gradient-to-r from-white via-[#dfe8f5] to-[#8ea7c7] px-7 py-3.5 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:from-white hover:via-white hover:to-[#b8cbe2] hover:shadow-2xl active:translate-y-0"
                   >
                     Get Faucet
                   </button>
@@ -1460,7 +1379,7 @@ export default function Home() {
                     ? "Confirm in Wallet"
                     : isConfirming
                     ? "Confirming Transaction"
-                    : "Send USDC"}
+                    : "Send"}
                 </button>
 
                 {isConnected &&
@@ -1977,7 +1896,7 @@ export default function Home() {
               </div>
 
               <h2 className="mt-6 text-3xl font-black sm:text-4xl">
-                Get Testnet Tokens
+                Faucet
               </h2>
 
               <p className="mt-4 text-sm font-medium leading-7 text-white/35 sm:text-base">
@@ -2002,57 +1921,6 @@ export default function Home() {
             </div>
           </section>
         )}
-
-        {/* FOOTER */}
-
-        <footer className="border-t border-white/[0.06] bg-[#030405] px-4 py-10 sm:px-6">
-          <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-black">
-                AlabaamaFi
-              </p>
-
-              <p className="mt-1 text-xs font-medium text-white/25">
-                A simple interface built on Arc Network.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-xs font-bold text-white/30">
-              <a
-                href="https://www.arc.network/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition hover:text-white"
-              >
-                Arc Network
-              </a>
-
-              <a
-                href="https://community.arc.network/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition hover:text-white"
-              >
-                Community
-              </a>
-
-              <a
-                href="https://discord.com/invite/buildoncircle"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition hover:text-white"
-              >
-                Discord
-              </a>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-7 max-w-7xl border-t border-white/[0.05] pt-5">
-            <p className="text-center text-[11px] font-semibold text-white/20">
-              AlabaamaFi • Built on Arc Testnet
-            </p>
-          </div>
-        </footer>
       </div>
 
       {/* WALLET MODAL */}
