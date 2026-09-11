@@ -825,7 +825,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
               onClick={handleWalletButton}
-              className="max-w-[155px] truncate rounded-2xl border border-white/[0.15] bg-white/[0.055] px-3.5 py-2.5 text-xs font-bold tracking-tight text-white shadow-lg shadow-black/30 backdrop-blur-xl transition-all duration-200 hover:border-white/[0.24] hover:bg-white/[0.10] hover:shadow-xl hover:shadow-black/40 active:scale-[0.98] sm:max-w-none sm:px-5 sm:py-3 lg:text-sm"
+              className="max-w-[155px] truncate rounded-2xl border border-white/[0.15] bg-white/[0.055] px-3.5 py-2.5 text-xs font-black tracking-tight text-white shadow-lg shadow-black/30 backdrop-blur-xl transition-all duration-200 hover:border-white/[0.24] hover:bg-white/[0.10] hover:shadow-xl hover:shadow-black/40 active:scale-[0.98] sm:max-w-none sm:px-5 sm:py-3 lg:text-sm"
             >
               {isConnected
                 ? shortAddress
@@ -893,7 +893,7 @@ export default function Home() {
             <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-4 py-3.5 text-sm font-bold tracking-tight text-black shadow-lg shadow-black/30 transition-all duration-200 hover:bg-white hover:shadow-xl hover:shadow-black/40 active:scale-[0.99]"
+                className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-4 py-3.5 text-sm font-black tracking-tight text-black shadow-lg shadow-black/30 transition-all duration-200 hover:bg-white hover:shadow-xl hover:shadow-black/40 active:scale-[0.99]"
               >
                 {isConnected
                   ? shortAddress
@@ -946,7 +946,7 @@ export default function Home() {
                       }
                       className="min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-4 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0 sm:w-auto"
                     >
-                      Send USDC
+                      Send
                     </button>
 
                     <button
