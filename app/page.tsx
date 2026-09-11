@@ -839,11 +839,10 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
   onClick={handleWalletButton}
-  className={`max-w-[100px] truncate rounded-full px-2 py-1.5 !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
+  className={`max-w-[105px] truncate rounded-full px-2 py-1.5 !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
+  style={{ fontSize: "10px" }}
 >
-  <span className="text-[10px] sm:text-xs lg:text-sm">
-    {isConnected ? shortAddress : "Connect Wallet"}
-  </span>
+  {isConnected ? shortAddress : "Connect Wallet"}
 </button>
           </div>
         </div>
