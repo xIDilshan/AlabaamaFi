@@ -840,7 +840,7 @@ export default function Home() {
             <button
   onClick={handleWalletButton}
   className={`${connectGlassButton} rounded-full !font-black tracking-tight
-    w-[92px] h-[32px] px-1.5 py-1 text-[10px]
+    w-[92px] h-[32px] px-1.5 py-1 text-[5px]
     sm:w-auto sm:h-auto sm:px-5 sm:py-3 sm:text-xs
     lg:text-sm`}
 >
