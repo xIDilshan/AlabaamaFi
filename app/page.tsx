@@ -944,7 +944,7 @@ export default function Home() {
                       onClick={() =>
                         handleNavigation("send")
                       }
-                      className="min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-4 text-sm !font-bold tracking-wide text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0 sm:w-auto"
+                      className="min-h-13 w-full rounded-2xl border border-white/[0.12] bg-white/[0.94] px-7 py-4 text-base !font-bold tracking-normal text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xl hover:shadow-black/50 active:translate-y-0 sm:w-auto"
                     >
                       Send Assets
                     </button>
