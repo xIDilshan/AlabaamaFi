@@ -93,9 +93,7 @@ function getFriendlyErrorMessage(message: string): string {
     return "Please enter a valid wallet address.";
   }
 
-  if (
-    lowerMessage.includes("transaction rejected")
-  ) {
+  if (lowerMessage.includes("transaction rejected")) {
     return "Transaction was rejected. Please try again.";
   }
 
@@ -674,7 +672,8 @@ export default function Home() {
                 {
                   to: USDC_ADDRESS,
                   data:
-                    "0x70a08231000000000000000000000000" +
+                    "0x70a08231000000000000000000" +
+                    "00000000" +
                     walletAddress.slice(2),
                 },
                 "latest",
@@ -1052,49 +1051,53 @@ export default function Home() {
 
                     <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-white/30">
                       AlabaamaFi currently displays
-                      USDC, EURC and cirBTC balances
-                      available on Arc Testnet.
+                      <br className="sm:hidden" />
+                      {" "}USDC, EURC and cirBTC balances
+                      <br />
+                      <span className="text-white/45">
+                        Available on Arc Network
+                      </span>
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[460px]">
-                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                  <div className="grid w-full grid-cols-3 gap-4 lg:w-auto lg:min-w-[460px]">
+                    <div className="flex min-w-0 items-center gap-2 p-1 sm:gap-3">
                       <img
                         src="/tokens/usdc.svg"
                         alt="USDC"
-                        className="h-9 w-9 rounded-full object-contain"
+                        className="h-9 w-9 shrink-0 rounded-full object-contain"
                       />
 
-                      <div>
-                        <p className="font-black">
+                      <div className="min-w-0">
+                        <p className="truncate font-black">
                           USDC
                         </p>
 
-                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                        <p className="mt-0.5 hidden text-xs font-medium text-white/25 sm:block">
                           USD Coin
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                    <div className="flex min-w-0 items-center gap-2 p-1 sm:gap-3">
                       <img
                         src="/tokens/eurc.svg"
                         alt="EURC"
-                        className="h-9 w-9 rounded-full object-contain"
+                        className="h-9 w-9 shrink-0 rounded-full object-contain"
                       />
 
-                      <div>
-                        <p className="font-black">
+                      <div className="min-w-0">
+                        <p className="truncate font-black">
                           EURC
                         </p>
 
-                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                        <p className="mt-0.5 hidden text-xs font-medium text-white/25 sm:block">
                           Euro Coin
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#040506] p-4">
+                    <div className="flex min-w-0 items-center gap-2 p-1 sm:gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center">
                         <img
                           src="/tokens/cirbtc.svg"
@@ -1106,12 +1109,12 @@ export default function Home() {
                         />
                       </div>
 
-                      <div>
-                        <p className="font-black">
+                      <div className="min-w-0">
+                        <p className="truncate font-black">
                           cirBTC
                         </p>
 
-                        <p className="mt-0.5 text-xs font-medium text-white/25">
+                        <p className="mt-0.5 hidden text-xs font-medium text-white/25 sm:block">
                           Bitcoin
                         </p>
                       </div>
@@ -1229,15 +1232,17 @@ export default function Home() {
                         <circle
                           cx="12"
                           cy="12"
-                          r="8"
+                          r="9"
                           stroke="currentColor"
                           strokeWidth="1.8"
                         />
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="3"
-                          fill="currentColor"
+
+                        <path
+                          d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         />
                       </svg>
                     </a>
