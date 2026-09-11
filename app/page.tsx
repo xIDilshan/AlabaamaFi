@@ -1278,7 +1278,7 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation("faucet")
                     }
-                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.16] bg-gradient-to-r from-white via-[#dfe8f5] to-[#8ea7c7] px-7 py-3.5 text-sm font-black tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:from-white hover:via-white hover:to-[#b8cbe2] hover:shadow-2xl active:translate-y-0"
+                    className="mt-7 min-h-12 rounded-2xl border border-white/[0.16] bg-gradient-to-r from-white via-[#dfe8f5] to-[#8ea7c7] px-7 py-3.5 text-sm !font-bold tracking-tight text-black shadow-xl shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:from-white hover:via-white hover:to-[#b8cbe2] hover:shadow-2xl active:translate-y-0"
                   >
                     Get Faucet
                   </button>
