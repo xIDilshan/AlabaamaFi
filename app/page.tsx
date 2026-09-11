@@ -189,12 +189,17 @@ function getUsdValue(value: any): number | null {
 /* CLEAR FROSTED GLASS - CONNECT WALLET */
 
 const connectGlassButton =
-  "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.32] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
+  "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
 
-/* SUBTLE SILVER-WHITE GLASS */
+/* LIGHT SILVER-WHITE GLASS */
 
 const silverGlassButton =
-  "border border-white/[0.24] bg-gradient-to-br from-white/[0.82] via-[#edf2f7]/[0.68] to-[#cbd5e1]/[0.58] text-black shadow-[0_8px_30px_rgba(255,255,255,0.06),0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.38] hover:from-white/[0.9] hover:via-[#f4f7fa]/[0.78] hover:to-[#dbe4ef]/[0.68] hover:shadow-[0_10px_35px_rgba(255,255,255,0.1),0_16px_40px_rgba(0,0,0,0.48)] active:translate-y-0";
+  "border border-white/[0.20] bg-gradient-to-br from-white/[0.76] via-[#edf2f7]/[0.58] to-[#cbd5e1]/[0.46] text-black shadow-[0_8px_30px_rgba(255,255,255,0.05),0_12px_35px_rgba(0,0,0,0.36)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.32] hover:from-white/[0.84] hover:via-[#f4f7fa]/[0.68] hover:to-[#dbe4ef]/[0.56] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.44)] active:translate-y-0";
+
+/* DISCONNECTED / UNAVAILABLE BUTTON */
+
+const unavailableButton =
+  "border border-white/[0.05] bg-[#111318] text-white/20 shadow-none cursor-not-allowed";
 
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
@@ -1289,7 +1294,7 @@ export default function Home() {
                         fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <path d="M19.54 5.12A16.3 16.3 0 0 0 15.48 4l-.5 1.02a15.2 15.2 0 0 0-5.96 0L8.52 4a16.3 16.3 0 0 0-4.06 1.12C1.9 8.9 1.2 12.6 1.55 16.25a16.5 16.5 0 0 0 4.98 2.52l1.2-1.64c-.66-.25-1.3-.56-1.9-.92l.46-.35a11.9 11.9 0 0 0 11.42 0l.46.35c-.6.36-1.24.67-1.9.92l1.2 1.64a16.5 16.5 0 0 0 4.98-2.52c.41-4.23-.7-7.9-2.91-11.13ZM8.4 14.42c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.2 0c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16-2.4 0 1.32-.96 2.4-2.16 2.4Z" />
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249-1.845-.276-3.68-.276-5.486 0-.164-.394-.405-.874-.617-1.249a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.678 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.868 19.868 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.461-.63.872-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.17 13.17 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.794 8.18 1.794 12.061 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.353-1.22.65-1.873.892a.077.077 0 0 0-.041.106c.36.698.771 1.364 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.033-.027ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.947 2.419-2.157 2.419Z" />
                       </svg>
                     </a>
                   </div>
@@ -1418,7 +1423,15 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-[#111318] disabled:text-white/20 disabled:shadow-none ${silverGlassButton}`}
+                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight ${
+                    !isConnected
+                      ? unavailableButton
+                      : silverGlassButton
+                  } ${
+                    isConnected
+                      ? "disabled:cursor-not-allowed disabled:opacity-60"
+                      : ""
+                  }`}
                 >
                   {!isConnected
                     ? "Connect Wallet"
@@ -1619,7 +1632,15 @@ export default function Home() {
                     !isConnected ||
                     activityLoading
                   }
-                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-[#111318] disabled:text-white/20 disabled:shadow-none ${silverGlassButton}`}
+                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight ${
+                    !isConnected
+                      ? unavailableButton
+                      : silverGlassButton
+                  } ${
+                    isConnected
+                      ? "disabled:cursor-not-allowed disabled:opacity-60"
+                      : ""
+                  }`}
                 >
                   {activityLoading
                     ? "Checking Wallet Activity"
