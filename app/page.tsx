@@ -186,10 +186,15 @@ function getUsdValue(value: any): number | null {
     : null;
 }
 
-/* SILVER-WHITE GLASS BUTTON */
+/* CLEAR FROSTED GLASS - CONNECT WALLET */
+
+const connectGlassButton =
+  "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.32] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
+
+/* SUBTLE SILVER-WHITE GLASS */
 
 const silverGlassButton =
-  "border border-white/[0.28] bg-gradient-to-br from-white/[0.92] via-white/[0.78] to-[#cbd5e1]/[0.82] text-black shadow-[0_8px_30px_rgba(255,255,255,0.08),0_12px_35px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.45] hover:from-white hover:via-white/[0.92] hover:to-[#dbe4ef] hover:shadow-[0_10px_35px_rgba(255,255,255,0.12),0_16px_40px_rgba(0,0,0,0.5)] active:translate-y-0";
+  "border border-white/[0.24] bg-gradient-to-br from-white/[0.82] via-[#edf2f7]/[0.68] to-[#cbd5e1]/[0.58] text-black shadow-[0_8px_30px_rgba(255,255,255,0.06),0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.38] hover:from-white/[0.9] hover:via-[#f4f7fa]/[0.78] hover:to-[#dbe4ef]/[0.68] hover:shadow-[0_10px_35px_rgba(255,255,255,0.1),0_16px_40px_rgba(0,0,0,0.48)] active:translate-y-0";
 
 export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
@@ -677,8 +682,8 @@ export default function Home() {
                 {
                   to: USDC_ADDRESS,
                   data:
-                    "0x70a08231000000000000000000" +
-                    "00000000" +
+                    "0x70a08231000000000000" +
+                    "00000000000000000000" +
                     walletAddress.slice(2),
                 },
                 "latest",
@@ -829,7 +834,7 @@ export default function Home() {
           <div className="flex min-w-0 items-center justify-end">
             <button
               onClick={handleWalletButton}
-              className={`max-w-[155px] truncate rounded-2xl px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${silverGlassButton}`}
+              className={`max-w-[155px] truncate rounded-2xl px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
             >
               {isConnected
                 ? shortAddress
@@ -897,7 +902,7 @@ export default function Home() {
             <div className="mt-auto pt-8">
               <button
                 onClick={handleWalletButton}
-                className={`w-full rounded-2xl px-4 py-3.5 text-sm !font-black tracking-tight active:scale-[0.99] ${silverGlassButton}`}
+                className={`w-full rounded-2xl px-4 py-3.5 text-sm !font-black tracking-tight active:scale-[0.99] ${connectGlassButton}`}
               >
                 {isConnected
                   ? shortAddress
@@ -1284,7 +1289,7 @@ export default function Home() {
                         fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <path d="M19.54 5.12A16.3 16.3 0 0 0 15.48 4l-.5 1.02a15.2 15.2 0 0 0-5.96 0L8.52 4a16.3 16.3 0 0 0-4.06 1.12C1.9 8.9 1.2 12.6 1.55 16.25a16.5 16.5 0 0 0 4.98 2.52l1.2-1.64c-.66-.25-1.3-.56-1.9-.92l.46-.35a11.9 11.9 0 0 0 11.42 0l.46.35c-.6.36-1.24.67-1.9.92l1.2 1.64a16.5 16.5 0 0 0 4.98-2.52c.41-4.23-.7-7.9-2.91-11.13ZM8.4 14.42c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.2 0c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Z" />
+                        <path d="M19.54 5.12A16.3 16.3 0 0 0 15.48 4l-.5 1.02a15.2 15.2 0 0 0-5.96 0L8.52 4a16.3 16.3 0 0 0-4.06 1.12C1.9 8.9 1.2 12.6 1.55 16.25a16.5 16.5 0 0 0 4.98 2.52l1.2-1.64c-.66-.25-1.3-.56-1.9-.92l.46-.35a11.9 11.9 0 0 0 11.42 0l.46.35c-.6.36-1.24.67-1.9.92l1.2 1.64a16.5 16.5 0 0 0 4.98-2.52c.41-4.23-.7-7.9-2.91-11.13ZM8.4 14.42c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.2 0c-1.18 0-2.16-1.08-2.16-2.4s.96-2.4 2.16-2.4c1.2 0 2.18 1.08 2.16 2.4 0 1.32-.96 2.4-2.16-2.4 0 1.32-.96 2.4-2.16 2.4Z" />
                       </svg>
                     </a>
                   </div>
@@ -1413,7 +1418,7 @@ export default function Home() {
                     isSending ||
                     isConfirming
                   }
-                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20 ${silverGlassButton}`}
+                  className={`mt-6 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-[#111318] disabled:text-white/20 disabled:shadow-none ${silverGlassButton}`}
                 >
                   {!isConnected
                     ? "Connect Wallet"
@@ -1605,17 +1610,16 @@ export default function Home() {
                 <button
                   onClick={() => {
                     if (!isConnected) {
-                      setError("");
-                      setShowWallets(true);
                       return;
                     }
 
                     handleCheckActivity();
                   }}
                   disabled={
-                    isConnected && activityLoading
+                    !isConnected ||
+                    activityLoading
                   }
-                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#111318] disabled:text-white/20 ${silverGlassButton}`}
+                  className={`mt-4 min-h-13 w-full rounded-2xl px-5 py-4 text-sm font-black tracking-tight disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-[#111318] disabled:text-white/20 disabled:shadow-none ${silverGlassButton}`}
                 >
                   {activityLoading
                     ? "Checking Wallet Activity"
