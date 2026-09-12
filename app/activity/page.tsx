@@ -55,7 +55,6 @@ const menuItems: {
     label: "Faucet",
     icon: "◌",
   },
-];
 ] as const;
 
 type TokenHolding = {
