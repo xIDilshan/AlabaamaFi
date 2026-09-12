@@ -58,9 +58,7 @@ function getTokenLogo(
   const upperSymbol =
     symbol.toUpperCase();
 
-  if (
-    upperSymbol === "USDC"
-  ) {
+  if (upperSymbol === "USDC") {
     return "/tokens/usdc.svg";
   }
 
@@ -94,9 +92,7 @@ function getTokenSymbol(
     "";
 
   const upper =
-    String(
-      rawSymbol
-    ).toUpperCase();
+    String(rawSymbol).toUpperCase();
 
   if (
     upper === "EUROC" ||
@@ -112,36 +108,26 @@ function getTokenSymbol(
     return "cirBTC";
   }
 
-  if (
-    upper === "USDC"
-  ) {
+  if (upper === "USDC") {
     return "USDC";
   }
 
-  return String(
-    rawSymbol
-  );
+  return String(rawSymbol);
 }
 
 function getTokenName(
   token: any,
   symbol: string
 ): string {
-  if (
-    symbol === "USDC"
-  ) {
+  if (symbol === "USDC") {
     return "USD Coin";
   }
 
-  if (
-    symbol === "EURC"
-  ) {
+  if (symbol === "EURC") {
     return "Euro Coin";
   }
 
-  if (
-    symbol === "cirBTC"
-  ) {
+  if (symbol === "cirBTC") {
     return "Circle Bitcoin";
   }
 
@@ -154,9 +140,7 @@ function getTokenName(
     token.metadata?.name ??
     "";
 
-  return String(
-    apiName || symbol
-  );
+  return String(apiName || symbol);
 }
 
 function getTokenDecimals(
@@ -176,13 +160,10 @@ function getTokenDecimals(
   for (
     const value of possibleDecimals
   ) {
-    const decimals =
-      Number(value);
+    const decimals = Number(value);
 
     if (
-      Number.isFinite(
-        decimals
-      ) &&
+      Number.isFinite(decimals) &&
       decimals >= 0 &&
       decimals <= 36
     ) {
@@ -201,9 +182,7 @@ function getTokenDecimals(
     return 6;
   }
 
-  if (
-    upperSymbol === "CIRBTC"
-  ) {
+  if (upperSymbol === "CIRBTC") {
     return 8;
   }
 
@@ -225,63 +204,51 @@ function formatTokenAmount(
     typeof value === "object"
   ) {
     if (
-      value.formatted !==
-        undefined &&
+      value.formatted !== undefined &&
       value.formatted !== null
     ) {
-      return String(
-        value.formatted
-      );
+      return String(value.formatted);
     }
 
     if (
-      value.display !==
-        undefined &&
+      value.display !== undefined &&
       value.display !== null
     ) {
-      return String(
-        value.display
-      );
+      return String(value.display);
     }
 
     if (
-      value.amount !==
-        undefined &&
+      value.amount !== undefined &&
       value.amount !== null
     ) {
       return formatTokenAmount(
         value.amount,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
 
     if (
-      value.raw !==
-        undefined &&
+      value.raw !== undefined &&
       value.raw !== null
     ) {
       return formatTokenAmount(
         value.raw,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
 
     if (
-      value.value !==
-        undefined &&
+      value.value !== undefined &&
       value.value !== null
     ) {
       return formatTokenAmount(
         value.value,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
@@ -304,22 +271,17 @@ function formatTokenAmount(
     const raw =
       BigInt(stringValue);
 
-    if (
-      decimals === 0
-    ) {
+    if (decimals === 0) {
       return raw.toString();
     }
 
-    const zero =
-      BigInt(0);
+    const zero = BigInt(0);
 
     const negative =
       raw < zero;
 
     const absolute =
-      negative
-        ? -raw
-        : raw;
+      negative ? -raw : raw;
 
     const divisor =
       BigInt(10) **
@@ -331,9 +293,7 @@ function formatTokenAmount(
     const fraction =
       absolute % divisor;
 
-    if (
-      fraction === zero
-    ) {
+    if (fraction === zero) {
       return `${negative ? "-" : ""}${whole}`;
     }
 
@@ -355,24 +315,86 @@ function formatTokenAmount(
   }
 }
 
+/*
+ * Get the actual holding Money object.
+ *
+ * Arcscan token balances use Money objects:
+ *
+ * {
+ *   raw,
+ *   decimals,
+ *   formatted,
+ *   usd,
+ *   symbol
+ * }
+ *
+ * The important part here is that the USD value
+ * must come from the SAME Money object as the
+ * token balance.
+ */
+function getHoldingMoney(
+  token: any
+): any | null {
+  const candidates = [
+    token.amount,
+    token.balance,
+    token.tokenAmount,
+    token.token_amount,
+    token.asset?.amount,
+    token.asset?.balance,
+    token.token?.amount,
+    token.token?.balance,
+  ];
+
+  for (
+    const candidate of candidates
+  ) {
+    if (
+      candidate !== null &&
+      candidate !== undefined
+    ) {
+      if (
+        typeof candidate ===
+        "object"
+      ) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
 function getTokenAmount(
   token: any,
   decimals: number
 ): string {
+  /*
+   * IMPORTANT:
+   * Prefer amount/balance before value.
+   *
+   * The previous implementation could pick
+   * token.value first, which can be a different
+   * object from the actual token holding.
+   */
   const candidates = [
     token.amount,
     token.balance,
-    token.value,
-    token.quantity,
     token.tokenAmount,
     token.token_amount,
-    token.rawBalance,
-    token.raw_balance,
     token.asset?.amount,
     token.asset?.balance,
-    token.asset?.value,
     token.token?.amount,
     token.token?.balance,
+
+    /*
+     * Keep these as fallback only.
+     */
+    token.value,
+    token.quantity,
+    token.rawBalance,
+    token.raw_balance,
+    token.asset?.value,
     token.token?.value,
   ];
 
@@ -393,7 +415,8 @@ function getTokenAmount(
       if (
         candidate.formatted !==
           undefined &&
-        candidate.formatted !== null
+        candidate.formatted !==
+          null
       ) {
         return String(
           candidate.formatted
@@ -403,8 +426,8 @@ function getTokenAmount(
       const nested =
         candidate.amount ??
         candidate.balance ??
-        candidate.value ??
-        candidate.raw;
+        candidate.raw ??
+        candidate.value;
 
       if (
         nested !== null &&
@@ -430,87 +453,54 @@ function getTokenAmount(
 }
 
 /*
- * Read a USD value only when it is clearly
- * attached to the token holding / Money object.
+ * Get the TOTAL USD value belonging to the
+ * actual token holding.
  *
- * Arcscan documents Money values as:
- *
- * raw
- * decimals
- * formatted
- * usd
- * symbol
- *
- * Therefore:
- *
- * amount.usd / balance.usd / value.usd
- *
- * are treated as the USD value of that
- * holding amount.
- *
- * We deliberately DO NOT read:
+ * We intentionally do NOT use:
  *
  * token.price.usd
+ * token.priceUsd
+ * token.usdPrice
  *
- * because that can be a unit price rather
- * than the total value of the user's holding.
+ * because those can represent a UNIT price,
+ * not the value of the user's entire holding.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  const moneyCandidates = [
-    token.amount,
-    token.balance,
-    token.value,
-    token.quantity,
-    token.tokenAmount,
-    token.token_amount,
-    token.asset?.amount,
-    token.asset?.balance,
-    token.asset?.value,
-    token.token?.amount,
-    token.token?.balance,
-    token.token?.value,
-  ];
+  /*
+   * First: use the actual Money object
+   * containing the token balance.
+   */
+  const holding =
+    getHoldingMoney(token);
 
-  for (
-    const candidate of moneyCandidates
-  ) {
-    if (
-      !candidate ||
-      typeof candidate !==
-        "object"
-    ) {
-      continue;
-    }
-
+  if (holding) {
     const usd =
-      candidate.usd;
+      holding.usd;
 
     if (
-      usd === null ||
-      usd === undefined
+      usd !== null &&
+      usd !== undefined
     ) {
-      continue;
-    }
+      const numericUsd =
+        Number(usd);
 
-    const numericUsd =
-      Number(usd);
-
-    if (
-      Number.isFinite(
-        numericUsd
-      )
-    ) {
-      return numericUsd;
+      if (
+        Number.isFinite(
+          numericUsd
+        )
+      ) {
+        return numericUsd;
+      }
     }
   }
 
   /*
-   * Some responses can expose an explicit
-   * holding USD field directly on the token.
+   * Some API responses may expose the
+   * total USD value directly.
    */
-  const directCandidates = [
+  const directUsdCandidates = [
     token.usdValue,
     token.usd_value,
     token.valueUsd,
@@ -518,7 +508,7 @@ function getTokenUsdValue(
   ];
 
   for (
-    const candidate of directCandidates
+    const candidate of directUsdCandidates
   ) {
     if (
       candidate === null ||
@@ -539,6 +529,13 @@ function getTokenUsdValue(
     }
   }
 
+  /*
+   * Do NOT calculate from price fields.
+   *
+   * Arcscan's USD value is a derived value
+   * and may be unavailable for a token when
+   * there is insufficient pool liquidity.
+   */
   return null;
 }
 
@@ -640,18 +637,12 @@ export default function ActivityPage() {
           hash
         );
 
-        setCopiedHash(
-          hash
-        );
+        setCopiedHash(hash);
 
         setTimeout(() => {
-          setCopiedHash(
-            null
-          );
+          setCopiedHash(null);
         }, 1800);
-      } catch (
-        error
-      ) {
+      } catch (error) {
         console.error(
           "Failed to copy transaction hash:",
           error
@@ -690,9 +681,7 @@ export default function ActivityPage() {
         return;
       }
 
-      setActivityLoading(
-        true
-      );
+      setActivityLoading(true);
 
       try {
         const transactions =
@@ -704,8 +693,8 @@ export default function ActivityPage() {
           transactions
         );
 
-        let tokenHoldings: TokenHolding[] =
-          [];
+        let tokenHoldings:
+          TokenHolding[] = [];
 
         /*
          * Arcscan token balances.
@@ -716,16 +705,12 @@ export default function ActivityPage() {
               `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
             );
 
-          if (
-            response.ok
-          ) {
+          if (response.ok) {
             const data =
               await response.json();
 
             const rawTokens =
-              Array.isArray(
-                data
-              )
+              Array.isArray(data)
                 ? data
                 : Array.isArray(
                     data?.items
@@ -792,21 +777,15 @@ export default function ActivityPage() {
                         String(
                           tokenAddress
                         ),
-
                       symbol,
-
                       name:
                         getTokenName(
                           token,
                           symbol
                         ),
-
                       amount,
-
                       logo,
-
                       usdValue,
-
                       decimals,
                     };
                   }
@@ -819,16 +798,13 @@ export default function ActivityPage() {
                     "USDC"
                 );
           }
-        } catch (
-          error
-        ) {
+        } catch (error) {
           console.error(
             "Token balance error:",
             error
           );
 
-          tokenHoldings =
-            [];
+          tokenHoldings = [];
         }
 
         /*
@@ -847,16 +823,13 @@ export default function ActivityPage() {
             await fetch(
               "https://rpc.testnet.arc.network",
               {
-                method:
-                  "POST",
-
+                method: "POST",
                 headers: {
                   "Content-Type":
                     "application/json",
                 },
-
-                body: JSON.stringify(
-                  {
+                body:
+                  JSON.stringify({
                     jsonrpc:
                       "2.0",
                     id: 1,
@@ -871,14 +844,11 @@ export default function ActivityPage() {
                       },
                       "latest",
                     ],
-                  }
-                ),
+                  }),
               }
             );
 
-          if (
-            response.ok
-          ) {
+          if (response.ok) {
             const rpcResult =
               await response.json();
 
@@ -893,57 +863,75 @@ export default function ActivityPage() {
               const usdcAmount =
                 Number(
                   rawBalance
-                ) /
-                1_000_000;
+                ) / 1_000_000;
 
               if (
                 usdcAmount > 0
               ) {
-                tokenHoldings.unshift(
-                  {
-                    address:
-                      USDC_ADDRESS,
-
-                    symbol:
-                      "USDC",
-
-                    name:
-                      "USD Coin",
-
-                    amount:
-                      String(
-                        usdcAmount
-                      ),
-
-                    logo:
-                      "/tokens/usdc.svg",
-
-                    usdValue:
-                      usdcAmount,
-
-                    decimals: 6,
-                  }
-                );
+                tokenHoldings.unshift({
+                  address:
+                    USDC_ADDRESS,
+                  symbol: "USDC",
+                  name: "USD Coin",
+                  amount:
+                    String(
+                      usdcAmount
+                    ),
+                  logo:
+                    "/tokens/usdc.svg",
+                  usdValue:
+                    usdcAmount,
+                  decimals: 6,
+                });
               }
             }
           }
-        } catch (
-          error
-        ) {
+        } catch (error) {
           console.error(
             "USDC balance error:",
             error
           );
         }
 
+        /*
+         * Keep the three main coins in the
+         * expected order:
+         *
+         * USDC → EURC → cirBTC
+         */
+        const tokenOrder: Record<
+          string,
+          number
+        > = {
+          USDC: 0,
+          EURC: 1,
+          CIRBTC: 2,
+        };
+
+        tokenHoldings.sort(
+          (a, b) => {
+            const aOrder =
+              tokenOrder[
+                a.symbol.toUpperCase()
+              ] ?? 99;
+
+            const bOrder =
+              tokenOrder[
+                b.symbol.toUpperCase()
+              ] ?? 99;
+
+            return (
+              aOrder - bOrder
+            );
+          }
+        );
+
         setActivityTokens(
           tokenHoldings
         );
 
         /*
-         * Portfolio:
-         * Add all available TOTAL USD
-         * holding values.
+         * Portfolio value.
          */
         const totalValue =
           tokenHoldings.reduce(
@@ -953,7 +941,7 @@ export default function ActivityPage() {
             ) => {
               if (
                 token.usdValue !==
-                null &&
+                  null &&
                 Number.isFinite(
                   token.usdValue
                 )
@@ -988,12 +976,8 @@ export default function ActivityPage() {
             totalValue
           );
         }
-      } catch (
-        error
-      ) {
-        console.error(
-          error
-        );
+      } catch (error) {
+        console.error(error);
 
         setActivityError(
           "Unable to load wallet activity. Please try again."
@@ -1153,7 +1137,16 @@ export default function ActivityPage() {
                     </span>
                   </div>
 
-                  <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+                  {/*
+                   * MOBILE:
+                   * one card per row.
+                   *
+                   * DESKTOP:
+                   * USDC | EURC | cirBTC
+                   *
+                   * Each coin gets its own card.
+                   */}
+                  <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
                     {activityTokens.map(
                       (
                         token
@@ -1162,9 +1155,9 @@ export default function ActivityPage() {
                           key={`${token.address}-${token.symbol}`}
                           className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                         >
-                          {/* ROW 1: COIN + USD */}
+                          {/* COIN + USD */}
 
-                          <div className="flex min-w-0 items-center justify-between gap-4">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex min-w-0 items-center gap-3">
                               {token.logo ? (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center">
@@ -1207,6 +1200,8 @@ export default function ActivityPage() {
                               </div>
                             </div>
 
+                            {/* MATCHING USD VALUE */}
+
                             <div className="shrink-0 text-right">
                               <p className="font-black">
                                 {token.usdValue !==
@@ -1217,20 +1212,20 @@ export default function ActivityPage() {
                                   : "—"}
                               </p>
 
-                              <p className="mt-1 text-xs font-semibold text-white/25">
-                                USD Value
+                              <p className="mt-1 text-[10px] font-semibold text-white/20">
+                                USD
                               </p>
                             </div>
                           </div>
 
-                          {/* ROW 2: BALANCE */}
+                          {/* BALANCE */}
 
-                          <div className="mt-4 border-t border-white/[0.06] pt-3">
+                          <div className="mt-5 border-t border-white/[0.06] pt-4">
                             <p className="text-xs font-bold text-white/25">
                               Balance
                             </p>
 
-                            <p className="mt-1 break-all text-sm font-black text-white/75">
+                            <p className="mt-1.5 break-all text-sm font-black text-white/75">
                               {Number(
                                 token.amount
                               ).toLocaleString(
