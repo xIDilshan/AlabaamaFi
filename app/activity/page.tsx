@@ -1270,8 +1270,10 @@ export default function ActivityPage() {
                               ).toLocaleString(
                                 undefined,
                                 {
-                                  maximumFractionDigits:
-                                    8,
+                                  minimumFractionDigits:
+  2,
+maximumFractionDigits:
+  2,
                                 }
                               )}{" "}
                               <span className="text-white/40">
