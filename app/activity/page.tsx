@@ -7,6 +7,15 @@ import { useAccount } from "wagmi";
 import { isAddress } from "viem";
 
 import Header from "@/components/Header";
+
+type Section =
+  | "home"
+  | "send"
+  | "swap"
+  | "bridge"
+  | "activity"
+  | "faucet";
+
 import {
   getWalletTransactions,
   type WalletTransaction,
