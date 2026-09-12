@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Manrope } from "next/font/google";
+import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { isAddress } from "viem";
 
@@ -18,6 +19,39 @@ const manrope = Manrope({
 
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
+
+const menuItems = [
+  {
+    id: "home",
+    label: "Home",
+    icon: "⌂",
+  },
+  {
+    id: "send",
+    label: "Send",
+    icon: "↗",
+  },
+  {
+    id: "swap",
+    label: "Swap",
+    icon: "⇄",
+  },
+  {
+    id: "bridge",
+    label: "Bridge",
+    icon: "⇆",
+  },
+  {
+    id: "activity",
+    label: "Activity",
+    icon: "◉",
+  },
+  {
+    id: "faucet",
+    label: "Faucet",
+    icon: "◈",
+  },
+] as const;
 
 type TokenHolding = {
   address: string;
@@ -809,6 +843,13 @@ function getApiLogo(
 }
 
 export default function ActivityPage() {
+  const router = useRouter();
+
+  const [
+    showMenu,
+    setShowMenu,
+  ] = useState(false);
+
   const [
     activityAddress,
     setActivityAddress,
@@ -876,6 +917,23 @@ export default function ActivityPage() {
     isConnected,
     address,
   ]);
+
+  const handleNavigation = (
+    section: (typeof menuItems)[number]["id"]
+  ) => {
+    const routes = {
+      home: "/",
+      send: "/send",
+      swap: "/swap",
+      bridge: "/bridge",
+      activity: "/activity",
+      faucet: "/faucet",
+    };
+
+    setShowMenu(false);
+
+    router.push(routes[section]);
+  };
 
   const handleCopyHash =
     async (
@@ -1060,20 +1118,6 @@ export default function ActivityPage() {
                         decimals
                       );
 
-                    /*
-                     * cirBTC uses the live BTC price.
-                     *
-                     * Example:
-                     *
-                     * 0.01 cirBTC
-                     * × $77,000 BTC
-                     * = $770.00
-                     *
-                     * If the live BTC price could
-                     * not be loaded, we return null
-                     * instead of using Arcscan's
-                     * potentially incorrect cirBTC USD.
-                     */
                     const isCirBTC =
                       symbol.toUpperCase() ===
                       "CIRBTC";
@@ -1326,8 +1370,108 @@ export default function ActivityPage() {
       `}</style>
 
       <Header
-  onMenuClick={() => {}}
-/>
+        onMenuClick={() =>
+          setShowMenu(true)
+        }
+      />
+
+      {/* MOBILE MENU */}
+
+      {showMenu && (
+        <div className="fixed inset-0 z-40">
+          <button
+            onClick={() =>
+              setShowMenu(false)
+            }
+            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+
+          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">
+                  AlabaamaFi
+                </h2>
+
+                <p className="mt-1 text-xs font-semibold text-white/30">
+                  Powered by Arc
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowMenu(false)
+                }
+                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <nav className="space-y-2">
+              {menuItems.map(
+                (item) => (
+                  <button
+                    key={item.id}
+                    onClick={() =>
+                      handleNavigation(
+                        item.id
+                      )
+                    }
+                    className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
+                      item.id ===
+                      "activity"
+                        ? "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)]"
+                        : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
+                    }`}
+                  >
+                    <span className="w-6 shrink-0 text-center text-lg font-bold">
+                      {
+                        item.icon
+                      }
+                    </span>
+
+                    <span className="text-sm font-bold">
+                      {
+                        item.label
+                      }
+                    </span>
+                  </button>
+                )
+              )}
+            </nav>
+
+            <div className="mt-auto pt-8">
+              <button
+                onClick={() => {
+                  setShowMenu(
+                    false
+                  );
+
+                  window.dispatchEvent(
+                    new Event(
+                      "open-wallet-modal"
+                    )
+                  );
+                }}
+                className="w-full rounded-full border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] px-4 py-3.5 text-sm !font-black tracking-tight text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0"
+              >
+                {isConnected &&
+                address
+                  ? `${address.slice(
+                      0,
+                      6
+                    )}...${address.slice(
+                      -4
+                    )}`
+                  : "Connect Wallet"}
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
         <div className="mx-auto max-w-6xl">
