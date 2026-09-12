@@ -294,9 +294,6 @@ function formatTokenAmount(
     return "0";
   }
 
-  /*
-   * Already formatted decimal.
-   */
   if (
     stringValue.includes(".")
   ) {
@@ -425,198 +422,214 @@ function getTokenAmount(
 }
 
 /*
- * Find a USD value anywhere inside
- * the Arcscan token object.
+ * Get the TOTAL USD value of the holding.
  *
- * Arcscan can return USD information
- * at different nesting levels, for example:
+ * Important:
+ * Do not recursively search every nested
+ * "usd" field because an API response can
+ * contain a USD unit price inside the token
+ * object. That price must not be displayed
+ * as the total holding value.
  *
- * token.usd
- * token.amount.usd
- * token.balance.usd
- * token.value.usd
- * token.token.usd
- * token.asset.usd
+ * Priority:
  *
- * We check USD-specific fields first so
- * a formatted token amount is never
- * incorrectly treated as a USD value.
+ * 1. Explicit total holding USD value.
+ * 2. Explicit USD value inside amount/balance.
+ * 3. amount × USD unit price.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  const visited =
-    new Set<any>();
+  const totalValueCandidates = [
+    token.usdValue,
+    token.usd_value,
+    token.valueUsd,
+    token.value_usd,
 
-  function findUsdValue(
-    value: any
-  ): number | null {
+    token.amount?.usdValue,
+    token.amount?.usd_value,
+    token.amount?.valueUsd,
+    token.amount?.value_usd,
+
+    token.balance?.usdValue,
+    token.balance?.usd_value,
+    token.balance?.valueUsd,
+    token.balance?.value_usd,
+
+    token.value?.usdValue,
+    token.value?.usd_value,
+    token.value?.valueUsd,
+    token.value?.value_usd,
+
+    token.token?.usdValue,
+    token.token?.usd_value,
+    token.token?.valueUsd,
+    token.token?.value_usd,
+
+    token.asset?.usdValue,
+    token.asset?.usd_value,
+    token.asset?.valueUsd,
+    token.asset?.value_usd,
+  ];
+
+  for (
+    const candidate of totalValueCandidates
+  ) {
     if (
-      value === null ||
-      value === undefined
+      candidate === null ||
+      candidate === undefined
     ) {
-      return null;
+      continue;
     }
 
-    if (
-      typeof value === "number"
-    ) {
-      return Number.isFinite(
-        value
-      )
-        ? value
-        : null;
-    }
-
-    if (
-      typeof value === "string"
-    ) {
-      const trimmed =
-        value.trim();
-
-      if (!trimmed) {
-        return null;
-      }
-
-      const numberValue =
-        Number(trimmed);
-
-      return Number.isFinite(
-        numberValue
-      )
-        ? numberValue
-        : null;
-    }
-
-    if (
-      typeof value !== "object"
-    ) {
-      return null;
-    }
+    let value: number;
 
     if (
-      visited.has(value)
+      typeof candidate ===
+      "object"
     ) {
-      return null;
+      value =
+        Number(
+          candidate.value ??
+            candidate.formatted ??
+            candidate.usd
+        );
+    } else {
+      value =
+        Number(candidate);
     }
 
-    visited.add(value);
-
-    /*
-     * Check direct USD fields first.
-     */
-    const usdFields = [
-      "usdValue",
-      "usd_value",
-      "valueUsd",
-      "value_usd",
-      "usd",
-      "usdAmount",
-      "usd_amount",
-      "usdValueFormatted",
-      "usd_value_formatted",
-    ];
-
-    for (
-      const field of usdFields
+    if (
+      Number.isFinite(value)
     ) {
-      if (
-        value[field] !==
-          undefined &&
-        value[field] !== null
-      ) {
-        const result =
-          findUsdValue(
-            value[field]
-          );
+      return value;
+    }
+  }
 
-        if (
-          result !== null
-        ) {
-          return result;
-        }
-      }
+  /*
+   * Arcscan Money objects can contain
+   * a direct "usd" value.
+   *
+   * Only use it here when the USD field
+   * belongs to the holding amount/balance,
+   * not a price object.
+   */
+  const amountUsdCandidates = [
+    token.amount?.usd,
+    token.balance?.usd,
+    token.value?.usd,
+  ];
+
+  for (
+    const candidate of amountUsdCandidates
+  ) {
+    if (
+      candidate === null ||
+      candidate === undefined
+    ) {
+      continue;
     }
 
-    /*
-     * Check common nested token
-     * containers.
-     */
-    const nestedObjects = [
-      value.amount,
-      value.balance,
-      value.value,
-      value.token,
-      value.asset,
-      value.metadata,
-      value.data,
-      value.details,
-      value.price,
-    ];
+    const value =
+      Number(candidate);
 
-    for (
-      const nested of nestedObjects
+    if (
+      Number.isFinite(value)
     ) {
-      if (
-        nested &&
-        typeof nested ===
-          "object"
-      ) {
-        const result =
-          findUsdValue(
-            nested
-          );
-
-        if (
-          result !== null
-        ) {
-          return result;
-        }
-      }
+      return value;
     }
+  }
 
-    /*
-     * Check arrays that may contain
-     * token/price information.
-     */
-    const arrays = [
-      value.items,
-      value.tokens,
-      value.data,
-      value.prices,
-    ];
+  /*
+   * If the API gives a unit price instead
+   * of a total USD holding value, calculate:
+   *
+   * holding amount × USD price
+   */
+  const symbol =
+    getTokenSymbol(token);
 
-    for (
-      const list of arrays
-    ) {
-      if (
-        !Array.isArray(list)
-      ) {
-        continue;
-      }
+  const decimals =
+    getTokenDecimals(
+      token,
+      symbol
+    );
 
-      for (
-        const item of list
-      ) {
-        const result =
-          findUsdValue(
-            item
-          );
+  const amount =
+    getTokenAmount(
+      token,
+      decimals
+    );
 
-        if (
-          result !== null
-        ) {
-          return result;
-        }
-      }
-    }
+  const numericAmount =
+    Number(amount);
 
+  if (
+    !Number.isFinite(
+      numericAmount
+    )
+  ) {
     return null;
   }
 
-  return findUsdValue(
-    token
-  );
+  const priceCandidates = [
+    token.priceUsd,
+    token.price_usd,
+    token.usdPrice,
+    token.usd_price,
+
+    token.price?.usd,
+    token.price?.value,
+
+    token.token?.priceUsd,
+    token.token?.price_usd,
+    token.token?.usdPrice,
+    token.token?.usd_price,
+
+    token.asset?.priceUsd,
+    token.asset?.price_usd,
+    token.asset?.usdPrice,
+    token.asset?.usd_price,
+  ];
+
+  for (
+    const candidate of priceCandidates
+  ) {
+    if (
+      candidate === null ||
+      candidate === undefined
+    ) {
+      continue;
+    }
+
+    let price: number;
+
+    if (
+      typeof candidate ===
+      "object"
+    ) {
+      price =
+        Number(
+          candidate.value ??
+            candidate.formatted ??
+            candidate.usd
+        );
+    } else {
+      price =
+        Number(candidate);
+    }
+
+    if (
+      Number.isFinite(price)
+    ) {
+      return (
+        numericAmount *
+        price
+      );
+    }
+  }
+
+  return null;
 }
 
 function getApiLogo(
@@ -1021,8 +1034,8 @@ export default function ActivityPage() {
          * Portfolio value:
          * USDC + EURC + cirBTC.
          *
-         * Every token with a valid USD
-         * value is included in the total.
+         * Only valid TOTAL USD values
+         * are included.
          */
         const totalValue =
           tokenHoldings.reduce(
@@ -1104,8 +1117,8 @@ export default function ActivityPage() {
         }}
       />
 
-      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
-        <div className="mx-auto max-w-2xl">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold text-white/35">
             AlabaamaFi
           </p>
@@ -1114,14 +1127,14 @@ export default function ActivityPage() {
             Wallet Activity
           </h1>
 
-          <p className="mt-3 text-sm font-medium leading-6 text-white/35">
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
             Connect your wallet to view its token
             holdings and recent transactions.
           </p>
 
           {/* CHECKER */}
 
-          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
+          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
             <label className="mb-2 block text-sm font-bold text-white/50">
               Wallet Address
             </label>
@@ -1191,7 +1204,7 @@ export default function ActivityPage() {
             <div className="mt-7 sm:mt-8">
               {/* PORTFOLIO */}
 
-              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5 lg:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-bold text-white/25">
@@ -1232,7 +1245,7 @@ export default function ActivityPage() {
                     </span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                     {activityTokens.map(
                       (
                         token
@@ -1332,7 +1345,7 @@ export default function ActivityPage() {
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                 {activityTransactions.map(
                   (
                     tx
