@@ -469,9 +469,9 @@ export default function Home() {
                       : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
                   }`}
                 >
-                  <span className="w-6 shrink-0 text-center text-lg font-bold">
-                    {item.icon}
-                  </span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center text-lg font-bold leading-none">
+  {item.icon}
+</span>
 
                   <span className="text-sm font-bold">
                     {item.label}
