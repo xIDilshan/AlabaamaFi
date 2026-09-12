@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Header from "@/components/Header";
 import {
   useAccount,
   useSwitchChain,
@@ -144,6 +145,18 @@ export default function SendPage() {
     ? (Number(usdcBalance) / 1_000_000).toFixed(2)
     : "0.00";
 
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : "";
+
+  const handleWalletClick = () => {
+    // Wallet modal will be connected in the next step.
+  };
+
+  const handleMenuClick = () => {
+    // Mobile menu will be connected in the next step.
+  };
+
   const handleSend = () => {
     setError("");
 
@@ -186,6 +199,13 @@ export default function SendPage() {
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
+      <Header
+        isConnected={isConnected}
+        shortAddress={shortAddress}
+        onWalletClick={handleWalletClick}
+        onMenuClick={handleMenuClick}
+      />
+
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-md">
 
