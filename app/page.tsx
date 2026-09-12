@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Manrope } from "next/font/google";
 import {
   useAccount,
@@ -208,6 +210,7 @@ const unavailableButton =
   "border border-white/[0.05] bg-[#111318] text-white/20 shadow-none cursor-not-allowed";
 
 export default function Home() {
+  const pathname = usePathname();
   const [showWallets, setShowWallets] =
     useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -829,49 +832,150 @@ export default function Home() {
 
       {/* HEADER */}
 
-      <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
-        <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setShowMenu(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
+<header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
 
-            <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
-              <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
+  {/* MOBILE HEADER — KEEPING THE CURRENT DESIGN */}
+  <div className="md:hidden">
+    <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
 
-              <span className="text-[11px] font-bold text-white/70 sm:text-xs">
-                Testnet
-              </span>
-            </div>
-          </div>
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <button
+          onClick={() => setShowMenu(true)}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
+          aria-label="Open menu"
+        >
+          ☰
+        </button>
 
-          <div className="min-w-0 text-center">
-            <h1 className="truncate text-sm font-bold sm:text-base lg:text-xl">
-              AlabaamaFi
-            </h1>
+        <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
+          <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
 
-            <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px] lg:text-xs">
-              Powered by Arc
-            </p>
-          </div>
-
-          <div className="flex min-w-0 items-center justify-end">
-            <button
-              onClick={handleWalletButton}
-              className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 lg:text-sm ${connectGlassButton}`}
-            >
-              {isConnected
-                ? shortAddress
-                : "Connect Wallet"}
-            </button>
-          </div>
+          <span className="text-[11px] font-bold text-white/70 sm:text-xs">
+            Testnet
+          </span>
         </div>
-      </header>
+      </div>
 
+      <div className="min-w-0 text-center">
+        <h1 className="truncate text-sm font-bold sm:text-base">
+          AlabaamaFi
+        </h1>
+
+        <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px]">
+          Powered by Arc
+        </p>
+      </div>
+
+      <div className="flex min-w-0 items-center justify-end">
+        <button
+          onClick={handleWalletButton}
+          className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
+        >
+          {isConnected ? shortAddress : "Connect Wallet"}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  {/* DESKTOP HEADER */}
+
+  <div className="hidden md:block">
+
+    <div className="mx-auto max-w-[1600px] px-6 lg:px-8">
+
+      {/* TOP ROW */}
+
+      <div className="relative flex min-h-[78px] items-center justify-center">
+
+        {/* NETWORK */}
+
+        <div className="absolute left-0 flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+
+          <span className="text-xs font-bold text-white/70">
+            Testnet
+          </span>
+        </div>
+
+
+        {/* LOGO / NAME */}
+
+        <div className="text-center">
+          <h1 className="text-xl font-bold tracking-tight">
+            AlabaamaFi
+          </h1>
+
+          <p className="mt-0.5 text-xs font-semibold text-white/30">
+            Powered by Arc
+          </p>
+        </div>
+
+
+        {/* WALLET */}
+
+        <div className="absolute right-0">
+          <button
+            onClick={handleWalletButton}
+            className={`rounded-full px-5 py-3 text-sm !font-black tracking-tight ${connectGlassButton}`}
+          >
+            {isConnected ? shortAddress : "Connect Wallet"}
+          </button>
+        </div>
+
+      </div>
+
+
+      {/* FIRST SILVER LINE */}
+
+      <div className="border-t border-white/[0.10]" />
+
+
+      {/* DESKTOP NAVIGATION */}
+
+      <nav className="flex min-h-[58px] items-center justify-center gap-2">
+
+        {[
+          { href: "/", label: "Home" },
+          { href: "/send", label: "Send" },
+          { href: "/swap", label: "Swap" },
+          { href: "/bridge", label: "Bridge" },
+          { href: "/activity", label: "Activity" },
+          { href: "/faucet", label: "Faucet" },
+        ].map((item) => {
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                isActive
+                  ? "bg-white/[0.10] text-white"
+                  : "text-white/45 hover:bg-white/[0.05] hover:text-white/85"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+
+      </nav>
+
+
+      {/* SECOND SILVER LINE */}
+
+      <div className="border-t border-white/[0.10]" />
+
+    </div>
+
+  </div>
+
+</header>
       {/* MENU */}
 
       {showMenu && (
