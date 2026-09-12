@@ -569,10 +569,7 @@ export default function ActivityPage() {
                 <div className="mt-5 space-y-2">
                   {transactions.map(
                     (transaction, index) => {
-                      const hash =
-                        transaction.hash ??
-                        transaction.tx_hash ??
-                        "";
+                      const hash = transaction.hash;
 
                       return (
                         <a
@@ -589,9 +586,7 @@ export default function ActivityPage() {
                           <div className="flex items-center justify-between gap-4">
                             <div className="min-w-0">
                               <p className="text-sm font-bold text-white/80">
-                                {transaction.method ??
-                                  transaction.type ??
-                                  "Transaction"}
+                                Transaction
                               </p>
 
                               <p className="mt-1 truncate font-mono text-xs text-white/25">
