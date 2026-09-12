@@ -1523,6 +1523,12 @@ export default function ActivityPage() {
                                 token.amount
                               ).toLocaleString(
                                 undefined,
+                          token.symbol === "cirBTC"
+      ? {
+          minimumFractionDigits: 6,
+          maximumFractionDigits: 6,
+        }
+      :
                                 {
                                   minimumFractionDigits:
                                     2,
