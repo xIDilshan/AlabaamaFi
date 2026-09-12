@@ -491,12 +491,6 @@ export default function Home() {
   window.location.href = routes[section];
 };
 
-  setShowMenu(false);
-  setError("");
-
-  window.location.href = routes[section];
-};
-
   const menuItems: {
     id: Section;
     label: string;
