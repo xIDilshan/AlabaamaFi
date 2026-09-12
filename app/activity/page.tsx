@@ -335,7 +335,7 @@ function getHoldingMoney(
     if (
       value === null ||
       value === undefined ||
-      depth > 6 ||
+      depth > 8 ||
       typeof value !== "object"
     ) {
       return null;
@@ -356,7 +356,8 @@ function getHoldingMoney(
       value.raw !== undefined ||
       value.formatted !== undefined ||
       value.amount !== undefined ||
-      value.balance !== undefined;
+      value.balance !== undefined ||
+      value.quantity !== undefined;
 
     const hasUsd =
       value.usd !== undefined &&
@@ -382,6 +383,7 @@ function getHoldingMoney(
       "token",
       "asset",
       "value",
+      "money",
     ];
 
     for (
@@ -528,49 +530,311 @@ function getTokenAmount(
 /*
  * Get the TOTAL USD value belonging to
  * the actual token holding.
+ *
+ * Arcscan returns token amounts as Money
+ * objects. A Money object can contain:
+ *
+ * raw
+ * decimals
+ * formatted
+ * usd
+ * symbol
+ *
+ * The USD value is supplied by Arcscan when
+ * it has a valid on-chain liquidity price.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  /*
-   * First search for the actual Money
-   * object associated with the holding.
-   */
-  const holding =
-    getHoldingMoney(token);
+  const visited =
+    new Set<any>();
 
-  if (holding) {
-    const usd =
-      holding.usd;
+  /*
+   * Convert a USD value into a number.
+   */
+  function parseUsd(
+    value: any
+  ): number | null {
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return null;
+    }
+
+    /*
+     * Direct numeric/string USD value.
+     */
+    if (
+      typeof value === "number" ||
+      typeof value === "string"
+    ) {
+      const numeric =
+        Number(value);
+
+      return Number.isFinite(
+        numeric
+      )
+        ? numeric
+        : null;
+    }
 
     if (
-      usd !== null &&
-      usd !== undefined
+      typeof value !== "object"
     ) {
-      const numericUsd =
+      return null;
+    }
+
+    /*
+     * USD may itself be a Money object.
+     *
+     * Example:
+     *
+     * usd: {
+     *   formatted: "12.34"
+     * }
+     */
+    if (
+      value.formatted !==
+        undefined &&
+      value.formatted !== null
+    ) {
+      const formatted =
         Number(
-          typeof usd === "object"
-            ? usd.formatted ??
-              usd.value ??
-              usd.amount
-            : usd
+          value.formatted
         );
 
       if (
         Number.isFinite(
-          numericUsd
+          formatted
         )
       ) {
-        return numericUsd;
+        return formatted;
       }
     }
+
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      const numeric =
+        Number(
+          value.value
+        );
+
+      if (
+        Number.isFinite(
+          numeric
+        )
+      ) {
+        return numeric;
+      }
+    }
+
+    if (
+      value.amount !== undefined &&
+      value.amount !== null
+    ) {
+      const numeric =
+        Number(
+          value.amount
+        );
+
+      if (
+        Number.isFinite(
+          numeric
+        )
+      ) {
+        return numeric;
+      }
+    }
+
+    /*
+     * Last fallback for a raw USD Money value.
+     */
+    if (
+      value.raw !== undefined &&
+      value.raw !== null &&
+      value.decimals !== undefined
+    ) {
+      try {
+        const raw =
+          Number(
+            value.raw
+          );
+
+        const decimals =
+          Number(
+            value.decimals
+          );
+
+        if (
+          Number.isFinite(raw) &&
+          Number.isFinite(decimals)
+        ) {
+          return (
+            raw /
+            10 ** decimals
+          );
+        }
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }
 
   /*
-   * Some responses expose total USD
-   * directly on the token object.
+   * Recursively search the token response.
+   *
+   * This handles structures such as:
+   *
+   * token.amount.usd
+   * token.balance.usd
+   * token.asset.amount.usd
+   * token.token.amount.usd
+   * token.holding.amount.usd
+   */
+  function search(
+    value: any,
+    depth = 0
+  ): number | null {
+    if (
+      value === null ||
+      value === undefined ||
+      typeof value !== "object" ||
+      depth > 8
+    ) {
+      return null;
+    }
+
+    if (
+      visited.has(value)
+    ) {
+      return null;
+    }
+
+    visited.add(value);
+
+    /*
+     * Most important case:
+     *
+     * {
+     *   amount: ...,
+     *   usd: ...
+     * }
+     */
+    if (
+      value.usd !== undefined &&
+      value.usd !== null
+    ) {
+      const usd =
+        parseUsd(
+          value.usd
+        );
+
+      if (
+        usd !== null
+      ) {
+        return usd;
+      }
+    }
+
+    /*
+     * Search likely holding containers first.
+     */
+    const priorityKeys = [
+      "amount",
+      "balance",
+      "tokenAmount",
+      "token_amount",
+      "holding",
+      "token",
+      "asset",
+      "value",
+      "money",
+    ];
+
+    for (
+      const key of priorityKeys
+    ) {
+      if (
+        value[key] === null ||
+        value[key] === undefined
+      ) {
+        continue;
+      }
+
+      const result =
+        search(
+          value[key],
+          depth + 1
+        );
+
+      if (
+        result !== null
+      ) {
+        return result;
+      }
+    }
+
+    /*
+     * Search the remaining nested
+     * objects as a final fallback.
+     */
+    for (
+      const [key, child] of Object.entries(
+        value
+      )
+    ) {
+      if (
+        priorityKeys.includes(
+          key
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        child !== null &&
+        typeof child === "object"
+      ) {
+        const result =
+          search(
+            child,
+            depth + 1
+          );
+
+        if (
+          result !== null
+        ) {
+          return result;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /*
+   * First try the actual token response.
+   */
+  const tokenUsd =
+    search(token);
+
+  if (
+    tokenUsd !== null
+  ) {
+    return tokenUsd;
+  }
+
+  /*
+   * Some API responses expose the
+   * total USD value directly.
    */
   const directUsdCandidates = [
+    token.usd,
     token.usdValue,
     token.usd_value,
     token.valueUsd,
@@ -580,33 +844,23 @@ function getTokenUsdValue(
   for (
     const candidate of directUsdCandidates
   ) {
-    if (
-      candidate === null ||
-      candidate === undefined
-    ) {
-      continue;
-    }
-
-    const numericUsd =
-      Number(
-        typeof candidate === "object"
-          ? candidate.formatted ??
-            candidate.value ??
-            candidate.amount
-          : candidate
+    const usd =
+      parseUsd(
+        candidate
       );
 
     if (
-      Number.isFinite(
-        numericUsd
-      )
+      usd !== null
     ) {
-      return numericUsd;
+      return usd;
     }
   }
 
   /*
-   * Do not calculate from price fields.
+   * Arcscan has no price for this token
+   * in the current response.
+   *
+   * Do NOT invent or hard-code a price.
    */
   return null;
 }
@@ -1271,9 +1525,9 @@ export default function ActivityPage() {
                                 undefined,
                                 {
                                   minimumFractionDigits:
-  2,
-maximumFractionDigits:
-  2,
+                                    2,
+                                  maximumFractionDigits:
+                                    2,
                                 }
                               )}{" "}
                               <span className="text-white/40">
