@@ -36,6 +36,26 @@ export default function Header({
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "";
 
+  React.useEffect(() => {
+    const openWalletModal = () => {
+      if (!isConnected) {
+        setShowWallets(true);
+      }
+    };
+
+    window.addEventListener(
+      "open-wallet-modal",
+      openWalletModal
+    );
+
+    return () => {
+      window.removeEventListener(
+        "open-wallet-modal",
+        openWalletModal
+      );
+    };
+  }, [isConnected]);
+
   const handleWalletClick = () => {
     if (isConnected) {
       disconnect();
@@ -49,6 +69,7 @@ export default function Header({
     <>
       <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
         {/* MOBILE HEADER */}
+
         <div className="md:hidden">
           <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -84,18 +105,23 @@ export default function Header({
                 onClick={handleWalletClick}
                 className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
               >
-                {isConnected ? shortAddress : "Connect Wallet"}
+                {isConnected
+                  ? shortAddress
+                  : "Connect Wallet"}
               </button>
             </div>
           </div>
         </div>
 
         {/* DESKTOP HEADER */}
+
         <div className="hidden md:block">
           <div className="mx-auto max-w-[1600px] px-6 lg:px-8">
             {/* TOP ROW */}
+
             <div className="relative flex min-h-[78px] items-center justify-center">
               {/* NETWORK */}
+
               <div className="absolute left-0 flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
 
@@ -105,6 +131,7 @@ export default function Header({
               </div>
 
               {/* LOGO */}
+
               <Link href="/" className="text-center">
                 <h1 className="text-xl font-bold tracking-tight">
                   AlabaamaFi
@@ -116,20 +143,25 @@ export default function Header({
               </Link>
 
               {/* WALLET */}
+
               <div className="absolute right-0">
                 <button
                   onClick={handleWalletClick}
                   className={`rounded-full px-5 py-3 text-sm !font-black tracking-tight ${connectGlassButton}`}
                 >
-                  {isConnected ? shortAddress : "Connect Wallet"}
+                  {isConnected
+                    ? shortAddress
+                    : "Connect Wallet"}
                 </button>
               </div>
             </div>
 
             {/* FIRST SILVER LINE */}
+
             <div className="border-t border-white/[0.10]" />
 
             {/* DESKTOP NAVIGATION */}
+
             <nav className="flex min-h-[58px] items-center justify-center gap-2">
               {navItems.map((item) => {
                 const isActive =
@@ -154,6 +186,7 @@ export default function Header({
             </nav>
 
             {/* SECOND SILVER LINE */}
+
             <div className="border-t border-white/[0.10]" />
           </div>
         </div>
