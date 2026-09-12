@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Manrope } from "next/font/google";
 import Header from "@/components/Header";
 import {
   useAccount,
+  useConnect,
+  useDisconnect,
   useSwitchChain,
   useReadContract,
   useWriteContract,
@@ -11,6 +16,11 @@ import {
 } from "wagmi";
 import { isAddress, parseUnits } from "viem";
 import { arcTestnet } from "@/lib/wagmi";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["600"],
+});
 
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
@@ -56,6 +66,17 @@ const USDC_ABI = [
   },
 ] as const;
 
+type Section =
+  | "home"
+  | "send"
+  | "swap"
+  | "bridge"
+  | "activity"
+  | "faucet";
+
+const connectGlassButton =
+  "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
+
 const silverGlassButton =
   "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0";
 
@@ -67,9 +88,17 @@ function getFriendlyErrorMessage(message: string): string {
 
   if (
     lowerMessage.includes("user rejected") ||
-    lowerMessage.includes("user denied")
+    lowerMessage.includes("user denied") ||
+    lowerMessage.includes("connection request reset")
   ) {
-    return "Transaction was rejected. Please try again.";
+    return "Wallet connection rejected. Please try again.";
+  }
+
+  if (
+    lowerMessage.includes("provider not found") ||
+    lowerMessage.includes("provider")
+  ) {
+    return "Wallet connection failed. Please make sure your wallet is installed and try again.";
   }
 
   if (
@@ -84,6 +113,10 @@ function getFriendlyErrorMessage(message: string): string {
     lowerMessage.includes("invalid recipient")
   ) {
     return "Please enter a valid wallet address.";
+  }
+
+  if (lowerMessage.includes("transaction rejected")) {
+    return "Transaction was rejected. Please try again.";
   }
 
   if (
@@ -104,9 +137,25 @@ function getFriendlyErrorMessage(message: string): string {
 }
 
 export default function SendPage() {
-  const [recipient, setRecipient] = useState("");
-  const [amount, setAmount] = useState("");
-  const [error, setError] = useState("");
+  const pathname = usePathname();
+
+  const [showWallets, setShowWallets] =
+    useState(false);
+
+  const [showMenu, setShowMenu] =
+    useState(false);
+
+  const [activeSection, setActiveSection] =
+    useState<Section>("send");
+
+  const [recipient, setRecipient] =
+    useState("");
+
+  const [amount, setAmount] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   const {
     address,
@@ -114,7 +163,18 @@ export default function SendPage() {
     chainId,
   } = useAccount();
 
-  const { switchChain } = useSwitchChain();
+  const {
+    connectors,
+    connect,
+    isPending,
+    error: connectError,
+  } = useConnect();
+
+  const { disconnect } =
+    useDisconnect();
+
+  const { switchChain } =
+    useSwitchChain();
 
   const {
     data: usdcBalance,
@@ -141,53 +201,316 @@ export default function SendPage() {
     hash,
   });
 
-  const formattedBalance = usdcBalance
-    ? (Number(usdcBalance) / 1_000_000).toFixed(2)
-    : "0.00";
-
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "";
 
-  const handleWalletClick = () => {
-    // Wallet modal will be connected in the next step.
+  const formattedBalance = usdcBalance
+    ? (Number(usdcBalance) / 1_000_000).toFixed(2)
+    : "0.00";
+
+  useEffect(() => {
+    if (connectError) {
+      setError(
+        getFriendlyErrorMessage(
+          connectError.message
+        )
+      );
+    }
+  }, [connectError]);
+
+  const walletConnectConnector = useMemo(() => {
+    return connectors.find((connector) => {
+      const name =
+        connector.name.toLowerCase();
+
+      const id =
+        connector.id.toLowerCase();
+
+      return (
+        name.includes("walletconnect") ||
+        id.includes("walletconnect")
+      );
+    });
+  }, [connectors]);
+
+  const coinbaseConnector = useMemo(() => {
+    return connectors.find((connector) => {
+      const name =
+        connector.name.toLowerCase();
+
+      const id =
+        connector.id.toLowerCase();
+
+      return (
+        name.includes("coinbase") ||
+        name.includes("base") ||
+        id.includes("coinbase")
+      );
+    });
+  }, [connectors]);
+
+  const metaMaskConnector = useMemo(() => {
+    return connectors.find((connector) => {
+      const name =
+        connector.name.toLowerCase();
+
+      const id =
+        connector.id.toLowerCase();
+
+      return (
+        name.includes("metamask") ||
+        id.includes("metamask") ||
+        id === "io.metamask"
+      );
+    });
+  }, [connectors]);
+
+  const browserConnector = useMemo(() => {
+    return connectors.find((connector) => {
+      const name =
+        connector.name.toLowerCase();
+
+      const id =
+        connector.id.toLowerCase();
+
+      return (
+        id === "injected" ||
+        name === "injected" ||
+        name === "browser wallet"
+      );
+    });
+  }, [connectors]);
+
+  const detectedBrowserWallets = useMemo(() => {
+    const excludedIds = new Set(
+      [
+        walletConnectConnector?.id,
+        coinbaseConnector?.id,
+        metaMaskConnector?.id,
+      ].filter(Boolean)
+    );
+
+    return connectors.filter((connector) => {
+      if (excludedIds.has(connector.id)) {
+        return false;
+      }
+
+      const name =
+        connector.name.toLowerCase();
+
+      const id =
+        connector.id.toLowerCase();
+
+      if (
+        id === "injected" ||
+        name === "injected" ||
+        name === "browser wallet"
+      ) {
+        return false;
+      }
+
+      return (
+        name.includes("wallet") ||
+        name.includes("brave") ||
+        name.includes("rabby") ||
+        name.includes("okx") ||
+        name.includes("metamask") ||
+        id.includes(".")
+      );
+    });
+  }, [
+    connectors,
+    walletConnectConnector,
+    coinbaseConnector,
+    metaMaskConnector,
+  ]);
+
+  const isMobileDevice = () => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(
+      navigator.userAgent
+    );
   };
 
-  const handleMenuClick = () => {
-    // Mobile menu will be connected in the next step.
+  const openMetaMaskMobile = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentUrl =
+      window.location.host +
+      window.location.pathname +
+      window.location.search;
+
+    const metamaskUrl =
+      `https://metamask.app.link/dapp/${currentUrl}`;
+
+    window.location.href =
+      metamaskUrl;
   };
+
+  const openMetaMaskInstall = () => {
+    window.open(
+      "https://metamask.io/download/",
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handleConnect = (
+    connector: (typeof connectors)[number]
+  ) => {
+    setError("");
+
+    connect(
+      { connector },
+      {
+        onSuccess: () => {
+          setShowWallets(false);
+          setShowMenu(false);
+        },
+      }
+    );
+  };
+
+  const handleMetaMaskClick = () => {
+    setError("");
+
+    if (isMobileDevice()) {
+      openMetaMaskMobile();
+      return;
+    }
+
+    if (metaMaskConnector) {
+      handleConnect(metaMaskConnector);
+      return;
+    }
+
+    openMetaMaskInstall();
+  };
+
+  const handleWalletButton = () => {
+    if (isConnected) {
+      disconnect();
+
+      setRecipient("");
+      setAmount("");
+      setError("");
+    } else {
+      setError("");
+      setShowWallets(true);
+    }
+  };
+
+  const handleNavigation = (
+    section: Section
+  ) => {
+    const routes: Record<
+      Section,
+      string
+    > = {
+      home: "/",
+      send: "/send",
+      swap: "/swap",
+      bridge: "/bridge",
+      activity: "/activity",
+      faucet: "/faucet",
+    };
+
+    setShowMenu(false);
+    setError("");
+
+    window.location.href =
+      routes[section];
+  };
+
+  const menuItems: {
+    id: Section;
+    label: string;
+    icon: string;
+  }[] = [
+    {
+      id: "home",
+      label: "Home",
+      icon: "⌂",
+    },
+    {
+      id: "send",
+      label: "Send",
+      icon: "↗",
+    },
+    {
+      id: "swap",
+      label: "Swap",
+      icon: "⇄",
+    },
+    {
+      id: "bridge",
+      label: "Bridge",
+      icon: "⇅",
+    },
+    {
+      id: "activity",
+      label: "Activity",
+      icon: "◷",
+    },
+    {
+      id: "faucet",
+      label: "Faucet",
+      icon: "◌",
+    },
+  ];
 
   const handleSend = () => {
     setError("");
 
     if (!isConnected || !address) {
-      setError("Please connect your wallet first.");
+      setError(
+        "Please connect your wallet first."
+      );
       return;
     }
 
     if (chainId !== arcTestnet.id) {
-      setError("Please switch to Arc Testnet.");
+      setError(
+        "Please switch to Arc Testnet."
+      );
       return;
     }
 
     if (!isAddress(recipient)) {
-      setError("Please enter a valid wallet address.");
+      setError(
+        "Please enter a valid wallet address."
+      );
       return;
     }
 
-    if (!amount || Number(amount) <= 0) {
-      setError("Please enter a valid USDC amount.");
+    if (
+      !amount ||
+      Number(amount) <= 0
+    ) {
+      setError(
+        "Please enter a valid USDC amount."
+      );
       return;
     }
 
     try {
-      const value = parseUnits(amount, 6);
+      const value =
+        parseUnits(amount, 6);
 
       writeContract({
         address: USDC_ADDRESS,
         abi: USDC_ABI,
         functionName: "transfer",
-        args: [recipient, value],
+        args: [
+          recipient,
+          value,
+        ],
         chainId: arcTestnet.id,
       });
     } catch {
@@ -199,16 +522,29 @@ export default function SendPage() {
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
+      <style jsx global>{`
+        button {
+          font-family: ${manrope.style.fontFamily} !important;
+          font-weight: 600 !important;
+          letter-spacing: normal !important;
+        }
+      `}</style>
+
       <Header
         isConnected={isConnected}
         shortAddress={shortAddress}
-        onWalletClick={handleWalletClick}
-        onMenuClick={handleMenuClick}
+        onWalletClick={
+          handleWalletButton
+        }
+        onMenuClick={() =>
+          setShowMenu(true)
+        }
       />
+
+      {/* SEND CONTENT */}
 
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-md">
-
           <div className="mb-6 sm:mb-8">
             <p className="text-sm font-semibold text-white/35">
               AlabaamaFi
@@ -224,7 +560,6 @@ export default function SendPage() {
           </div>
 
           <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6">
-
             <div className="mb-6 flex items-center justify-between gap-3">
               <h2 className="font-black">
                 Transfer
@@ -243,8 +578,10 @@ export default function SendPage() {
               type="text"
               placeholder="0x..."
               value={recipient}
-              onChange={(e) =>
-                setRecipient(e.target.value)
+              onChange={(event) =>
+                setRecipient(
+                  event.target.value
+                )
               }
               className="mb-5 min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
             />
@@ -269,8 +606,10 @@ export default function SendPage() {
                 step="0.000001"
                 placeholder="0.00"
                 value={amount}
-                onChange={(e) =>
-                  setAmount(e.target.value)
+                onChange={(event) =>
+                  setAmount(
+                    event.target.value
+                  )
                 }
                 className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-bold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
               />
@@ -287,7 +626,7 @@ export default function SendPage() {
                 isSending ||
                 isConfirming
               }
-              className={`mt-6 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black tracking-tight ${
+              className={`mt-6 min-h-13 w-full rounded-full px-5 py-4 text-sm font-semibold tracking-normal ${
                 !isConnected
                   ? unavailableButton
                   : silverGlassButton
@@ -311,10 +650,11 @@ export default function SendPage() {
                 <button
                   onClick={() =>
                     switchChain({
-                      chainId: arcTestnet.id,
+                      chainId:
+                        arcTestnet.id,
                     })
                   }
-                  className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-black tracking-tight text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
+                  className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-semibold tracking-normal text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
                 >
                   Switch to Arc Testnet
                 </button>
@@ -338,26 +678,257 @@ export default function SendPage() {
               </div>
             )}
 
-            {isConfirmed && hash && (
-              <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
-                <p className="text-sm font-bold text-green-400">
-                  Transaction confirmed ✓
-                </p>
+            {isConfirmed &&
+              hash && (
+                <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
+                  <p className="text-sm font-bold text-green-400">
+                    Transaction confirmed ✓
+                  </p>
 
-                <a
-                  href={`https://testnet.arcscan.app/tx/${hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
-                >
-                  View Transaction on ArcScan
-                </a>
-              </div>
-            )}
-
+                  <a
+                    href={`https://testnet.arcscan.app/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
+                  >
+                    View Transaction on ArcScan
+                  </a>
+                </div>
+              )}
           </div>
         </div>
       </section>
+
+      {/* MOBILE MENU */}
+
+      {showMenu && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            onClick={() =>
+              setShowMenu(false)
+            }
+            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+
+          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">
+                  AlabaamaFi
+                </h2>
+
+                <p className="mt-1 text-xs font-semibold text-white/30">
+                  Powered by Arc
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowMenu(false)
+                }
+                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <nav className="space-y-2">
+              {menuItems.map(
+                (item) => (
+                  <button
+                    key={item.id}
+                    onClick={() =>
+                      handleNavigation(
+                        item.id
+                      )
+                    }
+                    className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
+                      activeSection ===
+                      item.id
+                        ? `${silverGlassButton}`
+                        : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
+                    }`}
+                  >
+                    <span className="w-6 shrink-0 text-center text-lg font-bold">
+                      {item.icon}
+                    </span>
+
+                    <span className="text-sm font-bold">
+                      {item.label}
+                    </span>
+                  </button>
+                )
+              )}
+            </nav>
+
+            <div className="mt-auto pt-8">
+              <button
+                onClick={
+                  handleWalletButton
+                }
+                className={`w-full rounded-full px-4 py-3.5 text-sm font-semibold tracking-normal active:scale-[0.99] ${connectGlassButton}`}
+              >
+                {isConnected
+                  ? shortAddress
+                  : "Connect Wallet"}
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* WALLET MODAL */}
+
+      {showWallets && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-md sm:items-center sm:p-6">
+          <button
+            onClick={() =>
+              setShowWallets(false)
+            }
+            className="absolute inset-0"
+            aria-label="Close wallet modal"
+          />
+
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/[0.09] bg-[#080a0d] p-4 shadow-2xl shadow-black/80 sm:p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  Connect Wallet
+                </h2>
+
+                <p className="mt-1 text-xs font-semibold text-white/30">
+                  Choose a wallet to continue
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowWallets(false)
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-white/40 transition hover:bg-white/[0.05] hover:text-white"
+                aria-label="Close wallet modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {browserConnector && (
+                <button
+                  onClick={() =>
+                    handleConnect(
+                      browserConnector
+                    )
+                  }
+                  disabled={isPending}
+                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <span className="text-sm font-semibold">
+                    Browser Wallet
+                  </span>
+
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                </button>
+              )}
+
+              {detectedBrowserWallets.map(
+                (connector) => (
+                  <button
+                    key={connector.id}
+                    onClick={() =>
+                      handleConnect(
+                        connector
+                      )
+                    }
+                    disabled={isPending}
+                    className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
+                  >
+                    <span className="text-sm font-semibold">
+                      {connector.name}
+                    </span>
+
+                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                  </button>
+                )
+              )}
+
+              {walletConnectConnector && (
+                <button
+                  onClick={() =>
+                    handleConnect(
+                      walletConnectConnector
+                    )
+                  }
+                  disabled={isPending}
+                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <span className="text-sm font-semibold">
+                    WalletConnect
+                  </span>
+
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                </button>
+              )}
+
+              {coinbaseConnector && (
+                <button
+                  onClick={() =>
+                    handleConnect(
+                      coinbaseConnector
+                    )
+                  }
+                  disabled={isPending}
+                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <span className="text-sm font-semibold">
+                    Coinbase Wallet
+                  </span>
+
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                </button>
+              )}
+
+              <button
+                onClick={
+                  handleMetaMaskClick
+                }
+                disabled={isPending}
+                className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
+              >
+                <span className="text-sm font-semibold">
+                  MetaMask
+                </span>
+
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    metaMaskConnector
+                      ? "bg-green-500"
+                      : "bg-white/15"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {isPending && (
+              <p className="mt-4 text-center text-xs font-semibold text-white/35">
+                Waiting for wallet...
+              </p>
+            )}
+
+            {connectError && (
+              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="text-sm font-semibold leading-5 text-red-400">
+                  {getFriendlyErrorMessage(
+                    connectError.message
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
