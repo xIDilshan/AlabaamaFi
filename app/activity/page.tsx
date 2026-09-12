@@ -1525,8 +1525,8 @@ export default function ActivityPage() {
                                 undefined,
                           token.symbol === "cirBTC"
       ? {
-          minimumFractionDigits: 6,
-          maximumFractionDigits: 6,
+          minimumFractionDigits: 4,
+          maximumFractionDigits: 4,
         }
       :
                                 {
