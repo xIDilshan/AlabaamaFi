@@ -476,10 +476,26 @@ export default function Home() {
   };
 
   const handleNavigation = (section: Section) => {
-    setActiveSection(section);
-    setShowMenu(false);
-    setError("");
+  const routes: Record<Section, string> = {
+    home: "/",
+    send: "/send",
+    swap: "/swap",
+    bridge: "/bridge",
+    activity: "/activity",
+    faucet: "/faucet",
   };
+
+  setShowMenu(false);
+  setError("");
+
+  window.location.href = routes[section];
+};
+
+  setShowMenu(false);
+  setError("");
+
+  window.location.href = routes[section];
+};
 
   const menuItems: {
     id: Section;
