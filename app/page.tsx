@@ -799,9 +799,9 @@ export default function Home() {
                     onClick={() =>
                       handleNavigation(item.id)
                     }
-                    className="quick-access-button group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-left shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
+                    className="quick-access-button group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-center shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
                       {item.icon}
                     </div>
 
@@ -1766,6 +1766,52 @@ export default function Home() {
           </section>
         )}
       </div>
+
+      {/* FOOTER */}
+
+      <footer className="border-t border-white/[0.06] bg-[#030405]">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-10 text-center sm:px-6 sm:py-12 lg:px-10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-[#080a0d] shadow-lg shadow-black/30">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-white/65"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Arc"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+
+              <path
+                d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <p className="mt-5 text-sm font-black tracking-tight text-white/80">
+            AlabaamaFi
+          </p>
+
+          <p className="mt-1 text-xs font-semibold text-white/25">
+            Powered by Arc
+          </p>
+
+          <div className="mt-7 h-px w-16 bg-white/[0.08]" />
+
+          <p className="mt-5 text-[11px] font-medium text-white/20">
+            Built on Arc Testnet
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
