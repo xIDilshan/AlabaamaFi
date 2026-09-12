@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Manrope } from "next/font/google";
 import Header from "@/components/Header";
 import {
@@ -137,25 +135,15 @@ function getFriendlyErrorMessage(message: string): string {
 }
 
 export default function SendPage() {
-  const pathname = usePathname();
-
-  const [showWallets, setShowWallets] =
-    useState(false);
-
-  const [showMenu, setShowMenu] =
-    useState(false);
+  const [showWallets, setShowWallets] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const [activeSection, setActiveSection] =
     useState<Section>("send");
 
-  const [recipient, setRecipient] =
-    useState("");
-
-  const [amount, setAmount] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState("");
 
   const {
     address,
@@ -170,11 +158,9 @@ export default function SendPage() {
     error: connectError,
   } = useConnect();
 
-  const { disconnect } =
-    useDisconnect();
+  const { disconnect } = useDisconnect();
 
-  const { switchChain } =
-    useSwitchChain();
+  const { switchChain } = useSwitchChain();
 
   const {
     data: usdcBalance,
@@ -212,20 +198,15 @@ export default function SendPage() {
   useEffect(() => {
     if (connectError) {
       setError(
-        getFriendlyErrorMessage(
-          connectError.message
-        )
+        getFriendlyErrorMessage(connectError.message)
       );
     }
   }, [connectError]);
 
   const walletConnectConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name =
-        connector.name.toLowerCase();
-
-      const id =
-        connector.id.toLowerCase();
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
       return (
         name.includes("walletconnect") ||
@@ -236,11 +217,8 @@ export default function SendPage() {
 
   const coinbaseConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name =
-        connector.name.toLowerCase();
-
-      const id =
-        connector.id.toLowerCase();
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
       return (
         name.includes("coinbase") ||
@@ -252,11 +230,8 @@ export default function SendPage() {
 
   const metaMaskConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name =
-        connector.name.toLowerCase();
-
-      const id =
-        connector.id.toLowerCase();
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
       return (
         name.includes("metamask") ||
@@ -268,11 +243,8 @@ export default function SendPage() {
 
   const browserConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name =
-        connector.name.toLowerCase();
-
-      const id =
-        connector.id.toLowerCase();
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
       return (
         id === "injected" ||
@@ -296,11 +268,8 @@ export default function SendPage() {
         return false;
       }
 
-      const name =
-        connector.name.toLowerCase();
-
-      const id =
-        connector.id.toLowerCase();
+      const name = connector.name.toLowerCase();
+      const id = connector.id.toLowerCase();
 
       if (
         id === "injected" ||
@@ -349,8 +318,7 @@ export default function SendPage() {
     const metamaskUrl =
       `https://metamask.app.link/dapp/${currentUrl}`;
 
-    window.location.href =
-      metamaskUrl;
+    window.location.href = metamaskUrl;
   };
 
   const openMetaMaskInstall = () => {
@@ -406,13 +374,8 @@ export default function SendPage() {
     }
   };
 
-  const handleNavigation = (
-    section: Section
-  ) => {
-    const routes: Record<
-      Section,
-      string
-    > = {
+  const handleNavigation = (section: Section) => {
+    const routes: Record<Section, string> = {
       home: "/",
       send: "/send",
       swap: "/swap",
@@ -424,8 +387,7 @@ export default function SendPage() {
     setShowMenu(false);
     setError("");
 
-    window.location.href =
-      routes[section];
+    window.location.href = routes[section];
   };
 
   const menuItems: {
@@ -500,17 +462,13 @@ export default function SendPage() {
     }
 
     try {
-      const value =
-        parseUnits(amount, 6);
+      const value = parseUnits(amount, 6);
 
       writeContract({
         address: USDC_ADDRESS,
         abi: USDC_ABI,
         functionName: "transfer",
-        args: [
-          recipient,
-          value,
-        ],
+        args: [recipient, value],
         chainId: arcTestnet.id,
       });
     } catch {
@@ -533,12 +491,8 @@ export default function SendPage() {
       <Header
         isConnected={isConnected}
         shortAddress={shortAddress}
-        onWalletClick={
-          handleWalletButton
-        }
-        onMenuClick={() =>
-          setShowMenu(true)
-        }
+        onWalletClick={handleWalletButton}
+        onMenuClick={() => setShowMenu(true)}
       />
 
       {/* SEND CONTENT */}
@@ -579,9 +533,7 @@ export default function SendPage() {
               placeholder="0x..."
               value={recipient}
               onChange={(event) =>
-                setRecipient(
-                  event.target.value
-                )
+                setRecipient(event.target.value)
               }
               className="mb-5 min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
             />
@@ -607,9 +559,7 @@ export default function SendPage() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) =>
-                  setAmount(
-                    event.target.value
-                  )
+                  setAmount(event.target.value)
                 }
                 className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-bold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
               />
@@ -650,8 +600,7 @@ export default function SendPage() {
                 <button
                   onClick={() =>
                     switchChain({
-                      chainId:
-                        arcTestnet.id,
+                      chainId: arcTestnet.id,
                     })
                   }
                   className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-semibold tracking-normal text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
@@ -678,23 +627,22 @@ export default function SendPage() {
               </div>
             )}
 
-            {isConfirmed &&
-              hash && (
-                <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
-                  <p className="text-sm font-bold text-green-400">
-                    Transaction confirmed ✓
-                  </p>
+            {isConfirmed && hash && (
+              <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
+                <p className="text-sm font-bold text-green-400">
+                  Transaction confirmed ✓
+                </p>
 
-                  <a
-                    href={`https://testnet.arcscan.app/tx/${hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
-                  >
-                    View Transaction on ArcScan
-                  </a>
-                </div>
-              )}
+                <a
+                  href={`https://testnet.arcscan.app/tx/${hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
+                >
+                  View Transaction on ArcScan
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -704,9 +652,7 @@ export default function SendPage() {
       {showMenu && (
         <div className="fixed inset-0 z-40 md:hidden">
           <button
-            onClick={() =>
-              setShowMenu(false)
-            }
+            onClick={() => setShowMenu(false)}
             className="absolute inset-0 bg-black/85 backdrop-blur-sm"
             aria-label="Close menu"
           />
@@ -724,9 +670,7 @@ export default function SendPage() {
               </div>
 
               <button
-                onClick={() =>
-                  setShowMenu(false)
-                }
+                onClick={() => setShowMenu(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close menu"
               >
@@ -735,39 +679,32 @@ export default function SendPage() {
             </div>
 
             <nav className="space-y-2">
-              {menuItems.map(
-                (item) => (
-                  <button
-                    key={item.id}
-                    onClick={() =>
-                      handleNavigation(
-                        item.id
-                      )
-                    }
-                    className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
-                      activeSection ===
-                      item.id
-                        ? `${silverGlassButton}`
-                        : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
-                    }`}
-                  >
-                    <span className="w-6 shrink-0 text-center text-lg font-bold">
-                      {item.icon}
-                    </span>
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() =>
+                    handleNavigation(item.id)
+                  }
+                  className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
+                    activeSection === item.id
+                      ? silverGlassButton
+                      : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
+                  }`}
+                >
+                  <span className="w-6 shrink-0 text-center text-lg font-bold">
+                    {item.icon}
+                  </span>
 
-                    <span className="text-sm font-bold">
-                      {item.label}
-                    </span>
-                  </button>
-                )
-              )}
+                  <span className="text-sm font-bold">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
             </nav>
 
             <div className="mt-auto pt-8">
               <button
-                onClick={
-                  handleWalletButton
-                }
+                onClick={handleWalletButton}
                 className={`w-full rounded-full px-4 py-3.5 text-sm font-semibold tracking-normal active:scale-[0.99] ${connectGlassButton}`}
               >
                 {isConnected
@@ -780,154 +717,6 @@ export default function SendPage() {
       )}
 
       {/* WALLET MODAL */}
-
-      {showWallets && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-md sm:items-center sm:p-6">
-          <button
-            onClick={() =>
-              setShowWallets(false)
-            }
-            className="absolute inset-0"
-            aria-label="Close wallet modal"
-          />
-
-          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/[0.09] bg-[#080a0d] p-4 shadow-2xl shadow-black/80 sm:p-6">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">
-                  Connect Wallet
-                </h2>
-
-                <p className="mt-1 text-xs font-semibold text-white/30">
-                  Choose a wallet to continue
-                </p>
-              </div>
-
-              <button
-                onClick={() =>
-                  setShowWallets(false)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-white/40 transition hover:bg-white/[0.05] hover:text-white"
-                aria-label="Close wallet modal"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {browserConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(
-                      browserConnector
-                    )
-                  }
-                  disabled={isPending}
-                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <span className="text-sm font-semibold">
-                    Browser Wallet
-                  </span>
-
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                </button>
-              )}
-
-              {detectedBrowserWallets.map(
-                (connector) => (
-                  <button
-                    key={connector.id}
-                    onClick={() =>
-                      handleConnect(
-                        connector
-                      )
-                    }
-                    disabled={isPending}
-                    className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
-                  >
-                    <span className="text-sm font-semibold">
-                      {connector.name}
-                    </span>
-
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                  </button>
-                )
-              )}
-
-              {walletConnectConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(
-                      walletConnectConnector
-                    )
-                  }
-                  disabled={isPending}
-                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <span className="text-sm font-semibold">
-                    WalletConnect
-                  </span>
-
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                </button>
-              )}
-
-              {coinbaseConnector && (
-                <button
-                  onClick={() =>
-                    handleConnect(
-                      coinbaseConnector
-                    )
-                  }
-                  disabled={isPending}
-                  className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <span className="text-sm font-semibold">
-                    Coinbase Wallet
-                  </span>
-
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                </button>
-              )}
-
-              <button
-                onClick={
-                  handleMetaMaskClick
-                }
-                disabled={isPending}
-                className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] disabled:opacity-50"
-              >
-                <span className="text-sm font-semibold">
-                  MetaMask
-                </span>
-
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    metaMaskConnector
-                      ? "bg-green-500"
-                      : "bg-white/15"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {isPending && (
-              <p className="mt-4 text-center text-xs font-semibold text-white/35">
-                Waiting for wallet...
-              </p>
-            )}
-
-            {connectError && (
-              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="text-sm font-semibold leading-5 text-red-400">
-                  {getFriendlyErrorMessage(
-                    connectError.message
-                  )}
-                </p>
-              </div>
-            )}
-
-                  {/* WALLET MODAL */}
 
       {showWallets && !isConnected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
@@ -944,9 +733,7 @@ export default function SendPage() {
               </div>
 
               <button
-                onClick={() =>
-                  setShowWallets(false)
-                }
+                onClick={() => setShowWallets(false)}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white/45 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
                 aria-label="Close wallet modal"
               >
@@ -971,8 +758,7 @@ export default function SendPage() {
                         className="h-8 w-8 rounded-lg object-contain"
                       />
 
-                      {detectedBrowserWallets.length >
-                        0 && (
+                      {detectedBrowserWallets.length > 0 && (
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
                       )}
                     </div>
@@ -994,77 +780,73 @@ export default function SendPage() {
                 </button>
               )}
 
-              {detectedBrowserWallets.map(
-                (connector) => {
-                  const name =
-                    connector.name.toLowerCase();
+              {detectedBrowserWallets.map((connector) => {
+                const name =
+                  connector.name.toLowerCase();
 
-                  let displayName =
-                    connector.name;
+                let displayName =
+                  connector.name;
 
-                  let logo =
-                    connector.icon || null;
+                let logo =
+                  connector.icon || null;
 
-                  if (name.includes("brave")) {
-                    displayName = "Brave Wallet";
-                    logo = "/wallets/brave.svg";
-                  } else if (
-                    name.includes("rabby")
-                  ) {
-                    displayName = "Rabby";
-                    logo = "/wallets/rabby.svg";
-                  } else if (
-                    name.includes("okx") ||
-                    name.includes("okex")
-                  ) {
-                    displayName = "OKX Wallet";
-                    logo = "/wallets/okx.svg";
-                  }
+                if (name.includes("brave")) {
+                  displayName = "Brave Wallet";
+                  logo = "/wallets/brave.svg";
+                } else if (name.includes("rabby")) {
+                  displayName = "Rabby";
+                  logo = "/wallets/rabby.svg";
+                } else if (
+                  name.includes("okx") ||
+                  name.includes("okex")
+                ) {
+                  displayName = "OKX Wallet";
+                  logo = "/wallets/okx.svg";
+                }
 
-                  return (
-                    <button
-                      key={connector.uid}
-                      onClick={() =>
-                        handleConnect(connector)
-                      }
-                      disabled={isPending}
-                      className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="relative shrink-0">
-                          {logo ? (
-                            <img
-                              src={logo}
-                              alt=""
-                              className="h-8 w-8 rounded-lg object-contain"
-                            />
-                          ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b1017] text-sm font-bold">
-                              ◇
-                            </div>
-                          )}
+                return (
+                  <button
+                    key={connector.uid}
+                    onClick={() =>
+                      handleConnect(connector)
+                    }
+                    disabled={isPending}
+                    className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="relative shrink-0">
+                        {logo ? (
+                          <img
+                            src={logo}
+                            alt=""
+                            className="h-8 w-8 rounded-lg object-contain"
+                          />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b1017] text-sm font-bold">
+                            ◇
+                          </div>
+                        )}
 
-                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate font-black">
-                            {displayName}
-                          </p>
-
-                          <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                            Available in your browser
-                          </p>
-                        </div>
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
                       </div>
 
-                      <span className="shrink-0 text-sm font-bold text-white/25">
-                        •
-                      </span>
-                    </button>
-                  );
-                }
-              )}
+                      <div className="min-w-0">
+                        <p className="truncate font-black">
+                          {displayName}
+                        </p>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-white/25">
+                          Available in your browser
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="shrink-0 text-sm font-bold text-white/25">
+                      •
+                    </span>
+                  </button>
+                );
+              })}
 
               {walletConnectConnector && (
                 <button
@@ -1195,7 +977,6 @@ export default function SendPage() {
               WalletConnect supports many mobile and
               desktop wallets.
             </p>
-            
           </div>
         </div>
       )}
