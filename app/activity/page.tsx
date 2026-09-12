@@ -28,6 +28,51 @@ type TokenHolding = {
   usdValue: number | null;
 };
 
+type Section =
+  | "home"
+  | "send"
+  | "swap"
+  | "bridge"
+  | "activity"
+  | "faucet";
+
+const menuItems: {
+  id: Section;
+  label: string;
+  icon: string;
+}[] = [
+  {
+    id: "home",
+    label: "Home",
+    icon: "⌂",
+  },
+  {
+    id: "send",
+    label: "Send",
+    icon: "↗",
+  },
+  {
+    id: "swap",
+    label: "Swap",
+    icon: "⇄",
+  },
+  {
+    id: "bridge",
+    label: "Bridge",
+    icon: "⇅",
+  },
+  {
+    id: "activity",
+    label: "Activity",
+    icon: "◷",
+  },
+  {
+    id: "faucet",
+    label: "Faucet",
+    icon: "◌",
+  },
+];
+
 function shortenAddress(address: string) {
   if (!address) return "";
 
@@ -260,6 +305,9 @@ export default function ActivityPage() {
     isConnected,
   } = useAccount();
 
+  const [showMenu, setShowMenu] =
+    useState(false);
+
   const [activityAddress, setActivityAddress] =
     useState("");
 
@@ -343,14 +391,6 @@ export default function ActivityPage() {
 
       let tokenHoldings: TokenHolding[] = [];
 
-      /*
-       * Get token holdings from Arcscan.
-       *
-       * Arcscan can return tokens in slightly
-       * different shapes, so the parser below
-       * checks the supported fields and nested
-       * token/asset objects.
-       */
       try {
         const response = await fetch(
           `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
@@ -427,13 +467,6 @@ export default function ActivityPage() {
         tokenHoldings = [];
       }
 
-      /*
-       * Get USDC directly from Arc RPC.
-       *
-       * This makes sure USDC is displayed even
-       * when Arcscan does not include it in the
-       * token endpoint response.
-       */
       try {
         const paddedAddress =
           walletAddress
@@ -501,12 +534,6 @@ export default function ActivityPage() {
         );
       }
 
-      /*
-       * Keep the supported tokens in the
-       * requested order:
-       *
-       * USDC → EURC → cirBTC
-       */
       const supportedSymbols = [
         "USDC",
         "EURC",
@@ -539,9 +566,6 @@ export default function ActivityPage() {
             return aIndex - bIndex;
           });
 
-      /*
-       * Remove duplicate token entries.
-       */
       const uniqueTokens: TokenHolding[] =
         [];
 
@@ -610,7 +634,98 @@ export default function ActivityPage() {
         }
       `}</style>
 
-      <Header />
+      <Header
+        onMenuClick={() => setShowMenu(true)}
+      />
+
+      {/* MOBILE MENU */}
+
+      {showMenu && (
+        <div className="fixed inset-0 z-40">
+          <button
+            onClick={() =>
+              setShowMenu(false)
+            }
+            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+
+          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">
+                  AlabaamaFi
+                </h2>
+
+                <p className="mt-1 text-xs font-semibold text-white/30">
+                  Powered by Arc
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowMenu(false)
+                }
+                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <nav className="space-y-2">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setShowMenu(false);
+
+                    if (
+                      item.id === "home"
+                    ) {
+                      window.location.href =
+                        "/";
+                    } else if (
+                      item.id === "send"
+                    ) {
+                      window.location.href =
+                        "/send";
+                    } else if (
+                      item.id === "swap"
+                    ) {
+                      window.location.href =
+                        "/swap";
+                    } else if (
+                      item.id === "bridge"
+                    ) {
+                      window.location.href =
+                        "/bridge";
+                    } else if (
+                      item.id === "faucet"
+                    ) {
+                      window.location.href =
+                        "/faucet";
+                    }
+                  }}
+                  className={`flex min-h-12 w-full items-center gap-4 rounded-2xl px-4 text-left text-sm font-bold transition ${
+                    item.id === "activity"
+                      ? "bg-white text-black"
+                      : "text-white/55 hover:bg-white/[0.04] hover:text-white"
+                  }`}
+                >
+                  <span className="flex w-6 justify-center text-lg">
+                    {item.icon}
+                  </span>
+
+                  <span>
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
 
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-2xl">
