@@ -157,28 +157,26 @@ function formatTokenAmount(
    * Raw integer token amount.
    */
   try {
-    const raw = BigInt(
-      stringValue
-    );
+    const raw = BigInt(stringValue);
 
-    if (decimals === 0) {
-      return raw.toString();
-    }
+if (decimals === 0) {
+  return raw.toString();
+}
 
-    const negative =
-      raw < 0n;
+const negative =
+  raw < BigInt(0);
 
-    const absolute =
-      negative ? -raw : raw;
+const absolute =
+  negative ? -raw : raw;
 
-    const divisor =
-      10n ** BigInt(decimals);
+const divisor =
+  BigInt(10) ** BigInt(decimals);
 
-    const whole =
-      absolute / divisor;
+const whole =
+  absolute / divisor;
 
-    const fraction =
-      absolute % divisor;
+const fraction =
+  absolute % divisor;
 
     if (fraction === 0n) {
       return `${negative ? "-" : ""}${whole}`;
