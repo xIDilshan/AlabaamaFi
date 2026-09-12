@@ -16,7 +16,7 @@ const navItems = [
 ];
 
 type HeaderProps = {
-  onMenuClick: () => void;
+  onMenuClick?: () => void;
 };
 
 const connectGlassButton =
@@ -30,7 +30,11 @@ export default function Header({
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 
-  const [showWallets, setShowWallets] = React.useState(false);
+  const [showWallets, setShowWallets] =
+    React.useState(false);
+
+  const [showMobileMenu, setShowMobileMenu] =
+    React.useState(false);
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -65,6 +69,18 @@ export default function Header({
     setShowWallets(true);
   };
 
+  const handleMenuClick = () => {
+    if (onMenuClick) {
+      onMenuClick();
+    }
+
+    setShowMobileMenu((previous) => !previous);
+  };
+
+  const handleMobileNavigation = () => {
+    setShowMobileMenu(false);
+  };
+
   return (
     <>
       <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
@@ -74,11 +90,16 @@ export default function Header({
           <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
-                onClick={onMenuClick}
+                onClick={handleMenuClick}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
-                aria-label="Open menu"
+                aria-label={
+                  showMobileMenu
+                    ? "Close menu"
+                    : "Open menu"
+                }
+                aria-expanded={showMobileMenu}
               >
-                ☰
+                {showMobileMenu ? "×" : "☰"}
               </button>
 
               <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
@@ -91,13 +112,15 @@ export default function Header({
             </div>
 
             <div className="min-w-0 text-center">
-              <h1 className="truncate text-sm font-bold sm:text-base">
-                AlabaamaFi
-              </h1>
+              <Link href="/">
+                <h1 className="truncate text-sm font-bold sm:text-base">
+                  AlabaamaFi
+                </h1>
 
-              <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px]">
-                Powered by Arc
-              </p>
+                <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px]">
+                  Powered by Arc
+                </p>
+              </Link>
             </div>
 
             <div className="flex min-w-0 items-center justify-end">
@@ -111,6 +134,36 @@ export default function Header({
               </button>
             </div>
           </div>
+
+          {/* MOBILE MENU */}
+
+          {showMobileMenu && (
+            <div className="border-t border-white/[0.06] bg-[#050608] px-4 pb-4 pt-3">
+              <nav className="mx-auto flex max-w-[1600px] flex-col gap-1.5">
+                {navItems.map((item) => {
+                  const isActive =
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleMobileNavigation}
+                      className={`rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                        isActive
+                          ? "bg-white/[0.10] text-white"
+                          : "text-white/50 hover:bg-white/[0.05] hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
         </div>
 
         {/* DESKTOP HEADER */}
