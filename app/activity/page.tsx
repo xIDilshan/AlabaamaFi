@@ -390,9 +390,17 @@ function getTokenAmount(
       typeof candidate ===
       "object"
     ) {
+      if (
+        candidate.formatted !==
+          undefined &&
+        candidate.formatted !== null
+      ) {
+        return String(
+          candidate.formatted
+        );
+      }
+
       const nested =
-        candidate.formatted ??
-        candidate.display ??
         candidate.amount ??
         candidate.balance ??
         candidate.value ??
@@ -422,58 +430,95 @@ function getTokenAmount(
 }
 
 /*
- * Get the TOTAL USD value of the holding.
+ * Read a USD value only when it is clearly
+ * attached to the token holding / Money object.
  *
- * Important:
- * Do not recursively search every nested
- * "usd" field because an API response can
- * contain a USD unit price inside the token
- * object. That price must not be displayed
- * as the total holding value.
+ * Arcscan documents Money values as:
  *
- * Priority:
+ * raw
+ * decimals
+ * formatted
+ * usd
+ * symbol
  *
- * 1. Explicit total holding USD value.
- * 2. Explicit USD value inside amount/balance.
- * 3. amount × USD unit price.
+ * Therefore:
+ *
+ * amount.usd / balance.usd / value.usd
+ *
+ * are treated as the USD value of that
+ * holding amount.
+ *
+ * We deliberately DO NOT read:
+ *
+ * token.price.usd
+ *
+ * because that can be a unit price rather
+ * than the total value of the user's holding.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  const totalValueCandidates = [
+  const moneyCandidates = [
+    token.amount,
+    token.balance,
+    token.value,
+    token.quantity,
+    token.tokenAmount,
+    token.token_amount,
+    token.asset?.amount,
+    token.asset?.balance,
+    token.asset?.value,
+    token.token?.amount,
+    token.token?.balance,
+    token.token?.value,
+  ];
+
+  for (
+    const candidate of moneyCandidates
+  ) {
+    if (
+      !candidate ||
+      typeof candidate !==
+        "object"
+    ) {
+      continue;
+    }
+
+    const usd =
+      candidate.usd;
+
+    if (
+      usd === null ||
+      usd === undefined
+    ) {
+      continue;
+    }
+
+    const numericUsd =
+      Number(usd);
+
+    if (
+      Number.isFinite(
+        numericUsd
+      )
+    ) {
+      return numericUsd;
+    }
+  }
+
+  /*
+   * Some responses can expose an explicit
+   * holding USD field directly on the token.
+   */
+  const directCandidates = [
     token.usdValue,
     token.usd_value,
     token.valueUsd,
     token.value_usd,
-
-    token.amount?.usdValue,
-    token.amount?.usd_value,
-    token.amount?.valueUsd,
-    token.amount?.value_usd,
-
-    token.balance?.usdValue,
-    token.balance?.usd_value,
-    token.balance?.valueUsd,
-    token.balance?.value_usd,
-
-    token.value?.usdValue,
-    token.value?.usd_value,
-    token.value?.valueUsd,
-    token.value?.value_usd,
-
-    token.token?.usdValue,
-    token.token?.usd_value,
-    token.token?.valueUsd,
-    token.token?.value_usd,
-
-    token.asset?.usdValue,
-    token.asset?.usd_value,
-    token.asset?.valueUsd,
-    token.asset?.value_usd,
   ];
 
   for (
-    const candidate of totalValueCandidates
+    const candidate of directCandidates
   ) {
     if (
       candidate === null ||
@@ -482,150 +527,15 @@ function getTokenUsdValue(
       continue;
     }
 
-    let value: number;
-
-    if (
-      typeof candidate ===
-      "object"
-    ) {
-      value =
-        Number(
-          candidate.value ??
-            candidate.formatted ??
-            candidate.usd
-        );
-    } else {
-      value =
-        Number(candidate);
-    }
-
-    if (
-      Number.isFinite(value)
-    ) {
-      return value;
-    }
-  }
-
-  /*
-   * Arcscan Money objects can contain
-   * a direct "usd" value.
-   *
-   * Only use it here when the USD field
-   * belongs to the holding amount/balance,
-   * not a price object.
-   */
-  const amountUsdCandidates = [
-    token.amount?.usd,
-    token.balance?.usd,
-    token.value?.usd,
-  ];
-
-  for (
-    const candidate of amountUsdCandidates
-  ) {
-    if (
-      candidate === null ||
-      candidate === undefined
-    ) {
-      continue;
-    }
-
-    const value =
+    const numericUsd =
       Number(candidate);
 
     if (
-      Number.isFinite(value)
+      Number.isFinite(
+        numericUsd
+      )
     ) {
-      return value;
-    }
-  }
-
-  /*
-   * If the API gives a unit price instead
-   * of a total USD holding value, calculate:
-   *
-   * holding amount × USD price
-   */
-  const symbol =
-    getTokenSymbol(token);
-
-  const decimals =
-    getTokenDecimals(
-      token,
-      symbol
-    );
-
-  const amount =
-    getTokenAmount(
-      token,
-      decimals
-    );
-
-  const numericAmount =
-    Number(amount);
-
-  if (
-    !Number.isFinite(
-      numericAmount
-    )
-  ) {
-    return null;
-  }
-
-  const priceCandidates = [
-    token.priceUsd,
-    token.price_usd,
-    token.usdPrice,
-    token.usd_price,
-
-    token.price?.usd,
-    token.price?.value,
-
-    token.token?.priceUsd,
-    token.token?.price_usd,
-    token.token?.usdPrice,
-    token.token?.usd_price,
-
-    token.asset?.priceUsd,
-    token.asset?.price_usd,
-    token.asset?.usdPrice,
-    token.asset?.usd_price,
-  ];
-
-  for (
-    const candidate of priceCandidates
-  ) {
-    if (
-      candidate === null ||
-      candidate === undefined
-    ) {
-      continue;
-    }
-
-    let price: number;
-
-    if (
-      typeof candidate ===
-      "object"
-    ) {
-      price =
-        Number(
-          candidate.value ??
-            candidate.formatted ??
-            candidate.usd
-        );
-    } else {
-      price =
-        Number(candidate);
-    }
-
-    if (
-      Number.isFinite(price)
-    ) {
-      return (
-        numericAmount *
-        price
-      );
+      return numericUsd;
     }
   }
 
@@ -1031,11 +941,9 @@ export default function ActivityPage() {
         );
 
         /*
-         * Portfolio value:
-         * USDC + EURC + cirBTC.
-         *
-         * Only valid TOTAL USD values
-         * are included.
+         * Portfolio:
+         * Add all available TOTAL USD
+         * holding values.
          */
         const totalValue =
           tokenHoldings.reduce(
@@ -1252,52 +1160,77 @@ export default function ActivityPage() {
                       ) => (
                         <div
                           key={`${token.address}-${token.symbol}`}
-                          className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
+                          className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                         >
-                          <div className="flex min-w-0 items-center gap-3">
-                            {token.logo ? (
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-                                <img
-                                  src={
-                                    token.logo
-                                  }
-                                  alt={`${token.symbol} logo`}
-                                  className={
-                                    token.symbol ===
-                                    "cirBTC"
-                                      ? "h-7 w-7 rounded-full object-contain"
-                                      : "h-10 w-10 rounded-full object-contain"
-                                  }
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
-                                {token.symbol
-                                  .slice(
-                                    0,
-                                    1
-                                  )
-                                  .toUpperCase()}
-                              </div>
-                            )}
+                          {/* ROW 1: COIN + USD */}
 
-                            <div className="min-w-0">
+                          <div className="flex min-w-0 items-center justify-between gap-4">
+                            <div className="flex min-w-0 items-center gap-3">
+                              {token.logo ? (
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                                  <img
+                                    src={
+                                      token.logo
+                                    }
+                                    alt={`${token.symbol} logo`}
+                                    className={
+                                      token.symbol ===
+                                      "cirBTC"
+                                        ? "h-7 w-7 rounded-full object-contain"
+                                        : "h-10 w-10 rounded-full object-contain"
+                                    }
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
+                                  {token.symbol
+                                    .slice(
+                                      0,
+                                      1
+                                    )
+                                    .toUpperCase()}
+                                </div>
+                              )}
+
+                              <div className="min-w-0">
+                                <p className="font-black">
+                                  {
+                                    token.symbol
+                                  }
+                                </p>
+
+                                <p className="mt-1 truncate text-xs font-medium text-white/25">
+                                  {
+                                    token.name
+                                  }
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="shrink-0 text-right">
                               <p className="font-black">
-                                {
-                                  token.symbol
-                                }
+                                {token.usdValue !==
+                                null
+                                  ? `$${token.usdValue.toFixed(
+                                      2
+                                    )}`
+                                  : "—"}
                               </p>
 
-                              <p className="mt-1 truncate text-xs font-medium text-white/25">
-                                {
-                                  token.name
-                                }
+                              <p className="mt-1 text-xs font-semibold text-white/25">
+                                USD Value
                               </p>
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-right">
-                            <p className="font-black">
+                          {/* ROW 2: BALANCE */}
+
+                          <div className="mt-4 border-t border-white/[0.06] pt-3">
+                            <p className="text-xs font-bold text-white/25">
+                              Balance
+                            </p>
+
+                            <p className="mt-1 break-all text-sm font-black text-white/75">
                               {Number(
                                 token.amount
                               ).toLocaleString(
@@ -1306,16 +1239,12 @@ export default function ActivityPage() {
                                   maximumFractionDigits:
                                     8,
                                 }
-                              )}
-                            </p>
-
-                            <p className="mt-1 text-xs font-semibold text-white/25">
-                              {token.usdValue !==
-                              null
-                                ? `$${token.usdValue.toFixed(
-                                    2
-                                  )}`
-                                : "USD value unavailable"}
+                              )}{" "}
+                              <span className="text-white/40">
+                                {
+                                  token.symbol
+                                }
+                              </span>
                             </p>
                           </div>
                         </div>
