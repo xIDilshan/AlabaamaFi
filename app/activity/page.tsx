@@ -347,11 +347,6 @@ function getHoldingMoney(
 
     visited.add(value);
 
-    /*
-     * A Money object normally contains
-     * amount information and may contain
-     * the total USD value.
-     */
     const hasAmount =
       value.raw !== undefined ||
       value.formatted !== undefined ||
@@ -370,10 +365,6 @@ function getHoldingMoney(
       return value;
     }
 
-    /*
-     * Search the most likely holding
-     * properties first.
-     */
     const priorityKeys = [
       "amount",
       "balance",
@@ -409,9 +400,6 @@ function getHoldingMoney(
       }
     }
 
-    /*
-     * Search any other nested objects.
-     */
     for (
       const [key, child] of Object.entries(
         value
@@ -449,9 +437,6 @@ function getTokenAmount(
   token: any,
   decimals: number
 ): string {
-  /*
-   * Prefer amount/balance before value.
-   */
   const candidates = [
     token.amount,
     token.balance,
@@ -461,10 +446,6 @@ function getTokenAmount(
     token.asset?.balance,
     token.token?.amount,
     token.token?.balance,
-
-    /*
-     * Fallback only.
-     */
     token.value,
     token.quantity,
     token.rawBalance,
@@ -540,8 +521,7 @@ function getTokenAmount(
  * usd
  * symbol
  *
- * The USD value is supplied by Arcscan when
- * it has a valid on-chain liquidity price.
+ * Used for tokens other than cirBTC.
  */
 function getTokenUsdValue(
   token: any
@@ -549,9 +529,6 @@ function getTokenUsdValue(
   const visited =
     new Set<any>();
 
-  /*
-   * Convert a USD value into a number.
-   */
   function parseUsd(
     value: any
   ): number | null {
@@ -562,9 +539,6 @@ function getTokenUsdValue(
       return null;
     }
 
-    /*
-     * Direct numeric/string USD value.
-     */
     if (
       typeof value === "number" ||
       typeof value === "string"
@@ -585,15 +559,6 @@ function getTokenUsdValue(
       return null;
     }
 
-    /*
-     * USD may itself be a Money object.
-     *
-     * Example:
-     *
-     * usd: {
-     *   formatted: "12.34"
-     * }
-     */
     if (
       value.formatted !==
         undefined &&
@@ -649,9 +614,6 @@ function getTokenUsdValue(
       }
     }
 
-    /*
-     * Last fallback for a raw USD Money value.
-     */
     if (
       value.raw !== undefined &&
       value.raw !== null &&
@@ -685,17 +647,6 @@ function getTokenUsdValue(
     return null;
   }
 
-  /*
-   * Recursively search the token response.
-   *
-   * This handles structures such as:
-   *
-   * token.amount.usd
-   * token.balance.usd
-   * token.asset.amount.usd
-   * token.token.amount.usd
-   * token.holding.amount.usd
-   */
   function search(
     value: any,
     depth = 0
@@ -717,14 +668,6 @@ function getTokenUsdValue(
 
     visited.add(value);
 
-    /*
-     * Most important case:
-     *
-     * {
-     *   amount: ...,
-     *   usd: ...
-     * }
-     */
     if (
       value.usd !== undefined &&
       value.usd !== null
@@ -741,9 +684,6 @@ function getTokenUsdValue(
       }
     }
 
-    /*
-     * Search likely holding containers first.
-     */
     const priorityKeys = [
       "amount",
       "balance",
@@ -779,10 +719,6 @@ function getTokenUsdValue(
       }
     }
 
-    /*
-     * Search the remaining nested
-     * objects as a final fallback.
-     */
     for (
       const [key, child] of Object.entries(
         value
@@ -817,9 +753,6 @@ function getTokenUsdValue(
     return null;
   }
 
-  /*
-   * First try the actual token response.
-   */
   const tokenUsd =
     search(token);
 
@@ -829,10 +762,6 @@ function getTokenUsdValue(
     return tokenUsd;
   }
 
-  /*
-   * Some API responses expose the
-   * total USD value directly.
-   */
   const directUsdCandidates = [
     token.usd,
     token.usdValue,
@@ -856,12 +785,6 @@ function getTokenUsdValue(
     }
   }
 
-  /*
-   * Arcscan has no price for this token
-   * in the current response.
-   *
-   * Do NOT invent or hard-code a price.
-   */
   return null;
 }
 
@@ -1019,6 +942,58 @@ export default function ActivityPage() {
           transactions
         );
 
+        /*
+         * Get the current BTC/USD spot price.
+         *
+         * cirBTC is valued using:
+         *
+         * cirBTC balance × live BTC price
+         *
+         * We intentionally do not use
+         * Arcscan's USD value for cirBTC.
+         */
+        let currentBtcPrice:
+          number | null = null;
+
+        try {
+          const btcResponse =
+            await fetch(
+              "https://api.coinbase.com/v2/prices/BTC-USD/spot",
+              {
+                cache: "no-store",
+              }
+            );
+
+          if (
+            btcResponse.ok
+          ) {
+            const btcData =
+              await btcResponse.json();
+
+            const price =
+              Number(
+                btcData?.data?.amount
+              );
+
+            if (
+              Number.isFinite(
+                price
+              ) &&
+              price > 0
+            ) {
+              currentBtcPrice =
+                price;
+            }
+          }
+        } catch (error) {
+          console.error(
+            "BTC price error:",
+            error
+          );
+
+          currentBtcPrice = null;
+        }
+
         let tokenHoldings:
           TokenHolding[] = [];
 
@@ -1085,10 +1060,36 @@ export default function ActivityPage() {
                         decimals
                       );
 
+                    /*
+                     * cirBTC uses the live BTC price.
+                     *
+                     * Example:
+                     *
+                     * 0.01 cirBTC
+                     * × $77,000 BTC
+                     * = $770.00
+                     *
+                     * If the live BTC price could
+                     * not be loaded, we return null
+                     * instead of using Arcscan's
+                     * potentially incorrect cirBTC USD.
+                     */
+                    const isCirBTC =
+                      symbol.toUpperCase() ===
+                      "CIRBTC";
+
                     const usdValue =
-                      getTokenUsdValue(
-                        token
-                      );
+                      isCirBTC
+                        ? currentBtcPrice !==
+                          null
+                          ? Number(
+                              amount
+                            ) *
+                            currentBtcPrice
+                          : null
+                        : getTokenUsdValue(
+                            token
+                          );
 
                     const logo =
                       getTokenLogo(
@@ -1523,18 +1524,20 @@ export default function ActivityPage() {
                                 token.amount
                               ).toLocaleString(
                                 undefined,
-                          token.symbol === "cirBTC"
-      ? {
-          minimumFractionDigits: 4,
-          maximumFractionDigits: 4,
-        }
-      :
-                                {
-                                  minimumFractionDigits:
-                                    2,
-                                  maximumFractionDigits:
-                                    2,
-                                }
+                                token.symbol ===
+                                  "cirBTC"
+                                  ? {
+                                      minimumFractionDigits:
+                                        5,
+                                      maximumFractionDigits:
+                                        5,
+                                    }
+                                  : {
+                                      minimumFractionDigits:
+                                        2,
+                                      maximumFractionDigits:
+                                        2,
+                                    }
                               )}{" "}
                               <span className="text-white/40">
                                 {
