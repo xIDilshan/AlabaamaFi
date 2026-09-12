@@ -316,53 +316,131 @@ function formatTokenAmount(
 }
 
 /*
- * Get the actual holding Money object.
+ * Find the Money object belonging to the
+ * actual token holding.
  *
- * Arcscan token balances use Money objects:
- *
- * {
- *   raw,
- *   decimals,
- *   formatted,
- *   usd,
- *   symbol
- * }
- *
- * The important part here is that the USD value
- * must come from the SAME Money object as the
- * token balance.
+ * Arcscan may nest the Money object at
+ * different levels depending on the response.
  */
 function getHoldingMoney(
   token: any
 ): any | null {
-  const candidates = [
-    token.amount,
-    token.balance,
-    token.tokenAmount,
-    token.token_amount,
-    token.asset?.amount,
-    token.asset?.balance,
-    token.token?.amount,
-    token.token?.balance,
-  ];
+  const visited =
+    new Set<any>();
 
-  for (
-    const candidate of candidates
-  ) {
+  function search(
+    value: any,
+    depth = 0
+  ): any | null {
     if (
-      candidate !== null &&
-      candidate !== undefined
+      value === null ||
+      value === undefined ||
+      depth > 6 ||
+      typeof value !== "object"
     ) {
+      return null;
+    }
+
+    if (visited.has(value)) {
+      return null;
+    }
+
+    visited.add(value);
+
+    /*
+     * A Money object normally contains
+     * amount information and may contain
+     * the total USD value.
+     */
+    const hasAmount =
+      value.raw !== undefined ||
+      value.formatted !== undefined ||
+      value.amount !== undefined ||
+      value.balance !== undefined;
+
+    const hasUsd =
+      value.usd !== undefined &&
+      value.usd !== null;
+
+    if (
+      hasAmount &&
+      hasUsd
+    ) {
+      return value;
+    }
+
+    /*
+     * Search the most likely holding
+     * properties first.
+     */
+    const priorityKeys = [
+      "amount",
+      "balance",
+      "tokenAmount",
+      "token_amount",
+      "holding",
+      "token",
+      "asset",
+      "value",
+    ];
+
+    for (
+      const key of priorityKeys
+    ) {
+      const child =
+        value[key];
+
       if (
-        typeof candidate ===
-        "object"
+        child !== null &&
+        child !== undefined &&
+        typeof child === "object"
       ) {
-        return candidate;
+        const result =
+          search(
+            child,
+            depth + 1
+          );
+
+        if (result) {
+          return result;
+        }
       }
     }
+
+    /*
+     * Search any other nested objects.
+     */
+    for (
+      const [key, child] of Object.entries(
+        value
+      )
+    ) {
+      if (
+        priorityKeys.includes(key)
+      ) {
+        continue;
+      }
+
+      if (
+        child !== null &&
+        typeof child === "object"
+      ) {
+        const result =
+          search(
+            child,
+            depth + 1
+          );
+
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    return null;
   }
 
-  return null;
+  return search(token);
 }
 
 function getTokenAmount(
@@ -370,12 +448,7 @@ function getTokenAmount(
   decimals: number
 ): string {
   /*
-   * IMPORTANT:
    * Prefer amount/balance before value.
-   *
-   * The previous implementation could pick
-   * token.value first, which can be a different
-   * object from the actual token holding.
    */
   const candidates = [
     token.amount,
@@ -388,7 +461,7 @@ function getTokenAmount(
     token.token?.balance,
 
     /*
-     * Keep these as fallback only.
+     * Fallback only.
      */
     token.value,
     token.quantity,
@@ -453,24 +526,15 @@ function getTokenAmount(
 }
 
 /*
- * Get the TOTAL USD value belonging to the
- * actual token holding.
- *
- * We intentionally do NOT use:
- *
- * token.price.usd
- * token.priceUsd
- * token.usdPrice
- *
- * because those can represent a UNIT price,
- * not the value of the user's entire holding.
+ * Get the TOTAL USD value belonging to
+ * the actual token holding.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
   /*
-   * First: use the actual Money object
-   * containing the token balance.
+   * First search for the actual Money
+   * object associated with the holding.
    */
   const holding =
     getHoldingMoney(token);
@@ -484,7 +548,13 @@ function getTokenUsdValue(
       usd !== undefined
     ) {
       const numericUsd =
-        Number(usd);
+        Number(
+          typeof usd === "object"
+            ? usd.formatted ??
+              usd.value ??
+              usd.amount
+            : usd
+        );
 
       if (
         Number.isFinite(
@@ -497,8 +567,8 @@ function getTokenUsdValue(
   }
 
   /*
-   * Some API responses may expose the
-   * total USD value directly.
+   * Some responses expose total USD
+   * directly on the token object.
    */
   const directUsdCandidates = [
     token.usdValue,
@@ -518,7 +588,13 @@ function getTokenUsdValue(
     }
 
     const numericUsd =
-      Number(candidate);
+      Number(
+        typeof candidate === "object"
+          ? candidate.formatted ??
+            candidate.value ??
+            candidate.amount
+          : candidate
+      );
 
     if (
       Number.isFinite(
@@ -530,11 +606,7 @@ function getTokenUsdValue(
   }
 
   /*
-   * Do NOT calculate from price fields.
-   *
-   * Arcscan's USD value is a derived value
-   * and may be unavailable for a token when
-   * there is insufficient pool liquidity.
+   * Do not calculate from price fields.
    */
   return null;
 }
@@ -894,8 +966,7 @@ export default function ActivityPage() {
         }
 
         /*
-         * Keep the three main coins in the
-         * expected order:
+         * Keep the three main coins in order:
          *
          * USDC → EURC → cirBTC
          */
@@ -1137,15 +1208,6 @@ export default function ActivityPage() {
                     </span>
                   </div>
 
-                  {/*
-                   * MOBILE:
-                   * one card per row.
-                   *
-                   * DESKTOP:
-                   * USDC | EURC | cirBTC
-                   *
-                   * Each coin gets its own card.
-                   */}
                   <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
                     {activityTokens.map(
                       (
@@ -1155,9 +1217,9 @@ export default function ActivityPage() {
                           key={`${token.address}-${token.symbol}`}
                           className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                         >
-                          {/* COIN + USD */}
+                          {/* COIN + BALANCE */}
 
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center justify-between gap-3">
                             <div className="flex min-w-0 items-center gap-3">
                               {token.logo ? (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center">
@@ -1200,32 +1262,9 @@ export default function ActivityPage() {
                               </div>
                             </div>
 
-                            {/* MATCHING USD VALUE */}
+                            {/* BALANCE */}
 
-                            <div className="shrink-0 text-right">
-                              <p className="font-black">
-                                {token.usdValue !==
-                                null
-                                  ? `$${token.usdValue.toFixed(
-                                      2
-                                    )}`
-                                  : "—"}
-                              </p>
-
-                              <p className="mt-1 text-[10px] font-semibold text-white/20">
-                                USD
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* BALANCE */}
-
-                          <div className="mt-5 border-t border-white/[0.06] pt-4">
-                            <p className="text-xs font-bold text-white/25">
-                              Balance
-                            </p>
-
-                            <p className="mt-1.5 break-all text-sm font-black text-white/75">
+                            <p className="shrink-0 text-right text-sm font-black text-white/75">
                               {Number(
                                 token.amount
                               ).toLocaleString(
@@ -1240,6 +1279,19 @@ export default function ActivityPage() {
                                   token.symbol
                                 }
                               </span>
+                            </p>
+                          </div>
+
+                          {/* USD VALUE */}
+
+                          <div className="mt-5 border-t border-white/[0.06] pt-4">
+                            <p className="text-sm font-black text-white">
+                              {token.usdValue !==
+                              null
+                                ? `$${token.usdValue.toFixed(
+                                    2
+                                  )}`
+                                : "USD value unavailable"}
                             </p>
                           </div>
                         </div>
