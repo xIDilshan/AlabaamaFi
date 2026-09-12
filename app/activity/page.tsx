@@ -26,64 +26,37 @@ type TokenHolding = {
   amount: string;
   logo: string | null;
   usdValue: number | null;
+  decimals?: number;
 };
 
-type Section =
-  | "home"
-  | "send"
-  | "swap"
-  | "bridge"
-  | "activity"
-  | "faucet";
+function shortenAddress(
+  address: string,
+  start = 6,
+  end = 4
+) {
+  if (!address) {
+    return "—";
+  }
 
-const menuItems: {
-  id: Section;
-  label: string;
-  icon: string;
-}[] = [
-  {
-    id: "home",
-    label: "Home",
-    icon: "⌂",
-  },
-  {
-    id: "send",
-    label: "Send",
-    icon: "↗",
-  },
-  {
-    id: "swap",
-    label: "Swap",
-    icon: "⇄",
-  },
-  {
-    id: "bridge",
-    label: "Bridge",
-    icon: "⇅",
-  },
-  {
-    id: "activity",
-    label: "Activity",
-    icon: "◷",
-  },
-  {
-    id: "faucet",
-    label: "Faucet",
-    icon: "◌",
-  },
-];
+  if (
+    address.length <=
+    start + end + 3
+  ) {
+    return address;
+  }
 
-function shortenAddress(address: string) {
-  if (!address) return "";
-
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  return `${address.slice(
+    0,
+    start
+  )}...${address.slice(-end)}`;
 }
 
 function getTokenLogo(
   symbol: string,
   apiLogo: string | null
 ): string | null {
-  const upperSymbol = symbol.toUpperCase();
+  const upperSymbol =
+    symbol.toUpperCase();
 
   if (upperSymbol === "USDC") {
     return "/tokens/usdc.svg";
@@ -110,28 +83,33 @@ function getTokenSymbol(
   token: any
 ): string {
   const rawSymbol =
-    token?.symbol ??
-    token?.tokenSymbol ??
-    token?.token?.symbol ??
-    token?.asset?.symbol ??
-    token?.name ??
+    token.symbol ??
+    token.tokenSymbol ??
+    token.token_symbol ??
+    token.asset?.symbol ??
+    token.token?.symbol ??
+    token.metadata?.symbol ??
     "";
 
-  const upperSymbol =
+  const upper =
     String(rawSymbol).toUpperCase();
 
   if (
-    upperSymbol === "EUROC" ||
-    upperSymbol === "EURC"
+    upper === "EUROC" ||
+    upper === "EURC"
   ) {
     return "EURC";
   }
 
   if (
-    upperSymbol === "CIRBTC" ||
-    upperSymbol === "CIR-BTC"
+    upper === "CIRBTC" ||
+    upper === "CIR-BTC"
   ) {
     return "cirBTC";
+  }
+
+  if (upper === "USDC") {
+    return "USDC";
   }
 
   return String(rawSymbol);
@@ -141,197 +119,575 @@ function getTokenName(
   token: any,
   symbol: string
 ): string {
-  return String(
-    token?.name ??
-      token?.tokenName ??
-      token?.token?.name ??
-      token?.asset?.name ??
-      symbol
-  );
-}
-
-function getTokenAddress(
-  token: any
-): string {
-  return String(
-    token?.address ??
-      token?.tokenAddress ??
-      token?.contractAddress ??
-      token?.token?.address ??
-      token?.asset?.address ??
-      ""
-  );
-}
-
-function getTokenAmount(
-  token: any
-): string {
-  const rawAmount =
-    token?.amount ??
-    token?.balance ??
-    token?.value ??
-    token?.quantity ??
-    token?.token?.amount ??
-    token?.asset?.amount ??
-    "0";
-
-  if (
-    typeof rawAmount === "object" &&
-    rawAmount !== null
-  ) {
-    const formatted =
-      rawAmount.formatted ??
-      rawAmount.amount ??
-      rawAmount.value ??
-      rawAmount.balance ??
-      rawAmount.raw;
-
-    if (
-      formatted !== undefined &&
-      formatted !== null
-    ) {
-      return String(formatted);
-    }
-
-    return "0";
+  if (symbol === "USDC") {
+    return "USD Coin";
   }
 
-  return String(rawAmount);
+  if (symbol === "EURC") {
+    return "Euro Coin";
+  }
+
+  if (symbol === "cirBTC") {
+    return "Circle Bitcoin";
+  }
+
+  const apiName =
+    token.name ??
+    token.tokenName ??
+    token.token_name ??
+    token.asset?.name ??
+    token.token?.name ??
+    token.metadata?.name ??
+    "";
+
+  return String(apiName || symbol);
 }
 
-function getUsdValue(
-  value: any
-): number | null {
+function getTokenDecimals(
+  token: any,
+  symbol: string
+): number {
+  const possibleDecimals = [
+    token.decimals,
+    token.tokenDecimals,
+    token.token_decimals,
+    token.decimal,
+    token.token?.decimals,
+    token.asset?.decimals,
+    token.metadata?.decimals,
+  ];
+
+  for (
+    const value of possibleDecimals
+  ) {
+    const decimals = Number(value);
+
+    if (
+      Number.isFinite(decimals) &&
+      decimals >= 0 &&
+      decimals <= 36
+    ) {
+      return decimals;
+    }
+  }
+
+  const upperSymbol =
+    symbol.toUpperCase();
+
+  if (
+    upperSymbol === "USDC" ||
+    upperSymbol === "EURC" ||
+    upperSymbol === "EUROC"
+  ) {
+    return 6;
+  }
+
+  if (upperSymbol === "CIRBTC") {
+    return 8;
+  }
+
+  return 18;
+}
+
+function formatTokenAmount(
+  value: any,
+  decimals = 18
+): string {
   if (
     value === null ||
     value === undefined
   ) {
-    return null;
+    return "0";
   }
 
-  if (typeof value === "object") {
-    const nested =
-      value.usd ??
-      value.usdValue ??
-      value.usd_value ??
-      value.formatted ??
-      value.value ??
-      value.amount ??
-      null;
+  if (
+    typeof value === "object"
+  ) {
+    if (
+      value.formatted !== undefined &&
+      value.formatted !== null
+    ) {
+      return String(value.formatted);
+    }
 
     if (
-      nested !== null &&
-      nested !== undefined &&
-      Number.isFinite(Number(nested))
+      value.display !== undefined &&
+      value.display !== null
     ) {
-      return Number(nested);
+      return String(value.display);
+    }
+
+    if (
+      value.amount !== undefined &&
+      value.amount !== null
+    ) {
+      return formatTokenAmount(
+        value.amount,
+        Number(
+          value.decimals ?? decimals
+        )
+      );
+    }
+
+    if (
+      value.raw !== undefined &&
+      value.raw !== null
+    ) {
+      return formatTokenAmount(
+        value.raw,
+        Number(
+          value.decimals ?? decimals
+        )
+      );
+    }
+
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      return formatTokenAmount(
+        value.value,
+        Number(
+          value.decimals ?? decimals
+        )
+      );
+    }
+  }
+
+  const stringValue =
+    String(value).trim();
+
+  if (!stringValue) {
+    return "0";
+  }
+
+  if (
+    stringValue.includes(".")
+  ) {
+    return stringValue;
+  }
+
+  try {
+    const raw =
+      BigInt(stringValue);
+
+    if (decimals === 0) {
+      return raw.toString();
+    }
+
+    const zero = BigInt(0);
+
+    const negative =
+      raw < zero;
+
+    const absolute =
+      negative ? -raw : raw;
+
+    const divisor =
+      BigInt(10) **
+      BigInt(decimals);
+
+    const whole =
+      absolute / divisor;
+
+    const fraction =
+      absolute % divisor;
+
+    if (fraction === zero) {
+      return `${negative ? "-" : ""}${whole}`;
+    }
+
+    const fractionString =
+      fraction
+        .toString()
+        .padStart(
+          decimals,
+          "0"
+        )
+        .replace(
+          /0+$/,
+          ""
+        );
+
+    return `${negative ? "-" : ""}${whole}.${fractionString}`;
+  } catch {
+    return stringValue;
+  }
+}
+
+/*
+ * Find the Money object belonging to the
+ * actual token holding.
+ *
+ * Arcscan may nest the Money object at
+ * different levels depending on the response.
+ */
+function getHoldingMoney(
+  token: any
+): any | null {
+  const visited =
+    new Set<any>();
+
+  function search(
+    value: any,
+    depth = 0
+  ): any | null {
+    if (
+      value === null ||
+      value === undefined ||
+      depth > 6 ||
+      typeof value !== "object"
+    ) {
+      return null;
+    }
+
+    if (visited.has(value)) {
+      return null;
+    }
+
+    visited.add(value);
+
+    /*
+     * A Money object normally contains
+     * amount information and may contain
+     * the total USD value.
+     */
+    const hasAmount =
+      value.raw !== undefined ||
+      value.formatted !== undefined ||
+      value.amount !== undefined ||
+      value.balance !== undefined;
+
+    const hasUsd =
+      value.usd !== undefined &&
+      value.usd !== null;
+
+    if (
+      hasAmount &&
+      hasUsd
+    ) {
+      return value;
+    }
+
+    /*
+     * Search the most likely holding
+     * properties first.
+     */
+    const priorityKeys = [
+      "amount",
+      "balance",
+      "tokenAmount",
+      "token_amount",
+      "holding",
+      "token",
+      "asset",
+      "value",
+    ];
+
+    for (
+      const key of priorityKeys
+    ) {
+      const child =
+        value[key];
+
+      if (
+        child !== null &&
+        child !== undefined &&
+        typeof child === "object"
+      ) {
+        const result =
+          search(
+            child,
+            depth + 1
+          );
+
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    /*
+     * Search any other nested objects.
+     */
+    for (
+      const [key, child] of Object.entries(
+        value
+      )
+    ) {
+      if (
+        priorityKeys.includes(key)
+      ) {
+        continue;
+      }
+
+      if (
+        child !== null &&
+        typeof child === "object"
+      ) {
+        const result =
+          search(
+            child,
+            depth + 1
+          );
+
+        if (result) {
+          return result;
+        }
+      }
     }
 
     return null;
   }
 
-  const numberValue = Number(value);
-
-  return Number.isFinite(numberValue)
-    ? numberValue
-    : null;
+  return search(token);
 }
 
+function getTokenAmount(
+  token: any,
+  decimals: number
+): string {
+  /*
+   * Prefer amount/balance before value.
+   */
+  const candidates = [
+    token.amount,
+    token.balance,
+    token.tokenAmount,
+    token.token_amount,
+    token.asset?.amount,
+    token.asset?.balance,
+    token.token?.amount,
+    token.token?.balance,
+
+    /*
+     * Fallback only.
+     */
+    token.value,
+    token.quantity,
+    token.rawBalance,
+    token.raw_balance,
+    token.asset?.value,
+    token.token?.value,
+  ];
+
+  for (
+    const candidate of candidates
+  ) {
+    if (
+      candidate === null ||
+      candidate === undefined
+    ) {
+      continue;
+    }
+
+    if (
+      typeof candidate ===
+      "object"
+    ) {
+      if (
+        candidate.formatted !==
+          undefined &&
+        candidate.formatted !==
+          null
+      ) {
+        return String(
+          candidate.formatted
+        );
+      }
+
+      const nested =
+        candidate.amount ??
+        candidate.balance ??
+        candidate.raw ??
+        candidate.value;
+
+      if (
+        nested !== null &&
+        nested !== undefined
+      ) {
+        return formatTokenAmount(
+          nested,
+          Number(
+            candidate.decimals ??
+              decimals
+          )
+        );
+      }
+    }
+
+    return formatTokenAmount(
+      candidate,
+      decimals
+    );
+  }
+
+  return "0";
+}
+
+/*
+ * Get the TOTAL USD value belonging to
+ * the actual token holding.
+ */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  const directValue =
-    token?.usdValue ??
-    token?.usd_value ??
-    token?.valueUsd ??
-    token?.value_usd ??
-    token?.usd ??
-    token?.priceUsd;
+  /*
+   * First search for the actual Money
+   * object associated with the holding.
+   */
+  const holding =
+    getHoldingMoney(token);
 
-  const directUsd =
-    getUsdValue(directValue);
+  if (holding) {
+    const usd =
+      holding.usd;
 
-  if (directUsd !== null) {
-    return directUsd;
-  }
-
-  const amountCandidates = [
-    token?.amount,
-    token?.balance,
-    token?.value,
-    token?.quantity,
-    token?.token?.amount,
-    token?.asset?.amount,
-  ];
-
-  for (const candidate of amountCandidates) {
     if (
-      candidate &&
-      typeof candidate === "object"
+      usd !== null &&
+      usd !== undefined
     ) {
-      const usd =
-        getUsdValue(candidate.usd);
+      const numericUsd =
+        Number(
+          typeof usd === "object"
+            ? usd.formatted ??
+              usd.value ??
+              usd.amount
+            : usd
+        );
 
-      if (usd !== null) {
-        return usd;
+      if (
+        Number.isFinite(
+          numericUsd
+        )
+      ) {
+        return numericUsd;
       }
     }
   }
 
+  /*
+   * Some responses expose total USD
+   * directly on the token object.
+   */
+  const directUsdCandidates = [
+    token.usdValue,
+    token.usd_value,
+    token.valueUsd,
+    token.value_usd,
+  ];
+
+  for (
+    const candidate of directUsdCandidates
+  ) {
+    if (
+      candidate === null ||
+      candidate === undefined
+    ) {
+      continue;
+    }
+
+    const numericUsd =
+      Number(
+        typeof candidate === "object"
+          ? candidate.formatted ??
+            candidate.value ??
+            candidate.amount
+          : candidate
+      );
+
+    if (
+      Number.isFinite(
+        numericUsd
+      )
+    ) {
+      return numericUsd;
+    }
+  }
+
+  /*
+   * Do not calculate from price fields.
+   */
   return null;
 }
 
-function formatTokenAmount(
-  amount: string
-): string {
-  const number = Number(amount);
-
-  if (!Number.isFinite(number)) {
-    return "0.00";
-  }
-
-  return number.toLocaleString(
-    undefined,
-    {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
+function getApiLogo(
+  token: any
+): string | null {
+  return (
+    token.logo ??
+    token.logoUrl ??
+    token.logo_url ??
+    token.image ??
+    token.imageUrl ??
+    token.image_url ??
+    token.icon ??
+    token.iconUrl ??
+    token.asset?.logo ??
+    token.asset?.logoUrl ??
+    token.token?.logo ??
+    token.token?.logoUrl ??
+    null
   );
 }
 
 export default function ActivityPage() {
+  const [
+    activityAddress,
+    setActivityAddress,
+  ] = useState("");
+
+  const [
+    activityTransactions,
+    setActivityTransactions,
+  ] = useState<
+    WalletTransaction[]
+  >([]);
+
+  const [
+    activityLoading,
+    setActivityLoading,
+  ] = useState(false);
+
+  const [
+    activityError,
+    setActivityError,
+  ] = useState("");
+
+  const [
+    activityTokens,
+    setActivityTokens,
+  ] = useState<
+    TokenHolding[]
+  >([]);
+
+  const [
+    portfolioValue,
+    setPortfolioValue,
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    copiedHash,
+    setCopiedHash,
+  ] = useState<
+    string | null
+  >(null);
+
   const {
     address,
     isConnected,
   } = useAccount();
 
-  const [showMenu, setShowMenu] =
-    useState(false);
-
-  const [activityAddress, setActivityAddress] =
-    useState("");
-
-  const [activityTransactions, setActivityTransactions] =
-    useState<WalletTransaction[]>([]);
-
-  const [activityLoading, setActivityLoading] =
-    useState(false);
-
-  const [activityError, setActivityError] =
-    useState("");
-
-  const [activityTokens, setActivityTokens] =
-    useState<TokenHolding[]>([]);
-
-  const [portfolioValue, setPortfolioValue] =
-    useState<number | null>(null);
-
-  const [copiedHash, setCopiedHash] =
-    useState("");
-
   useEffect(() => {
-    if (isConnected && address) {
-      setActivityAddress(address);
+    if (
+      isConnected &&
+      address
+    ) {
+      setActivityAddress(
+        address
+      );
     } else {
       setActivityAddress("");
       setActivityTransactions([]);
@@ -339,290 +695,370 @@ export default function ActivityPage() {
       setPortfolioValue(null);
       setActivityError("");
     }
-  }, [isConnected, address]);
+  }, [
+    isConnected,
+    address,
+  ]);
 
-  const handleCopyHash = async (
-    hash: string
-  ) => {
-    try {
-      await navigator.clipboard.writeText(hash);
-      setCopiedHash(hash);
-
-      window.setTimeout(() => {
-        setCopiedHash("");
-      }, 1500);
-    } catch {
-      setCopiedHash("");
-    }
-  };
-
-  const handleCheckActivity = async () => {
-    setActivityError("");
-    setActivityTransactions([]);
-    setActivityTokens([]);
-    setPortfolioValue(null);
-
-    if (!isConnected || !address) {
-      setActivityError(
-        "Please connect your wallet first."
-      );
-      return;
-    }
-
-    const walletAddress =
-      activityAddress.trim();
-
-    if (!isAddress(walletAddress)) {
-      setActivityError(
-        "Please enter a valid wallet address."
-      );
-      return;
-    }
-
-    setActivityLoading(true);
-
-    try {
-      const transactions =
-        await getWalletTransactions(
-          walletAddress
-        );
-
-      setActivityTransactions(transactions);
-
-      let tokenHoldings: TokenHolding[] = [];
-
+  const handleCopyHash =
+    async (
+      hash: string
+    ) => {
       try {
-        const response = await fetch(
-          `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
+        await navigator.clipboard.writeText(
+          hash
         );
 
-        if (response.ok) {
-          const data =
-            await response.json();
+        setCopiedHash(hash);
 
-          const rawTokens =
-            Array.isArray(data)
-              ? data
-              : Array.isArray(data?.items)
-              ? data.items
-              : Array.isArray(data?.tokens)
-              ? data.tokens
-              : Array.isArray(data?.data)
-              ? data.data
-              : [];
-
-          tokenHoldings =
-            rawTokens
-              .map((token: any) => {
-                const symbol =
-                  getTokenSymbol(token);
-
-                const address =
-                  getTokenAddress(token);
-
-                const amount =
-                  getTokenAmount(token);
-
-                const usdValue =
-                  getTokenUsdValue(token);
-
-                return {
-                  address,
-                  symbol,
-                  name:
-                    getTokenName(
-                      token,
-                      symbol
-                    ),
-                  amount,
-                  logo:
-                    getTokenLogo(
-                      symbol,
-                      token?.logo ??
-                        token?.logoUrl ??
-                        token?.image ??
-                        token?.token?.logo ??
-                        token?.asset?.logo ??
-                        null
-                    ),
-                  usdValue,
-                };
-              })
-              .filter(
-                (token: TokenHolding) =>
-                  token.symbol
-                    .trim()
-                    .length > 0 &&
-                  token.symbol
-                    .toUpperCase() !==
-                    "USDC"
-              );
-        }
-      } catch (tokenError) {
+        setTimeout(() => {
+          setCopiedHash(null);
+        }, 1800);
+      } catch (error) {
         console.error(
-          "Token API error:",
-          tokenError
+          "Failed to copy transaction hash:",
+          error
         );
+      }
+    };
 
-        tokenHoldings = [];
+  const handleCheckActivity =
+    async () => {
+      setActivityError("");
+      setActivityTransactions([]);
+      setActivityTokens([]);
+      setPortfolioValue(null);
+
+      if (
+        !isConnected ||
+        !address
+      ) {
+        setActivityError(
+          "Please connect your wallet first."
+        );
+        return;
       }
 
-      try {
-        const paddedAddress =
-          walletAddress
-            .slice(2)
-            .padStart(64, "0");
+      const walletAddress =
+        activityAddress.trim();
 
-        const response =
-          await fetch(
-            "https://rpc.testnet.arc.network",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                id: 1,
-                method: "eth_call",
-                params: [
-                  {
-                    to: USDC_ADDRESS,
-                    data:
-                      "0x70a08231" +
-                      paddedAddress,
-                  },
-                  "latest",
-                ],
-              }),
-            }
+      if (
+        !isAddress(
+          walletAddress
+        )
+      ) {
+        setActivityError(
+          "Please enter a valid wallet address."
+        );
+        return;
+      }
+
+      setActivityLoading(true);
+
+      try {
+        const transactions =
+          await getWalletTransactions(
+            walletAddress
           );
 
-        if (response.ok) {
-          const rpcResult =
-            await response.json();
+        setActivityTransactions(
+          transactions
+        );
 
-          if (rpcResult?.result) {
-            const rawBalance =
-              BigInt(
-                rpcResult.result
+        let tokenHoldings:
+          TokenHolding[] = [];
+
+        /*
+         * Arcscan token balances.
+         */
+        try {
+          const response =
+            await fetch(
+              `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
+            );
+
+          if (response.ok) {
+            const data =
+              await response.json();
+
+            const rawTokens =
+              Array.isArray(data)
+                ? data
+                : Array.isArray(
+                    data?.items
+                  )
+                ? data.items
+                : Array.isArray(
+                    data?.tokens
+                  )
+                ? data.tokens
+                : Array.isArray(
+                    data?.data
+                  )
+                ? data.data
+                : [];
+
+            tokenHoldings =
+              rawTokens
+                .map(
+                  (
+                    token: any
+                  ) => {
+                    const symbol =
+                      getTokenSymbol(
+                        token
+                      );
+
+                    const decimals =
+                      getTokenDecimals(
+                        token,
+                        symbol
+                      );
+
+                    const tokenAddress =
+                      token.address ??
+                      token.tokenAddress ??
+                      token.token_address ??
+                      token.contractAddress ??
+                      token.contract_address ??
+                      token.asset?.address ??
+                      token.token?.address ??
+                      "";
+
+                    const amount =
+                      getTokenAmount(
+                        token,
+                        decimals
+                      );
+
+                    const usdValue =
+                      getTokenUsdValue(
+                        token
+                      );
+
+                    const logo =
+                      getTokenLogo(
+                        symbol,
+                        getApiLogo(
+                          token
+                        )
+                      );
+
+                    return {
+                      address:
+                        String(
+                          tokenAddress
+                        ),
+                      symbol,
+                      name:
+                        getTokenName(
+                          token,
+                          symbol
+                        ),
+                      amount,
+                      logo,
+                      usdValue,
+                      decimals,
+                    };
+                  }
+                )
+                .filter(
+                  (
+                    token: TokenHolding
+                  ) =>
+                    token.symbol.toUpperCase() !==
+                    "USDC"
+                );
+          }
+        } catch (error) {
+          console.error(
+            "Token balance error:",
+            error
+          );
+
+          tokenHoldings = [];
+        }
+
+        /*
+         * Direct USDC balance.
+         */
+        try {
+          const paddedAddress =
+            walletAddress
+              .slice(2)
+              .padStart(
+                64,
+                "0"
               );
 
-            const usdcAmount =
-              Number(rawBalance) /
-              1_000_000;
+          const response =
+            await fetch(
+              "https://rpc.testnet.arc.network",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                body:
+                  JSON.stringify({
+                    jsonrpc:
+                      "2.0",
+                    id: 1,
+                    method:
+                      "eth_call",
+                    params: [
+                      {
+                        to: USDC_ADDRESS,
+                        data:
+                          "0x70a08231" +
+                          paddedAddress,
+                      },
+                      "latest",
+                    ],
+                  }),
+              }
+            );
 
-            tokenHoldings.unshift({
-              address:
-                USDC_ADDRESS,
-              symbol: "USDC",
-              name: "USD Coin",
-              amount:
-                String(usdcAmount),
-              logo:
-                "/tokens/usdc.svg",
-              usdValue:
-                usdcAmount,
-            });
+          if (response.ok) {
+            const rpcResult =
+              await response.json();
+
+            if (
+              rpcResult?.result
+            ) {
+              const rawBalance =
+                BigInt(
+                  rpcResult.result
+                );
+
+              const usdcAmount =
+                Number(
+                  rawBalance
+                ) / 1_000_000;
+
+              if (
+                usdcAmount > 0
+              ) {
+                tokenHoldings.unshift({
+                  address:
+                    USDC_ADDRESS,
+                  symbol: "USDC",
+                  name: "USD Coin",
+                  amount:
+                    String(
+                      usdcAmount
+                    ),
+                  logo:
+                    "/tokens/usdc.svg",
+                  usdValue:
+                    usdcAmount,
+                  decimals: 6,
+                });
+              }
+            }
           }
+        } catch (error) {
+          console.error(
+            "USDC balance error:",
+            error
+          );
         }
-      } catch (rpcError) {
-        console.error(
-          "USDC RPC error:",
-          rpcError
-        );
-      }
 
-      const supportedSymbols = [
-        "USDC",
-        "EURC",
-        "CIRBTC",
-      ];
+        /*
+         * Keep the three main coins in order:
+         *
+         * USDC → EURC → cirBTC
+         */
+        const tokenOrder: Record<
+          string,
+          number
+        > = {
+          USDC: 0,
+          EURC: 1,
+          CIRBTC: 2,
+        };
 
-      const normalizedTokens =
-        tokenHoldings
-          .filter((token) => {
-            const symbol =
-              token.symbol.toUpperCase();
+        tokenHoldings.sort(
+          (a, b) => {
+            const aOrder =
+              tokenOrder[
+                a.symbol.toUpperCase()
+              ] ?? 99;
+
+            const bOrder =
+              tokenOrder[
+                b.symbol.toUpperCase()
+              ] ?? 99;
 
             return (
-              supportedSymbols.includes(
-                symbol
-              )
+              aOrder - bOrder
             );
-          })
-          .sort((a, b) => {
-            const aIndex =
-              supportedSymbols.indexOf(
-                a.symbol.toUpperCase()
-              );
+          }
+        );
 
-            const bIndex =
-              supportedSymbols.indexOf(
-                b.symbol.toUpperCase()
-              );
+        setActivityTokens(
+          tokenHoldings
+        );
 
-            return aIndex - bIndex;
-          });
+        /*
+         * Portfolio value.
+         */
+        const totalValue =
+          tokenHoldings.reduce(
+            (
+              total,
+              token
+            ) => {
+              if (
+                token.usdValue !==
+                  null &&
+                Number.isFinite(
+                  token.usdValue
+                )
+              ) {
+                return (
+                  total +
+                  token.usdValue
+                );
+              }
 
-      const uniqueTokens: TokenHolding[] =
-        [];
+              return total;
+            },
+            0
+          );
 
-      const seenSymbols =
-        new Set<string>();
-
-      for (const token of normalizedTokens) {
-        const symbol =
-          token.symbol.toUpperCase();
-
-        if (seenSymbols.has(symbol)) {
-          continue;
-        }
-
-        seenSymbols.add(symbol);
-        uniqueTokens.push(token);
-      }
-
-      setActivityTokens(
-        uniqueTokens
-      );
-
-      const totalValue =
-        uniqueTokens.reduce(
-          (total, token) => {
-            if (
-              token.usdValue !== null &&
+        const hasUsdValue =
+          tokenHoldings.some(
+            (
+              token
+            ) =>
+              token.usdValue !==
+                null &&
               Number.isFinite(
                 token.usdValue
               )
-            ) {
-              return (
-                total +
-                token.usdValue
-              );
-            }
+          );
 
-            return total;
-          },
-          0
+        if (
+          hasUsdValue
+        ) {
+          setPortfolioValue(
+            totalValue
+          );
+        }
+      } catch (error) {
+        console.error(error);
+
+        setActivityError(
+          "Unable to load wallet activity. Please try again."
         );
-
-      if (uniqueTokens.length > 0) {
-        setPortfolioValue(
-          totalValue
+      } finally {
+        setActivityLoading(
+          false
         );
       }
-    } catch (err) {
-      console.error(err);
-
-      setActivityError(
-        "Unable to load wallet activity. Please try again."
-      );
-    } finally {
-      setActivityLoading(false);
-    }
-  };
+    };
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
@@ -635,149 +1071,73 @@ export default function ActivityPage() {
       `}</style>
 
       <Header
-        onMenuClick={() => setShowMenu(true)}
+        onMenuClick={() => {
+          window.dispatchEvent(
+            new Event(
+              "open-wallet-modal"
+            )
+          );
+        }}
       />
 
-      {/* MOBILE MENU */}
-
-      {showMenu && (
-        <div className="fixed inset-0 z-40">
-          <button
-            onClick={() =>
-              setShowMenu(false)
-            }
-            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-            aria-label="Close menu"
-          />
-
-          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">
-                  AlabaamaFi
-                </h2>
-
-                <p className="mt-1 text-xs font-semibold text-white/30">
-                  Powered by Arc
-                </p>
-              </div>
-
-              <button
-                onClick={() =>
-                  setShowMenu(false)
-                }
-                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
-                aria-label="Close menu"
-              >
-                ✕
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setShowMenu(false);
-
-                    if (
-                      item.id === "home"
-                    ) {
-                      window.location.href =
-                        "/";
-                    } else if (
-                      item.id === "send"
-                    ) {
-                      window.location.href =
-                        "/send";
-                    } else if (
-                      item.id === "swap"
-                    ) {
-                      window.location.href =
-                        "/swap";
-                    } else if (
-                      item.id === "bridge"
-                    ) {
-                      window.location.href =
-                        "/bridge";
-                    } else if (
-                      item.id === "faucet"
-                    ) {
-                      window.location.href =
-                        "/faucet";
-                    }
-                  }}
-                  className={`flex min-h-12 w-full items-center gap-4 rounded-2xl px-4 text-left text-sm font-bold transition ${
-                    item.id === "activity"
-                      ? "bg-white text-black"
-                      : "text-white/55 hover:bg-white/[0.04] hover:text-white"
-                  }`}
-                >
-                  <span className="flex w-6 justify-center text-lg">
-                    {item.icon}
-                  </span>
-
-                  <span>
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </aside>
-        </div>
-      )}
-
-      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
-        <div className="mx-auto max-w-2xl">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold text-white/35">
             AlabaamaFi
           </p>
 
-          <h2 className="mt-1 text-3xl font-black sm:text-4xl">
+          <h1 className="mt-1 text-3xl font-black sm:text-4xl">
             Wallet Activity
-          </h2>
+          </h1>
 
-          <p className="mt-3 text-sm font-medium leading-6 text-white/35">
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
             Connect your wallet to view its token
             holdings and recent transactions.
           </p>
 
-          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-white/50">
-                Wallet Address
-              </label>
+          {/* CHECKER */}
 
-              <input
-                type="text"
-                placeholder="Connect wallet first"
-                value={activityAddress}
-                readOnly
-                disabled={!isConnected}
-                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
-              />
-            </div>
+          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
+            <label className="mb-2 block text-sm font-bold text-white/50">
+              Wallet Address
+            </label>
+
+            <input
+              type="text"
+              placeholder="Connect wallet first"
+              value={
+                activityAddress
+              }
+              readOnly
+              disabled={
+                !isConnected
+              }
+              className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
+            />
 
             <button
               onClick={() => {
-                if (!isConnected) {
+                if (
+                  !isConnected
+                ) {
+                  window.dispatchEvent(
+                    new Event(
+                      "open-wallet-modal"
+                    )
+                  );
                   return;
                 }
 
                 handleCheckActivity();
               }}
               disabled={
-                !isConnected ||
+                isConnected &&
                 activityLoading
               }
-              className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black tracking-tight ${
+              className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
                 !isConnected
-                  ? "cursor-not-allowed border border-white/[0.05] bg-[#111318] text-white/20 shadow-none"
-                  : "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0"
-              } ${
-                isConnected
-                  ? "disabled:cursor-not-allowed disabled:opacity-60"
-                  : ""
+                  ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
+                  : "border border-black/[0.08] bg-white text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
               }`}
             >
               {activityLoading
@@ -789,20 +1149,25 @@ export default function ActivityPage() {
 
             {activityError && (
               <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm font-semibold leading-5 text-red-400">
-                  {activityError}
+                <p className="text-sm font-semibold leading-5 text-red-400">
+                  {
+                    activityError
+                  }
                 </p>
               </div>
             )}
           </div>
 
-          {(activityTokens.length > 0 ||
+          {/* RESULTS */}
+
+          {(activityTokens.length >
+            0 ||
             activityTransactions.length >
               0) && (
             <div className="mt-7 sm:mt-8">
               {/* PORTFOLIO */}
 
-              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5 lg:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-bold text-white/25">
@@ -830,30 +1195,30 @@ export default function ActivityPage() {
               {activityTokens.length >
                 0 && (
                 <div className="mt-7 sm:mt-8">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h3 className="font-black">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="font-black">
                       Token Holdings
-                    </h3>
+                    </h2>
 
-                    <span className="shrink-0 text-xs font-bold text-white/25">
+                    <span className="text-xs font-bold text-white/25">
                       {
                         activityTokens.length
                       }{" "}
-                      token
-                      {activityTokens.length !==
-                      1
-                        ? "s"
-                        : ""}
+                      tokens
                     </span>
                   </div>
 
                   <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
                     {activityTokens.map(
-                      (token) => (
+                      (
+                        token
+                      ) => (
                         <div
                           key={`${token.address}-${token.symbol}`}
-                          className="min-w-0 rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
+                          className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                         >
+                          {/* COIN + BALANCE */}
+
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex min-w-0 items-center gap-3">
                               {token.logo ? (
@@ -863,15 +1228,11 @@ export default function ActivityPage() {
                                       token.logo
                                     }
                                     alt={`${token.symbol} logo`}
-                                    className="h-10 w-10 rounded-full object-contain"
-                                    style={
-                                      token.symbol.toUpperCase() ===
-                                      "CIRBTC"
-                                        ? {
-                                            transform:
-                                              "scale(0.75)",
-                                          }
-                                        : undefined
+                                    className={
+                                      token.symbol ===
+                                      "cirBTC"
+                                        ? "h-7 w-7 rounded-full object-contain"
+                                        : "h-10 w-10 rounded-full object-contain"
                                     }
                                   />
                                 </div>
@@ -901,17 +1262,29 @@ export default function ActivityPage() {
                               </div>
                             </div>
 
+                            {/* BALANCE */}
+
                             <p className="shrink-0 text-right text-sm font-black text-white/75">
-                              {formatTokenAmount(
+                              {Number(
                                 token.amount
+                              ).toLocaleString(
+                                undefined,
+                                {
+                                  maximumFractionDigits:
+                                    8,
+                                }
                               )}{" "}
-                              {
-                                token.symbol
-                              }
+                              <span className="text-white/40">
+                                {
+                                  token.symbol
+                                }
+                              </span>
                             </p>
                           </div>
 
-                          <div className="mt-4 border-t border-white/[0.06] pt-3">
+                          {/* USD VALUE */}
+
+                          <div className="mt-5 border-t border-white/[0.06] pt-4">
                             <p className="text-sm font-black text-white">
                               {token.usdValue !==
                               null
@@ -927,31 +1300,6 @@ export default function ActivityPage() {
                   </div>
                 </div>
               )}
-
-              {/* TRANSACTION SUMMARY */}
-
-              {activityTransactions.length >
-                0 && (
-                <div className="mt-7 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 sm:mt-8">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold text-white/25">
-                        Transactions
-                      </p>
-
-                      <p className="mt-2 text-2xl font-black">
-                        {
-                          activityTransactions.length
-                        }
-                      </p>
-                    </div>
-
-                    <span className="text-right text-xs font-semibold text-white/25">
-                      Recent activity
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -960,12 +1308,12 @@ export default function ActivityPage() {
           {activityTransactions.length >
             0 && (
             <div className="mt-7 sm:mt-8">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-black">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-black">
                   Recent Transactions
-                </h3>
+                </h2>
 
-                <span className="shrink-0 text-xs font-bold text-white/25">
+                <span className="text-xs font-bold text-white/25">
                   {
                     activityTransactions.length
                   }{" "}
@@ -973,9 +1321,11 @@ export default function ActivityPage() {
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                 {activityTransactions.map(
-                  (tx) => {
+                  (
+                    tx
+                  ) => {
                     const transactionDate =
                       tx.timestamp
                         ? new Date(
@@ -1007,8 +1357,10 @@ export default function ActivityPage() {
                             undefined,
                             {
                               hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
+                              minute:
+                                "2-digit",
+                              second:
+                                "2-digit",
                               hour12: false,
                             }
                           )
@@ -1016,38 +1368,88 @@ export default function ActivityPage() {
 
                     return (
                       <div
-                        key={tx.hash}
-                        className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 transition hover:bg-[#0a0d12] sm:p-5"
+                        key={
+                          tx.hash
+                        }
+                        className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <p className="text-sm font-black">
-                              Transaction
+                        {/* HASH */}
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-black">
+                            Transaction
+                          </p>
+
+                          <div className="mt-1 flex min-w-0 items-center gap-2">
+                            <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
+                              {shortenAddress(
+                                tx.hash,
+                                10,
+                                8
+                              )}
                             </p>
 
-                            <div className="mt-1 flex items-start gap-2">
-                              <p className="min-w-0 break-all text-xs font-medium leading-5 text-white/25">
-                                {tx.hash}
-                              </p>
-
-                              <button
-                                onClick={() =>
-                                  handleCopyHash(
-                                    tx.hash
-                                  )
-                                }
-                                className="shrink-0 text-xs font-bold text-white/30 transition hover:text-white"
-                                title="Copy transaction hash"
-                                aria-label="Copy transaction hash"
-                              >
-                                {copiedHash ===
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopyHash(
+                                  tx.hash
+                                )
+                              }
+                              title={
+                                copiedHash ===
                                 tx.hash
                                   ? "Copied"
-                                  : "Copy"}
-                              </button>
-                            </div>
+                                  : "Copy transaction hash"
+                              }
+                              aria-label={
+                                copiedHash ===
+                                tx.hash
+                                  ? "Transaction hash copied"
+                                  : "Copy transaction hash"
+                              }
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
+                            >
+                              {copiedHash ===
+                              tx.hash ? (
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M20 6 9 17l-5-5" />
+                                </svg>
+                              ) : (
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <rect
+                                    width="13"
+                                    height="13"
+                                    x="9"
+                                    y="9"
+                                    rx="2"
+                                  />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </button>
                           </div>
                         </div>
+
+                        {/* DATE / TIME */}
 
                         <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
                           <div className="flex items-center justify-between gap-4">
@@ -1075,42 +1477,52 @@ export default function ActivityPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+                        {/* FROM / TO */}
+
+                        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="min-w-0">
-                            <p className="font-bold text-white/25">
+                            <p className="text-xs font-bold text-white/25">
                               From
                             </p>
 
-                            <p className="mt-1 break-all font-semibold text-white/55">
-                              {tx.from
-                                ? shortenAddress(
-                                    tx.from
-                                  )
-                                : "Unavailable"}
+                            <p
+                              title={
+                                tx.from
+                              }
+                              className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
+                            >
+                              {shortenAddress(
+                                tx.from
+                              )}
                             </p>
                           </div>
 
                           <div className="min-w-0">
-                            <p className="font-bold text-white/25">
+                            <p className="text-xs font-bold text-white/25">
                               To
                             </p>
 
-                            <p className="mt-1 break-all font-semibold text-white/55">
-                              {tx.to
-                                ? shortenAddress(
-                                    tx.to
-                                  )
-                                : "Unavailable"}
+                            <p
+                              title={
+                                tx.to
+                              }
+                              className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
+                            >
+                              {shortenAddress(
+                                tx.to
+                              )}
                             </p>
                           </div>
 
                           <div>
-                            <p className="font-bold text-white/25">
+                            <p className="text-xs font-bold text-white/25">
                               Value
                             </p>
 
-                            <p className="mt-1 break-words font-black text-white/65">
-                              {tx.value}
+                            <p className="mt-1 break-words text-sm font-black text-white/65">
+                              {
+                                tx.value
+                              }
                               {tx.tokenSymbol
                                 ? ` ${tx.tokenSymbol}`
                                 : ""}
@@ -1118,24 +1530,34 @@ export default function ActivityPage() {
                           </div>
 
                           <div>
-                            <p className="font-bold text-white/25">
+                            <p className="text-xs font-bold text-white/25">
                               Status
                             </p>
 
-                            <p className="mt-1 font-black text-green-400">
-                              {tx.status}
+                            <p className="mt-1 text-sm font-black text-green-400">
+                              {
+                                tx.status
+                              }
                             </p>
                           </div>
                         </div>
+
+                        {/* ARCSCAN */}
 
                         <div className="mt-4 border-t border-white/[0.06] pt-3">
                           <a
                             href={`https://testnet.arcscan.app/tx/${tx.hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-black text-white/40 transition hover:text-white"
+                            className="inline-flex items-center gap-1.5 text-xs font-black text-white/40 transition hover:text-white"
                           >
-                            View Transaction on ArcScan
+                            View on ArcScan
+                            <span
+                              aria-hidden="true"
+                              className="text-base"
+                            >
+                              ↗
+                            </span>
                           </a>
                         </div>
                       </div>
@@ -1145,6 +1567,8 @@ export default function ActivityPage() {
               </div>
             </div>
           )}
+
+          {/* EMPTY */}
 
           {!activityLoading &&
             isConnected &&
