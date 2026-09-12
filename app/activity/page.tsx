@@ -34,22 +34,33 @@ function shortenAddress(
   start = 6,
   end = 4
 ) {
-  if (!address) return "—";
+  if (!address) {
+    return "—";
+  }
 
-  if (address.length <= start + end + 3) {
+  if (
+    address.length <=
+    start + end + 3
+  ) {
     return address;
   }
 
-  return `${address.slice(0, start)}...${address.slice(-end)}`;
+  return `${address.slice(
+    0,
+    start
+  )}...${address.slice(-end)}`;
 }
 
 function getTokenLogo(
   symbol: string,
   apiLogo: string | null
 ): string | null {
-  const upperSymbol = symbol.toUpperCase();
+  const upperSymbol =
+    symbol.toUpperCase();
 
-  if (upperSymbol === "USDC") {
+  if (
+    upperSymbol === "USDC"
+  ) {
     return "/tokens/usdc.svg";
   }
 
@@ -60,17 +71,146 @@ function getTokenLogo(
     return "/tokens/eurc.svg";
   }
 
-  if (upperSymbol === "CIRBTC") {
+  if (
+    upperSymbol === "CIRBTC" ||
+    upperSymbol === "CIR-BTC"
+  ) {
     return "/tokens/cirbtc.svg";
   }
 
   return apiLogo;
 }
 
-/*
- * Convert raw token values into human-readable
- * amounts.
- */function formatTokenAmount(
+function getTokenSymbol(
+  token: any
+): string {
+  const rawSymbol =
+    token.symbol ??
+    token.tokenSymbol ??
+    token.token_symbol ??
+    token.asset?.symbol ??
+    token.token?.symbol ??
+    token.metadata?.symbol ??
+    "";
+
+  const upper =
+    String(
+      rawSymbol
+    ).toUpperCase();
+
+  if (
+    upper === "EUROC" ||
+    upper === "EURC"
+  ) {
+    return "EURC";
+  }
+
+  if (
+    upper === "CIRBTC" ||
+    upper === "CIR-BTC"
+  ) {
+    return "cirBTC";
+  }
+
+  if (
+    upper === "USDC"
+  ) {
+    return "USDC";
+  }
+
+  return String(
+    rawSymbol
+  );
+}
+
+function getTokenName(
+  token: any,
+  symbol: string
+): string {
+  if (
+    symbol === "USDC"
+  ) {
+    return "USD Coin";
+  }
+
+  if (
+    symbol === "EURC"
+  ) {
+    return "Euro Coin";
+  }
+
+  if (
+    symbol === "cirBTC"
+  ) {
+    return "Circle Bitcoin";
+  }
+
+  const apiName =
+    token.name ??
+    token.tokenName ??
+    token.token_name ??
+    token.asset?.name ??
+    token.token?.name ??
+    token.metadata?.name ??
+    "";
+
+  return String(
+    apiName || symbol
+  );
+}
+
+function getTokenDecimals(
+  token: any,
+  symbol: string
+): number {
+  const possibleDecimals = [
+    token.decimals,
+    token.tokenDecimals,
+    token.token_decimals,
+    token.decimal,
+    token.token?.decimals,
+    token.asset?.decimals,
+    token.metadata?.decimals,
+  ];
+
+  for (
+    const value of possibleDecimals
+  ) {
+    const decimals =
+      Number(value);
+
+    if (
+      Number.isFinite(
+        decimals
+      ) &&
+      decimals >= 0 &&
+      decimals <= 36
+    ) {
+      return decimals;
+    }
+  }
+
+  const upperSymbol =
+    symbol.toUpperCase();
+
+  if (
+    upperSymbol === "USDC" ||
+    upperSymbol === "EURC" ||
+    upperSymbol === "EUROC"
+  ) {
+    return 6;
+  }
+
+  if (
+    upperSymbol === "CIRBTC"
+  ) {
+    return 8;
+  }
+
+  return 18;
+}
+
+function formatTokenAmount(
   value: any,
   decimals = 18
 ): string {
@@ -85,51 +225,63 @@ function getTokenLogo(
     typeof value === "object"
   ) {
     if (
-      value.formatted !== undefined &&
+      value.formatted !==
+        undefined &&
       value.formatted !== null
     ) {
-      return String(value.formatted);
+      return String(
+        value.formatted
+      );
     }
 
     if (
-      value.display !== undefined &&
+      value.display !==
+        undefined &&
       value.display !== null
     ) {
-      return String(value.display);
+      return String(
+        value.display
+      );
     }
 
     if (
-      value.amount !== undefined &&
+      value.amount !==
+        undefined &&
       value.amount !== null
     ) {
       return formatTokenAmount(
         value.amount,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
 
     if (
-      value.raw !== undefined &&
+      value.raw !==
+        undefined &&
       value.raw !== null
     ) {
       return formatTokenAmount(
         value.raw,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
 
     if (
-      value.value !== undefined &&
+      value.value !==
+        undefined &&
       value.value !== null
     ) {
       return formatTokenAmount(
         value.value,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
@@ -143,8 +295,7 @@ function getTokenLogo(
   }
 
   /*
-   * If the API already returned a
-   * decimal value, keep it as-is.
+   * Already formatted decimal.
    */
   if (
     stringValue.includes(".")
@@ -152,14 +303,13 @@ function getTokenLogo(
     return stringValue;
   }
 
-  /*
-   * Raw integer token amount.
-   */
   try {
     const raw =
       BigInt(stringValue);
 
-    if (decimals === 0) {
+    if (
+      decimals === 0
+    ) {
       return raw.toString();
     }
 
@@ -208,114 +358,213 @@ function getTokenLogo(
   }
 }
 
-function getUsdValue(
-  value: any
-): number | null {
-  if (
-    value === null ||
-    value === undefined
-  ) {
-    return null;
-  }
+function getTokenAmount(
+  token: any,
+  decimals: number
+): string {
+  const candidates = [
+    token.amount,
+    token.balance,
+    token.value,
+    token.quantity,
+    token.tokenAmount,
+    token.token_amount,
+    token.rawBalance,
+    token.raw_balance,
+    token.asset?.amount,
+    token.asset?.balance,
+    token.asset?.value,
+    token.token?.amount,
+    token.token?.balance,
+    token.token?.value,
+  ];
 
-  if (
-    typeof value === "object"
+  for (
+    const candidate of candidates
   ) {
-    const nested =
-      value.formatted ??
-      value.value ??
-      value.amount ??
-      value.raw ??
-      null;
-
     if (
-      nested !== null &&
-      nested !== undefined &&
-      Number.isFinite(
-        Number(nested)
-      )
+      candidate === null ||
+      candidate === undefined
     ) {
-      return Number(nested);
+      continue;
     }
 
-    return null;
+    if (
+      typeof candidate ===
+      "object"
+    ) {
+      const nested =
+        candidate.formatted ??
+        candidate.display ??
+        candidate.amount ??
+        candidate.balance ??
+        candidate.value ??
+        candidate.raw;
+
+      if (
+        nested !== null &&
+        nested !== undefined
+      ) {
+        return formatTokenAmount(
+          nested,
+          Number(
+            candidate.decimals ??
+              decimals
+          )
+        );
+      }
+    }
+
+    return formatTokenAmount(
+      candidate,
+      decimals
+    );
   }
 
-  const numberValue =
-    Number(value);
-
-  return Number.isFinite(
-    numberValue
-  )
-    ? numberValue
-    : null;
+  return "0";
 }
 
-function getTokenDecimals(
-  token: any,
-  symbol: string
-): number {
-  const apiDecimals =
-    Number(
-      token.decimals ??
-        token.tokenDecimals ??
-        token.decimal ??
-        token.token?.decimals ??
-        token.metadata?.decimals
-    );
+function getTokenUsdValue(
+  token: any
+): number | null {
+  const candidates = [
+    token.usdValue,
+    token.usd_value,
+    token.valueUsd,
+    token.value_usd,
+    token.usd,
+    token.priceUsd,
+    token.price_usd,
+    token.usdPrice,
+    token.usd_price,
+    token.token?.usdValue,
+    token.token?.valueUsd,
+    token.token?.priceUsd,
+    token.token?.price_usd,
+    token.asset?.usdValue,
+    token.asset?.valueUsd,
+    token.asset?.priceUsd,
+    token.asset?.price_usd,
+  ];
 
-  if (
-    Number.isFinite(apiDecimals) &&
-    apiDecimals >= 0 &&
-    apiDecimals <= 36
+  for (
+    const candidate of candidates
   ) {
-    return apiDecimals;
+    if (
+      candidate === null ||
+      candidate === undefined
+    ) {
+      continue;
+    }
+
+    if (
+      typeof candidate ===
+      "object"
+    ) {
+      const nested =
+        candidate.value ??
+        candidate.amount ??
+        candidate.formatted ??
+        candidate.usd ??
+        candidate.price;
+
+      if (
+        nested !== null &&
+        nested !== undefined
+      ) {
+        const numberValue =
+          Number(nested);
+
+        if (
+          Number.isFinite(
+            numberValue
+          )
+        ) {
+          return numberValue;
+        }
+      }
+
+      continue;
+    }
+
+    const numberValue =
+      Number(candidate);
+
+    if (
+      Number.isFinite(
+        numberValue
+      )
+    ) {
+      return numberValue;
+    }
   }
 
-  /*
-   * Known Arc testnet tokens.
-   */
-  const upperSymbol =
-    symbol.toUpperCase();
+  return null;
+}
 
-  if (
-    upperSymbol === "USDC" ||
-    upperSymbol === "EURC" ||
-    upperSymbol === "EUROC"
-  ) {
-    return 6;
-  }
-
-  if (
-    upperSymbol === "CIRBTC"
-  ) {
-    return 8;
-  }
-
-  return 18;
+function getApiLogo(
+  token: any
+): string | null {
+  return (
+    token.logo ??
+    token.logoUrl ??
+    token.logo_url ??
+    token.image ??
+    token.imageUrl ??
+    token.image_url ??
+    token.icon ??
+    token.iconUrl ??
+    token.asset?.logo ??
+    token.asset?.logoUrl ??
+    token.token?.logo ??
+    token.token?.logoUrl ??
+    null
+  );
 }
 
 export default function ActivityPage() {
-  const [activityAddress, setActivityAddress] =
-    useState("");
+  const [
+    activityAddress,
+    setActivityAddress,
+  ] = useState("");
 
-  const [activityTransactions, setActivityTransactions] =
-    useState<WalletTransaction[]>([]);
+  const [
+    activityTransactions,
+    setActivityTransactions,
+  ] = useState<
+    WalletTransaction[]
+  >([]);
 
-  const [activityLoading, setActivityLoading] =
-    useState(false);
+  const [
+    activityLoading,
+    setActivityLoading,
+  ] = useState(false);
 
-  const [activityError, setActivityError] =
-    useState("");
+  const [
+    activityError,
+    setActivityError,
+  ] = useState("");
 
-  const [activityTokens, setActivityTokens] =
-    useState<TokenHolding[]>([]);
+  const [
+    activityTokens,
+    setActivityTokens,
+  ] = useState<
+    TokenHolding[]
+  >([]);
 
-  const [portfolioValue, setPortfolioValue] =
-    useState<number | null>(null);
+  const [
+    portfolioValue,
+    setPortfolioValue,
+  ] = useState<
+    number | null
+  >(null);
 
-  const [copiedHash, setCopiedHash] =
-    useState<string | null>(null);
+  const [
+    copiedHash,
+    setCopiedHash,
+  ] = useState<
+    string | null
+  >(null);
 
   const {
     address,
@@ -342,26 +591,33 @@ export default function ActivityPage() {
     address,
   ]);
 
-  const handleCopyHash = async (
-    hash: string
-  ) => {
-    try {
-      await navigator.clipboard.writeText(
-        hash
-      );
+  const handleCopyHash =
+    async (
+      hash: string
+    ) => {
+      try {
+        await navigator.clipboard.writeText(
+          hash
+        );
 
-      setCopiedHash(hash);
+        setCopiedHash(
+          hash
+        );
 
-      setTimeout(() => {
-        setCopiedHash(null);
-      }, 1800);
-    } catch (error) {
-      console.error(
-        "Failed to copy transaction hash:",
+        setTimeout(() => {
+          setCopiedHash(
+            null
+          );
+        }, 1800);
+      } catch (
         error
-      );
-    }
-  };
+      ) {
+        console.error(
+          "Failed to copy transaction hash:",
+          error
+        );
+      }
+    };
 
   const handleCheckActivity =
     async () => {
@@ -394,7 +650,9 @@ export default function ActivityPage() {
         return;
       }
 
-      setActivityLoading(true);
+      setActivityLoading(
+        true
+      );
 
       try {
         const transactions =
@@ -409,18 +667,25 @@ export default function ActivityPage() {
         let tokenHoldings: TokenHolding[] =
           [];
 
+        /*
+         * Arcscan token balances.
+         */
         try {
           const response =
             await fetch(
               `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
             );
 
-          if (response.ok) {
+          if (
+            response.ok
+          ) {
             const data =
               await response.json();
 
             const rawTokens =
-              Array.isArray(data)
+              Array.isArray(
+                data
+              )
                 ? data
                 : Array.isArray(
                     data?.items
@@ -430,6 +695,10 @@ export default function ActivityPage() {
                     data?.tokens
                   )
                 ? data.tokens
+                : Array.isArray(
+                    data?.data
+                  )
+                ? data.data
                 : [];
 
             tokenHoldings =
@@ -438,37 +707,10 @@ export default function ActivityPage() {
                   (
                     token: any
                   ) => {
-                    const rawSymbol =
-                      token.symbol ??
-                      token.tokenSymbol ??
-                      token.name ??
-                      "";
-
-                    const upperSymbol =
-                      String(
-                        rawSymbol
-                      ).toUpperCase();
-
-                    let symbol =
-                      String(
-                        rawSymbol
+                    const symbol =
+                      getTokenSymbol(
+                        token
                       );
-
-                    if (
-                      upperSymbol ===
-                      "EUROC"
-                    ) {
-                      symbol =
-                        "EURC";
-                    }
-
-                    if (
-                      upperSymbol ===
-                      "CIRBTC"
-                    ) {
-                      symbol =
-                        "cirBTC";
-                    }
 
                     const decimals =
                       getTokenDecimals(
@@ -479,32 +721,30 @@ export default function ActivityPage() {
                     const tokenAddress =
                       token.address ??
                       token.tokenAddress ??
+                      token.token_address ??
                       token.contractAddress ??
+                      token.contract_address ??
+                      token.asset?.address ??
                       token.token?.address ??
                       "";
 
-                    const rawAmount =
-                      token.amount ??
-                      token.balance ??
-                      token.value ??
-                      token.quantity ??
-                      token.token?.amount ??
-                      token.token?.balance ??
-                      "0";
-
                     const amount =
-                      formatTokenAmount(
-                        rawAmount,
+                      getTokenAmount(
+                        token,
                         decimals
                       );
 
                     const usdValue =
-                      getUsdValue(
-                        token.usdValue ??
-                          token.usd_value ??
-                          token.valueUsd ??
-                          token.usd ??
-                          token.priceUsd
+                      getTokenUsdValue(
+                        token
+                      );
+
+                    const logo =
+                      getTokenLogo(
+                        symbol,
+                        getApiLogo(
+                          token
+                        )
                       );
 
                     return {
@@ -516,22 +756,14 @@ export default function ActivityPage() {
                       symbol,
 
                       name:
-                        token.name ??
-                        token.tokenName ??
-                        token.token?.name ??
-                        symbol,
+                        getTokenName(
+                          token,
+                          symbol
+                        ),
 
                       amount,
 
-                      logo:
-                        getTokenLogo(
-                          symbol,
-                          token.logo ??
-                            token.logoUrl ??
-                            token.image ??
-                            token.token?.logo ??
-                            null
-                        ),
+                      logo,
 
                       usdValue,
 
@@ -547,14 +779,21 @@ export default function ActivityPage() {
                     "USDC"
                 );
           }
-        } catch {
-          tokenHoldings = [];
+        } catch (
+          error
+        ) {
+          console.error(
+            "Token balance error:",
+            error
+          );
+
+          tokenHoldings =
+            [];
         }
 
         /*
          * Direct USDC balance.
          */
-
         try {
           const paddedAddress =
             walletAddress
@@ -564,16 +803,18 @@ export default function ActivityPage() {
                 "0"
               );
 
-          const data =
+          const response =
             await fetch(
               "https://rpc.testnet.arc.network",
               {
                 method:
                   "POST",
+
                 headers: {
                   "Content-Type":
                     "application/json",
                 },
+
                 body: JSON.stringify(
                   {
                     jsonrpc:
@@ -595,9 +836,11 @@ export default function ActivityPage() {
               }
             );
 
-          if (data.ok) {
+          if (
+            response.ok
+          ) {
             const rpcResult =
-              await data.json();
+              await response.json();
 
             if (
               rpcResult?.result
@@ -644,8 +887,13 @@ export default function ActivityPage() {
               }
             }
           }
-        } catch {
-          // Keep Arcscan token results.
+        } catch (
+          error
+        ) {
+          console.error(
+            "USDC balance error:",
+            error
+          );
         }
 
         setActivityTokens(
@@ -681,8 +929,12 @@ export default function ActivityPage() {
             totalValue
           );
         }
-      } catch (err) {
-        console.error(err);
+      } catch (
+        error
+      ) {
+        console.error(
+          error
+        );
 
         setActivityError(
           "Unable to load wallet activity. Please try again."
@@ -739,15 +991,21 @@ export default function ActivityPage() {
             <input
               type="text"
               placeholder="Connect wallet first"
-              value={activityAddress}
+              value={
+                activityAddress
+              }
               readOnly
-              disabled={!isConnected}
+              disabled={
+                !isConnected
+              }
               className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
             />
 
             <button
               onClick={() => {
-                if (!isConnected) {
+                if (
+                  !isConnected
+                ) {
                   window.dispatchEvent(
                     new Event(
                       "open-wallet-modal"
@@ -778,7 +1036,9 @@ export default function ActivityPage() {
             {activityError && (
               <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
                 <p className="text-sm font-semibold leading-5 text-red-400">
-                  {activityError}
+                  {
+                    activityError
+                  }
                 </p>
               </div>
             )}
@@ -911,7 +1171,7 @@ export default function ActivityPage() {
             </div>
           )}
 
-          {/* TRANSACTIONS */}
+          {/* RECENT TRANSACTIONS */}
 
           {activityTransactions.length >
             0 && (
@@ -931,7 +1191,9 @@ export default function ActivityPage() {
 
               <div className="space-y-3">
                 {activityTransactions.map(
-                  (tx) => {
+                  (
+                    tx
+                  ) => {
                     const transactionDate =
                       tx.timestamp
                         ? new Date(
@@ -939,12 +1201,15 @@ export default function ActivityPage() {
                           )
                         : null;
 
-                    const formattedDate =
+                    const validDate =
                       transactionDate &&
                       !Number.isNaN(
                         transactionDate.getTime()
-                      )
-                        ? transactionDate.toLocaleDateString(
+                      );
+
+                    const formattedDate =
+                      validDate
+                        ? transactionDate!.toLocaleDateString(
                             undefined,
                             {
                               year: "numeric",
@@ -955,11 +1220,8 @@ export default function ActivityPage() {
                         : "Date unavailable";
 
                     const formattedTime =
-                      transactionDate &&
-                      !Number.isNaN(
-                        transactionDate.getTime()
-                      )
-                        ? transactionDate.toLocaleTimeString(
+                      validDate
+                        ? transactionDate!.toLocaleTimeString(
                             undefined,
                             {
                               hour: "2-digit",
@@ -974,7 +1236,9 @@ export default function ActivityPage() {
 
                     return (
                       <div
-                        key={tx.hash}
+                        key={
+                          tx.hash
+                        }
                         className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
                       >
                         {/* HASH */}
@@ -985,7 +1249,7 @@ export default function ActivityPage() {
                           </p>
 
                           <div className="mt-1 flex min-w-0 items-center gap-2">
-                            <p className="min-w-0 truncate text-xs font-medium text-white/25">
+                            <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
                               {shortenAddress(
                                 tx.hash,
                                 10,
@@ -1000,12 +1264,55 @@ export default function ActivityPage() {
                                   tx.hash
                                 )
                               }
-                              className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[10px] font-bold text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
+                              title={
+                                copiedHash ===
+                                tx.hash
+                                  ? "Copied"
+                                  : "Copy transaction hash"
+                              }
+                              aria-label={
+                                copiedHash ===
+                                tx.hash
+                                  ? "Transaction hash copied"
+                                  : "Copy transaction hash"
+                              }
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
                             >
                               {copiedHash ===
-                              tx.hash
-                                ? "Copied"
-                                : "Copy"}
+                              tx.hash ? (
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M20 6 9 17l-5-5" />
+                                </svg>
+                              ) : (
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <rect
+                                    width="13"
+                                    height="13"
+                                    x="9"
+                                    y="9"
+                                    rx="2"
+                                  />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
                             </button>
                           </div>
                         </div>
@@ -1047,7 +1354,9 @@ export default function ActivityPage() {
                             </p>
 
                             <p
-                              title={tx.from}
+                              title={
+                                tx.from
+                              }
                               className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
                             >
                               {shortenAddress(
@@ -1062,7 +1371,9 @@ export default function ActivityPage() {
                             </p>
 
                             <p
-                              title={tx.to}
+                              title={
+                                tx.to
+                              }
                               className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
                             >
                               {shortenAddress(
@@ -1111,7 +1422,7 @@ export default function ActivityPage() {
                             View on ArcScan
                             <span
                               aria-hidden="true"
-                              className="text-sm"
+                              className="text-base"
                             >
                               ↗
                             </span>
@@ -1138,7 +1449,8 @@ export default function ActivityPage() {
               <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-6 text-center">
                 <p className="text-sm font-medium leading-6 text-white/35">
                   No transactions or token
-                  holdings found for this wallet.
+                  holdings found for this
+                  wallet.
                 </p>
               </div>
             )}
