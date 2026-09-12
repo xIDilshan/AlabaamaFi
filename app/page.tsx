@@ -1419,27 +1419,7 @@ export default function Home() {
 
       <footer className="border-t border-white/[0.06] bg-[#030405]">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-7 text-center sm:py-8">
-          {/* Arc Logo */}
-          <div
-            className="flex h-9 w-9 items-center justify-center text-white/75"
-            aria-label="Arc"
-          >
-            <svg
-              viewBox="0 0 32 32"
-              className="h-8 w-8"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M16 4.5L27.5 27.5H21.8L18.9 21.3H13.1L10.2 27.5H4.5L16 4.5Z"
-                fill="currentColor"
-              />
-              <path
-                d="M14.9 17.1H17.1L16 14.7L14.9 17.1Z"
-                fill="#030405"
-              />
-            </svg>
-          </div>
+          
 
           <p className="mt-2 text-sm font-black tracking-tight text-white/80">
             AlabaamaFi
