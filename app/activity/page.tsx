@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import { isAddress } from "viem";
 
@@ -11,241 +11,278 @@ import {
   type WalletTransaction,
 } from "@/lib/arcscan";
 
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["600"],
+});
+
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
 
 type TokenHolding = {
+  address: string;
   symbol: string;
   name: string;
-  balance: number;
-  usdValue: number;
-  logo: string;
+  amount: string;
+  logo: string | null;
+  usdValue: number | null;
 };
 
-function getTokenLogo(symbol: string) {
-  const normalized = symbol.toUpperCase();
+function getTokenLogo(
+  symbol: string,
+  apiLogo: string | null
+): string | null {
+  const upperSymbol = symbol.toUpperCase();
 
-  if (normalized === "USDC") {
+  if (upperSymbol === "USDC") {
     return "/tokens/usdc.svg";
   }
 
-  if (normalized === "EURC" || normalized === "EUROC") {
+  if (
+    upperSymbol === "EURC" ||
+    upperSymbol === "EUROC"
+  ) {
     return "/tokens/eurc.svg";
   }
 
-  if (normalized === "CIRBTC") {
+  if (upperSymbol === "CIRBTC") {
     return "/tokens/cirbtc.svg";
   }
 
-  return "";
+  return apiLogo;
 }
 
-function getUsdValue(token: any) {
-  const value =
-    token?.value_usd ??
-    token?.usd_value ??
-    token?.price_usd ??
-    token?.fiat_value ??
-    0;
+function getUsdValue(value: any): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
 
-  const number = Number(value);
+  if (typeof value === "object") {
+    const nested =
+      value.formatted ??
+      value.value ??
+      value.amount ??
+      value.raw ??
+      null;
 
-  return Number.isFinite(number) ? number : 0;
-}
+    if (
+      nested !== null &&
+      nested !== undefined &&
+      Number.isFinite(Number(nested))
+    ) {
+      return Number(nested);
+    }
 
-function shortenAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+    return null;
+  }
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
+  const numberValue = Number(value);
 
-function formatBalance(value: number) {
-  return value.toLocaleString("en-US", {
-    maximumFractionDigits: 6,
-  });
+  return Number.isFinite(numberValue)
+    ? numberValue
+    : null;
 }
 
 export default function ActivityPage() {
-  const { address, isConnected } = useAccount();
+  const [activityAddress, setActivityAddress] =
+    useState("");
 
-  const [walletInput, setWalletInput] = useState("");
-  const [checkedAddress, setCheckedAddress] = useState("");
+  const [activityTransactions, setActivityTransactions] =
+    useState<WalletTransaction[]>([]);
 
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(
-    []
-  );
+  const [activityLoading, setActivityLoading] =
+    useState(false);
 
-  const [tokens, setTokens] = useState<TokenHolding[]>([]);
+  const [activityError, setActivityError] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [activityTokens, setActivityTokens] =
+    useState<TokenHolding[]>([]);
 
-  const [searched, setSearched] = useState(false);
+  const [portfolioValue, setPortfolioValue] =
+    useState<number | null>(null);
 
-  const handleUseConnectedWallet = () => {
-    if (!address) return;
+  const {
+    address,
+    isConnected,
+  } = useAccount();
 
-    setWalletInput(address);
-  };
+  useEffect(() => {
+    if (isConnected && address) {
+      setActivityAddress(address);
+    } else {
+      setActivityAddress("");
+      setActivityTransactions([]);
+      setActivityTokens([]);
+      setPortfolioValue(null);
+      setActivityError("");
+    }
+  }, [isConnected, address]);
 
-  const handleCheckWallet = async () => {
-    const targetAddress = walletInput.trim();
+  const handleCheckActivity = async () => {
+    setActivityError("");
+    setActivityTransactions([]);
+    setActivityTokens([]);
+    setPortfolioValue(null);
 
-    setError("");
-    setSearched(false);
-    setTransactions([]);
-    setTokens([]);
-
-    if (!targetAddress) {
-      setError("Please enter a wallet address.");
+    if (!isConnected || !address) {
+      setActivityError(
+        "Please connect your wallet first."
+      );
       return;
     }
 
-    if (!isAddress(targetAddress)) {
-      setError("Please enter a valid wallet address.");
+    const walletAddress =
+      activityAddress.trim();
+
+    if (!isAddress(walletAddress)) {
+      setActivityError(
+        "Please enter a valid wallet address."
+      );
       return;
     }
 
-    setLoading(true);
+    setActivityLoading(true);
 
     try {
-      setCheckedAddress(targetAddress);
+      const transactions =
+        await getWalletTransactions(
+          walletAddress
+        );
 
-      /*
-       * ---------------------------------------------------------
-       * TRANSACTIONS
-       * ---------------------------------------------------------
-       */
-
-      const walletTransactions =
-        await getWalletTransactions(targetAddress);
-
-      setTransactions(walletTransactions);
-
-      /*
-       * ---------------------------------------------------------
-       * TOKEN HOLDINGS
-       * ---------------------------------------------------------
-       */
-
-      const tokenResponse = await fetch(
-        `https://api-testnet.arc-scan.org/v1/address/${targetAddress}/tokens`
+      setActivityTransactions(
+        transactions
       );
 
-      let apiTokens: any[] = [];
+      let tokenHoldings: TokenHolding[] =
+        [];
 
-      if (tokenResponse.ok) {
-        const tokenData = await tokenResponse.json();
+      try {
+        const response = await fetch(
+          `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
+        );
 
-        if (Array.isArray(tokenData)) {
-          apiTokens = tokenData;
-        } else if (Array.isArray(tokenData?.items)) {
-          apiTokens = tokenData.items;
-        } else if (Array.isArray(tokenData?.tokens)) {
-          apiTokens = tokenData.tokens;
+        if (response.ok) {
+          const data =
+            await response.json();
+
+          const rawTokens =
+            Array.isArray(data)
+              ? data
+              : Array.isArray(data?.items)
+              ? data.items
+              : Array.isArray(data?.tokens)
+              ? data.tokens
+              : [];
+
+          tokenHoldings = rawTokens
+            .map((token: any) => {
+              const rawSymbol =
+                token.symbol ??
+                token.tokenSymbol ??
+                token.name ??
+                "";
+
+              const upperSymbol =
+                String(
+                  rawSymbol
+                ).toUpperCase();
+
+              let symbol =
+                String(rawSymbol);
+
+              if (
+                upperSymbol ===
+                "EUROC"
+              ) {
+                symbol = "EURC";
+              }
+
+              if (
+                upperSymbol ===
+                "CIRBTC"
+              ) {
+                symbol = "cirBTC";
+              }
+
+              const tokenAddress =
+                token.address ??
+                token.tokenAddress ??
+                token.contractAddress ??
+                "";
+
+              const amount =
+                token.amount ??
+                token.balance ??
+                token.value ??
+                token.quantity ??
+                "0";
+
+              const usdValue =
+                getUsdValue(
+                  token.usdValue ??
+                    token.usd_value ??
+                    token.valueUsd ??
+                    token.usd ??
+                    token.priceUsd
+                );
+
+              return {
+                address:
+                  String(tokenAddress),
+
+                symbol,
+
+                name:
+                  token.name ??
+                  token.tokenName ??
+                  symbol,
+
+                amount:
+                  String(amount),
+
+                logo:
+                  getTokenLogo(
+                    symbol,
+                    token.logo ??
+                      token.logoUrl ??
+                      token.image ??
+                      null
+                  ),
+
+                usdValue,
+              };
+            })
+            .filter(
+              (token: TokenHolding) =>
+                token.symbol.toUpperCase() !==
+                "USDC"
+            );
         }
+      } catch {
+        tokenHoldings = [];
       }
 
       /*
-       * Normalize Arcscan token names.
-       */
-
-      const normalizedTokens = apiTokens
-        .map((token) => {
-          const rawSymbol =
-            token?.token?.symbol ??
-            token?.symbol ??
-            "";
-
-          let symbol = String(rawSymbol);
-
-          if (symbol.toUpperCase() === "EUROC") {
-            symbol = "EURC";
-          }
-
-          if (symbol.toUpperCase() === "CIRBTC") {
-            symbol = "cirBTC";
-          }
-
-          const rawBalance =
-            token?.value ??
-            token?.balance ??
-            token?.token?.balance ??
-            0;
-
-          const decimals =
-            Number(
-              token?.token?.decimals ??
-                token?.decimals ??
-                6
-            ) || 6;
-
-          let balance = Number(rawBalance);
-
-          /*
-           * If the API gives the raw integer token amount,
-           * convert it using the token decimals.
-           */
-          if (
-            Number.isFinite(balance) &&
-            Number.isInteger(balance) &&
-            String(rawBalance).length > 6
-          ) {
-            balance = balance / 10 ** decimals;
-          }
-
-          return {
-            symbol,
-            name:
-              token?.token?.name ??
-              token?.name ??
-              symbol,
-            balance: Number.isFinite(balance)
-              ? balance
-              : 0,
-            usdValue: getUsdValue(token),
-            logo:
-              token?.token?.icon_url ??
-              token?.icon_url ??
-              getTokenLogo(symbol),
-          };
-        })
-        .filter(
-          (token) =>
-            token.symbol &&
-            token.balance > 0
-        );
-
-      /*
-       * ---------------------------------------------------------
-       * DIRECT USDC BALANCE
-       * ---------------------------------------------------------
+       * Direct USDC balance check.
        *
-       * Arcscan may not always return USDC correctly,
+       * Arcscan may not always return USDC,
        * so we check the USDC contract directly.
        */
 
       try {
-        const selector = "0x70a08231";
-
         const paddedAddress =
-          targetAddress
-            .replace("0x", "")
+          walletAddress
+            .slice(2)
             .padStart(64, "0");
 
-        const data = `${selector}${paddedAddress}`;
-
-        const rpcResponse = await fetch(
+        const data = await fetch(
           "https://rpc.testnet.arc.network",
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":
+                "application/json",
             },
             body: JSON.stringify({
               jsonrpc: "2.0",
@@ -254,7 +291,9 @@ export default function ActivityPage() {
               params: [
                 {
                   to: USDC_ADDRESS,
-                  data,
+                  data:
+                    "0x70a08231" +
+                    paddedAddress,
                 },
                 "latest",
               ],
@@ -262,373 +301,544 @@ export default function ActivityPage() {
           }
         );
 
-        const rpcData = await rpcResponse.json();
+        if (data.ok) {
+          const rpcResult =
+            await data.json();
 
-        if (rpcData?.result) {
-          const rawBalance = BigInt(rpcData.result);
-
-          const usdcBalance =
-            Number(rawBalance) / 1_000_000;
-
-          if (usdcBalance > 0) {
-            const existingUsdcIndex =
-              normalizedTokens.findIndex(
-                (token) =>
-                  token.symbol.toUpperCase() === "USDC"
+          if (rpcResult?.result) {
+            const rawBalance =
+              BigInt(
+                rpcResult.result
               );
 
-            if (existingUsdcIndex >= 0) {
-              normalizedTokens.splice(
-                existingUsdcIndex,
-                1
-              );
+            const usdcAmount =
+              Number(rawBalance) /
+              1_000_000;
+
+            if (usdcAmount > 0) {
+              tokenHoldings.unshift({
+                address:
+                  USDC_ADDRESS,
+
+                symbol: "USDC",
+
+                name: "USD Coin",
+
+                amount:
+                  String(
+                    usdcAmount
+                  ),
+
+                logo:
+                  "/tokens/usdc.svg",
+
+                usdValue:
+                  usdcAmount,
+              });
             }
-
-            normalizedTokens.unshift({
-              symbol: "USDC",
-              name: "USD Coin",
-              balance: usdcBalance,
-              usdValue: usdcBalance,
-              logo: "/tokens/usdc.svg",
-            });
           }
         }
       } catch {
-        // Keep the other token results if direct USDC lookup fails.
+        // Keep Arcscan token results
+        // if direct RPC fails.
       }
 
-      /*
-       * ---------------------------------------------------------
-       * PORTFOLIO VALUE
-       * ---------------------------------------------------------
-       */
-
-      const finalTokens = normalizedTokens.map(
-        (token) => {
-          if (
-            token.symbol.toUpperCase() === "USDC"
-          ) {
-            return {
-              ...token,
-              usdValue: token.balance,
-            };
-          }
-
-          return token;
-        }
+      setActivityTokens(
+        tokenHoldings
       );
 
-      setTokens(finalTokens);
-      setSearched(true);
+      const totalValue =
+        tokenHoldings.reduce(
+          (total, token) => {
+            if (
+              token.usdValue !==
+              null
+            ) {
+              return (
+                total +
+                token.usdValue
+              );
+            }
+
+            return total;
+          },
+          0
+        );
+
+      if (
+        tokenHoldings.length > 0
+      ) {
+        setPortfolioValue(
+          totalValue
+        );
+      }
     } catch (err) {
       console.error(err);
 
-      setError(
+      setActivityError(
         "Unable to load wallet activity. Please try again."
       );
     } finally {
-      setLoading(false);
+      setActivityLoading(
+        false
+      );
     }
   };
 
-  const totalPortfolioValue = tokens.reduce(
-    (total, token) =>
-      total + (Number(token.usdValue) || 0),
-    0
-  );
-
   return (
     <main className="min-h-screen bg-[#030405] text-white">
+      <style jsx global>{`
+        button {
+          font-family: ${manrope.style.fontFamily} !important;
+          font-weight: 600 !important;
+          letter-spacing: normal !important;
+        }
+      `}</style>
+
+      {/* HEADER */}
+
       <Header
         onMenuClick={() => {
           window.dispatchEvent(
-            new CustomEvent("open-wallet-modal")
+            new Event(
+              "open-wallet-modal"
+            )
           );
         }}
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8 lg:pt-14">
-        {/* PAGE HEADER */}
+      {/* CONTENT */}
 
-        <div className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/30">
-            Arc Testnet
+      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
+        <div className="mx-auto max-w-2xl">
+          <p className="text-sm font-semibold text-white/35">
+            AlabaamaFi
           </p>
 
-          <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+          <h1 className="mt-1 text-3xl font-black sm:text-4xl">
             Wallet Activity
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45 sm:text-base">
-            Check token balances and recent on-chain
-            activity for any Arc Testnet wallet.
+          <p className="mt-3 text-sm font-medium leading-6 text-white/35">
+            Connect your wallet to view its token
+            holdings and recent transactions.
           </p>
-        </div>
 
-        {/* SEARCH BOX */}
+          {/* CHECKER */}
 
-        <div className="mt-8 rounded-3xl border border-white/[0.07] bg-[#080a0d] p-4 shadow-2xl shadow-black/20 sm:p-5">
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="min-w-0 flex-1">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-white/30">
-                Wallet address
+          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white/50">
+                Wallet Address
               </label>
 
               <input
-                value={walletInput}
-                onChange={(event) =>
-                  setWalletInput(event.target.value)
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleCheckWallet();
-                  }
-                }}
-                placeholder="0x..."
-                className="h-12 w-full rounded-2xl border border-white/[0.08] bg-[#030405] px-4 font-mono text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/20"
+                type="text"
+                placeholder="Connect wallet first"
+                value={activityAddress}
+                readOnly
+                disabled={!isConnected}
+                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
               />
             </div>
 
-            <div className="flex items-end gap-2">
-              {isConnected && address && (
-                <button
-                  type="button"
-                  onClick={handleUseConnectedWallet}
-                  className="h-12 rounded-2xl border border-white/[0.08] px-4 text-xs font-bold text-white/60 transition hover:border-white/15 hover:text-white"
-                >
-                  My Wallet
-                </button>
-              )}
+            <button
+              onClick={() => {
+                if (!isConnected) {
+                  window.dispatchEvent(
+                    new Event(
+                      "open-wallet-modal"
+                    )
+                  );
+                  return;
+                }
 
-              <button
-                type="button"
-                onClick={handleCheckWallet}
-                disabled={loading}
-                className="h-12 min-w-[130px] rounded-2xl bg-white px-5 text-sm font-black text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Checking..." : "Check Wallet"}
-              </button>
-            </div>
+                handleCheckActivity();
+              }}
+              disabled={
+                isConnected &&
+                activityLoading
+              }
+              className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black tracking-tight ${
+                !isConnected
+                  ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
+                  : "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              }`}
+            >
+              {activityLoading
+                ? "Checking Wallet Activity"
+                : isConnected
+                ? "Check Wallet Activity"
+                : "Connect Wallet"}
+            </button>
+
+            {activityError && (
+              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                <p className="break-words text-sm font-semibold leading-5 text-red-400">
+                  {activityError}
+                </p>
+              </div>
+            )}
           </div>
 
-          {error && (
-            <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.05] px-4 py-3 text-sm text-red-300">
-              {error}
+          {/* RESULTS */}
+
+          {(activityTokens.length > 0 ||
+            activityTransactions.length >
+              0) && (
+            <div className="mt-7 sm:mt-8">
+              {/* PORTFOLIO */}
+
+              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-white/25">
+                      Portfolio
+                    </p>
+
+                    <p className="mt-2 text-3xl font-black">
+                      {portfolioValue !==
+                      null
+                        ? `$${portfolioValue.toFixed(
+                            2
+                          )}`
+                        : "Value unavailable"}
+                    </p>
+                  </div>
+
+                  <div className="w-fit rounded-xl border border-white/[0.07] bg-[#080a0d] px-3 py-2 text-xs font-bold text-white/40">
+                    Arc Testnet
+                  </div>
+                </div>
+              </div>
+
+              {/* TOKEN HOLDINGS */}
+
+              {activityTokens.length >
+                0 && (
+                <div className="mt-7 sm:mt-8">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h2 className="font-black">
+                      Token Holdings
+                    </h2>
+
+                    <span className="shrink-0 text-xs font-bold text-white/25">
+                      {
+                        activityTokens.length
+                      }{" "}
+                      token
+                      {activityTokens.length !==
+                      1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {activityTokens.map(
+                      (token) => (
+                        <div
+                          key={`${token.address}-${token.symbol}`}
+                          className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            {token.logo ? (
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                                <img
+                                  src={
+                                    token.logo
+                                  }
+                                  alt={`${token.symbol} logo`}
+                                  className="h-10 w-10 rounded-full object-contain"
+                                  style={
+                                    token.symbol.toUpperCase() ===
+                                    "CIRBTC"
+                                      ? {
+                                          transform:
+                                            "scale(0.75)",
+                                        }
+                                      : undefined
+                                  }
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
+                                {token.symbol
+                                  .slice(
+                                    0,
+                                    1
+                                  )
+                                  .toUpperCase()}
+                              </div>
+                            )}
+
+                            <div className="min-w-0">
+                              <p className="font-black">
+                                {
+                                  token.symbol
+                                }
+                              </p>
+
+                              <p className="mt-1 truncate text-xs font-medium text-white/25">
+                                {
+                                  token.name
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="ml-2 shrink-0 text-right sm:ml-4">
+                            <p className="font-black">
+                              {Number(
+                                token.amount
+                              ).toLocaleString(
+                                undefined,
+                                {
+                                  maximumFractionDigits:
+                                    6,
+                                }
+                              )}
+                            </p>
+
+                            <p className="mt-1 text-xs font-semibold text-white/25">
+                              {token.usdValue !==
+                              null
+                                ? `$${token.usdValue.toFixed(
+                                    2
+                                  )}`
+                                : "USD value unavailable"}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TRANSACTION COUNT */}
+
+              {activityTransactions.length >
+                0 && (
+                <div className="mt-7 rounded-2xl border border-white/[0.07] bg-[#060709] p-5 sm:mt-8">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-white/25">
+                        Transactions
+                      </p>
+
+                      <p className="mt-2 text-2xl font-black">
+                        {
+                          activityTransactions.length
+                        }
+                      </p>
+                    </div>
+
+                    <span className="text-right text-xs font-semibold text-white/25">
+                      Recent activity
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
 
-        {/* RESULTS */}
+          {/* RECENT TRANSACTIONS */}
 
-        {searched && !loading && (
-          <div className="mt-8 space-y-6">
-            {/* WALLET INFO */}
+          {activityTransactions.length >
+            0 && (
+            <div className="mt-7 sm:mt-8">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="font-black">
+                  Recent Transactions
+                </h2>
 
-            <div className="rounded-3xl border border-white/[0.07] bg-[#080a0d] p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/25">
-                    Wallet
-                  </p>
-
-                  <p className="mt-2 break-all font-mono text-sm text-white/75">
-                    {checkedAddress}
-                  </p>
-                </div>
-
-                <a
-                  href={`https://testnet.arcscan.app/address/${checkedAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-white/45 transition hover:text-white"
-                >
-                  View on Arcscan ↗
-                </a>
-              </div>
-            </div>
-
-            {/* OVERVIEW */}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/[0.07] bg-[#080a0d] p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/25">
-                  Portfolio Value
-                </p>
-
-                <p className="mt-3 text-2xl font-black tracking-tight">
-                  {formatUsd(totalPortfolioValue)}
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/[0.07] bg-[#080a0d] p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/25">
-                  Transactions
-                </p>
-
-                <p className="mt-3 text-2xl font-black tracking-tight">
-                  {transactions.length}
-                </p>
-              </div>
-            </div>
-
-            {/* TOKEN HOLDINGS */}
-
-            <div className="rounded-3xl border border-white/[0.07] bg-[#080a0d] p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/25">
-                    Assets
-                  </p>
-
-                  <h2 className="mt-1 text-lg font-black">
-                    Token Holdings
-                  </h2>
-                </div>
-
-                <span className="text-xs font-semibold text-white/25">
-                  {tokens.length} assets
+                <span className="shrink-0 text-xs font-bold text-white/25">
+                  {
+                    activityTransactions.length
+                  }{" "}
+                  found
                 </span>
               </div>
 
-              {tokens.length === 0 ? (
-                <div className="mt-6 rounded-2xl border border-white/[0.05] bg-black/20 px-4 py-8 text-center">
-                  <p className="text-sm font-semibold text-white/40">
-                    No token holdings found.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-5 space-y-2">
-                  {tokens.map((token, index) => (
-                    <div
-                      key={`${token.symbol}-${index}`}
-                      className="flex items-center justify-between rounded-2xl border border-white/[0.05] bg-black/20 px-4 py-3"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-                          {token.logo ? (
-                            <img
-                              src={token.logo}
-                              alt={token.symbol}
-                              className="h-10 w-10 object-contain"
-                            />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.06] text-xs font-black text-white/40">
-                              {token.symbol
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                          )}
+              <div className="space-y-3">
+                {activityTransactions.map(
+                  (tx) => {
+                    const transactionDate =
+                      tx.timestamp
+                        ? new Date(
+                            tx.timestamp
+                          )
+                        : null;
+
+                    const formattedDate =
+                      transactionDate &&
+                      !Number.isNaN(
+                        transactionDate.getTime()
+                      )
+                        ? transactionDate.toLocaleDateString(
+                            undefined,
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )
+                        : "Date unavailable";
+
+                    const formattedTime =
+                      transactionDate &&
+                      !Number.isNaN(
+                        transactionDate.getTime()
+                      )
+                        ? transactionDate.toLocaleTimeString(
+                            undefined,
+                            {
+                              hour: "2-digit",
+                              minute:
+                                "2-digit",
+                              second:
+                                "2-digit",
+                              hour12: false,
+                            }
+                          )
+                        : "Time unavailable";
+
+                    return (
+                      <div
+                        key={tx.hash}
+                        className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 transition hover:bg-[#0a0d12] sm:p-5"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="text-sm font-black">
+                              Transaction
+                            </p>
+
+                            <p className="mt-1 break-all text-xs font-medium leading-5 text-white/25">
+                              {
+                                tx.hash
+                              }
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-black">
-                            {token.symbol}
-                          </p>
-
-                          <p className="truncate text-xs text-white/25">
-                            {token.name}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="ml-4 text-right">
-                        <p className="text-sm font-bold">
-                          {formatBalance(token.balance)}
-                        </p>
-
-                        <p className="mt-1 text-xs text-white/25">
-                          {formatUsd(token.usdValue)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* TRANSACTIONS */}
-
-            <div className="rounded-3xl border border-white/[0.07] bg-[#080a0d] p-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/25">
-                  On-chain activity
-                </p>
-
-                <h2 className="mt-1 text-lg font-black">
-                  Recent Transactions
-                </h2>
-              </div>
-
-              {transactions.length === 0 ? (
-                <div className="mt-6 rounded-2xl border border-white/[0.05] bg-black/20 px-4 py-8 text-center">
-                  <p className="text-sm font-semibold text-white/40">
-                    No transactions found.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-5 space-y-2">
-                  {transactions.map(
-                    (transaction, index) => {
-                      const hash = transaction.hash;
-
-                      return (
-                        <a
-                          key={`${hash}-${index}`}
-                          href={
-                            hash
-                              ? `https://testnet.arcscan.app/tx/${hash}`
-                              : "#"
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded-2xl border border-white/[0.05] bg-black/20 px-4 py-4 transition hover:border-white/[0.1] hover:bg-white/[0.02]"
-                        >
+                        <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
                           <div className="flex items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-white/80">
-                                Transaction
-                              </p>
+                            <span className="text-xs font-bold text-white/25">
+                              Date
+                            </span>
 
-                              <p className="mt-1 truncate font-mono text-xs text-white/25">
-                                {hash
-                                  ? shortenAddress(hash)
-                                  : "Transaction"}
-                              </p>
-                            </div>
-
-                            <span className="shrink-0 text-xs font-bold text-white/35">
-                              View ↗
+                            <span className="text-right text-xs font-semibold text-white/55">
+                              {
+                                formattedDate
+                              }
                             </span>
                           </div>
-                        </a>
-                      );
-                    }
-                  )}
-                </div>
-              )}
+
+                          <div className="mt-1.5 flex items-center justify-between gap-4">
+                            <span className="text-xs font-bold text-white/25">
+                              Time
+                            </span>
+
+                            <span className="text-right text-xs font-semibold text-white/55">
+                              {
+                                formattedTime
+                              }
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+                          <div className="min-w-0">
+                            <p className="font-bold text-white/25">
+                              From
+                            </p>
+
+                            <p className="mt-1 break-all font-semibold text-white/55">
+                              {
+                                tx.from
+                              }
+                            </p>
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="font-bold text-white/25">
+                              To
+                            </p>
+
+                            <p className="mt-1 break-all font-semibold text-white/55">
+                              {
+                                tx.to
+                              }
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-white/25">
+                              Value
+                            </p>
+
+                            <p className="mt-1 break-words font-black text-white/65">
+                              {
+                                tx.value
+                              }
+                              {tx.tokenSymbol
+                                ? ` ${tx.tokenSymbol}`
+                                : ""}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-white/25">
+                              Status
+                            </p>
+
+                            <p className="mt-1 font-black text-green-400">
+                              {
+                                tx.status
+                              }
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 border-t border-white/[0.06] pt-3">
+                          <a
+                            href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-black text-white/40 transition hover:text-white"
+                          >
+                            View Transaction on ArcScan
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* EMPTY STATE */}
+          {/* EMPTY */}
 
-        {!searched && !loading && (
-          <div className="mt-8 rounded-3xl border border-dashed border-white/[0.08] bg-[#080a0d]/50 px-6 py-14 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.02]">
-              <span className="text-xl">⌕</span>
-            </div>
-
-            <h2 className="mt-5 text-lg font-black">
-              Check any Arc wallet
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/35">
-              Enter a wallet address above to view its
-              token holdings and recent Arc Testnet
-              activity.
-            </p>
-          </div>
-        )}
+          {!activityLoading &&
+            isConnected &&
+            activityAddress &&
+            activityTransactions.length ===
+              0 &&
+            activityTokens.length ===
+              0 &&
+            !activityError && (
+              <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-6 text-center">
+                <p className="text-sm font-medium leading-6 text-white/35">
+                  No transactions or token
+                  holdings found for this
+                  wallet.
+                </p>
+              </div>
+            )}
+        </div>
       </section>
     </main>
   );
