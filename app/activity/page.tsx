@@ -70,8 +70,7 @@ function getTokenLogo(
 /*
  * Convert raw token values into human-readable
  * amounts.
- */
-function formatTokenAmount(
+ */function formatTokenAmount(
   value: any,
   decimals = 18
 ): string {
@@ -144,8 +143,8 @@ function formatTokenAmount(
   }
 
   /*
-   * If the API already returned a decimal
-   * value such as 12.34, keep it as-is.
+   * If the API already returned a
+   * decimal value, keep it as-is.
    */
   if (
     stringValue.includes(".")
@@ -157,28 +156,37 @@ function formatTokenAmount(
    * Raw integer token amount.
    */
   try {
-    const raw = BigInt(stringValue);
+    const raw =
+      BigInt(stringValue);
 
-if (decimals === 0) {
-  return raw.toString();
-}
+    if (decimals === 0) {
+      return raw.toString();
+    }
 
-const negative =
-  raw < BigInt(0);
+    const zero =
+      BigInt(0);
 
-const absolute =
-  negative ? -raw : raw;
+    const negative =
+      raw < zero;
 
-const divisor =
-  BigInt(10) ** BigInt(decimals);
+    const absolute =
+      negative
+        ? -raw
+        : raw;
 
-const whole =
-  absolute / divisor;
+    const divisor =
+      BigInt(10) **
+      BigInt(decimals);
 
-const fraction =
-  absolute % divisor;
+    const whole =
+      absolute / divisor;
 
-    if (fraction === 0n) {
+    const fraction =
+      absolute % divisor;
+
+    if (
+      fraction === zero
+    ) {
       return `${negative ? "-" : ""}${whole}`;
     }
 
@@ -189,7 +197,10 @@ const fraction =
           decimals,
           "0"
         )
-        .replace(/0+$/, "");
+        .replace(
+          /0+$/,
+          ""
+        );
 
     return `${negative ? "-" : ""}${whole}.${fractionString}`;
   } catch {
