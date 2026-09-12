@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
 import Header from "@/components/Header";
 import {
@@ -194,14 +194,6 @@ export default function SendPage() {
   const formattedBalance = usdcBalance
     ? (Number(usdcBalance) / 1_000_000).toFixed(2)
     : "0.00";
-
-  useEffect(() => {
-    if (connectError) {
-      setError(
-        getFriendlyErrorMessage(connectError.message)
-      );
-    }
-  }, [connectError]);
 
   const walletConnectConnector = useMemo(() => {
     return connectors.find((connector) => {
@@ -955,20 +947,13 @@ export default function SendPage() {
               )}
             </div>
 
+            {/* ONLY wallet connection error appears here */}
             {connectError && (
               <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
                 <p className="break-words text-sm font-semibold leading-5 text-red-400">
                   {getFriendlyErrorMessage(
                     connectError.message
                   )}
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm font-semibold leading-5 text-red-400">
-                  {error}
                 </p>
               </div>
             )}
