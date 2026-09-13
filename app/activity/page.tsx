@@ -896,6 +896,30 @@ export default function ActivityPage() {
     isConnected,
   } = useAccount();
 
+  const [mobileMenuOpen, setMobileMenuOpen] =
+  useState(false);
+
+useEffect(() => {
+  const handleMenuState = (event: Event) => {
+    const customEvent =
+      event as CustomEvent<boolean>;
+
+    setMobileMenuOpen(customEvent.detail);
+  };
+
+  window.addEventListener(
+    "mobile-menu-state",
+    handleMenuState
+  );
+
+  return () => {
+    window.removeEventListener(
+      "mobile-menu-state",
+      handleMenuState
+    );
+  };
+}, []);
+
   useEffect(() => {
     if (
       isConnected &&
