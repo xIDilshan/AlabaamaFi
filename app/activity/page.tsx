@@ -1796,13 +1796,9 @@ export default function ActivityPage() {
                             Transaction
                           </p>
 
-                          <div className="mt-1 flex min-w-0 items-center gap-2">
-                            <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
-                              {shortenAddress(
-                                tx.hash,
-                                18,
-                                12
-                              )}
+                          <div className="mt-1 flex min-w-0 items-start gap-2">
+                            <p className="w-full min-w-0 whitespace-normal break-all font-mono text-xs font-medium leading-5 text-white/25">
+                              {tx.hash}
                             </p>
 
                             <button
@@ -1905,13 +1901,9 @@ export default function ActivityPage() {
                               title={
                                 tx.from
                               }
-                              className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
+                              className="mt-1 w-full min-w-0 whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                             >
-                              {shortenAddress(
-                                tx.from,
-                                14,
-                                10
-                              )}
+                              {tx.from}
                             </p>
                           </div>
 
@@ -1924,13 +1916,9 @@ export default function ActivityPage() {
                               title={
                                 tx.to
                               }
-                              className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
+                              className="mt-1 w-full min-w-0 whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                             >
-                              {shortenAddress(
-                                tx.to,
-                                14,
-                                10
-                              )}
+                              {tx.to}
                             </p>
                           </div>
 
