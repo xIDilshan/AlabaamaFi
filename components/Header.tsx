@@ -181,14 +181,12 @@ export default function Header({
           {/* MOBILE BACKDROP */}
 
 <div
-  className={`fixed inset-x-0 bottom-0 top-[72px] z-40 bg-black/35 backdrop-blur-xl transition-all duration-300 ${
+  className={`fixed left-0 right-0 bottom-0 top-[72px] z-40 bg-black/45 backdrop-blur-2xl transition-all duration-300 ${
     mobileMenuOpen
       ? "visible opacity-100"
       : "invisible opacity-0"
   }`}
-  onClick={() =>
-    setMobileMenuOpen(false)
-  }
+  onClick={() => setMobileMenuOpen(false)}
   aria-hidden="true"
 />
           {/* MOBILE TOP MENU */}
