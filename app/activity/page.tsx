@@ -1797,69 +1797,74 @@ export default function ActivityPage() {
                           </p>
 
                           <div className="mt-1 flex min-w-0 items-start gap-2">
-                            <p className="w-full min-w-0 whitespace-normal break-all font-mono text-xs font-medium leading-5 text-white/25">
-                              {tx.hash}
-                            </p>
+  <p className="w-full min-w-0 whitespace-normal break-all font-mono text-xs font-medium leading-5 text-white/25">
+    <span className="sm:hidden">
+      {shortenAddress(tx.hash, 8, 6)}
+    </span>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCopyHash(
-                                  tx.hash
-                                )
-                              }
-                              title={
-                                copiedHash ===
-                                tx.hash
-                                  ? "Copied"
-                                  : "Copy transaction hash"
-                              }
-                              aria-label={
-                                copiedHash ===
-                                tx.hash
-                                  ? "Transaction hash copied"
-                                  : "Copy transaction hash"
-                              }
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
-                            >
-                              {copiedHash ===
-                              tx.hash ? (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M20 6 9 17l-5-5" />
-                                </svg>
-                              ) : (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <rect
-                                    width="13"
-                                    height="13"
-                                    x="9"
-                                    y="9"
-                                    rx="2"
-                                  />
-                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
+    <span className="hidden sm:inline">
+      {tx.hash}
+    </span>
+  </p>
+
+  <button
+    type="button"
+    onClick={() =>
+      handleCopyHash(
+        tx.hash
+      )
+    }
+    title={
+      copiedHash ===
+      tx.hash
+        ? "Copied"
+        : "Copy transaction hash"
+    }
+    aria-label={
+      copiedHash ===
+      tx.hash
+        ? "Transaction hash copied"
+        : "Copy transaction hash"
+    }
+    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
+  >
+    {copiedHash ===
+    tx.hash ? (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    ) : (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect
+          width="13"
+          height="13"
+          x="9"
+          y="9"
+          rx="2"
+        />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+    )}
+  </button>
+</div>
 
                         {/* DATE / TIME */}
 
