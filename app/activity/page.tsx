@@ -2,19 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Manrope } from "next/font/google";
-import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { isAddress } from "viem";
 
 import Header from "@/components/Header";
-
-type Section =
-  | "home"
-  | "send"
-  | "swap"
-  | "bridge"
-  | "activity"
-  | "faucet";
 
 import {
   getWalletTransactions,
@@ -28,43 +19,6 @@ const manrope = Manrope({
 
 const USDC_ADDRESS =
   "0x3600000000000000000000000000000000000000";
-
-const menuItems: {
-  id: Section;
-  label: string;
-  icon: string;
-}[] = [
-  {
-    id: "home",
-    label: "Home",
-    icon: "⌂",
-  },
-  {
-    id: "send",
-    label: "Send",
-    icon: "↗",
-  },
-  {
-    id: "swap",
-    label: "Swap",
-    icon: "⇄",
-  },
-  {
-    id: "bridge",
-    label: "Bridge",
-    icon: "⇅",
-  },
-  {
-    id: "activity",
-    label: "Activity",
-    icon: "◷",
-  },
-  {
-    id: "faucet",
-    label: "Faucet",
-    icon: "◌",
-  },
-] as const;
 
 type TokenHolding = {
   address: string;
@@ -187,7 +141,9 @@ function getTokenName(
     token.metadata?.name ??
     "";
 
-  return String(apiName || symbol);
+  return String(
+    apiName || symbol
+  );
 }
 
 function getTokenDecimals(
@@ -210,7 +166,9 @@ function getTokenDecimals(
     const decimals = Number(value);
 
     if (
-      Number.isFinite(decimals) &&
+      Number.isFinite(
+        decimals
+      ) &&
       decimals >= 0 &&
       decimals <= 36
     ) {
@@ -229,7 +187,9 @@ function getTokenDecimals(
     return 6;
   }
 
-  if (upperSymbol === "CIRBTC") {
+  if (
+    upperSymbol === "CIRBTC"
+  ) {
     return 8;
   }
 
@@ -251,51 +211,63 @@ function formatTokenAmount(
     typeof value === "object"
   ) {
     if (
-      value.formatted !== undefined &&
+      value.formatted !==
+        undefined &&
       value.formatted !== null
     ) {
-      return String(value.formatted);
+      return String(
+        value.formatted
+      );
     }
 
     if (
-      value.display !== undefined &&
+      value.display !==
+        undefined &&
       value.display !== null
     ) {
-      return String(value.display);
+      return String(
+        value.display
+      );
     }
 
     if (
-      value.amount !== undefined &&
+      value.amount !==
+        undefined &&
       value.amount !== null
     ) {
       return formatTokenAmount(
         value.amount,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
 
     if (
-      value.raw !== undefined &&
+      value.raw !==
+        undefined &&
       value.raw !== null
     ) {
       return formatTokenAmount(
         value.raw,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
 
     if (
-      value.value !== undefined &&
+      value.value !==
+        undefined &&
       value.value !== null
     ) {
       return formatTokenAmount(
         value.value,
         Number(
-          value.decimals ?? decimals
+          value.decimals ??
+            decimals
         )
       );
     }
@@ -341,7 +313,9 @@ function formatTokenAmount(
       absolute % divisor;
 
     if (fraction === zero) {
-      return `${negative ? "-" : ""}${whole}`;
+      return `${
+        negative ? "-" : ""
+      }${whole}`;
     }
 
     const fractionString =
@@ -356,7 +330,9 @@ function formatTokenAmount(
           ""
         );
 
-    return `${negative ? "-" : ""}${whole}.${fractionString}`;
+    return `${
+      negative ? "-" : ""
+    }${whole}.${fractionString}`;
   } catch {
     return stringValue;
   }
@@ -372,8 +348,7 @@ function formatTokenAmount(
 function getHoldingMoney(
   token: any
 ): any | null {
-  const visited =
-    new Set<any>();
+  const visited = new Set();
 
   function search(
     value: any,
@@ -383,26 +358,35 @@ function getHoldingMoney(
       value === null ||
       value === undefined ||
       depth > 8 ||
-      typeof value !== "object"
+      typeof value !==
+        "object"
     ) {
       return null;
     }
 
-    if (visited.has(value)) {
+    if (
+      visited.has(value)
+    ) {
       return null;
     }
 
     visited.add(value);
 
     const hasAmount =
-      value.raw !== undefined ||
-      value.formatted !== undefined ||
-      value.amount !== undefined ||
-      value.balance !== undefined ||
-      value.quantity !== undefined;
+      value.raw !==
+        undefined ||
+      value.formatted !==
+        undefined ||
+      value.amount !==
+        undefined ||
+      value.balance !==
+        undefined ||
+      value.quantity !==
+        undefined;
 
     const hasUsd =
-      value.usd !== undefined &&
+      value.usd !==
+        undefined &&
       value.usd !== null;
 
     if (
@@ -433,7 +417,8 @@ function getHoldingMoney(
       if (
         child !== null &&
         child !== undefined &&
-        typeof child === "object"
+        typeof child ===
+          "object"
       ) {
         const result =
           search(
@@ -453,14 +438,17 @@ function getHoldingMoney(
       )
     ) {
       if (
-        priorityKeys.includes(key)
+        priorityKeys.includes(
+          key
+        )
       ) {
         continue;
       }
 
       if (
         child !== null &&
-        typeof child === "object"
+        typeof child ===
+          "object"
       ) {
         const result =
           search(
@@ -518,8 +506,7 @@ function getTokenAmount(
       if (
         candidate.formatted !==
           undefined &&
-        candidate.formatted !==
-          null
+        candidate.formatted !== null
       ) {
         return String(
           candidate.formatted
@@ -560,21 +547,14 @@ function getTokenAmount(
  * the actual token holding.
  *
  * Arcscan returns token amounts as Money
- * objects. A Money object can contain:
- *
- * raw
- * decimals
- * formatted
- * usd
- * symbol
+ * objects.
  *
  * Used for tokens other than cirBTC.
  */
 function getTokenUsdValue(
   token: any
 ): number | null {
-  const visited =
-    new Set<any>();
+  const visited = new Set();
 
   function parseUsd(
     value: any
@@ -587,8 +567,10 @@ function getTokenUsdValue(
     }
 
     if (
-      typeof value === "number" ||
-      typeof value === "string"
+      typeof value ===
+        "number" ||
+      typeof value ===
+        "string"
     ) {
       const numeric =
         Number(value);
@@ -601,7 +583,8 @@ function getTokenUsdValue(
     }
 
     if (
-      typeof value !== "object"
+      typeof value !==
+      "object"
     ) {
       return null;
     }
@@ -626,7 +609,8 @@ function getTokenUsdValue(
     }
 
     if (
-      value.value !== undefined &&
+      value.value !==
+        undefined &&
       value.value !== null
     ) {
       const numeric =
@@ -644,7 +628,8 @@ function getTokenUsdValue(
     }
 
     if (
-      value.amount !== undefined &&
+      value.amount !==
+        undefined &&
       value.amount !== null
     ) {
       const numeric =
@@ -662,9 +647,11 @@ function getTokenUsdValue(
     }
 
     if (
-      value.raw !== undefined &&
+      value.raw !==
+        undefined &&
       value.raw !== null &&
-      value.decimals !== undefined
+      value.decimals !==
+        undefined
     ) {
       try {
         const raw =
@@ -678,8 +665,12 @@ function getTokenUsdValue(
           );
 
         if (
-          Number.isFinite(raw) &&
-          Number.isFinite(decimals)
+          Number.isFinite(
+            raw
+          ) &&
+          Number.isFinite(
+            decimals
+          )
         ) {
           return (
             raw /
@@ -701,7 +692,8 @@ function getTokenUsdValue(
     if (
       value === null ||
       value === undefined ||
-      typeof value !== "object" ||
+      typeof value !==
+        "object" ||
       depth > 8
     ) {
       return null;
@@ -716,7 +708,8 @@ function getTokenUsdValue(
     visited.add(value);
 
     if (
-      value.usd !== undefined &&
+      value.usd !==
+        undefined &&
       value.usd !== null
     ) {
       const usd =
@@ -781,7 +774,8 @@ function getTokenUsdValue(
 
       if (
         child !== null &&
-        typeof child === "object"
+        typeof child ===
+          "object"
       ) {
         const result =
           search(
@@ -821,9 +815,7 @@ function getTokenUsdValue(
     const candidate of directUsdCandidates
   ) {
     const usd =
-      parseUsd(
-        candidate
-      );
+      parseUsd(candidate);
 
     if (
       usd !== null
@@ -856,13 +848,6 @@ function getApiLogo(
 }
 
 export default function ActivityPage() {
-  const router = useRouter();
-
-  const [
-    showMenu,
-    setShowMenu,
-  ] = useState(false);
-
   const [
     activityAddress,
     setActivityAddress,
@@ -921,7 +906,9 @@ export default function ActivityPage() {
       );
     } else {
       setActivityAddress("");
-      setActivityTransactions([]);
+      setActivityTransactions(
+        []
+      );
       setActivityTokens([]);
       setPortfolioValue(null);
       setActivityError("");
@@ -930,23 +917,6 @@ export default function ActivityPage() {
     isConnected,
     address,
   ]);
-
-  const handleNavigation = (
-    section: (typeof menuItems)[number]["id"]
-  ) => {
-    const routes = {
-      home: "/",
-      send: "/send",
-      swap: "/swap",
-      bridge: "/bridge",
-      activity: "/activity",
-      faucet: "/faucet",
-    };
-
-    setShowMenu(false);
-
-    router.push(routes[section]);
-  };
 
   const handleCopyHash =
     async (
@@ -973,7 +943,9 @@ export default function ActivityPage() {
   const handleCheckActivity =
     async () => {
       setActivityError("");
-      setActivityTransactions([]);
+      setActivityTransactions(
+        []
+      );
       setActivityTokens([]);
       setPortfolioValue(null);
 
@@ -1062,7 +1034,8 @@ export default function ActivityPage() {
             error
           );
 
-          currentBtcPrice = null;
+          currentBtcPrice =
+            null;
         }
 
         let tokenHoldings:
@@ -1077,7 +1050,9 @@ export default function ActivityPage() {
               `https://api-testnet.arc-scan.org/v1/address/${walletAddress}/tokens`
             );
 
-          if (response.ok) {
+          if (
+            response.ok
+          ) {
             const data =
               await response.json();
 
@@ -1232,7 +1207,9 @@ export default function ActivityPage() {
               }
             );
 
-          if (response.ok) {
+          if (
+            response.ok
+          ) {
             const rpcResult =
               await response.json();
 
@@ -1252,21 +1229,23 @@ export default function ActivityPage() {
               if (
                 usdcAmount > 0
               ) {
-                tokenHoldings.unshift({
-                  address:
-                    USDC_ADDRESS,
-                  symbol: "USDC",
-                  name: "USD Coin",
-                  amount:
-                    String(
-                      usdcAmount
-                    ),
-                  logo:
-                    "/tokens/usdc.svg",
-                  usdValue:
-                    usdcAmount,
-                  decimals: 6,
-                });
+                tokenHoldings.unshift(
+                  {
+                    address:
+                      USDC_ADDRESS,
+                    symbol: "USDC",
+                    name: "USD Coin",
+                    amount:
+                      String(
+                        usdcAmount
+                      ),
+                    logo:
+                      "/tokens/usdc.svg",
+                    usdValue:
+                      usdcAmount,
+                    decimals: 6,
+                  }
+                );
               }
             }
           }
@@ -1304,7 +1283,8 @@ export default function ActivityPage() {
               ] ?? 99;
 
             return (
-              aOrder - bOrder
+              aOrder -
+              bOrder
             );
           }
         );
@@ -1382,107 +1362,7 @@ export default function ActivityPage() {
         }
       `}</style>
 
-      <Header
-        onMenuClick={() =>
-          setShowMenu(true)
-        }
-      />
-
-      {/* MOBILE MENU */}
-
-      {showMenu && (
-        <div className="fixed inset-0 z-40">
-          <button
-            onClick={() =>
-              setShowMenu(false)
-            }
-            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-            aria-label="Close menu"
-          />
-
-          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">
-                  AlabaamaFi
-                </h2>
-
-                <p className="mt-1 text-xs font-semibold text-white/30">
-                  Powered by Arc
-                </p>
-              </div>
-
-              <button
-                onClick={() =>
-                  setShowMenu(false)
-                }
-                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
-                aria-label="Close menu"
-              >
-                ✕
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              {menuItems.map(
-                (item) => (
-                  <button
-                    key={item.id}
-                    onClick={() =>
-                      handleNavigation(
-                        item.id
-                      )
-                    }
-                    className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
-                      item.id ===
-                      "activity"
-                        ? "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)]"
-                        : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
-                    }`}
-                  >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center text-lg font-bold leading-none">
-                      {item.icon}
-                    </span>
-
-                    <span className="text-sm font-bold">
-                      {
-                        item.label
-                      }
-                    </span>
-                  </button>
-                )
-              )}
-            </nav>
-
-            <div className="mt-auto pt-8">
-              <button
-                onClick={() => {
-                  setShowMenu(
-                    false
-                  );
-
-                  window.dispatchEvent(
-                    new Event(
-                      "open-wallet-modal"
-                    )
-                  );
-                }}
-                className="w-full rounded-full border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] px-4 py-3.5 text-sm !font-black tracking-tight text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0"
-              >
-                {isConnected &&
-                address
-                  ? `${address.slice(
-                      0,
-                      6
-                    )}...${address.slice(
-                      -4
-                    )}`
-                  : "Connect Wallet"}
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+      <Header />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
         <div className="mx-auto max-w-6xl">
@@ -1907,7 +1787,9 @@ export default function ActivityPage() {
                               }
                               className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                             >
-                              {tx.from}
+                              {
+                                tx.from
+                              }
                             </p>
                           </div>
 
@@ -1922,7 +1804,9 @@ export default function ActivityPage() {
                               }
                               className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                             >
-                              {tx.to}
+                              {
+                                tx.to
+                              }
                             </p>
                           </div>
 
