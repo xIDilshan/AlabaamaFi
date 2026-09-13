@@ -259,34 +259,6 @@ export default function SendPage() {
             {/* TRANSFER CARD */}
 
             <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-8">
-              {/* BALANCE */}
-
-              <div className="mb-6 rounded-2xl border border-white/[0.06] bg-[#05070a] p-4 sm:p-5 lg:mb-8">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wider text-white/25">
-                      Available Balance
-                    </p>
-
-                    <p className="mt-2 truncate text-2xl font-black sm:text-3xl">
-                      {isBalanceLoading
-                        ? "Loading..."
-                        : `${formattedBalance} USDC`}
-                    </p>
-                  </div>
-
-                  <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
-                    Arc Testnet
-                  </span>
-                </div>
-
-                <div className="mt-4 border-t border-white/[0.06] pt-4">
-                  <p className="text-xs font-semibold leading-5 text-white/25">
-                    USDC transfers are processed directly on Arc Testnet.
-                  </p>
-                </div>
-              </div>
-
               {/* TRANSFER HEADER */}
 
               <div className="mb-6 flex items-center justify-between gap-3 lg:mb-8">
