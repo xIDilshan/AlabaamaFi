@@ -853,6 +853,9 @@ export default function ActivityPage() {
     setActivityAddress,
   ] = useState("");
 
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
   const [
     activityTransactions,
     setActivityTransactions,
