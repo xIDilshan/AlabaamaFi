@@ -3,10 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  useAccount,
-  useDisconnect,
-} from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import WalletModal from "@/components/WalletModal";
 
 const navItems = [
@@ -285,10 +282,12 @@ export default function Header({
   return (
     <>
       <header className="relative z-50 border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
+
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
           <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
+
             {/* LEFT */}
 
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -457,9 +456,11 @@ export default function Header({
 
         <div className="hidden md:block">
           <div className="mx-auto max-w-[1600px] px-6 lg:px-8">
+
             {/* TOP ROW */}
 
             <div className="relative flex min-h-[78px] items-center justify-center">
+
               {/* NETWORK */}
 
               <div className="absolute left-0 flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
@@ -576,178 +577,118 @@ export default function Header({
 
       {/* CONNECTED WALLET MENU */}
 
-{showWalletMenu &&
-  isConnected &&
-  address && (
-    <>
-      {/* BACKDROP */}
+      {showWalletMenu &&
+        isConnected &&
+        address && (
+          <>
+            {/* BACKDROP */}
 
-      <div
-        className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
-        onClick={handleCloseWalletMenu}
-        aria-hidden="true"
-      />
-
-      {/* MODAL */}
-
-      <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-        <div
-          className="w-full max-w-sm rounded-3xl border border-white/[0.10] bg-[#080a0d]/[0.98] p-4 shadow-[0_25px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:p-5"
-          onClick={(event) =>
-            event.stopPropagation()
-          }
-        >
-          {/* HEADER */}
-
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              {/* CONNECTED WALLET LOGO */}
-
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] p-2">
-                <img
-                  src={connectedWallet.logo}
-                  alt={`${connectedWallet.name} logo`}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-white">
-                  {connectedWallet.name}
-                </p>
-
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-
-                  <p className="text-[11px] font-medium text-white/35">
-                    Connected
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* CLOSE */}
-
-            <button
+            <div
+              className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
               onClick={handleCloseWalletMenu}
-              className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.04] text-base text-white/45 transition hover:bg-white/[0.08] hover:text-white"
-              aria-label="Close wallet menu"
-            >
-              ×
-            </button>
-          </div>
+              aria-hidden="true"
+            />
 
-          {/* ADDRESS */}
+            {/* COMPACT MODAL */}
 
-          <div className="mb-3 flex min-h-[48px] items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-black/30 px-3.5">
-            <span className="shrink-0 text-[11px] font-semibold text-white/30">
-              Address
-            </span>
-
-            <span
-              className="min-w-0 truncate text-right text-sm font-bold text-white/80"
-              title={address}
-            >
-              {shortAddress}
-            </span>
-          </div>
-
-          {/* COPY + DISCONNECT */}
-
-          <div className="grid grid-cols-2 gap-2">
-            {/* COPY */}
-
-            <button
-              onClick={handleCopyAddress}
-              className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 text-sm font-bold text-white/75 transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white active:scale-[0.98]"
-            >
-              {copied ? (
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M5 12.5L9.5 17L19 7.5"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <rect
-                    x="9"
-                    y="9"
-                    width="10"
-                    height="10"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-
-                  <path
-                    d="M15 9V7C15 5.9 14.1 5 13 5H7C5.9 5 5 5.9 5 7V13C5 14.1 5.9 15 7 15H9"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                </svg>
-              )}
-
-              <span>
-                {copied ? "Copied" : "Copy"}
-              </span>
-            </button>
-
-            {/* DISCONNECT */}
-
-            <button
-              onClick={handleDisconnect}
-              className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-red-500/[0.12] bg-red-500/[0.045] px-3 text-sm font-bold text-red-400 transition-all duration-200 hover:border-red-500/[0.22] hover:bg-red-500/[0.08] active:scale-[0.98]"
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+              <div
+                className="w-full max-w-sm rounded-3xl border border-white/[0.10] bg-[#080a0d]/[0.98] p-4 shadow-[0_25px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:p-5"
+                onClick={(event) =>
+                  event.stopPropagation()
+                }
               >
-                <path
-                  d="M10 5H6C4.9 5 4 5.9 4 7V17C4 18.1 4.9 19 6 19H10"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
+                {/* WALLET HEADER */}
 
-                <path
-                  d="M14 8L18 12L14 16"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
 
-                <path
-                  d="M9 12H18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
+                    {/* WALLET LOGO */}
 
-              <span>Disconnect</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  )}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] p-2">
+                      <img
+                        src={connectedWallet.logo}
+                        alt={`${connectedWallet.name} logo`}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+
+                    {/* WALLET NAME */}
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-white">
+                        {connectedWallet.name}
+                      </p>
+
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+
+                        <p className="text-[11px] font-medium text-white/35">
+                          Connected
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CLOSE */}
+
+                  <button
+                    onClick={handleCloseWalletMenu}
+                    className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.04] text-base text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+                    aria-label="Close wallet menu"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* ADDRESS */}
+
+                <div className="mb-3 flex min-h-[48px] items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-black/30 px-3.5">
+                  <span className="shrink-0 text-[11px] font-semibold text-white/30">
+                    Address
+                  </span>
+
+                  <span
+                    className="min-w-0 truncate text-right text-sm font-bold text-white/80"
+                    title={address}
+                  >
+                    {shortAddress}
+                  </span>
+                </div>
+
+                {/* COPY + DISCONNECT */}
+
+                <div className="grid grid-cols-2 gap-2">
+
+                  {/* COPY */}
+
+                  <button
+                    onClick={handleCopyAddress}
+                    className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 text-sm font-bold text-white/75 transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white active:scale-[0.98]"
+                  >
+                    {copied ? (
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="shrink-0"
+                      >
+                        <path
+                          d="M5 12.5L9.5 17L19 7.5"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="shrink-0"
                       >
                         <rect
                           x="9"
@@ -766,35 +707,26 @@ export default function Header({
                         />
                       </svg>
                     )}
-                  </div>
 
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-white/85">
+                    <span>
                       {copied
                         ? "Copied"
-                        : "Copy address"}
-                    </p>
+                        : "Copy"}
+                    </span>
+                  </button>
 
-                    <p className="text-xs font-medium text-white/30">
-                      {copied
-                        ? "Wallet address copied"
-                        : "Copy your full wallet address"}
-                    </p>
-                  </div>
-                </button>
+                  {/* DISCONNECT */}
 
-                {/* DISCONNECT */}
-
-                <button
-                  onClick={handleDisconnect}
-                  className="mt-3 flex min-h-[56px] w-full items-center gap-4 rounded-2xl border border-red-500/[0.12] bg-red-500/[0.045] px-4 text-left transition-all duration-200 hover:border-red-500/[0.22] hover:bg-red-500/[0.08] active:scale-[0.99]"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/[0.08] text-red-400">
+                  <button
+                    onClick={handleDisconnect}
+                    className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-red-500/[0.12] bg-red-500/[0.045] px-3 text-sm font-bold text-red-400 transition-all duration-200 hover:border-red-500/[0.22] hover:bg-red-500/[0.08] active:scale-[0.98]"
+                  >
                     <svg
-                      width="19"
-                      height="19"
+                      width="17"
+                      height="17"
                       viewBox="0 0 24 24"
                       fill="none"
+                      className="shrink-0"
                     >
                       <path
                         d="M10 5H6C4.9 5 4 5.9 4 7V17C4 18.1 4.9 19 6 19H10"
@@ -818,18 +750,12 @@ export default function Header({
                         strokeLinecap="round"
                       />
                     </svg>
-                  </div>
 
-                  <div>
-                    <p className="text-sm font-bold text-red-400">
+                    <span>
                       Disconnect
-                    </p>
-
-                    <p className="text-xs font-medium text-red-400/45">
-                      Disconnect this wallet
-                    </p>
-                  </div>
-                </button>
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </>
