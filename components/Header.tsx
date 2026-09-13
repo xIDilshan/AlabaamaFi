@@ -181,7 +181,7 @@ export default function Header({
           {/* MOBILE BACKDROP */}
 
 <div
-  className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-xl transition-all duration-300 ${
+  className={`fixed inset-x-0 bottom-0 top-[72px] z-40 bg-black/35 backdrop-blur-xl transition-all duration-300 ${
     mobileMenuOpen
       ? "visible opacity-100"
       : "invisible opacity-0"
