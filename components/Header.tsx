@@ -47,8 +47,12 @@ export default function Header({
     React.useState(false);
 
   const shortAddress = address
-    ? `${address.slice(0, 8)}...${address.slice(-6)}`
-    : "";
+  ? `${address.slice(0, 6)}...${address.slice(-4)}`
+  : "";
+
+  const menuAddress = address
+  ? `${address.slice(0, 10)}...${address.slice(-8)}`
+  : "";
 
   /*
    * Detect the connected wallet and choose
@@ -347,7 +351,7 @@ export default function Header({
             <div className="flex min-w-0 items-center justify-end">
               <button
                 onClick={handleWalletClick}
-                className={`flex max-w-[135px] items-center gap-1.5 truncate rounded-full px-2.5 py-2 text-[11px] !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
+                className={`flex max-w-[120px] items-center gap-1 truncate rounded-full px-2 py-1.5 text-[10px] !font-black tracking-tight sm:max-w-none sm:gap-2 sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
               >
                 <span className="truncate">
                   {isConnected
