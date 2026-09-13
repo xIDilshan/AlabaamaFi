@@ -7,11 +7,11 @@ import { useAccount, useDisconnect } from "wagmi";
 import WalletModal from "@/components/WalletModal";
 
 const navItems = [
-  { href: "/", label: "Home", icon: "⌂" },
-  { href: "/send", label: "Send", icon: "↗" },
-  { href: "/swap", label: "Swap", icon: "⇄" },
-  { href: "/bridge", label: "Bridge", icon: "⇅" },
-  { href: "/activity", label: "Activity", icon: "◷" },
+  { href: "/", label: "Home", icon: "⌂", disabled: false },
+  { href: "/send", label: "Send", icon: "↗", disabled: true },
+  { href: "/swap", label: "Swap", icon: "⇄", disabled: false },
+  { href: "/bridge", label: "Bridge", icon: "⇅", disabled: true },
+  { href: "/activity", label: "Activity", icon: "◷", disabled: false },
 ];
 
 type HeaderProps = {
@@ -54,10 +54,6 @@ export default function Header({
     ? `${address.slice(0, 10)}...${address.slice(-8)}`
     : "";
 
-  /*
-   * Detect the connected wallet and choose
-   * the correct logo from /public/wallets/
-   */
   const connectedWallet = React.useMemo(() => {
     if (!connector) {
       return {
@@ -135,10 +131,6 @@ export default function Header({
       };
     }
 
-    /*
-     * For another injected/browser wallet,
-     * use the connector-provided icon if available.
-     */
     if (connector.icon) {
       return {
         name: connector.name || "Browser Wallet",
@@ -215,9 +207,7 @@ export default function Header({
     }
 
     try {
-      await navigator.clipboard.writeText(
-        address
-      );
+      await navigator.clipboard.writeText(address);
 
       setCopied(true);
 
@@ -403,10 +393,32 @@ export default function Header({
           >
             <div className="mx-auto max-w-[600px] px-4 pb-5 pt-3 sm:px-6">
               <nav className="flex flex-col">
+
                 {navItems.map((item) => {
-                  const active = isActive(
-                    item.href
-                  );
+                  const active = isActive(item.href);
+
+                  if (item.disabled) {
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        disabled
+                        className="my-1 flex min-h-[56px] w-full cursor-not-allowed items-center gap-4 rounded-full border border-white/[0.045] bg-white/[0.018] px-5 text-left text-white/30"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
+                          {item.icon}
+                        </span>
+
+                        <span className="text-sm font-semibold tracking-tight">
+                          {item.label}
+                        </span>
+
+                        <span className="ml-auto rounded-full border border-white/[0.08] bg-white/[0.035] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/30">
+                          Soon
+                        </span>
+                      </button>
+                    );
+                  }
 
                   return (
                     <Link
@@ -531,10 +543,26 @@ export default function Header({
             {/* DESKTOP NAVIGATION */}
 
             <nav className="flex min-h-[58px] items-center justify-center gap-2">
+
               {navItems.map((item) => {
-                const active = isActive(
-                  item.href
-                );
+                const active = isActive(item.href);
+
+                if (item.disabled) {
+                  return (
+                    <button
+                      key={item.href}
+                      type="button"
+                      disabled
+                      className="flex cursor-not-allowed items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white/25"
+                    >
+                      <span>{item.label}</span>
+
+                      <span className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white/25">
+                        Soon
+                      </span>
+                    </button>
+                  );
+                }
 
                 return (
                   <Link
@@ -574,9 +602,7 @@ export default function Header({
 
       <WalletModal
         isOpen={showWallets}
-        onClose={() =>
-          setShowWallets(false)
-        }
+        onClose={() => setShowWallets(false)}
       />
 
       {/* CONNECTED WALLET MENU */}
@@ -607,8 +633,6 @@ export default function Header({
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex min-w-0 items-center gap-3">
 
-                    {/* WALLET LOGO */}
-
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] p-2">
                       <img
                         src={connectedWallet.logo}
@@ -616,8 +640,6 @@ export default function Header({
                         className="h-full w-full object-contain"
                       />
                     </div>
-
-                    {/* WALLET NAME */}
 
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-white">
@@ -633,8 +655,6 @@ export default function Header({
                       </div>
                     </div>
                   </div>
-
-                  {/* CLOSE */}
 
                   <button
                     onClick={handleCloseWalletMenu}
@@ -659,8 +679,6 @@ export default function Header({
                 {/* COPY + DISCONNECT */}
 
                 <div className="grid grid-cols-2 gap-2">
-
-                  {/* COPY */}
 
                   <button
                     onClick={handleCopyAddress}
@@ -709,13 +727,9 @@ export default function Header({
                     )}
 
                     <span>
-                      {copied
-                        ? "Copied"
-                        : "Copy"}
+                      {copied ? "Copied" : "Copy"}
                     </span>
                   </button>
-
-                  {/* DISCONNECT */}
 
                   <button
                     onClick={handleDisconnect}
@@ -751,9 +765,7 @@ export default function Header({
                       />
                     </svg>
 
-                    <span>
-                      Disconnect
-                    </span>
+                    <span>Disconnect</span>
                   </button>
                 </div>
               </div>
