@@ -32,6 +32,12 @@ export default function Header({
   const [showWallets, setShowWallets] =
     React.useState(false);
 
+  const [showWalletMenu, setShowWalletMenu] =
+    React.useState(false);
+
+  const [copied, setCopied] =
+    React.useState(false);
+
   const [mobileMenuOpen, setMobileMenuOpen] =
     React.useState(false);
 
@@ -63,6 +69,7 @@ export default function Header({
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMobileMenuOpen(false);
+        setShowWalletMenu(false);
 
         window.dispatchEvent(
           new CustomEvent("mobile-menu-state", {
@@ -87,11 +94,38 @@ export default function Header({
 
   const handleWalletClick = () => {
     if (isConnected) {
-      disconnect();
+      setShowWalletMenu(true);
       return;
     }
 
     setShowWallets(true);
+  };
+
+  const handleCopyAddress = async () => {
+    if (!address) return;
+
+    try {
+      await navigator.clipboard.writeText(address);
+
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    setShowWalletMenu(false);
+    setCopied(false);
+  };
+
+  const handleCloseWalletMenu = () => {
+    setShowWalletMenu(false);
+    setCopied(false);
   };
 
   const handleMenuToggle = () => {
@@ -202,11 +236,31 @@ export default function Header({
             <div className="flex min-w-0 items-center justify-end">
               <button
                 onClick={handleWalletClick}
-                className={`max-w-[155px] truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
+                className={`flex max-w-[165px] items-center gap-2 truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
               >
-                {isConnected
-                  ? shortAddress
-                  : "Connect Wallet"}
+                <span className="truncate">
+                  {isConnected
+                    ? shortAddress
+                    : "Connect Wallet"}
+                </span>
+
+                {isConnected && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="shrink-0 text-white/55"
+                  >
+                    <path
+                      d="M6 9L12 15L18 9"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
@@ -324,11 +378,31 @@ export default function Header({
               <div className="absolute right-0">
                 <button
                   onClick={handleWalletClick}
-                  className={`rounded-full px-5 py-3 text-sm !font-black tracking-tight ${connectGlassButton}`}
+                  className={`flex items-center gap-2 rounded-full px-5 py-3 text-sm !font-black tracking-tight ${connectGlassButton}`}
                 >
-                  {isConnected
-                    ? shortAddress
-                    : "Connect Wallet"}
+                  <span>
+                    {isConnected
+                      ? shortAddress
+                      : "Connect Wallet"}
+                  </span>
+
+                  {isConnected && (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-white/55"
+                    >
+                      <path
+                        d="M6 9L12 15L18 9"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
@@ -379,12 +453,213 @@ export default function Header({
         </div>
       </header>
 
+      {/* CONNECT WALLET MODAL */}
+
       <WalletModal
         isOpen={showWallets}
         onClose={() =>
           setShowWallets(false)
         }
       />
+
+      {/* CONNECTED WALLET MENU */}
+
+      {showWalletMenu && isConnected && address && (
+        <>
+          {/* BACKDROP */}
+
+          <div
+            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
+            onClick={handleCloseWalletMenu}
+            aria-hidden="true"
+          />
+
+          {/* MODAL */}
+
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+            <div
+              className="w-full max-w-sm rounded-3xl border border-white/[0.10] bg-[#080a0d]/[0.98] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:p-6"
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+            >
+              {/* TOP */}
+
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.06]">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-white/75"
+                    >
+                      <path
+                        d="M3 7.5C3 6.12 4.12 5 5.5 5H18.5C19.88 5 21 6.12 21 7.5V16.5C21 17.88 19.88 19 18.5 19H5.5C4.12 19 3 17.88 3 16.5V7.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                      <path
+                        d="M16 12H21"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                      <circle
+                        cx="16"
+                        cy="12"
+                        r="1.2"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <p className="text-base font-bold text-white">
+                      Wallet
+                    </p>
+
+                    <p className="text-xs font-medium text-white/35">
+                      Connected
+                    </p>
+                  </div>
+                </div>
+
+                {/* CLOSE */}
+
+                <button
+                  onClick={handleCloseWalletMenu}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.04] text-lg text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+                  aria-label="Close wallet menu"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* ADDRESS */}
+
+              <div className="mb-4 rounded-2xl border border-white/[0.07] bg-black/30 p-4">
+                <p className="mb-2 text-xs font-semibold text-white/30">
+                  Wallet address
+                </p>
+
+                <p className="break-all text-sm font-bold leading-6 text-white/80">
+                  {address}
+                </p>
+              </div>
+
+              {/* COPY */}
+
+              <button
+                onClick={handleCopyAddress}
+                className="flex min-h-[56px] w-full items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-left transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.99]"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-white/65">
+                  {copied ? (
+                    <svg
+                      width="19"
+                      height="19"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <path
+                        d="M5 12.5L9.5 17L19 7.5"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="10"
+                        height="10"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d="M15 9V7C15 5.9 14.1 5 13 5H7C5.9 5 5 5.9 5 7V13C5 14.1 5.9 15 7 15H9"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white/85">
+                    {copied
+                      ? "Copied"
+                      : "Copy address"}
+                  </p>
+
+                  <p className="text-xs font-medium text-white/30">
+                    {copied
+                      ? "Wallet address copied"
+                      : "Copy your full wallet address"}
+                  </p>
+                </div>
+              </button>
+
+              {/* DISCONNECT */}
+
+              <button
+                onClick={handleDisconnect}
+                className="mt-3 flex min-h-[56px] w-full items-center gap-4 rounded-2xl border border-red-500/[0.12] bg-red-500/[0.045] px-4 text-left transition-all duration-200 hover:border-red-500/[0.22] hover:bg-red-500/[0.08] active:scale-[0.99]"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/[0.08] text-red-400">
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path
+                      d="M10 5H6C4.9 5 4 5.9 4 7V17C4 18.1 4.9 19 6 19H10"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M14 8L18 12L14 16"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M9 12H18"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-red-400">
+                    Disconnect
+                  </p>
+
+                  <p className="text-xs font-medium text-red-400/45">
+                    Disconnect this wallet
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
