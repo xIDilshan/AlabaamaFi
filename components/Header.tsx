@@ -232,23 +232,28 @@ export default function Header({
 
                 {/* FAUCET */}
 
-<Link
-  href="/faucet"
-  onClick={handleNavigation}
-  className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
-    isActive("/faucet")
-      ? "border-white/[0.13] bg-white/[0.10] text-white"
-      : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
-  }`}
->
-  <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
-    ◌
-  </span>
+                <Link
+                  href="/faucet"
+                  onClick={handleNavigation}
+                  className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
+                    isActive("/faucet")
+                      ? "border-white/[0.13] bg-white/[0.10] text-white"
+                      : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
+                  }`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
+                    ◌
+                  </span>
 
-  <span className="text-sm font-semibold tracking-tight">
-    Faucet
-  </span>
-</Link>
+                  <span className="text-sm font-semibold tracking-tight">
+                    Faucet
+                  </span>
+                </Link>
+              </nav>
+            </div>
+          </div>
+        </div>
+
         {/* DESKTOP HEADER */}
 
         <div className="hidden md:block">
