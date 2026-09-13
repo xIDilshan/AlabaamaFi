@@ -899,29 +899,26 @@ export default function ActivityPage() {
     isConnected,
   } = useAccount();
 
-  const [mobileMenuOpen, setMobileMenuOpen] =
-  useState(false);
+  useEffect(() => {
+    const handleMenuState = (event: Event) => {
+      const customEvent =
+        event as CustomEvent<boolean>;
 
-useEffect(() => {
-  const handleMenuState = (event: Event) => {
-    const customEvent =
-      event as CustomEvent<boolean>;
+      setMobileMenuOpen(customEvent.detail);
+    };
 
-    setMobileMenuOpen(customEvent.detail);
-  };
-
-  window.addEventListener(
-    "mobile-menu-state",
-    handleMenuState
-  );
-
-  return () => {
-    window.removeEventListener(
+    window.addEventListener(
       "mobile-menu-state",
       handleMenuState
     );
-  };
-}, []);
+
+    return () => {
+      window.removeEventListener(
+        "mobile-menu-state",
+        handleMenuState
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -1391,526 +1388,534 @@ useEffect(() => {
 
       <Header />
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-semibold text-white/35">
-            AlabaamaFi
-          </p>
+      <div
+        className={`transition-[filter] duration-300 ${
+          mobileMenuOpen
+            ? "blur-md"
+            : "blur-0"
+        }`}
+      >
+        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+          <div className="mx-auto max-w-6xl">
+            <p className="text-sm font-semibold text-white/35">
+              AlabaamaFi
+            </p>
 
-          <h1 className="mt-1 text-3xl font-black sm:text-4xl">
-            Wallet Activity
-          </h1>
+            <h1 className="mt-1 text-3xl font-black sm:text-4xl">
+              Wallet Activity
+            </h1>
 
-          <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
-            Connect your wallet to view its token
-            holdings and recent transactions.
-          </p>
+            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
+              Connect your wallet to view its token
+              holdings and recent transactions.
+            </p>
 
-          {/* CHECKER */}
+            {/* CHECKER */}
 
-          <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
-            <label className="mb-2 block text-sm font-bold text-white/50">
-              Wallet Address
-            </label>
+            <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
+              <label className="mb-2 block text-sm font-bold text-white/50">
+                Wallet Address
+              </label>
 
-            <input
-              type="text"
-              placeholder="Connect wallet first"
-              value={
-                activityAddress
-              }
-              readOnly
-              disabled={
-                !isConnected
-              }
-              className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
-            />
-
-            <button
-              onClick={() => {
-                if (
-                  !isConnected
-                ) {
-                  window.dispatchEvent(
-                    new Event(
-                      "open-wallet-modal"
-                    )
-                  );
-                  return;
+              <input
+                type="text"
+                placeholder="Connect wallet first"
+                value={
+                  activityAddress
                 }
+                readOnly
+                disabled={
+                  !isConnected
+                }
+                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
+              />
 
-                handleCheckActivity();
-              }}
-              disabled={
-                isConnected &&
-                activityLoading
-              }
-              className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
-                !isConnected
-                  ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
-                  : "border border-black/[0.08] bg-white text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
-              }`}
-            >
-              {activityLoading
-                ? "Checking Wallet Activity"
-                : isConnected
-                ? "Check Wallet Activity"
-                : "Connect Wallet"}
-            </button>
-
-            {activityError && (
-              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="text-sm font-semibold leading-5 text-red-400">
-                  {
-                    activityError
-                  }
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* RESULTS */}
-
-          {(activityTokens.length >
-            0 ||
-            activityTransactions.length >
-              0) && (
-            <div className="mt-7 sm:mt-8">
-              {/* PORTFOLIO */}
-
-              <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5 lg:p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-white/25">
-                      Portfolio
-                    </p>
-
-                    <p className="mt-2 text-3xl font-black">
-                      {portfolioValue !==
-                      null
-                        ? `$${portfolioValue.toFixed(
-                            2
-                          )}`
-                        : "Value unavailable"}
-                    </p>
-                  </div>
-
-                  <div className="w-fit rounded-xl border border-white/[0.07] bg-[#080a0d] px-3 py-2 text-xs font-bold text-white/40">
-                    Arc Testnet
-                  </div>
-                </div>
-              </div>
-
-              {/* TOKEN HOLDINGS */}
-
-              {activityTokens.length >
-                0 && (
-                <div className="mt-7 sm:mt-8">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h2 className="font-black">
-                      Token Holdings
-                    </h2>
-
-                    <span className="text-xs font-bold text-white/25">
-                      {
-                        activityTokens.length
-                      }{" "}
-                      tokens
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
-                    {activityTokens.map(
-                      (
-                        token
-                      ) => (
-                        <div
-                          key={`${token.address}-${token.symbol}`}
-                          className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
-                        >
-                          {/* COIN + BALANCE */}
-
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex min-w-0 items-center gap-3">
-                              {token.logo ? (
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-                                  <img
-                                    src={
-                                      token.logo
-                                    }
-                                    alt={`${token.symbol} logo`}
-                                    className={
-                                      token.symbol ===
-                                      "cirBTC"
-                                        ? "h-7 w-7 rounded-full object-contain"
-                                        : "h-10 w-10 rounded-full object-contain"
-                                    }
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
-                                  {token.symbol
-                                    .slice(
-                                      0,
-                                      1
-                                    )
-                                    .toUpperCase()}
-                                </div>
-                              )}
-
-                              <div className="min-w-0">
-                                <p className="font-black">
-                                  {
-                                    token.symbol
-                                  }
-                                </p>
-
-                                <p className="mt-1 truncate text-xs font-medium text-white/25">
-                                  {
-                                    token.name
-                                  }
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* BALANCE */}
-
-                            <p className="shrink-0 text-right text-sm font-black text-white/75">
-                              {Number(
-                                token.amount
-                              ).toLocaleString(
-                                undefined,
-                                token.symbol ===
-                                  "cirBTC"
-                                  ? {
-                                      minimumFractionDigits:
-                                        5,
-                                      maximumFractionDigits:
-                                        5,
-                                    }
-                                  : {
-                                      minimumFractionDigits:
-                                        2,
-                                      maximumFractionDigits:
-                                        2,
-                                    }
-                              )}{" "}
-                              <span className="text-white/40">
-                                {
-                                  token.symbol
-                                }
-                              </span>
-                            </p>
-                          </div>
-
-                          {/* USD VALUE */}
-
-                          <div className="mt-5 border-t border-white/[0.06] pt-4">
-                            <p className="text-sm font-black text-white">
-                              {token.usdValue !==
-                              null
-                                ? `$${token.usdValue.toFixed(
-                                    2
-                                  )}`
-                                : "USD value unavailable"}
-                            </p>
-                          </div>
-                        </div>
+              <button
+                onClick={() => {
+                  if (
+                    !isConnected
+                  ) {
+                    window.dispatchEvent(
+                      new Event(
+                        "open-wallet-modal"
                       )
-                    )}
-                  </div>
+                    );
+                    return;
+                  }
+
+                  handleCheckActivity();
+                }}
+                disabled={
+                  isConnected &&
+                  activityLoading
+                }
+                className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
+                  !isConnected
+                    ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
+                    : "border border-black/[0.08] bg-white text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
+                }`}
+              >
+                {activityLoading
+                  ? "Checking Wallet Activity"
+                  : isConnected
+                  ? "Check Wallet Activity"
+                  : "Connect Wallet"}
+              </button>
+
+              {activityError && (
+                <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                  <p className="text-sm font-semibold leading-5 text-red-400">
+                    {
+                      activityError
+                    }
+                  </p>
                 </div>
               )}
             </div>
-          )}
 
-          {/* RECENT TRANSACTIONS */}
+            {/* RESULTS */}
 
-          {activityTransactions.length >
-            0 && (
-            <div className="mt-7 sm:mt-8">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-black">
-                  Recent Transactions
-                </h2>
+            {(activityTokens.length >
+              0 ||
+              activityTransactions.length >
+                0) && (
+              <div className="mt-7 sm:mt-8">
+                {/* PORTFOLIO */}
 
-                <span className="text-xs font-bold text-white/25">
-                  {
-                    activityTransactions.length
-                  }{" "}
-                  found
-                </span>
-              </div>
+                <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5 lg:p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-white/25">
+                        Portfolio
+                      </p>
 
-              {/* DESKTOP: ONE COLUMN */}
+                      <p className="mt-2 text-3xl font-black">
+                        {portfolioValue !==
+                        null
+                          ? `$${portfolioValue.toFixed(
+                              2
+                            )}`
+                          : "Value unavailable"}
+                      </p>
+                    </div>
 
-              <div className="space-y-3">
-                {activityTransactions.map(
-                  (
-                    tx
-                  ) => {
-                    const transactionDate =
-                      tx.timestamp
-                        ? new Date(
-                            tx.timestamp
-                          )
-                        : null;
+                    <div className="w-fit rounded-xl border border-white/[0.07] bg-[#080a0d] px-3 py-2 text-xs font-bold text-white/40">
+                      Arc Testnet
+                    </div>
+                  </div>
+                </div>
 
-                    const validDate =
-                      transactionDate &&
-                      !Number.isNaN(
-                        transactionDate.getTime()
-                      );
+                {/* TOKEN HOLDINGS */}
 
-                    const formattedDate =
-                      validDate
-                        ? transactionDate!.toLocaleDateString(
-                            undefined,
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )
-                        : "Date unavailable";
+                {activityTokens.length >
+                  0 && (
+                  <div className="mt-7 sm:mt-8">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-black">
+                        Token Holdings
+                      </h2>
 
-                    const formattedTime =
-                      validDate
-                        ? transactionDate!.toLocaleTimeString(
-                            undefined,
-                            {
-                              hour: "2-digit",
-                              minute:
-                                "2-digit",
-                              second:
-                                "2-digit",
-                              hour12: false,
-                            }
-                          )
-                        : "Time unavailable";
+                      <span className="text-xs font-bold text-white/25">
+                        {
+                          activityTokens.length
+                        }{" "}
+                        tokens
+                      </span>
+                    </div>
 
-                    return (
-                      <div
-                        key={
-                          tx.hash
-                        }
-                        className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
-                      >
-                        {/* HASH */}
-
-                        <div className="min-w-0">
-                          <p className="text-sm font-black">
-                            Transaction
-                          </p>
-
-                          <div className="mt-1 flex min-w-0 items-center gap-2">
-                            <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
-                              {shortenAddress(
-                                tx.hash,
-                                14,
-                                18
-                              )}
-                            </p>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCopyHash(
-                                  tx.hash
-                                )
-                              }
-                              title={
-                                copiedHash ===
-                                tx.hash
-                                  ? "Copied"
-                                  : "Copy transaction hash"
-                              }
-                              aria-label={
-                                copiedHash ===
-                                tx.hash
-                                  ? "Transaction hash copied"
-                                  : "Copy transaction hash"
-                              }
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
-                            >
-                              {copiedHash ===
-                              tx.hash ? (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M20 6 9 17l-5-5" />
-                                </svg>
-                              ) : (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <rect
-                                    width="13"
-                                    height="13"
-                                    x="9"
-                                    y="9"
-                                    rx="2"
-                                  />
-                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* DATE / TIME */}
-
-                        <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-xs font-bold text-white/25">
-                              Date
-                            </span>
-
-                            <span className="text-right text-xs font-semibold text-white/55">
-                              {
-                                formattedDate
-                              }
-                            </span>
-                          </div>
-
-                          <div className="mt-1.5 flex items-center justify-between gap-4">
-                            <span className="text-xs font-bold text-white/25">
-                              Time
-                            </span>
-
-                            <span className="text-right text-xs font-semibold text-white/55">
-                              {
-                                formattedTime
-                              }
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* FROM / TO */}
-
-                        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white/25">
-                              From
-                            </p>
-
-                            <p
-                              title={
-                                tx.from
-                              }
-                              className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
-                            >
-                              {
-                                tx.from
-                              }
-                            </p>
-                          </div>
-
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white/25">
-                              To
-                            </p>
-
-                            <p
-                              title={
-                                tx.to
-                              }
-                              className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
-                            >
-                              {
-                                tx.to
-                              }
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-bold text-white/25">
-                              Value
-                            </p>
-
-                            <p className="mt-1 break-words text-sm font-black text-white/65">
-                              {
-                                tx.value
-                              }
-                              {tx.tokenSymbol
-                                ? ` ${tx.tokenSymbol}`
-                                : ""}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-bold text-white/25">
-                              Status
-                            </p>
-
-                            <p className="mt-1 text-sm font-black text-green-400">
-                              {
-                                tx.status
-                              }
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* ARCSCAN */}
-
-                        <div className="mt-4 border-t border-white/[0.06] pt-3">
-                          <a
-                            href={`https://testnet.arcscan.app/tx/${tx.hash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-black text-white/40 transition hover:text-white"
+                    <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
+                      {activityTokens.map(
+                        (
+                          token
+                        ) => (
+                          <div
+                            key={`${token.address}-${token.symbol}`}
+                            className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                           >
-                            View on ArcScan
-                            <span
-                              aria-hidden="true"
-                              className="text-base"
-                            >
-                              ↗
-                            </span>
-                          </a>
-                        </div>
-                      </div>
-                    );
-                  }
+                            {/* COIN + BALANCE */}
+
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                {token.logo ? (
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                                    <img
+                                      src={
+                                        token.logo
+                                      }
+                                      alt={`${token.symbol} logo`}
+                                      className={
+                                        token.symbol ===
+                                        "cirBTC"
+                                          ? "h-7 w-7 rounded-full object-contain"
+                                          : "h-10 w-10 rounded-full object-contain"
+                                      }
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
+                                    {token.symbol
+                                      .slice(
+                                        0,
+                                        1
+                                      )
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+
+                                <div className="min-w-0">
+                                  <p className="font-black">
+                                    {
+                                      token.symbol
+                                    }
+                                  </p>
+
+                                  <p className="mt-1 truncate text-xs font-medium text-white/25">
+                                    {
+                                      token.name
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* BALANCE */}
+
+                              <p className="shrink-0 text-right text-sm font-black text-white/75">
+                                {Number(
+                                  token.amount
+                                ).toLocaleString(
+                                  undefined,
+                                  token.symbol ===
+                                    "cirBTC"
+                                    ? {
+                                        minimumFractionDigits:
+                                          5,
+                                        maximumFractionDigits:
+                                          5,
+                                      }
+                                    : {
+                                        minimumFractionDigits:
+                                          2,
+                                        maximumFractionDigits:
+                                          2,
+                                      }
+                                )}{" "}
+                                <span className="text-white/40">
+                                  {
+                                    token.symbol
+                                  }
+                                </span>
+                              </p>
+                            </div>
+
+                            {/* USD VALUE */}
+
+                            <div className="mt-5 border-t border-white/[0.06] pt-4">
+                              <p className="text-sm font-black text-white">
+                                {token.usdValue !==
+                                null
+                                  ? `$${token.usdValue.toFixed(
+                                      2
+                                    )}`
+                                  : "USD value unavailable"}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* EMPTY */}
+            {/* RECENT TRANSACTIONS */}
 
-          {!activityLoading &&
-            isConnected &&
-            activityAddress &&
-            activityTransactions.length ===
-              0 &&
-            activityTokens.length ===
-              0 &&
-            !activityError && (
-              <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-6 text-center">
-                <p className="text-sm font-medium leading-6 text-white/35">
-                  No transactions or token
-                  holdings found for this
-                  wallet.
-                </p>
+            {activityTransactions.length >
+              0 && (
+              <div className="mt-7 sm:mt-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="font-black">
+                    Recent Transactions
+                  </h2>
+
+                  <span className="text-xs font-bold text-white/25">
+                    {
+                      activityTransactions.length
+                    }{" "}
+                    found
+                  </span>
+                </div>
+
+                {/* DESKTOP: ONE COLUMN */}
+
+                <div className="space-y-3">
+                  {activityTransactions.map(
+                    (
+                      tx
+                    ) => {
+                      const transactionDate =
+                        tx.timestamp
+                          ? new Date(
+                              tx.timestamp
+                            )
+                          : null;
+
+                      const validDate =
+                        transactionDate &&
+                        !Number.isNaN(
+                          transactionDate.getTime()
+                        );
+
+                      const formattedDate =
+                        validDate
+                          ? transactionDate!.toLocaleDateString(
+                              undefined,
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
+                          : "Date unavailable";
+
+                      const formattedTime =
+                        validDate
+                          ? transactionDate!.toLocaleTimeString(
+                              undefined,
+                              {
+                                hour: "2-digit",
+                                minute:
+                                  "2-digit",
+                                second:
+                                  "2-digit",
+                                hour12: false,
+                              }
+                            )
+                          : "Time unavailable";
+
+                      return (
+                        <div
+                          key={
+                            tx.hash
+                          }
+                          className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
+                        >
+                          {/* HASH */}
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-black">
+                              Transaction
+                            </p>
+
+                            <div className="mt-1 flex min-w-0 items-center gap-2">
+                              <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
+                                {shortenAddress(
+                                  tx.hash,
+                                  14,
+                                  18
+                                )}
+                              </p>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopyHash(
+                                    tx.hash
+                                  )
+                                }
+                                title={
+                                  copiedHash ===
+                                  tx.hash
+                                    ? "Copied"
+                                    : "Copy transaction hash"
+                                }
+                                aria-label={
+                                  copiedHash ===
+                                  tx.hash
+                                    ? "Transaction hash copied"
+                                    : "Copy transaction hash"
+                                }
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-white/40 transition hover:bg-white/[0.07] hover:text-white/70"
+                              >
+                                {copiedHash ===
+                                tx.hash ? (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M20 6 9 17l-5-5" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <rect
+                                      width="13"
+                                      height="13"
+                                      x="9"
+                                      y="9"
+                                      rx="2"
+                                    />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* DATE / TIME */}
+
+                          <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs font-bold text-white/25">
+                                Date
+                              </span>
+
+                              <span className="text-right text-xs font-semibold text-white/55">
+                                {
+                                  formattedDate
+                                }
+                              </span>
+                            </div>
+
+                            <div className="mt-1.5 flex items-center justify-between gap-4">
+                              <span className="text-xs font-bold text-white/25">
+                                Time
+                              </span>
+
+                              <span className="text-right text-xs font-semibold text-white/55">
+                                {
+                                  formattedTime
+                                }
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* FROM / TO */}
+
+                          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-white/25">
+                                From
+                              </p>
+
+                              <p
+                                title={
+                                  tx.from
+                                }
+                                className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
+                              >
+                                {
+                                  tx.from
+                                }
+                              </p>
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-white/25">
+                                To
+                              </p>
+
+                              <p
+                                title={
+                                  tx.to
+                                }
+                                className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
+                              >
+                                {
+                                  tx.to
+                                }
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-bold text-white/25">
+                                Value
+                              </p>
+
+                              <p className="mt-1 break-words text-sm font-black text-white/65">
+                                {
+                                  tx.value
+                                }
+                                {tx.tokenSymbol
+                                  ? ` ${tx.tokenSymbol}`
+                                  : ""}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-bold text-white/25">
+                                Status
+                              </p>
+
+                              <p className="mt-1 text-sm font-black text-green-400">
+                                {
+                                  tx.status
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* ARCSCAN */}
+
+                          <div className="mt-4 border-t border-white/[0.06] pt-3">
+                            <a
+                              href={`https://testnet.arcscan.app/tx/${tx.hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-black text-white/40 transition hover:text-white"
+                            >
+                              View on ArcScan
+                              <span
+                                aria-hidden="true"
+                                className="text-base"
+                              >
+                                ↗
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
               </div>
             )}
-        </div>
-      </section>
+
+            {/* EMPTY */}
+
+            {!activityLoading &&
+              isConnected &&
+              activityAddress &&
+              activityTransactions.length ===
+                0 &&
+              activityTokens.length ===
+                0 &&
+              !activityError && (
+                <div className="mt-8 rounded-2xl border border-white/[0.07] bg-[#060709] p-6 text-center">
+                  <p className="text-sm font-medium leading-6 text-white/35">
+                    No transactions or token
+                    holdings found for this
+                    wallet.
+                  </p>
+                </div>
+              )}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
