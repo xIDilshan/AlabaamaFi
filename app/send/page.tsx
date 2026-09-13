@@ -70,9 +70,6 @@ type Section =
   | "activity"
   | "faucet";
 
-const connectGlassButton =
-  "border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0";
-
 const silverGlassButton =
   "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0";
 
@@ -118,11 +115,6 @@ function getFriendlyErrorMessage(message: string): string {
 }
 
 export default function SendPage() {
-  const [showMenu, setShowMenu] = useState(false);
-
-  const [activeSection, setActiveSection] =
-    useState<Section>("send");
-
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -163,60 +155,6 @@ export default function SendPage() {
   const formattedBalance = usdcBalance
     ? (Number(usdcBalance) / 1_000_000).toFixed(2)
     : "0.00";
-
-  const handleNavigation = (section: Section) => {
-    const routes: Record<Section, string> = {
-      home: "/",
-      send: "/send",
-      swap: "/swap",
-      bridge: "/bridge",
-      activity: "/activity",
-      faucet: "/faucet",
-    };
-
-    setShowMenu(false);
-    setError("");
-    setActiveSection(section);
-
-    window.location.href = routes[section];
-  };
-
-  const menuItems: {
-    id: Section;
-    label: string;
-    icon: string;
-  }[] = [
-    {
-      id: "home",
-      label: "Home",
-      icon: "⌂",
-    },
-    {
-      id: "send",
-      label: "Send",
-      icon: "↗",
-    },
-    {
-      id: "swap",
-      label: "Swap",
-      icon: "⇄",
-    },
-    {
-      id: "bridge",
-      label: "Bridge",
-      icon: "⇅",
-    },
-    {
-      id: "activity",
-      label: "Activity",
-      icon: "◷",
-    },
-    {
-      id: "faucet",
-      label: "Faucet",
-      icon: "◌",
-    },
-  ];
 
   const handleSend = () => {
     setError("");
@@ -268,9 +206,7 @@ export default function SendPage() {
         }
       `}</style>
 
-      <Header
-        onMenuClick={() => setShowMenu(true)}
-      />
+      <Header />
 
       {/* SEND CONTENT */}
 
@@ -459,85 +395,6 @@ export default function SendPage() {
           </div>
         </div>
       </section>
-
-      {/* MOBILE MENU */}
-
-      {showMenu && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <button
-            onClick={() => setShowMenu(false)}
-            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-            aria-label="Close menu"
-          />
-
-          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
-
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">
-                  AlabaamaFi
-                </h2>
-
-                <p className="mt-1 text-xs font-semibold text-white/30">
-                  Powered by Arc
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowMenu(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
-                aria-label="Close menu"
-              >
-                ✕
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    handleNavigation(item.id)
-                  }
-                  className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
-                    activeSection === item.id
-                      ? silverGlassButton
-                      : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
-                  }`}
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center text-lg font-bold leading-none">
-                    {item.icon}
-                  </span>
-
-                  <span className="text-sm font-bold">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-auto pt-8">
-              <button
-                onClick={() => {
-                  setShowMenu(false);
-
-                  window.dispatchEvent(
-                    new Event("open-wallet-modal")
-                  );
-                }}
-                className={`w-full rounded-full px-4 py-3.5 text-sm font-semibold tracking-normal active:scale-[0.99] ${connectGlassButton}`}
-              >
-                {isConnected
-                  ? `${address?.slice(
-                      0,
-                      6
-                    )}...${address?.slice(-4)}`
-                  : "Connect Wallet"}
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
     </main>
   );
 }
