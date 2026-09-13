@@ -1864,6 +1864,7 @@ export default function ActivityPage() {
       </svg>
     )}
   </button>
+                          </div>
 </div>
 
                         {/* DATE / TIME */}
