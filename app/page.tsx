@@ -477,72 +477,111 @@ export default function Home() {
 
             {/* QUICK ACTIONS */}
 
-            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10">
-              <div className="mb-6 text-center sm:mb-8">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
-                  Explore AlabaamaFi
-                </p>
+<div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10">
+  <div className="mb-6 text-center sm:mb-8">
+    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/25">
+      Explore AlabaamaFi
+    </p>
 
-                <h3 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-                  Everything in one place
-                </h3>
+    <h3 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+      Everything in one place
+    </h3>
 
-                <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-white/30">
-                  Simple tools for interacting with
-                  assets and activity on Arc Testnet.
-                </p>
-              </div>
+    <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-white/30">
+      Simple tools for interacting with
+      assets and activity on Arc Testnet.
+    </p>
+  </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  {
-                    id: "send" as Section,
-                    icon: "↗",
-                    title: "Send USDC",
-                    text: "Send USDC to another wallet.",
-                  },
-                  {
-                    id: "swap" as Section,
-                    icon: "⇄",
-                    title: "Swap Tokens",
-                    text: "Swap supported assets on Arc.",
-                  },
-                  {
-                    id: "bridge" as Section,
-                    icon: "⇅",
-                    title: "Bridge USDC",
-                    text: "Move assets across networks.",
-                  },
-                  {
-                    id: "activity" as Section,
-                    icon: "◷",
-                    title: "Wallet Activity",
-                    text: "Explore wallet activity and assets.",
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() =>
-                      handleNavigation(item.id)
-                    }
-                    className="quick-access-button group min-w-0 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] p-6 text-center shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
-                  >
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-[#080a0d] text-xl font-bold text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white">
-                      {item.icon}
-                    </div>
+  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    {[
+      {
+        id: "send" as Section,
+        icon: "↗",
+        title: "Send USDC",
+        text: "Send USDC to another wallet.",
+        disabled: true,
+      },
+      {
+        id: "swap" as Section,
+        icon: "⇄",
+        title: "Swap Tokens",
+        text: "Swap supported assets on Arc.",
+        disabled: false,
+      },
+      {
+        id: "bridge" as Section,
+        icon: "⇅",
+        title: "Bridge USDC",
+        text: "Move assets across networks.",
+        disabled: true,
+      },
+      {
+        id: "activity" as Section,
+        icon: "◷",
+        title: "Wallet Activity",
+        text: "Explore wallet activity and assets.",
+        disabled: false,
+      },
+    ].map((item) => (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          if (item.disabled) {
+            return;
+          }
 
-                    <h4 className="mt-6 font-black tracking-tight">
-                      {item.title}
-                    </h4>
+          handleNavigation(item.id);
+        }}
+        disabled={item.disabled}
+        className={`quick-access-button group min-w-0 rounded-3xl border p-6 text-center shadow-lg shadow-black/40 transition-all duration-200 ${
+          item.disabled
+            ? "cursor-not-allowed border-white/[0.05] bg-gradient-to-br from-[#080b10] via-[#06080b] to-[#030303] opacity-55"
+            : "border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#07090c] to-[#030303] hover:-translate-y-1 hover:border-[#2b6cff]/20 hover:shadow-xl hover:shadow-black/50 active:translate-y-0"
+        }`}
+      >
+        <div
+          className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border text-xl font-bold ${
+            item.disabled
+              ? "border-white/[0.05] bg-[#07090c] text-white/35"
+              : "border-white/[0.07] bg-[#080a0d] text-white/65 transition-all group-hover:border-[#2b6cff]/20 group-hover:bg-[#0b1017] group-hover:text-white"
+          }`}
+        >
+          {item.icon}
+        </div>
 
-                    <p className="mt-2 text-sm font-medium leading-6 text-white/30">
-                      {item.text}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <h4
+            className={`font-black tracking-tight ${
+              item.disabled
+                ? "text-white/55"
+                : "text-white"
+            }`}
+          >
+            {item.title}
+          </h4>
 
+          {item.disabled && (
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-white/30">
+              Soon
+            </span>
+          )}
+        </div>
+
+        <p
+          className={`mt-2 text-sm font-medium leading-6 ${
+            item.disabled
+              ? "text-white/20"
+              : "text-white/30"
+          }`}
+        >
+          {item.text}
+        </p>
+      </button>
+    ))}
+  </div>
+</div>
             {/* SILVER DIVIDER */}
 
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
