@@ -386,22 +386,22 @@ export default function SendPage() {
 
               {/* SUCCESS */}
 
-              {isConfirmed && hash && (
-                <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
-                  <p className="text-sm font-bold text-green-400">
-                    Transaction confirmed ✓
-                  </p>
+{isConfirmed && hash && (
+  <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
+    <p className="text-sm font-bold text-green-400">
+      Transaction confirmed
+    </p>
 
-                  <a
-                    href={`https://testnet.arcscan.app/tx/${hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
-                  >
-                    View Transaction on ArcScan
-                  </a>
-                </div>
-              )}
+    <a
+      href={`https://testnet.arcscan.app/tx/${hash}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
+    >
+      View Transaction on ArcScan
+    </a>
+  </div>
+)}
             </div>
           </div>
         </section>
