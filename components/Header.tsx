@@ -47,7 +47,7 @@ export default function Header({
     React.useState(false);
 
   const shortAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    ? `${address.slice(0, 8)}...${address.slice(-6)}`
     : "";
 
   /*
@@ -347,7 +347,7 @@ export default function Header({
             <div className="flex min-w-0 items-center justify-end">
               <button
                 onClick={handleWalletClick}
-                className={`flex max-w-[165px] items-center gap-2 truncate rounded-full px-3.5 py-2.5 text-xs !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 ${connectGlassButton}`}
+                className={`flex max-w-[135px] items-center gap-1.5 truncate rounded-full px-2.5 py-2 text-[11px] !font-black tracking-tight sm:max-w-none sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
               >
                 <span className="truncate">
                   {isConnected
@@ -357,8 +357,8 @@ export default function Header({
 
                 {isConnected && (
                   <svg
-                    width="12"
-                    height="12"
+                    width="11"
+                    height="11"
                     viewBox="0 0 24 24"
                     fill="none"
                     className="shrink-0 text-white/55"
@@ -641,15 +641,11 @@ export default function Header({
                   </button>
                 </div>
 
-                {/* ADDRESS */}
+                {/* WALLET ADDRESS */}
 
-                <div className="mb-3 flex min-h-[48px] items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-black/30 px-3.5">
-                  <span className="shrink-0 text-[11px] font-semibold text-white/30">
-                    Address
-                  </span>
-
+                <div className="mb-3 flex min-h-[48px] items-center justify-center rounded-2xl border border-white/[0.07] bg-black/30 px-4">
                   <span
-                    className="min-w-0 truncate text-right text-sm font-bold text-white/80"
+                    className="truncate text-center text-sm font-bold tracking-tight text-white/80"
                     title={address}
                   >
                     {shortAddress}
