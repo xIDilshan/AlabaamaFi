@@ -90,7 +90,6 @@ export default function Header({
 
   const handleMenuToggle = () => {
     setMobileMenuOpen((current) => !current);
-
     onMenuClick?.();
   };
 
@@ -214,10 +213,10 @@ export default function Header({
                       key={item.href}
                       href={item.href}
                       onClick={handleNavigation}
-                      className={`flex min-h-[56px] items-center gap-4 border-b border-white/[0.06] px-3 transition-all duration-200 last:border-b-0 ${
+                      className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
                         active
-                          ? "bg-white/[0.08] text-white"
-                          : "text-white/55 hover:bg-white/[0.05] hover:text-white/90"
+                          ? "border-white/[0.13] bg-white/[0.10] text-white"
+                          : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
                       }`}
                     >
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
@@ -236,10 +235,10 @@ export default function Header({
                 <Link
                   href="/faucet"
                   onClick={handleNavigation}
-                  className={`flex min-h-[56px] items-center gap-4 border-b border-white/[0.06] px-3 transition-all duration-200 ${
+                  className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
                     isActive("/faucet")
-                      ? "bg-white/[0.08] text-white"
-                      : "text-white/55 hover:bg-white/[0.05] hover:text-white/90"
+                      ? "border-white/[0.13] bg-white/[0.10] text-white"
+                      : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
                   }`}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center">
