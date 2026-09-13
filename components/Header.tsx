@@ -242,8 +242,10 @@ export default function Header({
                   }`}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
-                    ◌
-                  </span>
+  <span className="-translate-y-[2px]">
+    ◌
+  </span>
+</span>
 
                   <span className="text-sm font-semibold tracking-tight">
                     Faucet
