@@ -37,43 +37,6 @@ type TokenHolding = {
   usdValue: number | null;
 };
 
-const menuItems: {
-  id: Section;
-  label: string;
-  icon: string;
-}[] = [
-  {
-    id: "home",
-    label: "Home",
-    icon: "⌂",
-  },
-  {
-    id: "send",
-    label: "Send",
-    icon: "↗",
-  },
-  {
-    id: "swap",
-    label: "Swap",
-    icon: "⇄",
-  },
-  {
-    id: "bridge",
-    label: "Bridge",
-    icon: "⇅",
-  },
-  {
-    id: "activity",
-    label: "Activity",
-    icon: "◷",
-  },
-  {
-    id: "faucet",
-    label: "Faucet",
-    icon: "◌",
-  },
-];
-
 function getTokenLogo(
   symbol: string,
   apiLogo: string | null
@@ -132,7 +95,6 @@ function getUsdValue(value: any): number | null {
 export default function Home() {
   const router = useRouter();
 
-  const [showMenu, setShowMenu] = useState(false);
   const [activeSection, setActiveSection] =
     useState<Section>("home");
 
@@ -180,8 +142,6 @@ export default function Home() {
       activity: "/activity",
       faucet: "/faucet",
     };
-
-    setShowMenu(false);
 
     if (section === "home") {
       setActiveSection("home");
@@ -322,7 +282,9 @@ export default function Home() {
 
       try {
         const paddedAddress =
-          walletAddress.slice(2).padStart(64, "0");
+          walletAddress
+            .slice(2)
+            .padStart(64, "0");
 
         const data = await fetch(
           "https://rpc.testnet.arc.network",
@@ -349,7 +311,8 @@ export default function Home() {
         );
 
         if (data.ok) {
-          const rpcResult = await data.json();
+          const rpcResult =
+            await data.json();
 
           if (rpcResult?.result) {
             const rawBalance = BigInt(
@@ -377,16 +340,17 @@ export default function Home() {
 
       setActivityTokens(tokenHoldings);
 
-      const totalValue = tokenHoldings.reduce(
-        (total, token) => {
-          if (token.usdValue !== null) {
-            return total + token.usdValue;
-          }
+      const totalValue =
+        tokenHoldings.reduce(
+          (total, token) => {
+            if (token.usdValue !== null) {
+              return total + token.usdValue;
+            }
 
-          return total;
-        },
-        0
-      );
+            return total;
+          },
+          0
+        );
 
       if (tokenHoldings.length > 0) {
         setPortfolioValue(totalValue);
@@ -421,78 +385,7 @@ export default function Home() {
 
       {/* HEADER */}
 
-      <Header
-        onMenuClick={() => setShowMenu(true)}
-      />
-
-      {/* MENU */}
-
-      {showMenu && (
-        <div className="fixed inset-0 z-40">
-          <button
-            onClick={() => setShowMenu(false)}
-            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-            aria-label="Close menu"
-          />
-
-          <aside className="relative z-50 flex min-h-screen w-[min(18rem,88vw)] flex-col border-r border-white/[0.06] bg-[#040506] p-4 shadow-2xl shadow-black/80 sm:p-5">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">
-                  AlabaamaFi
-                </h2>
-
-                <p className="mt-1 text-xs font-semibold text-white/30">
-                  Powered by Arc
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowMenu(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white/50 transition hover:bg-white/[0.04] hover:text-white active:scale-95"
-                aria-label="Close menu"
-              >
-                ✕
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    handleNavigation(item.id)
-                  }
-                  className={`flex min-h-12 w-full items-center gap-4 rounded-full px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.99] ${
-                    activeSection === item.id
-                      ? "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)]"
-                      : "text-white/60 hover:bg-[#0a0d12] hover:text-white"
-                  }`}
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center text-lg font-bold leading-none">
-  {item.icon}
-</span>
-
-                  <span className="text-sm font-bold">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-auto pt-8">
-              <button
-                onClick={handleWalletButton}
-                className="w-full rounded-full border border-white/[0.22] bg-gradient-to-br from-white/[0.14] via-white/[0.08] to-white/[0.035] px-4 py-3.5 text-sm !font-black tracking-tight text-white shadow-[0_8px_30px_rgba(255,255,255,0.05),0_10px_35px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.34] hover:from-white/[0.18] hover:via-white/[0.11] hover:to-white/[0.055] hover:shadow-[0_10px_35px_rgba(255,255,255,0.08),0_18px_45px_rgba(0,0,0,0.42)] active:translate-y-0"
-              >
-                {isConnected && address
-                  ? `${address.slice(0, 6)}...${address.slice(-4)}`
-                  : "Connect Wallet"}
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+      <Header />
 
       {/* CONTENT */}
 
@@ -870,7 +763,7 @@ export default function Home() {
                         fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249-1.845-.276-3.68-.276-5.486 0-.164-.394-.405-.874-.617-1.249a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.678 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.868 19.868 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.461-.63.872-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.17 13.17 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.794 8.18 1.794 12.061 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.353-1.22.65-1.873.892a.077.077 0 0 0-.041.106c.36.698.771 1.364 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.033-.027ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.947 2.419-2.157 2.419Z" />
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249-1.845-.276-3.68-.276-5.486 0-.164-.394-.405-.874-.617-1.249a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.678 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.868 19.868 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.461-.63.872-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.17 13.17 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.794 8.18 1.794 12.061 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.353-1.22.65-1.873.892a.077.077 0 0 0-.041.106c.36.698.771 1.364 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.033-.027ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.419 2.419 2.419Z" />
                       </svg>
                     </a>
                   </div>
@@ -1419,8 +1312,6 @@ export default function Home() {
 
       <footer className="border-t border-white/[0.06] bg-[#030405]">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-7 text-center sm:py-8">
-          
-
           <p className="mt-2 text-sm font-black tracking-tight text-white/80">
             AlabaamaFi
           </p>
