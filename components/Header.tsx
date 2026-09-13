@@ -7,12 +7,11 @@ import { useAccount, useDisconnect } from "wagmi";
 import WalletModal from "@/components/WalletModal";
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/send", label: "Send" },
-  { href: "/swap", label: "Swap" },
-  { href: "/bridge", label: "Bridge" },
-  { href: "/activity", label: "Activity" },
-  { href: "/faucet", label: "Faucet" },
+  { href: "/", label: "Home", icon: "⌂" },
+  { href: "/send", label: "Send", icon: "↗" },
+  { href: "/swap", label: "Swap", icon: "⇄" },
+  { href: "/bridge", label: "Bridge", icon: "⇅" },
+  { href: "/activity", label: "Activity", icon: "◷" },
 ];
 
 type HeaderProps = {
@@ -31,6 +30,9 @@ export default function Header({
   const { disconnect } = useDisconnect();
 
   const [showWallets, setShowWallets] =
+    React.useState(false);
+
+  const [mobileMenuOpen, setMobileMenuOpen] =
     React.useState(false);
 
   const shortAddress = address
@@ -57,6 +59,26 @@ export default function Header({
     };
   }, [isConnected]);
 
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, []);
+
   const handleWalletClick = () => {
     if (isConnected) {
       disconnect();
@@ -66,20 +88,60 @@ export default function Header({
     setShowWallets(true);
   };
 
+  const handleMenuToggle = () => {
+    setMobileMenuOpen((current) => !current);
+
+    /*
+     * Keep the old callback available for compatibility
+     * with pages that still pass onMenuClick.
+     * The shared menu itself is now controlled here.
+     */
+    onMenuClick?.();
+  };
+
+  const handleNavigation = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const isActive = (href: string) => {
+    return href === "/"
+      ? pathname === "/"
+      : pathname.startsWith(href);
+  };
+
   return (
     <>
-      <header className="border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
+      <header className="relative z-50 border-b border-white/[0.06] bg-[#040506]/95 backdrop-blur-xl">
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
           <div className="mx-auto grid min-h-[72px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6">
+            {/* LEFT */}
+
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
-                onClick={onMenuClick}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white active:scale-95"
-                aria-label="Open menu"
+                onClick={handleMenuToggle}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-[#060709] text-lg font-bold text-white/70 transition-all duration-200 ${
+                  mobileMenuOpen
+                    ? "border-white/[0.18] bg-white/[0.08] text-white"
+                    : "border-white/[0.07] hover:border-white/[0.14] hover:bg-[#0a0d12] hover:text-white"
+                }`}
+                aria-label={
+                  mobileMenuOpen
+                    ? "Close menu"
+                    : "Open menu"
+                }
+                aria-expanded={mobileMenuOpen}
               >
-                ☰
+                <span
+                  className={`transition-transform duration-200 ${
+                    mobileMenuOpen
+                      ? "rotate-90"
+                      : "rotate-0"
+                  }`}
+                >
+                  ☰
+                </span>
               </button>
 
               <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/[0.07] bg-[#060709] px-3 py-2">
@@ -91,8 +153,13 @@ export default function Header({
               </div>
             </div>
 
+            {/* CENTER */}
+
             <div className="min-w-0 text-center">
-              <Link href="/">
+              <Link
+                href="/"
+                onClick={handleNavigation}
+              >
                 <h1 className="truncate text-sm font-bold sm:text-base">
                   AlabaamaFi
                 </h1>
@@ -103,6 +170,8 @@ export default function Header({
               </Link>
             </div>
 
+            {/* RIGHT */}
+
             <div className="flex min-w-0 items-center justify-end">
               <button
                 onClick={handleWalletClick}
@@ -112,6 +181,93 @@ export default function Header({
                   ? shortAddress
                   : "Connect Wallet"}
               </button>
+            </div>
+          </div>
+
+          {/* MOBILE TOP MENU */}
+
+          <div
+            className={`absolute left-0 right-0 top-full overflow-hidden border-b border-white/[0.10] bg-[#050608]/[0.98] shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-300 ease-out ${
+              mobileMenuOpen
+                ? "visible max-h-[360px] translate-y-0 opacity-100"
+                : "invisible max-h-0 -translate-y-2 opacity-0"
+            }`}
+          >
+            <div className="mx-auto max-w-[600px] px-4 pb-5 pt-4 sm:px-6">
+              <div className="grid grid-cols-3 gap-2">
+                {navItems.map((item) => {
+                  const active = isActive(
+                    item.href
+                  );
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleNavigation}
+                      className={`group flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-2xl border transition-all duration-200 ${
+                        active
+                          ? "border-white/[0.13] bg-white/[0.10] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                          : "border-white/[0.055] bg-white/[0.025] text-white/45 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/85"
+                      }`}
+                    >
+                      <span className="flex h-6 w-6 items-center justify-center text-[19px] font-semibold leading-none">
+                        {item.icon}
+                      </span>
+
+                      <span className="text-[11px] font-semibold tracking-tight">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+
+                {/* FAUCET */}
+
+                <Link
+                  href="/faucet"
+                  onClick={handleNavigation}
+                  className={`group flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-2xl border transition-all duration-200 ${
+                    isActive("/faucet")
+                      ? "border-white/[0.13] bg-white/[0.10] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                      : "border-white/[0.055] bg-white/[0.025] text-white/45 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/85"
+                  }`}
+                >
+                  <span className="flex h-6 w-6 items-center justify-center">
+                    <svg
+                      width="19"
+                      height="19"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M4 10h12" />
+                      <path d="M7 10V7a3 3 0 0 1 3-3h3" />
+                      <path d="M13 4h4v3" />
+                      <path d="M16 10v4" />
+                      <path d="M12 14h8" />
+                      <path d="M20 14v2" />
+                      <path d="M20 20c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.2 2-3 2-3s2 1.8 2 3Z" />
+                    </svg>
+                  </span>
+
+                  <span className="text-[11px] font-semibold tracking-tight">
+                    Faucet
+                  </span>
+                </Link>
+              </div>
+
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">
+                  Arc Testnet
+                </span>
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+              </div>
             </div>
           </div>
         </div>
@@ -170,19 +326,16 @@ export default function Header({
 
             <nav className="flex min-h-[58px] items-center justify-center gap-2">
               {navItems.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(
-                        item.href
-                      );
+                const active = isActive(
+                  item.href
+                );
 
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                      isActive
+                      active
                         ? "bg-white/[0.10] text-white"
                         : "text-white/45 hover:bg-white/[0.05] hover:text-white/85"
                     }`}
@@ -191,6 +344,17 @@ export default function Header({
                   </Link>
                 );
               })}
+
+              <Link
+                href="/faucet"
+                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  isActive("/faucet")
+                    ? "bg-white/[0.10] text-white"
+                    : "text-white/45 hover:bg-white/[0.05] hover:text-white/85"
+                }`}
+              >
+                Faucet
+              </Link>
             </nav>
 
             {/* SECOND SILVER LINE */}
