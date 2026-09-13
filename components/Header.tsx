@@ -63,6 +63,12 @@ export default function Header({
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMobileMenuOpen(false);
+
+        window.dispatchEvent(
+          new CustomEvent("mobile-menu-state", {
+            detail: false,
+          })
+        );
       }
     };
 
@@ -89,12 +95,39 @@ export default function Header({
   };
 
   const handleMenuToggle = () => {
-    setMobileMenuOpen((current) => !current);
+    setMobileMenuOpen((current) => {
+      const next = !current;
+
+      window.dispatchEvent(
+        new CustomEvent("mobile-menu-state", {
+          detail: next,
+        })
+      );
+
+      return next;
+    });
+
     onMenuClick?.();
   };
 
   const handleNavigation = () => {
     setMobileMenuOpen(false);
+
+    window.dispatchEvent(
+      new CustomEvent("mobile-menu-state", {
+        detail: false,
+      })
+    );
+  };
+
+  const handleBackdropClick = () => {
+    setMobileMenuOpen(false);
+
+    window.dispatchEvent(
+      new CustomEvent("mobile-menu-state", {
+        detail: false,
+      })
+    );
   };
 
   const isActive = (href: string) => {
@@ -180,15 +213,16 @@ export default function Header({
 
           {/* MOBILE BACKDROP */}
 
-<div
-  className={`fixed left-0 right-0 bottom-0 top-[72px] z-40 bg-black/45 backdrop-blur-2xl transition-all duration-300 ${
-    mobileMenuOpen
-      ? "visible opacity-100"
-      : "invisible opacity-0"
-  }`}
-  onClick={() => setMobileMenuOpen(false)}
-  aria-hidden="true"
-/>
+          <div
+            className={`fixed inset-x-0 bottom-0 top-[72px] z-40 bg-black/40 transition-all duration-300 ${
+              mobileMenuOpen
+                ? "visible opacity-100"
+                : "invisible opacity-0"
+            }`}
+            onClick={handleBackdropClick}
+            aria-hidden="true"
+          />
+
           {/* MOBILE TOP MENU */}
 
           <div
@@ -239,10 +273,10 @@ export default function Header({
                   }`}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
-  <span className="-translate-y-[3px]">
-    ◌
-  </span>
-</span>
+                    <span className="-translate-y-[3px]">
+                      ◌
+                    </span>
+                  </span>
 
                   <span className="text-sm font-semibold tracking-tight">
                     Faucet
