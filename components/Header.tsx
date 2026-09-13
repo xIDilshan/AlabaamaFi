@@ -232,56 +232,23 @@ export default function Header({
 
                 {/* FAUCET */}
 
-                <Link
-                  href="/faucet"
-                  onClick={handleNavigation}
-                  className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
-                    isActive("/faucet")
-                      ? "border-white/[0.13] bg-white/[0.10] text-white"
-                      : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
-                  }`}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-                    <svg
-                      width="19"
-                      height="19"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 10h12" />
-                      <path d="M7 10V7a3 3 0 0 1 3-3h3" />
-                      <path d="M13 4h4v3" />
-                      <path d="M16 10v4" />
-                      <path d="M12 14h8" />
-                      <path d="M20 14v2" />
-                      <path d="M20 20c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.2 2-3 2-3s2 1.8 2 3Z" />
-                    </svg>
-                  </span>
+<Link
+  href="/faucet"
+  onClick={handleNavigation}
+  className={`my-1 flex min-h-[56px] items-center gap-4 rounded-full border px-5 transition-all duration-200 ${
+    isActive("/faucet")
+      ? "border-white/[0.13] bg-white/[0.10] text-white"
+      : "border-white/[0.055] bg-white/[0.025] text-white/55 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/90"
+  }`}
+>
+  <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
+    ◌
+  </span>
 
-                  <span className="text-sm font-semibold tracking-tight">
-                    Faucet
-                  </span>
-                </Link>
-              </nav>
-
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-
-                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">
-                  Arc Testnet
-                </span>
-
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+  <span className="text-sm font-semibold tracking-tight">
+    Faucet
+  </span>
+</Link>
         {/* DESKTOP HEADER */}
 
         <div className="hidden md:block">
