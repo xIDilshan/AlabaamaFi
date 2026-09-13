@@ -356,7 +356,7 @@ export default function Header({
                 <span className="truncate">
                   {isConnected
                     ? shortAddress
-                    : "Connect Wallet"}
+                    : "Connect"}
                 </span>
 
                 {isConnected && (
