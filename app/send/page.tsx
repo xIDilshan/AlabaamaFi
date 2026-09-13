@@ -62,14 +62,6 @@ const USDC_ABI = [
   },
 ] as const;
 
-type Section =
-  | "home"
-  | "send"
-  | "swap"
-  | "bridge"
-  | "activity"
-  | "faucet";
-
 const silverGlassButton =
   "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] hover:shadow-[0_4px_10px_rgba(0,0,0,0.08),0_14px_34px_rgba(0,0,0,0.18)] active:translate-y-0";
 
@@ -118,7 +110,6 @@ export default function SendPage() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
-
   const [mobileMenuOpen, setMobileMenuOpen] =
     useState(false);
 
@@ -233,40 +224,51 @@ export default function SendPage() {
       <Header />
 
       <div
-        className={`transition-all duration-300 ${
-          mobileMenuOpen ? "blur-md" : "blur-0"
+        className={`transition-[filter] duration-300 ${
+          mobileMenuOpen
+            ? "blur-md"
+            : "blur-0"
         }`}
       >
         {/* SEND CONTENT */}
 
-        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20">
-          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-12">
+        <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 xl:py-20">
+          <div className="mx-auto w-full max-w-3xl">
+            {/* PAGE INTRO */}
 
-            {/* LEFT SIDE */}
-
-            <div className="lg:pr-8">
+            <div className="mb-6 sm:mb-8 lg:mb-10">
               <p className="text-sm font-semibold text-white/35">
                 AlabaamaFi
               </p>
 
-              <h1 className="mt-1 text-3xl font-black sm:text-4xl lg:text-5xl">
-                Send USDC
-              </h1>
+              <div className="mt-1 flex items-center justify-between gap-4">
+                <h1 className="text-3xl font-black sm:text-4xl lg:text-5xl">
+                  Send USDC
+                </h1>
 
-              <p className="mt-2 max-w-md text-sm font-medium leading-6 text-white/35 sm:text-base lg:mt-4 lg:leading-7">
+                <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
+                  Testnet
+                </span>
+              </div>
+
+              <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-white/35 sm:text-base lg:mt-3 lg:leading-7">
                 Send USDC to another wallet on Arc Testnet.
               </p>
+            </div>
 
-              {/* DESKTOP BALANCE CARD */}
+            {/* TRANSFER CARD */}
 
-              <div className="mt-8 hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-6 shadow-2xl shadow-black/40 lg:block">
+            <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-8">
+              {/* BALANCE */}
+
+              <div className="mb-6 rounded-2xl border border-white/[0.06] bg-[#05070a] p-4 sm:p-5 lg:mb-8">
                 <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-wider text-white/25">
                       Available Balance
                     </p>
 
-                    <p className="mt-2 text-3xl font-black">
+                    <p className="mt-2 truncate text-2xl font-black sm:text-3xl">
                       {isBalanceLoading
                         ? "Loading..."
                         : `${formattedBalance} USDC`}
@@ -278,149 +280,156 @@ export default function SendPage() {
                   </span>
                 </div>
 
-                <div className="mt-6 border-t border-white/[0.06] pt-5">
+                <div className="mt-4 border-t border-white/[0.06] pt-4">
                   <p className="text-xs font-semibold leading-5 text-white/25">
                     USDC transfers are processed directly on Arc Testnet.
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* TRANSFER CARD */}
+              {/* TRANSFER HEADER */}
 
-            <div className="mx-auto w-full max-w-md lg:max-w-none">
-              <div className="rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-8">
+              <div className="mb-6 flex items-center justify-between gap-3 lg:mb-8">
+                <h2 className="font-black">
+                  Transfer
+                </h2>
 
-                <div className="mb-6 flex items-center justify-between gap-3 lg:mb-8">
-                  <h2 className="font-black">
-                    Transfer
-                  </h2>
+                <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
+                  USDC
+                </span>
+              </div>
 
-                  <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
-                    Testnet
-                  </span>
-                </div>
+              {/* RECIPIENT */}
 
-                <label className="mb-2 block text-sm font-bold text-white/50">
-                  Recipient
+              <label className="mb-2 block text-sm font-bold text-white/50">
+                Recipient
+              </label>
+
+              <input
+                type="text"
+                placeholder="0x..."
+                value={recipient}
+                onChange={(event) =>
+                  setRecipient(event.target.value)
+                }
+                className="mb-5 min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
+              />
+
+              {/* AMOUNT */}
+
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <label className="text-sm font-bold text-white/50">
+                  Amount
                 </label>
 
+                <span className="text-xs font-semibold text-white/25">
+                  Balance:{" "}
+                  {isBalanceLoading
+                    ? "Loading..."
+                    : `${formattedBalance} USDC`}
+                </span>
+              </div>
+
+              <div className="relative">
                 <input
-                  type="text"
-                  placeholder="0x..."
-                  value={recipient}
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  placeholder="0.00"
+                  value={amount}
                   onChange={(event) =>
-                    setRecipient(event.target.value)
+                    setAmount(event.target.value)
                   }
-                  className="mb-5 min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-medium outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
+                  className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-bold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
                 />
 
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <label className="text-sm font-bold text-white/50">
-                    Amount
-                  </label>
-
-                  <span className="text-xs font-semibold text-white/25">
-                    Balance:{" "}
-                    {isBalanceLoading
-                      ? "Loading..."
-                      : `${formattedBalance} USDC`}
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.000001"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(event) =>
-                      setAmount(event.target.value)
-                    }
-                    className="min-h-13 w-full rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 pr-20 text-lg font-bold outline-none transition placeholder:text-white/15 focus:border-[#2b6cff]/25 focus:ring-2 focus:ring-[#163a72]/30"
-                  />
-
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-white/45">
-                    USDC
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleSend}
-                  disabled={
-                    !isConnected ||
-                    isSending ||
-                    isConfirming
-                  }
-                  className={`mt-6 min-h-13 w-full rounded-full px-5 py-4 text-sm font-semibold tracking-normal ${
-                    !isConnected
-                      ? unavailableButton
-                      : silverGlassButton
-                  } ${
-                    isConnected
-                      ? "disabled:cursor-not-allowed disabled:opacity-60"
-                      : ""
-                  }`}
-                >
-                  {!isConnected
-                    ? "Connect Wallet"
-                    : isSending
-                    ? "Confirm in Wallet"
-                    : isConfirming
-                    ? "Confirming Transaction"
-                    : "Send"}
-                </button>
-
-                {isConnected &&
-                  chainId !== arcTestnet.id && (
-                    <button
-                      onClick={() =>
-                        switchChain({
-                          chainId: arcTestnet.id,
-                        })
-                      }
-                      className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-semibold tracking-normal text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
-                    >
-                      Switch to Arc Testnet
-                    </button>
-                  )}
-
-                {error && (
-                  <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm font-semibold leading-5 text-red-400">
-                      {error}
-                    </p>
-                  </div>
-                )}
-
-                {sendError && (
-                  <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="break-words text-sm font-semibold leading-5 text-red-400">
-                      {getFriendlyErrorMessage(
-                        sendError.message
-                      )}
-                    </p>
-                  </div>
-                )}
-
-                {isConfirmed && hash && (
-                  <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
-                    <p className="text-sm font-bold text-green-400">
-                      Transaction confirmed ✓
-                    </p>
-
-                    <a
-                      href={`https://testnet.arcscan.app/tx/${hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
-                    >
-                      View Transaction on ArcScan
-                    </a>
-                  </div>
-                )}
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-white/45">
+                  USDC
+                </span>
               </div>
+
+              {/* SEND BUTTON */}
+
+              <button
+                onClick={handleSend}
+                disabled={
+                  !isConnected ||
+                  isSending ||
+                  isConfirming
+                }
+                className={`mt-6 min-h-13 w-full rounded-full px-5 py-4 text-sm font-semibold tracking-normal ${
+                  !isConnected
+                    ? unavailableButton
+                    : silverGlassButton
+                } ${
+                  isConnected
+                    ? "disabled:cursor-not-allowed disabled:opacity-60"
+                    : ""
+                }`}
+              >
+                {!isConnected
+                  ? "Connect Wallet"
+                  : isSending
+                  ? "Confirm in Wallet"
+                  : isConfirming
+                  ? "Confirming Transaction"
+                  : "Send"}
+              </button>
+
+              {/* SWITCH NETWORK */}
+
+              {isConnected &&
+                chainId !== arcTestnet.id && (
+                  <button
+                    onClick={() =>
+                      switchChain({
+                        chainId: arcTestnet.id,
+                      })
+                    }
+                    className="mt-3 min-h-13 w-full rounded-full border border-white/[0.09] bg-white/[0.045] py-3.5 text-sm font-semibold tracking-normal text-white backdrop-blur-xl transition-all hover:border-white/[0.17] hover:bg-white/[0.08] active:scale-[0.99]"
+                  >
+                    Switch to Arc Testnet
+                  </button>
+                )}
+
+              {/* ERROR */}
+
+              {error && (
+                <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                  <p className="break-words text-sm font-semibold leading-5 text-red-400">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              {sendError && (
+                <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+                  <p className="break-words text-sm font-semibold leading-5 text-red-400">
+                    {getFriendlyErrorMessage(
+                      sendError.message
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {/* SUCCESS */}
+
+              {isConfirmed && hash && (
+                <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
+                  <p className="text-sm font-bold text-green-400">
+                    Transaction confirmed ✓
+                  </p>
+
+                  <a
+                    href={`https://testnet.arcscan.app/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
+                  >
+                    View Transaction on ArcScan
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </section>
