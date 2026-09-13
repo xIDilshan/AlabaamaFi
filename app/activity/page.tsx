@@ -1441,8 +1441,8 @@ export default function ActivityPage() {
                     }`}
                   >
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center text-lg font-bold leading-none">
-  {item.icon}
-</span>
+                      {item.icon}
+                    </span>
 
                     <span className="text-sm font-bold">
                       {
@@ -1735,7 +1735,9 @@ export default function ActivityPage() {
                 </span>
               </div>
 
-              <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+              {/* DESKTOP: ONE COLUMN */}
+
+              <div className="space-y-3">
                 {activityTransactions.map(
                   (
                     tx
