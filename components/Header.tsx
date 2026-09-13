@@ -91,11 +91,6 @@ export default function Header({
   const handleMenuToggle = () => {
     setMobileMenuOpen((current) => !current);
 
-    /*
-     * Keep the old callback available for compatibility
-     * with pages that still pass onMenuClick.
-     * The shared menu itself is now controlled here.
-     */
     onMenuClick?.();
   };
 
@@ -184,17 +179,31 @@ export default function Header({
             </div>
           </div>
 
+          {/* MOBILE BACKDROP */}
+
+          <div
+            className={`fixed inset-x-0 bottom-0 top-[72px] z-40 bg-black/45 backdrop-blur-md transition-all duration-300 ${
+              mobileMenuOpen
+                ? "visible opacity-100"
+                : "invisible opacity-0"
+            }`}
+            onClick={() =>
+              setMobileMenuOpen(false)
+            }
+            aria-hidden="true"
+          />
+
           {/* MOBILE TOP MENU */}
 
           <div
-            className={`absolute left-0 right-0 top-full overflow-hidden border-b border-white/[0.10] bg-[#050608]/[0.98] shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-300 ease-out ${
+            className={`absolute left-0 right-0 top-full z-[60] overflow-hidden border-b border-white/[0.10] bg-[#050608]/[0.98] shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-300 ease-out ${
               mobileMenuOpen
-                ? "visible max-h-[360px] translate-y-0 opacity-100"
+                ? "visible max-h-[520px] translate-y-0 opacity-100"
                 : "invisible max-h-0 -translate-y-2 opacity-0"
             }`}
           >
-            <div className="mx-auto max-w-[600px] px-4 pb-5 pt-4 sm:px-6">
-              <div className="grid grid-cols-3 gap-2">
+            <div className="mx-auto max-w-[600px] px-4 pb-5 pt-3 sm:px-6">
+              <nav className="flex flex-col">
                 {navItems.map((item) => {
                   const active = isActive(
                     item.href
@@ -205,17 +214,17 @@ export default function Header({
                       key={item.href}
                       href={item.href}
                       onClick={handleNavigation}
-                      className={`group flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-2xl border transition-all duration-200 ${
+                      className={`flex min-h-[56px] items-center gap-4 border-b border-white/[0.06] px-3 transition-all duration-200 last:border-b-0 ${
                         active
-                          ? "border-white/[0.13] bg-white/[0.10] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-                          : "border-white/[0.055] bg-white/[0.025] text-white/45 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/85"
+                          ? "bg-white/[0.08] text-white"
+                          : "text-white/55 hover:bg-white/[0.05] hover:text-white/90"
                       }`}
                     >
-                      <span className="flex h-6 w-6 items-center justify-center text-[19px] font-semibold leading-none">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
                         {item.icon}
                       </span>
 
-                      <span className="text-[11px] font-semibold tracking-tight">
+                      <span className="text-sm font-semibold tracking-tight">
                         {item.label}
                       </span>
                     </Link>
@@ -227,13 +236,13 @@ export default function Header({
                 <Link
                   href="/faucet"
                   onClick={handleNavigation}
-                  className={`group flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-2xl border transition-all duration-200 ${
+                  className={`flex min-h-[56px] items-center gap-4 border-b border-white/[0.06] px-3 transition-all duration-200 ${
                     isActive("/faucet")
-                      ? "border-white/[0.13] bg-white/[0.10] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-                      : "border-white/[0.055] bg-white/[0.025] text-white/45 hover:border-white/[0.11] hover:bg-white/[0.06] hover:text-white/85"
+                      ? "bg-white/[0.08] text-white"
+                      : "text-white/55 hover:bg-white/[0.05] hover:text-white/90"
                   }`}
                 >
-                  <span className="flex h-6 w-6 items-center justify-center">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center">
                     <svg
                       width="19"
                       height="19"
@@ -255,17 +264,19 @@ export default function Header({
                     </svg>
                   </span>
 
-                  <span className="text-[11px] font-semibold tracking-tight">
+                  <span className="text-sm font-semibold tracking-tight">
                     Faucet
                   </span>
                 </Link>
-              </div>
+              </nav>
 
               <div className="mt-4 flex items-center justify-center gap-2">
                 <span className="h-1 w-1 rounded-full bg-white/20" />
+
                 <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">
                   Arc Testnet
                 </span>
+
                 <span className="h-1 w-1 rounded-full bg-white/20" />
               </div>
             </div>
