@@ -180,18 +180,17 @@ export default function Header({
 
           {/* MOBILE BACKDROP */}
 
-          <div
-            className={`fixed inset-x-0 bottom-0 top-[72px] z-40 bg-black/45 backdrop-blur-md transition-all duration-300 ${
-              mobileMenuOpen
-                ? "visible opacity-100"
-                : "invisible opacity-0"
-            }`}
-            onClick={() =>
-              setMobileMenuOpen(false)
-            }
-            aria-hidden="true"
-          />
-
+<div
+  className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-xl transition-all duration-300 ${
+    mobileMenuOpen
+      ? "visible opacity-100"
+      : "invisible opacity-0"
+  }`}
+  onClick={() =>
+    setMobileMenuOpen(false)
+  }
+  aria-hidden="true"
+/>
           {/* MOBILE TOP MENU */}
 
           <div
