@@ -8,8 +8,8 @@ import WalletModal from "@/components/WalletModal";
 
 const navItems = [
   { href: "/", label: "Home", icon: "⌂", disabled: false },
-  { href: "/send", label: "Send", icon: "↗", disabled: true },
-  { href: "/swap", label: "Swap", icon: "⇄", disabled: false },
+  { href: "/send", label: "Send", icon: "↗", disabled: false },
+  { href: "/swap", label: "Swap", icon: "⇄", disabled: true },
   { href: "/bridge", label: "Bridge", icon: "⇅", disabled: true },
   { href: "/activity", label: "Activity", icon: "◷", disabled: false },
 ];
@@ -403,6 +403,7 @@ export default function Header({
                         key={item.href}
                         type="button"
                         disabled
+                        aria-disabled="true"
                         className="my-1 flex min-h-[56px] w-full cursor-not-allowed items-center gap-4 rounded-full border border-white/[0.045] bg-white/[0.018] px-5 text-left text-white/30"
                       >
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
@@ -553,6 +554,7 @@ export default function Header({
                       key={item.href}
                       type="button"
                       disabled
+                      aria-disabled="true"
                       className="flex cursor-not-allowed items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white/25"
                     >
                       <span>{item.label}</span>
