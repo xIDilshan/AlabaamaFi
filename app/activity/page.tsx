@@ -1800,8 +1800,8 @@ export default function ActivityPage() {
                             <p className="min-w-0 truncate font-mono text-xs font-medium text-white/25">
                               {shortenAddress(
                                 tx.hash,
-                                10,
-                                8
+                                18,
+                                12
                               )}
                             </p>
 
@@ -1908,7 +1908,9 @@ export default function ActivityPage() {
                               className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
                             >
                               {shortenAddress(
-                                tx.from
+                                tx.from,
+                                14,
+                                10
                               )}
                             </p>
                           </div>
@@ -1925,7 +1927,9 @@ export default function ActivityPage() {
                               className="mt-1 truncate font-mono text-xs font-semibold text-white/55"
                             >
                               {shortenAddress(
-                                tx.to
+                                tx.to,
+                                14,
+                                10
                               )}
                             </p>
                           </div>
