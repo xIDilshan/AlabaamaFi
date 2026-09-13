@@ -95,6 +95,9 @@ function getUsdValue(value: any): number | null {
 export default function Home() {
   const router = useRouter();
 
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
   const [activeSection, setActiveSection] =
     useState<Section>("home");
 
@@ -120,6 +123,27 @@ export default function Home() {
     address,
     isConnected,
   } = useAccount();
+
+  useEffect(() => {
+    const handleMenuState = (event: Event) => {
+      const customEvent =
+        event as CustomEvent<boolean>;
+
+      setMobileMenuOpen(customEvent.detail);
+    };
+
+    window.addEventListener(
+      "mobile-menu-state",
+      handleMenuState
+    );
+
+    return () => {
+      window.removeEventListener(
+        "mobile-menu-state",
+        handleMenuState
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -389,7 +413,13 @@ export default function Home() {
 
       {/* CONTENT */}
 
-      <div className="min-w-0">
+      <div
+        className={`min-w-0 transition-[filter] duration-300 ${
+          mobileMenuOpen
+            ? "blur-md"
+            : "blur-0"
+        }`}
+      >
         {/* HOME */}
 
         {activeSection === "home" && (
@@ -763,7 +793,7 @@ export default function Home() {
                         fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249-1.845-.276-3.68-.276-5.486 0-.164-.394-.405-.874-.617-1.249a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.678 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.868 19.868 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.461-.63.872-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.17 13.17 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.794 8.18 1.794 12.061 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.353-1.22.65-1.873.892a.077.077 0 0 0-.041.106c.36.698.771 1.364 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.033-.027ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.419 2.419 2.419Z" />
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249-1.845-.276-3.68-.276-5.486 0-.164-.394-.405-.874-.617-1.249a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.678 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.868 19.868 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.461-.63.872-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.17 13.17 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.794 8.18 1.794 12.061 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.353-1.22.65-1.873.892a.077.077 0 0 0-.041.106c.36.698.771 1.364 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.033-.027ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.095 2.157 2.418 0 1.334-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.419 2.419 2.419 2.419Z" />
                       </svg>
                     </a>
                   </div>
@@ -1310,7 +1340,13 @@ export default function Home() {
 
       {/* FOOTER */}
 
-      <footer className="border-t border-white/[0.06] bg-[#030405]">
+      <footer
+        className={`border-t border-white/[0.06] bg-[#030405] transition-[filter] duration-300 ${
+          mobileMenuOpen
+            ? "blur-md"
+            : "blur-0"
+        }`}
+      >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-7 text-center sm:py-8">
           <p className="mt-2 text-sm font-black tracking-tight text-white/80">
             AlabaamaFi
