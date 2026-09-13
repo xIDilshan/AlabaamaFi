@@ -351,7 +351,7 @@ export default function Header({
             <div className="flex min-w-0 items-center justify-end">
               <button
                 onClick={handleWalletClick}
-                className={`flex max-w-[135px] items-center gap-1 truncate rounded-full px-2 py-1.5 text-[10px] !font-black tracking-tight sm:max-w-none sm:gap-2 sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
+                className={`flex max-w-[120px] items-center gap-1 truncate rounded-full px-2 py-1.5 text-[9px] !font-black tracking-tight sm:max-w-none sm:gap-2 sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
               >
                 <span className="truncate">
                   {isConnected
