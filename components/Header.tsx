@@ -242,7 +242,7 @@ export default function Header({
                   }`}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
-  <span className="-translate-y-[2px]">
+  <span className="-translate-y-[3px]">
     ◌
   </span>
 </span>
