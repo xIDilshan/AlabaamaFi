@@ -438,10 +438,10 @@ export default function Home() {
                   </p>
 
                   <h2 className="mx-auto mt-7 max-w-4xl text-center text-[3.7rem] font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
-                    Simple.
+                    One place.
                     <br />
                     <span className="text-white/30">
-                      On-chain.
+                      Every move.
                     </span>
                   </h2>
 
