@@ -440,7 +440,7 @@ export default function Home() {
                   <h2 className="mx-auto mt-7 max-w-4xl text-center text-[3.7rem] font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
                     One place.
                     <br />
-                    <span className="text-white/30 tracking-[-0.02em]">
+                    <span className="text-white/30 tracking-[-0.015em]">
                       Every move.
                     </span>
                   </h2>
