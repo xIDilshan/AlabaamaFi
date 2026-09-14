@@ -437,7 +437,7 @@ export default function Home() {
                     A simple interface for Arc
                   </p>
 
-                  <h2 className="mx-auto mt-7 max-w-4xl text-center text-sm font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
+                  <h2 className="mx-auto mt-7 max-w-4xl text-center text-[3.7rem] font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
                     One place.
                     <br />
                     <span className="text-white/30">
