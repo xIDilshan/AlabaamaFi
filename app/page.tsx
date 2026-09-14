@@ -440,13 +440,13 @@ export default function Home() {
                   <h2 className="mx-auto mt-7 max-w-4xl text-center text-[3.7rem] font-black leading-[0.88] tracking-[-0.055em] sm:text-7xl lg:text-[7.5rem]">
                     One place.
                     <br />
-                    <span className="text-white/30 tracking-[-0.025em]">
+                    <span className="text-white/30 tracking-[-0.02em]">
                       Every move.
                     </span>
                   </h2>
 
                   <p className="mx-auto mt-8 max-w-2xl text-sm font-medium leading-7 text-white/45 sm:mt-9 sm:text-lg sm:leading-8">
-                    A simple way to explore, manage and move assets on Arc.
+                    Explore, manage and move your digital assets on Arc with a clean and simple DeFi experience built for everyday use.
                   </p>
 
                   <div className="mt-9 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row">
