@@ -211,24 +211,18 @@ export default function SwapPage() {
   const inputToken = tokens[tokenIn];
   const outputToken = tokens[tokenOut];
 
-  const swapCompleted =
+  const swapData =
     typeof swapResult === "object" &&
-    swapResult !== null &&
-    "progress" in swapResult &&
-    typeof (
-      swapResult as {
-        progress?: {
-          status?: string;
-        };
-      }
-    ).progress === "object" &&
-    (
-      swapResult as {
-        progress?: {
-          status?: string;
-        };
-      }
-    ).progress?.status === "DONE";
+    swapResult !== null
+      ? (swapResult as {
+          txHash?: string;
+          explorerUrl?: string;
+          amountOut?: string;
+        })
+      : null;
+
+  const swapCompleted =
+    Boolean(swapData?.txHash);
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
@@ -374,13 +368,43 @@ export default function SwapPage() {
               </div>
             )}
 
-            {swapCompleted && (
-              <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-3">
-                <p className="text-center text-xs font-semibold text-green-300/80">
-                  Swap completed successfully.
-                </p>
-              </div>
-            )}
+            {swapCompleted &&
+              swapData?.txHash && (
+                <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
+                  <p className="text-center text-sm font-bold text-green-300/90">
+                    Swap completed successfully.
+                  </p>
+
+                  <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold text-white/30">
+                        Transaction
+                      </span>
+
+                      <span className="min-w-0 truncate text-right font-mono text-xs font-semibold text-white/60">
+                        {swapData.txHash.slice(0, 8)}
+                        ...
+                        {swapData.txHash.slice(-8)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <a
+                    href={
+                      swapData.explorerUrl ||
+                      `https://testnet.arcscan.app/tx/${swapData.txHash}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex min-h-11 w-full items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-bold text-white/80 transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white"
+                  >
+                    View on Arcscan
+                    <span className="ml-2 text-white/40">
+                      ↗
+                    </span>
+                  </a>
+                </div>
+              )}
 
             <button
               type="button"
