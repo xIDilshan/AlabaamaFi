@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@circle-fin/adapter-viem-v2": "^1.17.1",
+    "@circle-fin/app-kit": "^1.14.0",
+    "@circle-fin/swap-kit": "^1.6.1",
     "@coinbase/wallet-sdk": "^4.3.7",
     "@tanstack/react-query": "latest",
     "@walletconnect/ethereum-provider": "^2.24.0",
