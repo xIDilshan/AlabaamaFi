@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 
 import Header from "@/components/Header";
+import { createCircleViemAdapter } from "@/lib/circle";
+import { AppKit } from "@circle-fin/app-kit";
 
 type Token = "USDC" | "EURC";
 
@@ -39,13 +41,29 @@ export default function SwapPage() {
   const [amountIn, setAmountIn] =
     useState("");
 
+  const [estimatedOutput, setEstimatedOutput] =
+    useState("");
+
   const [isLoading, setIsLoading] =
     useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const handleAmountChange = (
+    value: string
+  ) => {
+    setAmountIn(value);
+    setEstimatedOutput("");
+    setError("");
+  };
 
   const handleSwitchTokens = () => {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
     setAmountIn("");
+    setEstimatedOutput("");
+    setError("");
   };
 
   const handleSwap = async () => {
@@ -58,12 +76,38 @@ export default function SwapPage() {
     }
 
     setIsLoading(true);
+    setEstimatedOutput("");
+    setError("");
 
     try {
-      // Real Circle Swap Kit integration
-      // will be added after the UI is confirmed.
-      await new Promise((resolve) =>
-        setTimeout(resolve, 700)
+      const adapter =
+        await createCircleViemAdapter();
+
+      const kit = new AppKit();
+
+      const estimate = await kit.estimateSwap({
+        from: {
+          adapter,
+          chain: "Arc_Testnet",
+        },
+        tokenIn,
+        tokenOut,
+        amountIn,
+        config: {
+          slippageBps: 50,
+        },
+      });
+
+      setEstimatedOutput(
+        estimate.estimatedOutput.amount
+      );
+    } catch (err) {
+      console.error("Swap quote error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to get a swap quote."
       );
     } finally {
       setIsLoading(false);
@@ -75,11 +119,7 @@ export default function SwapPage() {
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
-      {/* HEADER */}
-
       <Header />
-
-      {/* SWAP */}
 
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
         <div className="mx-auto max-w-md">
@@ -97,8 +137,6 @@ export default function SwapPage() {
           </p>
 
           <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6">
-            {/* YOU PAY */}
-
             <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold text-white/35">
@@ -118,7 +156,9 @@ export default function SwapPage() {
                   placeholder="0.00"
                   value={amountIn}
                   onChange={(event) =>
-                    setAmountIn(event.target.value)
+                    handleAmountChange(
+                      event.target.value
+                    )
                   }
                   className="min-w-0 flex-1 bg-transparent text-3xl font-black text-white outline-none placeholder:text-white/15"
                 />
@@ -141,8 +181,6 @@ export default function SwapPage() {
               </p>
             </div>
 
-            {/* SWITCH */}
-
             <div className="relative z-10 -my-3 flex justify-center">
               <button
                 type="button"
@@ -154,8 +192,6 @@ export default function SwapPage() {
               </button>
             </div>
 
-            {/* YOU RECEIVE */}
-
             <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
               <p className="text-xs font-bold text-white/35">
                 You receive
@@ -163,7 +199,9 @@ export default function SwapPage() {
 
               <div className="mt-3 flex items-center gap-3">
                 <span className="min-w-0 flex-1 truncate text-3xl font-black text-white/70">
-                  {amountIn ? "—" : "0.00"}
+                  {estimatedOutput || (
+                    amountIn ? "—" : "0.00"
+                  )}
                 </span>
 
                 <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
@@ -184,17 +222,21 @@ export default function SwapPage() {
               </p>
             </div>
 
-            {/* SWAP DETAILS */}
-
             <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-semibold text-white/25">
                   Estimated output
                 </span>
 
-                <span className="text-xs font-bold text-white/40">
-                  {amountIn
-                    ? "Waiting for quote"
+                <span className="truncate text-right text-xs font-bold text-white/40">
+                  {isLoading
+                    ? "Getting quote..."
+                    : estimatedOutput
+                    ? `${estimatedOutput} ${outputToken.symbol}`
+                    : error
+                    ? "Quote unavailable"
+                    : amountIn
+                    ? "Ready for quote"
                     : "Enter amount"}
                 </span>
               </div>
@@ -210,7 +252,13 @@ export default function SwapPage() {
               </div>
             </div>
 
-            {/* SWAP BUTTON */}
+            {error && (
+              <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+                <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
+                  {error}
+                </p>
+              </div>
+            )}
 
             <button
               type="button"
@@ -224,17 +272,20 @@ export default function SwapPage() {
               className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm font-black tracking-tight transition-all duration-200 ${
                 !isConnected ||
                 !amountIn ||
-                Number(amountIn) <= 0
+                Number(amountIn) <= 0 ||
+                isLoading
                   ? "cursor-not-allowed border border-white/[0.05] bg-[#111318] text-white/20"
                   : "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 hover:bg-[#fafafa] active:translate-y-0"
               }`}
             >
               {isLoading
-                ? "Preparing Swap"
+                ? "Getting Quote"
                 : !isConnected
                 ? "Connect Wallet"
                 : !amountIn
                 ? "Enter Amount"
+                : estimatedOutput
+                ? "Refresh Quote"
                 : "Get Quote"}
             </button>
 
