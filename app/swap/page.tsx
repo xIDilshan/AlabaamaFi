@@ -182,6 +182,7 @@ export default function SwapPage() {
         amountIn,
         config: {
           slippageBps: 50,
+          allowanceStrategy: "approve",
         },
       });
 
