@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
 import Header from "@/components/Header";
@@ -50,6 +50,84 @@ export default function SwapPage() {
   const [error, setError] =
     useState("");
 
+  useEffect(() => {
+    if (
+      !isConnected ||
+      !address ||
+      !amountIn ||
+      Number(amountIn) <= 0
+    ) {
+      setEstimatedOutput("");
+      setError("");
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setEstimatedOutput("");
+      setError("");
+
+      try {
+        const adapter =
+          await createCircleViemAdapter();
+
+        if (cancelled) return;
+
+        const kit = new AppKit();
+
+        const estimate = await kit.estimateSwap({
+          from: {
+            adapter,
+            chain: "Arc_Testnet",
+          },
+          tokenIn,
+          tokenOut,
+          amountIn,
+          config: {
+            slippageBps: 50,
+          },
+        });
+
+        if (!cancelled) {
+          setEstimatedOutput(
+            estimate.estimatedOutput.amount
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            "Swap quote error:",
+            err
+          );
+
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to get a swap quote."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    amountIn,
+    tokenIn,
+    tokenOut,
+    address,
+    isConnected,
+  ]);
+
   const handleAmountChange = (
     value: string
   ) => {
@@ -64,54 +142,6 @@ export default function SwapPage() {
     setAmountIn("");
     setEstimatedOutput("");
     setError("");
-  };
-
-  const handleSwap = async () => {
-    if (!isConnected || !address) {
-      return;
-    }
-
-    if (!amountIn || Number(amountIn) <= 0) {
-      return;
-    }
-
-    setIsLoading(true);
-    setEstimatedOutput("");
-    setError("");
-
-    try {
-      const adapter =
-        await createCircleViemAdapter();
-
-      const kit = new AppKit();
-
-      const estimate = await kit.estimateSwap({
-        from: {
-          adapter,
-          chain: "Arc_Testnet",
-        },
-        tokenIn,
-        tokenOut,
-        amountIn,
-        config: {
-          slippageBps: 50,
-        },
-      });
-
-      setEstimatedOutput(
-        estimate.estimatedOutput.amount
-      );
-    } catch (err) {
-      console.error("Swap quote error:", err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to get a swap quote."
-      );
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const inputToken = tokens[tokenIn];
@@ -199,9 +229,10 @@ export default function SwapPage() {
 
               <div className="mt-3 flex items-center gap-3">
                 <span className="min-w-0 flex-1 truncate text-3xl font-black text-white/70">
-                  {estimatedOutput || (
-                    amountIn ? "—" : "0.00"
-                  )}
+                  {isLoading
+                    ? "..."
+                    : estimatedOutput ||
+                      (amountIn ? "—" : "0.00")}
                 </span>
 
                 <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
@@ -236,7 +267,7 @@ export default function SwapPage() {
                     : error
                     ? "Quote unavailable"
                     : amountIn
-                    ? "Ready for quote"
+                    ? "Waiting for quote"
                     : "Enter amount"}
                 </span>
               </div>
@@ -262,7 +293,6 @@ export default function SwapPage() {
 
             <button
               type="button"
-              onClick={handleSwap}
               disabled={
                 !isConnected ||
                 !amountIn ||
@@ -285,8 +315,8 @@ export default function SwapPage() {
                 : !amountIn
                 ? "Enter Amount"
                 : estimatedOutput
-                ? "Refresh Quote"
-                : "Get Quote"}
+                ? "Quote Ready"
+                : "Getting Quote"}
             </button>
 
             {!isConnected && (
