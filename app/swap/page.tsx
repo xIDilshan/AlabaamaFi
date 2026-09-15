@@ -96,21 +96,34 @@ export default function SwapPage() {
     },
   });
 
-  const [tokenIn, setTokenIn] = useState<Token>("USDC");
-  const [tokenOut, setTokenOut] = useState<Token>("EURC");
+  const [tokenIn, setTokenIn] =
+    useState<Token>("USDC");
 
-  const [amountIn, setAmountIn] = useState("");
-  const [estimatedOutput, setEstimatedOutput] = useState("");
+  const [tokenOut, setTokenOut] =
+    useState<Token>("EURC");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSwapping, setIsSwapping] = useState(false);
+  const [amountIn, setAmountIn] =
+    useState("");
 
-  const [swapStage, setSwapStage] = useState<
-    "idle" | "approving" | "confirming"
-  >("idle");
+  const [estimatedOutput, setEstimatedOutput] =
+    useState("");
 
-  const [error, setError] = useState("");
-  const [swapResult, setSwapResult] = useState<unknown>(null);
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const [isSwapping, setIsSwapping] =
+    useState(false);
+
+  const [swapStage, setSwapStage] =
+    useState<
+      "idle" | "approving" | "confirming"
+    >("idle");
+
+  const [error, setError] =
+    useState("");
+
+  const [swapResult, setSwapResult] =
+    useState<unknown>(null);
 
   const [slippageMode, setSlippageMode] =
     useState<SlippageMode>("auto");
@@ -133,24 +146,25 @@ export default function SwapPage() {
       ? formattedUsdcBalance
       : formattedEurcBalance;
 
-  const inputBalanceNumber = Number(inputBalance);
+  const inputBalanceNumber =
+    Number(inputBalance);
 
-  const displayBalance = Number(inputBalance).toLocaleString(
-    undefined,
-    {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    }
-  );
+  const displayBalance =
+    Number(inputBalance).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6,
+      }
+    );
 
   const activeSlippage =
     slippageMode === "auto"
       ? AUTO_SLIPPAGE
       : customSlippage;
 
-  const slippageBps = Math.round(
-    activeSlippage * 100
-  );
+  const slippageBps =
+    Math.round(activeSlippage * 100);
 
   const inputToken = tokens[tokenIn];
   const outputToken = tokens[tokenOut];
@@ -169,11 +183,14 @@ export default function SwapPage() {
         })
       : null;
 
-  const swapCompleted = Boolean(swapData?.txHash);
+  const swapCompleted =
+    Boolean(swapData?.txHash);
 
   const formattedSlippage = useMemo(() => {
     return activeSlippage
-      .toFixed(activeSlippage % 1 === 0 ? 0 : 2)
+      .toFixed(
+        activeSlippage % 1 === 0 ? 0 : 2
+      )
       .replace(/\.00$/, "");
   }, [activeSlippage]);
 
@@ -207,18 +224,19 @@ export default function SwapPage() {
 
         const kit = new AppKit();
 
-        const estimate = await kit.estimateSwap({
-          from: {
-            adapter,
-            chain: "Arc_Testnet",
-          },
-          tokenIn,
-          tokenOut,
-          amountIn,
-          config: {
-            slippageBps,
-          },
-        });
+        const estimate =
+          await kit.estimateSwap({
+            from: {
+              adapter,
+              chain: "Arc_Testnet",
+            },
+            tokenIn,
+            tokenOut,
+            amountIn,
+            config: {
+              slippageBps,
+            },
+          });
 
         if (!cancelled) {
           setEstimatedOutput(
@@ -266,6 +284,7 @@ export default function SwapPage() {
     setEstimatedOutput("");
     setError("");
     setSwapResult(null);
+    setSwapStage("idle");
   };
 
   const handlePercentage = (
@@ -282,12 +301,15 @@ export default function SwapPage() {
       inputBalanceNumber * percentage;
 
     setAmountIn(
-      amount.toFixed(6).replace(/\.?0+$/, "")
+      amount
+        .toFixed(6)
+        .replace(/\.?0+$/, "")
     );
 
     setEstimatedOutput("");
     setError("");
     setSwapResult(null);
+    setSwapStage("idle");
   };
 
   const handleMax = () => {
@@ -301,6 +323,7 @@ export default function SwapPage() {
     setEstimatedOutput("");
     setError("");
     setSwapResult(null);
+    setSwapStage("idle");
   };
 
   const handleSlippageMode = (
@@ -351,28 +374,13 @@ export default function SwapPage() {
       const kit = new AppKit();
 
       /*
-       * Circle emits operation events while the swap
-       * is running. We listen for approval completion
-       * so the UI can move naturally into the swap
-       * confirmation stage.
+       * The Circle SDK handles the approval and swap
+       * transactions internally.
+       *
+       * allowanceStrategy: "approve" is intentionally
+       * kept because this is the configuration that
+       * successfully fixed the Arc Testnet permit issue.
        */
-      const handleApprove = () => {
-        setSwapStage("confirming");
-      };
-
-      try {
-        kit.on(
-          "swap.approve",
-          handleApprove
-        );
-      } catch {
-        /*
-         * Some App Kit builds do not expose a
-         * swap-specific approval event. The normal
-         * swap promise remains the source of truth.
-         */
-      }
-
       const result = await kit.swap({
         from: {
           adapter,
@@ -387,15 +395,15 @@ export default function SwapPage() {
         },
       });
 
-      try {
-        kit.off(
-          "swap.approve",
-          handleApprove
-        );
-      } catch {
-        // Ignore unsupported event cleanup.
-      }
-
+      /*
+       * The public typed App Kit API in the installed
+       * version does not expose a "swap.approve"
+       * action name. Therefore we do not subscribe to
+       * an unsupported event.
+       *
+       * Once kit.swap() returns successfully, the complete
+       * operation has finished.
+       */
       setSwapStage("confirming");
 
       console.log(
