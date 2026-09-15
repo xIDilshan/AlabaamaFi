@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import {
+  useAccount,
+  useReadContract,
+} from "wagmi";
+import { formatUnits } from "viem";
 
 import Header from "@/components/Header";
 import { createCircleViemAdapter } from "@/lib/circle";
@@ -29,8 +33,60 @@ const tokens: Record<
   },
 };
 
+const USDC_ADDRESS =
+  "0x3600000000000000000000000000000000000000" as const;
+
+const EURC_ADDRESS =
+  "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const;
+
+const erc20BalanceAbi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "balance",
+        type: "uint256",
+      },
+    ],
+  },
+] as const;
+
 export default function SwapPage() {
   const { address, isConnected } = useAccount();
+
+  const {
+    data: usdcBalance,
+    refetch: refetchUsdcBalance,
+  } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: erc20BalanceAbi,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: Boolean(address),
+    },
+  });
+
+  const {
+    data: eurcBalance,
+    refetch: refetchEurcBalance,
+  } = useReadContract({
+    address: EURC_ADDRESS,
+    abi: erc20BalanceAbi,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: Boolean(address),
+    },
+  });
 
   const [tokenIn, setTokenIn] =
     useState<Token>("USDC");
@@ -55,6 +111,33 @@ export default function SwapPage() {
 
   const [swapResult, setSwapResult] =
     useState<unknown>(null);
+
+  const formattedUsdcBalance =
+    usdcBalance !== undefined
+      ? formatUnits(usdcBalance, 6)
+      : "0";
+
+  const formattedEurcBalance =
+    eurcBalance !== undefined
+      ? formatUnits(eurcBalance, 6)
+      : "0";
+
+  const inputBalance =
+    tokenIn === "USDC"
+      ? formattedUsdcBalance
+      : formattedEurcBalance;
+
+  const inputBalanceNumber =
+    Number(inputBalance);
+
+  const displayBalance =
+    Number(inputBalance).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6,
+      }
+    );
 
   useEffect(() => {
     if (
@@ -143,6 +226,17 @@ export default function SwapPage() {
     setSwapResult(null);
   };
 
+  const handleMax = () => {
+    if (inputBalanceNumber <= 0) {
+      return;
+    }
+
+    setAmountIn(inputBalance);
+    setEstimatedOutput("");
+    setError("");
+    setSwapResult(null);
+  };
+
   const handleSwitchTokens = () => {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
@@ -157,7 +251,8 @@ export default function SwapPage() {
       !isConnected ||
       !address ||
       !amountIn ||
-      Number(amountIn) <= 0
+      Number(amountIn) <= 0 ||
+      Number(amountIn) > inputBalanceNumber
     ) {
       return;
     }
@@ -192,6 +287,11 @@ export default function SwapPage() {
       );
 
       setSwapResult(result);
+
+      await Promise.all([
+        refetchUsdcBalance(),
+        refetchEurcBalance(),
+      ]);
     } catch (err) {
       console.error(
         "Swap execution error:",
@@ -224,6 +324,10 @@ export default function SwapPage() {
   const swapCompleted =
     Boolean(swapData?.txHash);
 
+  const insufficientBalance =
+    Boolean(amountIn) &&
+    Number(amountIn) > inputBalanceNumber;
+
   return (
     <main className="min-h-screen bg-[#030405] text-white">
       <Header />
@@ -250,9 +354,29 @@ export default function SwapPage() {
                   You pay
                 </p>
 
-                <p className="text-xs font-semibold text-white/25">
-                  Balance unavailable
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-semibold text-white/25">
+                    Balance
+                  </p>
+
+                  <p className="text-xs font-bold text-white/45">
+                    {isConnected
+                      ? displayBalance
+                      : "—"}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleMax}
+                    disabled={
+                      !isConnected ||
+                      inputBalanceNumber <= 0
+                    }
+                    className="text-[10px] font-black text-white/45 transition hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                  >
+                    MAX
+                  </button>
+                </div>
               </div>
 
               <div className="mt-3 flex items-center gap-3">
@@ -360,7 +484,15 @@ export default function SwapPage() {
               </div>
             </div>
 
-            {error && (
+            {insufficientBalance && (
+              <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+                <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
+                  Insufficient {inputToken.symbol} balance.
+                </p>
+              </div>
+            )}
+
+            {error && !insufficientBalance && (
               <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
                 <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                   {error}
@@ -413,6 +545,7 @@ export default function SwapPage() {
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
+                Number(amountIn) > inputBalanceNumber ||
                 isLoading ||
                 isSwapping ||
                 !estimatedOutput
@@ -421,6 +554,7 @@ export default function SwapPage() {
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
+                Number(amountIn) > inputBalanceNumber ||
                 isLoading ||
                 isSwapping ||
                 !estimatedOutput
@@ -434,6 +568,8 @@ export default function SwapPage() {
                 ? "Connect Wallet"
                 : !amountIn
                 ? "Enter Amount"
+                : insufficientBalance
+                ? "Insufficient Balance"
                 : isLoading
                 ? "Getting Quote"
                 : !estimatedOutput
