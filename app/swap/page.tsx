@@ -47,8 +47,14 @@ export default function SwapPage() {
   const [isLoading, setIsLoading] =
     useState(false);
 
+  const [isSwapping, setIsSwapping] =
+    useState(false);
+
   const [error, setError] =
     useState("");
+
+  const [swapResult, setSwapResult] =
+    useState<unknown>(null);
 
   useEffect(() => {
     if (
@@ -134,6 +140,7 @@ export default function SwapPage() {
     setAmountIn(value);
     setEstimatedOutput("");
     setError("");
+    setSwapResult(null);
   };
 
   const handleSwitchTokens = () => {
@@ -142,10 +149,85 @@ export default function SwapPage() {
     setAmountIn("");
     setEstimatedOutput("");
     setError("");
+    setSwapResult(null);
+  };
+
+  const handleSwap = async () => {
+    if (
+      !isConnected ||
+      !address ||
+      !amountIn ||
+      Number(amountIn) <= 0
+    ) {
+      return;
+    }
+
+    setIsSwapping(true);
+    setError("");
+    setSwapResult(null);
+
+    try {
+      const adapter =
+        await createCircleViemAdapter();
+
+      const kit = new AppKit();
+
+      const result = await kit.swap({
+        from: {
+          adapter,
+          chain: "Arc_Testnet",
+        },
+        tokenIn,
+        tokenOut,
+        amountIn,
+        config: {
+          slippageBps: 50,
+        },
+      });
+
+      console.log(
+        "Circle swap result:",
+        result
+      );
+
+      setSwapResult(result);
+    } catch (err) {
+      console.error(
+        "Swap execution error:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Swap failed. Please try again."
+      );
+    } finally {
+      setIsSwapping(false);
+    }
   };
 
   const inputToken = tokens[tokenIn];
   const outputToken = tokens[tokenOut];
+
+  const swapCompleted =
+    typeof swapResult === "object" &&
+    swapResult !== null &&
+    "progress" in swapResult &&
+    typeof (
+      swapResult as {
+        progress?: {
+          status?: string;
+        };
+      }
+    ).progress === "object" &&
+    (
+      swapResult as {
+        progress?: {
+          status?: string;
+        };
+      }
+    ).progress?.status === "DONE";
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
@@ -291,32 +373,49 @@ export default function SwapPage() {
               </div>
             )}
 
+            {swapCompleted && (
+              <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-3">
+                <p className="text-center text-xs font-semibold text-green-300/80">
+                  Swap completed successfully.
+                </p>
+              </div>
+            )}
+
             <button
               type="button"
+              onClick={handleSwap}
               disabled={
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
-                isLoading
+                isLoading ||
+                isSwapping ||
+                !estimatedOutput
               }
               className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm font-black tracking-tight transition-all duration-200 ${
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
-                isLoading
+                isLoading ||
+                isSwapping ||
+                !estimatedOutput
                   ? "cursor-not-allowed border border-white/[0.05] bg-[#111318] text-white/20"
                   : "border border-black/[0.08] bg-white text-black shadow-[0_2px_6px_rgba(0,0,0,0.06),0_10px_28px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 hover:bg-[#fafafa] active:translate-y-0"
               }`}
             >
-              {isLoading
-                ? "Getting Quote"
+              {isSwapping
+                ? "Confirming Swap"
                 : !isConnected
                 ? "Connect Wallet"
                 : !amountIn
                 ? "Enter Amount"
-                : estimatedOutput
-                ? "Quote Ready"
-                : "Getting Quote"}
+                : isLoading
+                ? "Getting Quote"
+                : !estimatedOutput
+                ? "Waiting for Quote"
+                : swapCompleted
+                ? "Swap Completed"
+                : "Swap"}
             </button>
 
             {!isConnected && (
