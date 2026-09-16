@@ -798,9 +798,9 @@ export default function SwapPage() {
   }
   style={{
     fontSize: "8px",
-    lineHeight: "10px",
+    lineHeight: "10.5px",
     fontWeight: 600,
-    padding: "2px 4px",
+    padding: "3px 6px",
   }}
   className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
 >
@@ -815,9 +815,9 @@ export default function SwapPage() {
                       }
                       style={{
     fontSize: "8px",
-    lineHeight: "10px",
+    lineHeight: "10.5px",
     fontWeight: 600,
-    padding: "2px 4px",
+    padding: "3px 6px",
   }}
                       className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
