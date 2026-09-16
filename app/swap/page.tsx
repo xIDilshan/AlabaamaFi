@@ -742,6 +742,13 @@ export default function SwapPage() {
   const amountTextClass =
     "min-w-0 flex-1 truncate text-[36px] font-black leading-none tracking-tight text-white";
 
+  const amountTextStyle = {
+    fontFamily: "inherit",
+    fontSize: "36px",
+    fontWeight: 900,
+    lineHeight: "1",
+  };
+
   return (
     <main className="min-h-screen bg-[#030405] text-white">
       <Header />
@@ -795,36 +802,31 @@ export default function SwapPage() {
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M18 7H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
-                    d="M10 7C10 8.10457 9.10457 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
+                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
-
                   <path
                     d="M4 17H8"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M12 17H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.1046 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -835,9 +837,9 @@ export default function SwapPage() {
             <div className="grid gap-3">
 
               {/* YOU PAY */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:p-5">
+              <div className="mx-auto w-[92%] rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:w-full sm:p-5">
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold text-white/35">
                     You pay
                   </p>
@@ -855,14 +857,12 @@ export default function SwapPage() {
                         stroke="currentColor"
                         strokeWidth="1.7"
                       />
-
                       <path
                         d="M16 13H21"
                         stroke="currentColor"
                         strokeWidth="1.7"
                         strokeLinecap="round"
                       />
-
                       <circle
                         cx="16"
                         cy="13"
@@ -879,8 +879,8 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                {/* COMPACT AMOUNT */}
-                <div className="mt-1 flex items-center gap-2 sm:mt-3 sm:gap-3">
+                {/* MOBILE-COMPACT AMOUNT */}
+                <div className="mt-1 flex h-[50px] items-center gap-2 sm:mt-3 sm:h-auto sm:min-h-[60px] sm:gap-3">
 
                   <input
                     type="text"
@@ -903,12 +903,7 @@ export default function SwapPage() {
                       }
                     }}
                     className={`${amountTextClass} border-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
-                    style={{
-                      fontFamily: "inherit",
-                      fontSize: "36px",
-                      fontWeight: 900,
-                      lineHeight: "1",
-                    }}
+                    style={amountTextStyle}
                   />
 
                   <div className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.07] bg-[#080a0d] px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-2">
@@ -993,19 +988,20 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:p-5">
+              <div className="mx-auto w-[92%] rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:w-full sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
-                {/* COMPACT AMOUNT */}
-                <div className="mt-1 flex items-center gap-2 sm:mt-3 sm:gap-3">
+                {/* MOBILE-COMPACT AMOUNT */}
+                <div className="mt-1 flex h-[50px] items-center gap-2 sm:mt-3 sm:h-auto sm:min-h-[60px] sm:gap-3">
 
                   <span
                     className={
                       amountTextClass
                     }
+                    style={amountTextStyle}
                   >
                     {isLoading
                       ? "..."
