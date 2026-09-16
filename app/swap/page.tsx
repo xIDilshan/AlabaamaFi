@@ -833,21 +833,26 @@ export default function SwapPage() {
               {/* YOU PAY AMOUNT */}
 <div className="mt-3 flex min-h-[60px] items-center gap-3">
   <input
-    type="number"
-    inputMode="decimal"
-    min="0"
-    placeholder="0.00"
-    value={amountIn}
-    onChange={(event) =>
-      handleAmountChange(event.target.value)
+  type="text"
+  inputMode="decimal"
+  placeholder="0.00"
+  value={amountIn}
+  onChange={(event) => {
+    const value = event.target.value;
+
+    // Allow only numbers and one decimal point
+    if (/^\d*\.?\d*$/.test(value)) {
+      handleAmountChange(value);
     }
-    className="min-w-0 flex-1 bg-transparent p-0 text-3xl font-black leading-[1] tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-    style={{
-      fontFamily: "inherit",
-      WebkitAppearance: "none",
-      MozAppearance: "textfield",
-    }}
-  />
+  }}
+  className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-3xl font-black leading-[1] tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
+  style={{
+    fontFamily: "inherit",
+    fontSize: "2.25rem",
+    fontWeight: 900,
+    lineHeight: "1",
+  }}
+/>
 
   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
     <img
