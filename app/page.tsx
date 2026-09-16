@@ -25,7 +25,9 @@ const manrope = Manrope({
 });
 
 type Token = "USDC" | "EURC";
+
 type SlippageMode = "auto" | "custom";
+
 type SwapStage =
   | "idle"
   | "approving"
@@ -796,31 +798,36 @@ export default function SwapPage() {
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M18 7H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
+
                   <path
                     d="M4 17H8"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M12 17H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -852,12 +859,14 @@ export default function SwapPage() {
                         stroke="currentColor"
                         strokeWidth="1.7"
                       />
+
                       <path
                         d="M16 13H21"
                         stroke="currentColor"
                         strokeWidth="1.7"
                         strokeLinecap="round"
                       />
+
                       <circle
                         cx="16"
                         cy="13"
@@ -875,7 +884,7 @@ export default function SwapPage() {
                 </div>
 
                 {/* AMOUNT */}
-                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-3">
+                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-2 sm:gap-3">
 
                   <input
                     type="text"
@@ -890,15 +899,15 @@ export default function SwapPage() {
                     className={`${amountTypography} min-w-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
                   />
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
 
                     <img
                       src={inputToken.logo}
                       alt={inputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
+                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
-                    <span className="text-sm font-black">
+                    <span className="text-xs font-black sm:text-sm">
                       {inputToken.symbol}
                     </span>
 
@@ -978,7 +987,8 @@ export default function SwapPage() {
                   You receive
                 </p>
 
-                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-3">
+                {/* AMOUNT */}
+                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-2 sm:gap-3">
 
                   <span className={amountTypography}>
                     {isLoading
@@ -989,26 +999,24 @@ export default function SwapPage() {
                           : "0.00")}
                   </span>
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
 
                     <img
                       src={outputToken.logo}
                       alt={outputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
+                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
-                    <span className="text-sm font-black">
+                    <span className="text-xs font-black sm:text-sm">
                       {outputToken.symbol}
                     </span>
 
                   </div>
-
                 </div>
 
                 <p className="mt-2 truncate text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
-
               </div>
             </div>
 
@@ -1161,7 +1169,6 @@ export default function SwapPage() {
                       {slippageMode ===
                         "custom" && (
                         <>
-
                           <div className="relative mt-3">
 
                             <input
@@ -1218,7 +1225,6 @@ export default function SwapPage() {
                           </div>
                         </>
                       )}
-
                     </div>
 
                     {/* DONE */}
@@ -1289,7 +1295,6 @@ export default function SwapPage() {
                       </span>
 
                     </div>
-
                   </div>
 
                   <a
