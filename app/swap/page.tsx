@@ -875,103 +875,134 @@ export default function SwapPage() {
             </div>
 
             {/* DETAILS */}
-            <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs font-semibold text-white/25">
-                  Estimated output
-                </span>
+<div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+  <div className="flex items-center justify-between gap-4">
+    <span className="text-xs font-semibold text-white/25">
+      Estimated output
+    </span>
 
-                <span className="truncate text-right text-xs font-bold text-white/40">
-                  {isLoading
-                    ? "Getting quote..."
-                    : estimatedOutput
-                    ? `${estimatedOutput} ${outputToken.symbol}`
-                    : error
-                    ? "Quote unavailable"
-                    : amountIn
-                    ? "Waiting for quote"
-                    : "Enter amount"}
-                </span>
-              </div>
+    <div className="flex items-center gap-2">
+      <span className="truncate text-right text-xs font-bold text-white/40">
+        {isLoading
+          ? "Getting quote..."
+          : estimatedOutput
+          ? `${estimatedOutput} ${outputToken.symbol}`
+          : error
+          ? "Quote unavailable"
+          : amountIn
+          ? "Waiting for quote"
+          : "Enter amount"}
+      </span>
 
-              {/* SLIPPAGE */}
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-white/25">
-                    Slippage
-                  </p>
+      <button
+        type="button"
+        onClick={() =>
+          setShowSettings(!showSettings)
+        }
+        aria-label="Swap settings"
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all duration-150 ${
+          showSettings
+            ? "border-white/[0.16] bg-white/[0.08] text-white"
+            : "border-white/[0.07] bg-white/[0.025] text-white/40 hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white"
+        }`}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M19.4 15C19.55 14.67 19.67 14.33 19.75 13.97L21.05 12.96C21.3 12.77 21.3 12.4 21.05 12.21L19.75 11.2C19.67 10.84 19.55 10.5 19.4 10.17L19.7 8.58C19.76 8.28 19.53 8 19.23 7.93L17.65 7.61C17.42 7.32 17.16 7.06 16.87 6.83L16.55 5.25C16.48 4.95 16.2 4.72 15.9 4.78L14.31 5.08C13.98 4.93 13.64 4.81 13.28 4.73L12.27 3.43C12.08 3.18 11.71 3.18 11.52 3.43L10.51 4.73C10.15 4.81 9.81 4.93 9.48 5.08L7.89 4.78C7.59 4.72 7.31 4.95 7.24 5.25L6.92 6.83C6.63 7.06 6.37 7.32 6.14 7.61L4.56 7.93C4.26 8 4.03 8.28 4.09 8.58L4.39 10.17C4.24 10.5 4.12 10.84 4.04 11.2L2.74 12.21C2.49 12.4 2.49 12.77 2.74 12.96L4.04 13.97C4.12 14.33 4.24 14.67 4.39 15L4.09 16.59C4.03 16.89 4.26 17.17 4.56 17.24L6.14 17.56C6.37 17.85 6.63 18.11 6.92 18.34L7.24 19.92C7.31 20.22 7.59 20.45 7.89 20.39L9.48 20.09C9.81 20.24 10.15 20.36 10.51 20.44L11.52 21.74C11.71 21.99 12.08 21.99 12.27 21.74L13.28 20.44C13.64 20.36 13.98 20.24 14.31 20.09L15.9 20.39C16.2 20.45 16.48 20.22 16.55 19.92L16.87 18.34C17.16 18.11 17.42 17.85 17.65 17.56L19.23 17.24C19.53 17.17 19.76 16.89 19.7 16.59L19.4 15Z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
 
-                  <p className="mt-1 text-[10px] font-medium text-white/15">
-                    Maximum price movement accepted
-                  </p>
-                </div>
+  {showSettings && (
+    <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold text-white/50">
+            Slippage tolerance
+          </p>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleSlippageMode("auto")
-                    }
-                    className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
-                      slippageMode === "auto"
-                        ? "border-white/[0.15] bg-white/[0.09] text-white"
-                        : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
-                    }`}
-                  >
-                    Auto
-                  </button>
+          <p className="mt-1 text-[10px] font-medium text-white/20">
+            Maximum price movement accepted
+          </p>
+        </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleSlippageMode("custom")
-                    }
-                    className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
-                      slippageMode === "custom"
-                        ? "border-white/[0.15] bg-white/[0.09] text-white"
-                        : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
-                    }`}
-                  >
-                    Custom
-                  </button>
-                </div>
-              </div>
+        <span className="text-xs font-bold text-white/50">
+          {formattedSlippage}%
+        </span>
+      </div>
 
-              {slippageMode === "custom" && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {customSlippageOptions.map(
-                    (value) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() =>
-                          handleCustomSlippage(
-                            value
-                          )
-                        }
-                        className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
-                          customSlippage === value
-                            ? "border-white/[0.15] bg-white/[0.09] text-white"
-                            : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
-                        }`}
-                      >
-                        {value}%
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
+      <div className="mt-3 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() =>
+            handleSlippageMode("auto")
+          }
+          className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
+            slippageMode === "auto"
+              ? "border-white/[0.15] bg-white/[0.09] text-white"
+              : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
+          }`}
+        >
+          Auto
+        </button>
 
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <span className="text-xs font-semibold text-white/25">
-                  Slippage tolerance
-                </span>
+        <button
+          type="button"
+          onClick={() =>
+            handleSlippageMode("custom")
+          }
+          className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
+            slippageMode === "custom"
+              ? "border-white/[0.15] bg-white/[0.09] text-white"
+              : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
+          }`}
+        >
+          Custom
+        </button>
+      </div>
 
-                <span className="text-xs font-bold text-white/40">
-                  {formattedSlippage}%
-                </span>
-              </div>
-            </div>
+      {slippageMode === "custom" && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {customSlippageOptions.map(
+            (value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() =>
+                  handleCustomSlippage(value)
+                }
+                className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${
+                  customSlippage === value
+                    ? "border-white/[0.15] bg-white/[0.09] text-white"
+                    : "border-white/[0.07] bg-white/[0.025] text-white/35 hover:text-white"
+                }`}
+              >
+                {value}%
+              </button>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  )}
+</div>
 
             {/* ERRORS */}
             {insufficientBalance && (
