@@ -787,45 +787,45 @@ export default function SwapPage() {
       {inputToken.name}
     </p>
 
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={() =>
-          handlePercentage(0.5)
-        }
-        disabled={
-          !isConnected ||
-          inputBalanceNumber <= 0
-        }
-        style={{
-          fontSize: "8px",
-          lineHeight: "10.5px",
-          fontWeight: 600,
-          padding: "3px 6px",
-        }}
-        className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
-      >
-        50%
-      </button>
+    <div className="flex items-center gap-1.5">
+  <button
+    type="button"
+    onClick={() =>
+      handlePercentage(0.5)
+    }
+    disabled={
+      !isConnected ||
+      inputBalanceNumber <= 0
+    }
+    style={{
+      fontSize: "9px",
+      lineHeight: "11px",
+      fontWeight: 600,
+      padding: "3px 7px",
+    }}
+    className="rounded-full border border-white/[0.09] bg-white/[0.04] text-white/75 transition-all duration-150 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-white/[0.02] disabled:text-white/15"
+  >
+    50%
+  </button>
 
-      <button
-        type="button"
-        onClick={handleMax}
-        disabled={
-          !isConnected ||
-          inputBalanceNumber <= 0
-        }
-        style={{
-          fontSize: "8px",
-          lineHeight: "10.5px",
-          fontWeight: 600,
-          padding: "3px 6px",
-        }}
-        className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
-      >
-        MAX
-      </button>
-    </div>
+  <button
+    type="button"
+    onClick={handleMax}
+    disabled={
+      !isConnected ||
+      inputBalanceNumber <= 0
+    }
+    style={{
+      fontSize: "9px",
+      lineHeight: "11px",
+      fontWeight: 600,
+      padding: "3px 7px",
+    }}
+    className="rounded-full border border-white/[0.09] bg-white/[0.04] text-white/75 transition-all duration-150 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-white/[0.05] disabled:bg-white/[0.02] disabled:text-white/15"
+  >
+    MAX
+  </button>
+</div>
   </div>
 </div>
 
