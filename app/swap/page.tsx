@@ -4,12 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
   useReadContract,
-  useWriteContract,
 } from "wagmi";
 import {
   formatUnits,
-  parseUnits,
-  type Address,
 } from "viem";
 
 import Header from "@/components/Header";
@@ -65,54 +62,6 @@ const erc20BalanceAbi = [
   },
 ] as const;
 
-const erc20AllowanceAbi = [
-  {
-    type: "function",
-    name: "allowance",
-    stateMutability: "view",
-    inputs: [
-      {
-        name: "owner",
-        type: "address",
-      },
-      {
-        name: "spender",
-        type: "address",
-      },
-    ],
-    outputs: [
-      {
-        name: "allowance",
-        type: "uint256",
-      },
-    ],
-  },
-] as const;
-
-const erc20ApproveAbi = [
-  {
-    type: "function",
-    name: "approve",
-    stateMutability: "nonpayable",
-    inputs: [
-      {
-        name: "spender",
-        type: "address",
-      },
-      {
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    outputs: [
-      {
-        name: "",
-        type: "bool",
-      },
-    ],
-  },
-] as const;
-
 const AUTO_SLIPPAGE = 0.5;
 
 const customSlippageOptions = [
@@ -125,8 +74,6 @@ const customSlippageOptions = [
 
 export default function SwapPage() {
   const { address, isConnected } = useAccount();
-
-  const { writeContractAsync } = useWriteContract();
 
   const {
     data: usdcBalance,
@@ -227,11 +174,6 @@ export default function SwapPage() {
   const inputToken = tokens[tokenIn];
   const outputToken = tokens[tokenOut];
 
-  const inputTokenAddress =
-    tokenIn === "USDC"
-      ? USDC_ADDRESS
-      : EURC_ADDRESS;
-
   const insufficientBalance =
     Boolean(amountIn) &&
     Number(amountIn) > inputBalanceNumber;
@@ -257,6 +199,9 @@ export default function SwapPage() {
       .replace(/\.00$/, "");
   }, [activeSlippage]);
 
+  /*
+   * Get a swap quote.
+   */
   useEffect(() => {
     if (
       !isConnected ||
@@ -298,6 +243,7 @@ export default function SwapPage() {
             amountIn,
             config: {
               slippageBps,
+              allowanceStrategy: "permit",
             },
           });
 
@@ -413,6 +359,17 @@ export default function SwapPage() {
     setSwapStage("idle");
   };
 
+  /*
+   * Execute the swap.
+   *
+   * IMPORTANT:
+   * There is NO manual ERC-20 approval here.
+   * Circle App Kit handles the allowance strategy.
+   *
+   * permit:
+   * - Uses a permit signature when supported.
+   * - Falls back to approve when necessary.
+   */
   const handleSwap = async () => {
     if (
       !isConnected ||
@@ -436,99 +393,6 @@ export default function SwapPage() {
 
       const kit = new AppKit();
 
-      const supportedChains =
-        kit.getSupportedChains("swap");
-
-      const arcTestnet =
-        supportedChains.find(
-          (chain) =>
-            chain.chain === "Arc_Testnet"
-        );
-
-      if (!arcTestnet) {
-        throw new Error(
-          "Arc Testnet is not available for swaps."
-        );
-      }
-
-      const spender =
-        arcTestnet.kitContracts?.adapter;
-
-      if (!spender) {
-        throw new Error(
-          "Circle swap adapter contract is not configured for Arc Testnet."
-        );
-      }
-
-      const amountInUnits = parseUnits(
-        amountIn,
-        6
-      );
-
-      /*
-       * Get the public client through the adapter.
-       * The Circle chain definition is intentionally
-       * cast here because the installed SDK exposes
-       * ChainDefinition while getPublicClient expects
-       * the underlying viem Chain type.
-       */
-      const publicClient =
-  await adapter.getPublicClient(
-    arcTestnet as any
-  );
-
-      /*
-       * Check the existing allowance before asking
-       * the wallet for an approval transaction.
-       */
-      const allowance =
-        await publicClient.readContract({
-          address: inputTokenAddress,
-          abi: erc20AllowanceAbi,
-          functionName: "allowance",
-          args: [
-            address,
-            spender as Address,
-          ],
-        });
-
-      const allowanceIsEnough =
-        allowance >= amountInUnits;
-
-      /*
-       * Only approve when the current allowance
-       * is smaller than the swap amount.
-       */
-      if (!allowanceIsEnough) {
-        setSwapStage("approving");
-
-        const approvalTx =
-          await writeContractAsync({
-            address: inputTokenAddress,
-            abi: erc20ApproveAbi,
-            functionName: "approve",
-            args: [
-              spender as Address,
-              amountInUnits,
-            ],
-          });
-
-        /*
-         * Wait for the approval transaction using
-         * the public client. This avoids the ChainDefinition
-         * vs EVMChainDefinition type mismatch.
-         */
-        await publicClient.waitForTransactionReceipt({
-          hash: approvalTx,
-        });
-      }
-
-      /*
-       * Approval is complete or was already sufficient.
-       * Now execute the actual swap.
-       */
-      setSwapStage("confirming");
-
       const result = await kit.swap({
         from: {
           adapter,
@@ -539,7 +403,7 @@ export default function SwapPage() {
         amountIn,
         config: {
           slippageBps,
-          allowanceStrategy: "approve",
+          allowanceStrategy: "permit",
         },
       });
 
