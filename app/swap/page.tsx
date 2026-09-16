@@ -868,9 +868,11 @@ export default function SwapPage() {
                       />
                     </svg>
 
-                    <span className="text-3xl font-black tracking-tight text-white/70 sm:text-4xl">
-  {isConnected ? displayBalance : "—"}
-</span>
+                    <span className="text-xs font-bold text-white/45">
+                      {isConnected
+                        ? displayBalance
+                        : "—"}
+                    </span>
                   </div>
                 </div>
 
@@ -889,6 +891,9 @@ export default function SwapPage() {
                       )
                     }
                     className="min-w-0 flex-1 truncate appearance-none bg-transparent p-0 text-3xl font-black tracking-tight text-white/70 outline-none placeholder:text-white/15 sm:text-4xl"
+                    style={{
+                      fontFamily: "inherit",
+                    }}
                   />
 
                   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
