@@ -750,7 +750,7 @@ export default function SwapPage() {
                     <img
                       src={inputToken.logo}
                       alt={inputToken.symbol}
-                      className="h-9 w-9 rounded-full object-contain"
+                      className="h-10 w-10 rounded-full object-contain"
                     />
 
                     <span className="text-sm font-black">
