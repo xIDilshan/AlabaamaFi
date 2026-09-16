@@ -747,7 +747,7 @@ export default function SwapPage() {
       <Header />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-2xl min-w-0">
 
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
@@ -766,7 +766,7 @@ export default function SwapPage() {
           </div>
 
           {/* MAIN SWAP CARD */}
-          <div className="relative rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
+          <div className="relative min-w-0 max-w-full overflow-hidden rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
 
             {/* SWAP HEADER */}
             <div className="mb-5 flex items-center justify-between">
@@ -781,7 +781,7 @@ export default function SwapPage() {
                   setShowSettings(true)
                 }
                 aria-label="Swap settings"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-white/40 transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-95"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-white/40 transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-95"
               >
                 <svg
                   width="17"
@@ -820,7 +820,7 @@ export default function SwapPage() {
                     strokeLinecap="round"
                   />
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -828,17 +828,17 @@ export default function SwapPage() {
               </button>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid min-w-0 gap-3">
 
               {/* YOU PAY */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold text-white/35">
+                <div className="flex min-w-0 items-center justify-between gap-4">
+                  <p className="min-w-0 text-xs font-bold text-white/35">
                     You pay
                   </p>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <svg
                       width="14"
                       height="14"
@@ -875,7 +875,7 @@ export default function SwapPage() {
                 </div>
 
                 {/* AMOUNT */}
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
+                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-3">
 
                   <input
                     type="text"
@@ -887,7 +887,7 @@ export default function SwapPage() {
                         event.target.value
                       )
                     }
-                    className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
+                    className={`${amountTypography} min-w-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
                   />
 
                   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
@@ -905,13 +905,13 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
 
-                  <p className="text-xs font-medium text-white/20">
+                  <p className="min-w-0 truncate text-xs font-medium text-white/20">
                     {inputToken.name}
                   </p>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
 
                     {/* 50% */}
                     <button
@@ -972,13 +972,13 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
+                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-3">
 
                   <span className={amountTypography}>
                     {isLoading
@@ -1005,7 +1005,7 @@ export default function SwapPage() {
 
                 </div>
 
-                <p className="mt-2 text-xs font-medium text-white/20">
+                <p className="mt-2 truncate text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
 
@@ -1013,15 +1013,15 @@ export default function SwapPage() {
             </div>
 
             {/* ESTIMATED OUTPUT */}
-            <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+            <div className="mt-5 min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center justify-between gap-4">
 
-                <span className="text-xs font-semibold text-white/25">
+                <span className="shrink-0 text-xs font-semibold text-white/25">
                   Estimated output
                 </span>
 
-                <span className="truncate text-right text-xs font-bold text-white/40">
+                <span className="min-w-0 truncate text-right text-xs font-bold text-white/40">
                   {isLoading
                     ? "Getting quote..."
                     : estimatedOutput
