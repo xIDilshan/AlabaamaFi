@@ -503,74 +503,140 @@ export default function SwapPage() {
         setSwapStage("approving");
 
         const approvalTx =
-          await writeContractAsync({
-            address: inputTokenAddress,
-            abi: erc20ApproveAbi,
-            functionName: "approve",
-            args: [
-              spender as Address,
-              amountInUnits,
-            ],
-          });
+const handleSwap = async () => {
+  if (
+    !isConnected ||
+    !address ||
+    !amountIn ||
+    Number(amountIn) <= 0 ||
+    Number(amountIn) > inputBalanceNumber ||
+    !estimatedOutput
+  ) {
+    return;
+  }
 
-        /*
-         * Wait for the approval transaction using
-         * the public client. This avoids the ChainDefinition
-         * vs EVMChainDefinition type mismatch.
-         */
-        await publicClient.waitForTransactionReceipt({
-          hash: approvalTx,
-        });
-      }
+  setIsSwapping(true);
+  setSwapStage("confirming");
+  setError("");
+  setSwapResult(null);
 
-      /*
-       * Approval is complete or was already sufficient.
-       * Now execute the actual swap.
-       */
-      setSwapStage("confirming");
+  try {
+    const adapter =
+      await createCircleViemAdapter();
 
-      const result = await kit.swap({
-        from: {
-          adapter,
-          chain: "Arc_Testnet",
-        },
-        tokenIn,
-        tokenOut,
-        amountIn,
-        config: {
-          slippageBps,
-          allowanceStrategy: "approve",
-        },
+    const kit = new AppKit();
+
+    const supportedChains =
+      kit.getSupportedChains("swap");
+
+    const arcTestnet =
+      supportedChains.find(
+        (chain) =>
+          chain.chain === "Arc_Testnet"
+      );
+
+    if (!arcTestnet) {
+      throw new Error(
+        "Arc Testnet is not available for swaps."
+      );
+    }
+
+    const spender =
+      arcTestnet.kitContracts?.adapter;
+
+    if (!spender) {
+      throw new Error(
+        "Circle swap adapter contract is not configured for Arc Testnet."
+      );
+    }
+
+    const amountInUnits = parseUnits(
+      amountIn,
+      6
+    );
+
+    const publicClient =
+      await adapter.getPublicClient({
+        chain: arcTestnet as any,
       });
 
-      console.log(
-        "Circle swap result:",
-        result
-      );
+    const allowance =
+      await publicClient.readContract({
+        address: inputTokenAddress,
+        abi: erc20AllowanceAbi,
+        functionName: "allowance",
+        args: [
+          address,
+          spender as Address,
+        ],
+      });
 
-      setSwapResult(result);
+    const allowanceIsEnough =
+      allowance >= amountInUnits;
 
-      await Promise.all([
-        refetchUsdcBalance(),
-        refetchEurcBalance(),
-      ]);
-    } catch (err) {
-      console.error(
-        "Swap execution error:",
-        err
-      );
+    if (!allowanceIsEnough) {
+      setSwapStage("approving");
 
-      setSwapStage("idle");
+      const approvalTx =
+        await writeContractAsync({
+          address: inputTokenAddress,
+          abi: erc20ApproveAbi,
+          functionName: "approve",
+          args: [
+            spender as Address,
+            amountInUnits,
+          ],
+        });
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Swap failed. Please try again."
-      );
-    } finally {
-      setIsSwapping(false);
+      await publicClient.waitForTransactionReceipt({
+        hash: approvalTx,
+      });
     }
-  };
+
+    setSwapStage("confirming");
+
+    const result = await kit.swap({
+      from: {
+        adapter,
+        chain: "Arc_Testnet",
+      },
+      tokenIn,
+      tokenOut,
+      amountIn,
+      config: {
+        slippageBps,
+        allowanceStrategy: "approve",
+      },
+    });
+
+    console.log(
+      "Circle swap result:",
+      result
+    );
+
+    setSwapResult(result);
+
+    await Promise.all([
+      refetchUsdcBalance(),
+      refetchEurcBalance(),
+    ]);
+  } catch (err) {
+    console.error(
+      "Swap execution error:",
+      err
+    );
+
+    setSwapStage("idle");
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Swap failed. Please try again."
+    );
+  } finally {
+    setIsSwapping(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
