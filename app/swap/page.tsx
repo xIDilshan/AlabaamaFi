@@ -780,7 +780,7 @@ export default function SwapPage() {
     fontWeight: 600,
     padding: "2px 4px",
   }}
-  className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+  className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
 >
   50%
 </button>
@@ -797,7 +797,7 @@ export default function SwapPage() {
     fontWeight: 600,
     padding: "2px 4px",
   }}
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-[4px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       MAX
                     </button>
@@ -837,7 +837,7 @@ export default function SwapPage() {
                     <img
                       src={outputToken.logo}
                       alt={outputToken.symbol}
-                      className="h-6 w-6 rounded-full object-contain"
+                      className="h-10 w-10 rounded-full object-contain"
                     />
 
                     <span className="text-sm font-black">
