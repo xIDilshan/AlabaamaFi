@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Manrope } from "next/font/google";
 import { useAccount, useReadContract, useWalletClient } from "wagmi";
 import {
   createPublicClient,
@@ -13,6 +14,11 @@ import {
 } from "viem";
 
 import Header from "@/components/Header";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: "600",
+});
 
 type Token = "USDC" | "EURC";
 type SlippageMode = "auto" | "custom";
@@ -226,11 +232,13 @@ const customSlippageOptions = [
 ];
 
 export default function SwapPage() {
-  const { address, isConnected, chainId } = useAccount();
+  const { address, isConnected, chainId } =
+    useAccount();
 
-  const { data: rawWalletClient } = useWalletClient({
-    chainId: ARC_TESTNET_CHAIN_ID,
-  });
+  const { data: rawWalletClient } =
+    useWalletClient({
+      chainId: ARC_TESTNET_CHAIN_ID,
+    });
 
   const walletClient =
     rawWalletClient as SwapWalletClient | undefined;
@@ -357,10 +365,6 @@ export default function SwapPage() {
       .replace(/\.00$/, "");
   }, [activeSlippage]);
 
-  /*
-   * Get an on-chain quote directly from the
-   * Arc Testnet Uniswap V2 router.
-   */
   useEffect(() => {
     if (
       !isConnected ||
@@ -518,23 +522,6 @@ export default function SwapPage() {
     setSwapStage("idle");
   };
 
-  /*
-   * Execute the swap directly through the
-   * Arc Testnet Uniswap V2 Router.
-   *
-   * Desired wallet flow:
-   *
-   * First swap:
-   * 1. ERC-20 approve(router)
-   * 2. swapExactTokensForTokens(...)
-   *
-   * Later swaps:
-   * 1. swapExactTokensForTokens(...)
-   *
-   * The approval is set to maxUint256 so that
-   * subsequent swaps do not need another approval
-   * for the same token/router pair.
-   */
   const handleSwap = async () => {
     if (
       !isConnected ||
@@ -558,12 +545,6 @@ export default function SwapPage() {
       const amountInUnits =
         parseUnits(amountIn, 6);
 
-      /*
-       * Check existing allowance.
-       *
-       * If enough allowance already exists,
-       * no approval transaction is requested.
-       */
       const currentAllowance =
         await publicClient.readContract({
           address: inputToken.address,
@@ -575,12 +556,6 @@ export default function SwapPage() {
           ],
         });
 
-      /*
-       * FIRST TRANSACTION:
-       *
-       * Only approve if the router does not already
-       * have enough allowance.
-       */
       if (currentAllowance < amountInUnits) {
         setSwapStage("approving");
 
@@ -613,10 +588,6 @@ export default function SwapPage() {
         }
       }
 
-      /*
-       * Get a fresh quote immediately before
-       * submitting the swap transaction.
-       */
       const amounts =
         await publicClient.readContract({
           address: SWAP_ROUTER,
@@ -634,22 +605,11 @@ export default function SwapPage() {
       const quotedOutput =
         amounts[1];
 
-      /*
-       * Apply the selected slippage tolerance.
-       *
-       * amountOutMin =
-       * quotedOutput * (1 - slippage)
-       */
       const amountOutMin =
         (quotedOutput *
           BigInt(10000 - slippageBps)) /
         BigInt(10000);
 
-      /*
-       * SECOND TRANSACTION:
-       *
-       * Actual swap.
-       */
       setSwapStage("confirming");
 
       const deadline =
@@ -750,6 +710,7 @@ export default function SwapPage() {
 
           <div className="rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
             <div className="grid gap-3">
+
               {/* YOU PAY */}
               <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-4">
@@ -770,7 +731,7 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex min-h-[72px] items-center gap-3">
+                <div className="mt-3 flex min-h-[60px] items-center gap-3">
                   <input
                     type="number"
                     inputMode="decimal"
@@ -803,7 +764,7 @@ export default function SwapPage() {
                     {inputToken.name}
                   </p>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() =>
@@ -813,7 +774,7 @@ export default function SwapPage() {
                         !isConnected ||
                         inputBalanceNumber <= 0
                       }
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[10px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       50%
                     </button>
@@ -825,7 +786,7 @@ export default function SwapPage() {
                         !isConnected ||
                         inputBalanceNumber <= 0
                       }
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[10px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       MAX
                     </button>
@@ -851,7 +812,7 @@ export default function SwapPage() {
                   You receive
                 </p>
 
-                <div className="mt-3 flex min-h-[72px] items-center gap-3">
+                <div className="mt-3 flex min-h-[60px] items-center gap-3">
                   <span className="min-w-0 flex-1 truncate text-3xl font-black tracking-tight text-white/70 sm:text-4xl">
                     {isLoading
                       ? "..."
@@ -1064,7 +1025,11 @@ export default function SwapPage() {
                 swapCompleted ||
                 chainId !== ARC_TESTNET_CHAIN_ID
               }
-              className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm font-semibold tracking-tight transition-all duration-200 ${
+              style={{
+                fontFamily: manrope.style.fontFamily,
+                fontWeight: 600,
+              }}
+              className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm tracking-tight transition-all duration-200 ${
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
@@ -1091,12 +1056,6 @@ export default function SwapPage() {
                 ? "Enter Amount"
                 : insufficientBalance
                 ? "Insufficient Balance"
-                : isLoading
-                ? "Getting Quote"
-                : !estimatedOutput
-                ? "Waiting for Quote"
-                : swapCompleted
-                ? "Swap Completed"
                 : "Swap"}
             </button>
 
