@@ -839,7 +839,7 @@ export default function SwapPage() {
             <div className="grid gap-3">
 
               {/* YOU PAY */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:p-5">
 
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-xs font-bold text-white/35">
@@ -883,8 +883,8 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                {/* SAME-SIZED AMOUNT AREA */}
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
+                {/* COMPACT AMOUNT AREA */}
+                <div className="mt-2 flex min-h-[50px] items-center gap-2.5 sm:mt-3 sm:min-h-[60px] sm:gap-3">
 
                   <input
                     type="text"
@@ -908,29 +908,29 @@ export default function SwapPage() {
                     }}
                     className={`${amountTextClass} border-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
                     style={{
-                      fontFamily:
-                        "inherit",
+                      fontFamily: "inherit",
                       fontSize: "36px",
                       fontWeight: 900,
                       lineHeight: "1",
                     }}
                   />
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+
                     <img
                       src={inputToken.logo}
                       alt={inputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
+                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
                     <span className="text-sm font-black">
                       {inputToken.symbol}
                     </span>
-                  </div>
 
+                  </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="mt-1.5 flex items-center justify-between gap-3 sm:mt-2">
 
                   <p className="text-xs font-medium text-white/20">
                     {inputToken.name}
@@ -997,14 +997,14 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-3 sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
-                {/* EXACT SAME TYPOGRAPHY AS YOU PAY */}
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
+                {/* SAME TYPOGRAPHY AS YOU PAY */}
+                <div className="mt-2 flex min-h-[50px] items-center gap-2.5 sm:mt-3 sm:min-h-[60px] sm:gap-3">
 
                   <span
                     className={
@@ -1019,29 +1019,30 @@ export default function SwapPage() {
                           : "0.00")}
                   </span>
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+
                     <img
                       src={outputToken.logo}
                       alt={outputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
+                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
                     <span className="text-sm font-black">
                       {outputToken.symbol}
                     </span>
-                  </div>
 
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs font-medium text-white/20">
+                <p className="mt-1.5 text-xs font-medium text-white/20 sm:mt-2">
                   {outputToken.name}
                 </p>
-
               </div>
             </div>
 
             {/* ESTIMATED OUTPUT */}
             <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+
               <div className="flex items-center justify-between gap-4">
 
                 <span className="text-xs font-semibold text-white/25">
@@ -1311,7 +1312,6 @@ export default function SwapPage() {
                       </span>
 
                     </div>
-
                   </div>
 
                   <a
