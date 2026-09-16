@@ -763,17 +763,11 @@ export default function SwapPage() {
           {/* MAIN SWAP CARD */}
           <div className="relative rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
 
-            {/* SWAP CARD HEADER */}
+            {/* SWAP HEADER */}
             <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-white/25">
-                  Swap
-                </p>
-
-                <h2 className="mt-0.5 text-base font-bold text-white/80">
-                  Token Swap
-                </h2>
-              </div>
+              <h2 className="text-base font-bold text-white/80">
+                Swap
+              </h2>
 
               {/* SETTINGS BUTTON */}
               <button
@@ -806,7 +800,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M10 7C10 8.10457 9.10457 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5.89543 10 7Z"
+                    d="M10 7C10 8.10457 9.10457 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -826,7 +820,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15.8954 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -838,6 +832,7 @@ export default function SwapPage() {
 
               {/* YOU PAY */}
               <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-xs font-bold text-white/35">
                     You pay
@@ -881,7 +876,9 @@ export default function SwapPage() {
                   </div>
                 </div>
 
+                {/* AMOUNT */}
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
+
                   <input
                     type="number"
                     inputMode="decimal"
@@ -893,7 +890,7 @@ export default function SwapPage() {
                         event.target.value
                       )
                     }
-                    className="min-w-0 flex-1 bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
+                    className="min-w-0 flex-1 truncate bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
                   />
 
                   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
@@ -907,9 +904,11 @@ export default function SwapPage() {
                       {inputToken.symbol}
                     </span>
                   </div>
+
                 </div>
 
                 <div className="mt-2 flex items-center justify-between gap-3">
+
                   <p className="text-xs font-medium text-white/20">
                     {inputToken.name}
                   </p>
@@ -972,11 +971,13 @@ export default function SwapPage() {
 
               {/* YOU RECEIVE */}
               <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
+
                   <span className="min-w-0 flex-1 truncate text-3xl font-black tracking-tight text-white/70 sm:text-4xl">
                     {isLoading
                       ? "..."
@@ -997,17 +998,20 @@ export default function SwapPage() {
                       {outputToken.symbol}
                     </span>
                   </div>
+
                 </div>
 
                 <p className="mt-2 text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
+
               </div>
             </div>
 
             {/* ESTIMATED OUTPUT */}
             <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
               <div className="flex items-center justify-between gap-4">
+
                 <span className="text-xs font-semibold text-white/25">
                   Estimated output
                 </span>
@@ -1023,206 +1027,211 @@ export default function SwapPage() {
                     ? "Waiting for quote"
                     : "Enter amount"}
                 </span>
+
               </div>
             </div>
 
             {/* SETTINGS POPUP */}
             {showSettings && (
-              <div
-                className="absolute right-4 top-[68px] z-50 w-[calc(100%-32px)] max-w-[340px] sm:right-6 sm:w-[340px] lg:right-7"
-                style={{
-                  fontFamily:
-                    manrope.style.fontFamily,
-                  fontWeight: 600,
-                }}
-              >
-                <div
-                  className="rounded-2xl border border-white/[0.08] bg-[#080a0d] p-4 shadow-2xl shadow-black/70"
-                  onClick={(event) =>
-                    event.stopPropagation()
+              <>
+                {/* BACKDROP */}
+                <button
+                  type="button"
+                  aria-label="Close settings"
+                  onClick={() =>
+                    setShowSettings(false)
                   }
+                  className="fixed inset-0 z-40 cursor-default bg-black/20 backdrop-blur-[1px]"
+                />
+
+                {/* POPUP */}
+                <div
+                  className="absolute right-4 top-[68px] z-50 w-[calc(100%-32px)] max-w-[340px] sm:right-6 sm:w-[340px] lg:right-7"
+                  style={{
+                    fontFamily:
+                      manrope.style.fontFamily,
+                    fontWeight: 600,
+                  }}
                 >
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#080a0d] p-4 shadow-2xl shadow-black/70">
 
-                  {/* POPUP HEADER */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-white/80">
-                        Swap settings
-                      </p>
+                    {/* HEADER */}
+                    <div className="flex items-center justify-between">
 
-                      <p className="mt-1 text-[10px] font-semibold text-white/25">
-                        Configure your swap tolerance
-                      </p>
+                      <div>
+                        <p className="text-sm font-semibold text-white/80">
+                          Swap settings
+                        </p>
+
+                        <p className="mt-1 text-[10px] font-semibold text-white/25">
+                          Configure your swap tolerance
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowSettings(false)
+                        }
+                        aria-label="Close settings"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M6 6L18 18M18 6L6 18"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+
                     </div>
 
+                    {/* SLIPPAGE */}
+                    <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+
+                      <div className="flex items-center justify-between">
+
+                        <div>
+                          <p className="text-xs font-semibold text-white/65">
+                            Slippage tolerance
+                          </p>
+
+                          <p className="mt-1 text-[10px] font-semibold text-white/25">
+                            Maximum price movement accepted
+                          </p>
+                        </div>
+
+                        <span className="text-xs font-semibold text-white/55">
+                          {formattedSlippage}%
+                        </span>
+
+                      </div>
+
+                      {/* AUTO / CUSTOM */}
+                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSlippageMode(
+                              "auto"
+                            )
+                          }
+                          className={`h-8 rounded-lg border text-[10px] font-semibold transition ${
+                            slippageMode ===
+                            "auto"
+                              ? "border-white/[0.14] bg-white/[0.08] text-white"
+                              : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
+                          }`}
+                        >
+                          Auto · 0.5%
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSlippageMode(
+                              "custom"
+                            )
+                          }
+                          className={`h-8 rounded-lg border text-[10px] font-semibold transition ${
+                            slippageMode ===
+                            "custom"
+                              ? "border-white/[0.14] bg-white/[0.08] text-white"
+                              : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
+                          }`}
+                        >
+                          Custom
+                        </button>
+
+                      </div>
+
+                      {/* CUSTOM INPUT */}
+                      {slippageMode ===
+                        "custom" && (
+                        <>
+                          <div className="relative mt-3">
+
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0.01"
+                              max="50"
+                              step="0.01"
+                              value={
+                                customSlippageInput
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                handleCustomSlippageInput(
+                                  event
+                                    .target
+                                    .value
+                                )
+                              }
+                              placeholder="0.5"
+                              className="h-10 w-full rounded-lg border border-white/[0.07] bg-[#030405] px-3 pr-8 text-xs font-semibold text-white outline-none placeholder:text-white/15 focus:border-white/[0.16]"
+                            />
+
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-white/35">
+                              %
+                            </span>
+
+                          </div>
+
+                          {/* PRESETS */}
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+
+                            {customSlippageOptions.map(
+                              (value) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() =>
+                                    handleCustomSlippage(
+                                      value
+                                    )
+                                  }
+                                  className={`h-7 rounded-lg border px-2.5 text-[10px] font-semibold transition ${
+                                    customSlippage ===
+                                    value
+                                      ? "border-white/[0.14] bg-white/[0.08] text-white"
+                                      : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
+                                  }`}
+                                >
+                                  {value}%
+                                </button>
+                              )
+                            )}
+
+                          </div>
+                        </>
+                      )}
+
+                    </div>
+
+                    {/* DONE */}
                     <button
                       type="button"
                       onClick={() =>
                         setShowSettings(false)
                       }
-                      aria-label="Close settings"
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/[0.06] hover:text-white"
+                      className="mt-3 h-9 w-full rounded-lg border border-white/[0.07] bg-white/[0.04] text-xs font-semibold text-white/60 transition hover:border-white/[0.12] hover:bg-white/[0.07] hover:text-white"
                     >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M6 6L18 18M18 6L6 18"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      Done
                     </button>
-                  </div>
-
-                  {/* SLIPPAGE CARD */}
-                  <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-white/65">
-                          Slippage tolerance
-                        </p>
-
-                        <p className="mt-1 text-[10px] font-semibold text-white/25">
-                          Maximum price movement accepted
-                        </p>
-                      </div>
-
-                      <span className="text-xs font-semibold text-white/55">
-                        {formattedSlippage}%
-                      </span>
-                    </div>
-
-                    {/* AUTO / CUSTOM */}
-                    <div className="mt-3 grid grid-cols-2 gap-1.5">
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSlippageMode(
-                            "auto"
-                          )
-                        }
-                        className={`h-8 rounded-lg border text-[10px] font-semibold transition ${
-                          slippageMode ===
-                          "auto"
-                            ? "border-white/[0.14] bg-white/[0.08] text-white"
-                            : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
-                        }`}
-                      >
-                        Auto · 0.5%
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSlippageMode(
-                            "custom"
-                          )
-                        }
-                        className={`h-8 rounded-lg border text-[10px] font-semibold transition ${
-                          slippageMode ===
-                          "custom"
-                            ? "border-white/[0.14] bg-white/[0.08] text-white"
-                            : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
-                        }`}
-                      >
-                        Custom
-                      </button>
-
-                    </div>
-
-                    {/* CUSTOM SLIPPAGE */}
-                    {slippageMode ===
-                      "custom" && (
-                      <>
-                        <div className="relative mt-3">
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min="0.01"
-                            max="50"
-                            step="0.01"
-                            value={
-                              customSlippageInput
-                            }
-                            onChange={(
-                              event
-                            ) =>
-                              handleCustomSlippageInput(
-                                event
-                                  .target
-                                  .value
-                              )
-                            }
-                            placeholder="0.5"
-                            className="h-10 w-full rounded-lg border border-white/[0.07] bg-[#030405] px-3 pr-8 text-xs font-semibold text-white outline-none placeholder:text-white/15 focus:border-white/[0.16]"
-                          />
-
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-white/35">
-                            %
-                          </span>
-                        </div>
-
-                        {/* PRESET VALUES */}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {customSlippageOptions.map(
-                            (value) => (
-                              <button
-                                key={value}
-                                type="button"
-                                onClick={() =>
-                                  handleCustomSlippage(
-                                    value
-                                  )
-                                }
-                                className={`h-7 rounded-lg border px-2.5 text-[10px] font-semibold transition ${
-                                  customSlippage ===
-                                  value
-                                    ? "border-white/[0.14] bg-white/[0.08] text-white"
-                                    : "border-white/[0.06] bg-white/[0.025] text-white/35 hover:bg-white/[0.05] hover:text-white/60"
-                                }`}
-                              >
-                                {value}%
-                              </button>
-                            )
-                          )}
-                        </div>
-                      </>
-                    )}
 
                   </div>
-
-                  {/* DONE */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowSettings(false)
-                    }
-                    className="mt-3 h-9 w-full rounded-lg border border-white/[0.07] bg-white/[0.04] text-xs font-semibold text-white/60 transition hover:border-white/[0.12] hover:bg-white/[0.07] hover:text-white"
-                  >
-                    Done
-                  </button>
-
                 </div>
-              </div>
-            )}
-
-            {/* POPUP BACKDROP */}
-            {showSettings && (
-              <button
-                type="button"
-                aria-label="Close settings"
-                onClick={() =>
-                  setShowSettings(false)
-                }
-                className="fixed inset-0 z-40 cursor-default bg-transparent"
-              />
+              </>
             )}
 
             {/* ERRORS */}
@@ -1248,12 +1257,15 @@ export default function SwapPage() {
             {swapCompleted &&
               swapData?.txHash && (
                 <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
+
                   <p className="text-center text-sm font-bold text-green-300/90">
                     Swap completed successfully.
                   </p>
 
                   <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+
                     <div className="flex items-center justify-between gap-3">
+
                       <span className="text-xs font-semibold text-white/30">
                         Transaction
                       </span>
@@ -1268,7 +1280,9 @@ export default function SwapPage() {
                           -8
                         )}
                       </span>
+
                     </div>
+
                   </div>
 
                   <a
@@ -1294,6 +1308,7 @@ export default function SwapPage() {
                   >
                     New Swap
                   </button>
+
                 </div>
               )}
 
