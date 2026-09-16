@@ -80,15 +80,6 @@ const tokens: Record<
 const SWAP_ROUTER =
   "0xe27d5d256b370604f1ff060fb489c6a8e3f8a6d9" as Address;
 
-/*
- * Arc Testnet USDC/EURC pair.
- *
- * Used by the router for the direct
- * USDC <-> EURC route.
- */
-const USDC_EURC_PAIR =
-  "0xb3685D16AAa06361ED28377b1319136650Fa9A13" as Address;
-
 const erc20BalanceAbi = [
   {
     type: "function",
@@ -589,8 +580,8 @@ export default function SwapPage() {
               SWAP_ROUTER,
               maxUint256,
             ],
-            gas: 100_000n,
-          });
+            gas: BigInt(100000),
+          } as any);
 
         const approvalReceipt =
           await publicClient.waitForTransactionReceipt(
@@ -638,10 +629,8 @@ export default function SwapPage() {
        */
       const amountOutMin =
         (quotedOutput *
-          BigInt(
-            10_000 - slippageBps
-          )) /
-        10_000n;
+          BigInt(10000 - slippageBps)) /
+        BigInt(10000);
 
       /*
        * SECOND TRANSACTION:
@@ -674,8 +663,8 @@ export default function SwapPage() {
             address,
             deadline,
           ],
-          gas: 250_000n,
-        });
+          gas: BigInt(250000),
+        } as any);
 
       const swapReceipt =
         await publicClient.waitForTransactionReceipt(
