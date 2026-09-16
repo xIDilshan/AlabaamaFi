@@ -750,7 +750,7 @@ export default function SwapPage() {
                     <img
                       src={inputToken.logo}
                       alt={inputToken.symbol}
-                      className="h-6 w-6 rounded-full object-contain"
+                      className="h-7 w-7 rounded-full object-contain"
                     />
 
                     <span className="text-sm font-black">
@@ -774,7 +774,7 @@ export default function SwapPage() {
                         !isConnected ||
                         inputBalanceNumber <= 0
                       }
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-[7px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       50%
                     </button>
@@ -786,7 +786,7 @@ export default function SwapPage() {
                         !isConnected ||
                         inputBalanceNumber <= 0
                       }
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-[7px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       MAX
                     </button>
