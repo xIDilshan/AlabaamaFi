@@ -766,19 +766,24 @@ export default function SwapPage() {
 
                   <div className="flex items-center gap-1">
                     <button
-                      type="button"
-                      onClick={() =>
-                        handlePercentage(0.5)
-                      }
-                      disabled={
-                        !isConnected ||
-                        inputBalanceNumber <= 0
-                      }
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-[4px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
-                    >
-                      50%
-                    </button>
-
+  type="button"
+  onClick={() =>
+    handlePercentage(0.5)
+  }
+  disabled={
+    !isConnected ||
+    inputBalanceNumber <= 0
+  }
+  style={{
+    fontSize: "7px",
+    lineHeight: "10px",
+    fontWeight: 600,
+    padding: "2px 4px",
+  }}
+  className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+>
+  50%
+</button>
                     <button
                       type="button"
                       onClick={handleMax}
@@ -786,6 +791,12 @@ export default function SwapPage() {
                         !isConnected ||
                         inputBalanceNumber <= 0
                       }
+                      style={{
+    fontSize: "7px",
+    lineHeight: "10px",
+    fontWeight: 600,
+    padding: "2px 4px",
+  }}
                       className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-[4px] font-semibold text-white/45 transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
                     >
                       MAX
