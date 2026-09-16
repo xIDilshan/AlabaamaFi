@@ -473,9 +473,9 @@ export default function SwapPage() {
        * the underlying viem Chain type.
        */
       const publicClient =
-  await adapter.getPublicClient({
-    chain: arcTestnet as any,
-  });
+  await adapter.getPublicClient(
+    arcTestnet as any
+  );
 
       /*
        * Check the existing allowance before asking
