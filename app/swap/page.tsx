@@ -299,6 +299,9 @@ export default function SwapPage() {
   const [slippageMode, setSlippageMode] =
     useState<SlippageMode>("auto");
 
+  const [showSettings, setShowSettings] =
+  useState(false);
+
   const [customSlippage, setCustomSlippage] =
     useState(0.5);
 
