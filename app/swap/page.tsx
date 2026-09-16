@@ -868,11 +868,9 @@ export default function SwapPage() {
                       />
                     </svg>
 
-                    <span className="text-xs font-bold text-white/45">
-                      {isConnected
-                        ? displayBalance
-                        : "—"}
-                    </span>
+                    <span className="text-3xl font-black tracking-tight text-white/70 sm:text-4xl">
+  {isConnected ? displayBalance : "—"}
+</span>
                   </div>
                 </div>
 
