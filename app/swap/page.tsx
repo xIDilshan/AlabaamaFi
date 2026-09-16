@@ -8,7 +8,6 @@ import {
 } from "wagmi";
 import {
   formatUnits,
-  maxUint256,
   parseUnits,
   type Address,
 } from "viem";
@@ -432,10 +431,6 @@ export default function SwapPage() {
     setSwapResult(null);
 
     try {
-      /*
-       * Get the same Circle chain definition used by
-       * the working swap integration.
-       */
       const adapter =
         await createCircleViemAdapter();
 
@@ -456,10 +451,6 @@ export default function SwapPage() {
         );
       }
 
-      /*
-       * Circle's adapter contract is the spender
-       * used for the token approval.
-       */
       const spender =
         arcTestnet.kitContracts?.adapter;
 
@@ -475,11 +466,23 @@ export default function SwapPage() {
       );
 
       /*
-       * Read the existing allowance directly from
-       * the token contract.
+       * Get the public client through the adapter.
+       * The Circle chain definition is intentionally
+       * cast here because the installed SDK exposes
+       * ChainDefinition while getPublicClient expects
+       * the underlying viem Chain type.
+       */
+      const publicClient =
+        adapter.getPublicClient({
+          chain: arcTestnet as any,
+        });
+
+      /*
+       * Check the existing allowance before asking
+       * the wallet for an approval transaction.
        */
       const allowance =
-        await adapter.publicClient.readContract({
+        await publicClient.readContract({
           address: inputTokenAddress,
           abi: erc20AllowanceAbi,
           functionName: "allowance",
@@ -493,8 +496,8 @@ export default function SwapPage() {
         allowance >= amountInUnits;
 
       /*
-       * Only request an approval when the existing
-       * allowance is not enough.
+       * Only approve when the current allowance
+       * is smaller than the swap amount.
        */
       if (!allowanceIsEnough) {
         setSwapStage("approving");
@@ -510,16 +513,19 @@ export default function SwapPage() {
             ],
           });
 
-        await adapter.waitForTransaction(
-          approvalTx,
-          undefined,
-          arcTestnet
-        );
+        /*
+         * Wait for the approval transaction using
+         * the public client. This avoids the ChainDefinition
+         * vs EVMChainDefinition type mismatch.
+         */
+        await publicClient.waitForTransactionReceipt({
+          hash: approvalTx,
+        });
       }
 
       /*
-       * Approval is now complete or was already
-       * sufficient. Continue with the actual swap.
+       * Approval is complete or was already sufficient.
+       * Now execute the actual swap.
        */
       setSwapStage("confirming");
 
