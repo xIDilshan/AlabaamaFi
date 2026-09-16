@@ -878,34 +878,35 @@ export default function SwapPage() {
 
                 {/* AMOUNT */}
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
+  <input
+    type="number"
+    inputMode="decimal"
+    min="0"
+    placeholder="0.00"
+    value={amountIn}
+    onChange={(event) =>
+      handleAmountChange(event.target.value)
+    }
+    className="min-w-0 flex-1 appearance-none truncate bg-transparent p-0 text-3xl font-black leading-none tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
+    style={{
+      fontFamily: "inherit",
+      WebkitAppearance: "none",
+      MozAppearance: "textfield",
+    }}
+  />
 
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    placeholder="0.00"
-                    value={amountIn}
-                    onChange={(event) =>
-                      handleAmountChange(
-                        event.target.value
-                      )
-                    }
-                    className="min-w-0 flex-1 truncate bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-                  />
+  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+    <img
+      src={inputToken.logo}
+      alt={inputToken.symbol}
+      className="h-10 w-10 rounded-full object-contain"
+    />
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-                    <img
-                      src={inputToken.logo}
-                      alt={inputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
-                    />
-
-                    <span className="text-sm font-black">
-                      {inputToken.symbol}
-                    </span>
-                  </div>
-
-                </div>
+    <span className="text-sm font-black">
+      {inputToken.symbol}
+    </span>
+  </div>
+</div>
 
                 <div className="mt-2 flex items-center justify-between gap-3">
 
