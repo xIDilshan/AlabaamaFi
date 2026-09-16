@@ -87,6 +87,7 @@ const tokens: Record<
     address:
       "0x3600000000000000000000000000000000000000",
   },
+
   EURC: {
     symbol: "EURC",
     name: "Euro Coin",
@@ -195,6 +196,7 @@ const routerAbi = [
       },
     ],
   },
+
   {
     type: "function",
     name: "swapExactTokensForTokens",
@@ -737,6 +739,13 @@ export default function SwapPage() {
     }
   };
 
+  /*
+   * Same typography is intentionally used
+   * for both Pay and Receive amounts.
+   */
+  const amountTextClass =
+    "min-w-0 flex-1 truncate text-[36px] font-black leading-none tracking-tight text-white";
+
   return (
     <main className="min-h-screen bg-[#030405] text-white">
       <Header />
@@ -763,13 +772,12 @@ export default function SwapPage() {
           {/* MAIN SWAP CARD */}
           <div className="relative rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
 
-            {/* SWAP HEADER */}
+            {/* HEADER */}
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-bold text-white/80">
                 Swap
               </h2>
 
-              {/* SETTINGS BUTTON */}
               <button
                 type="button"
                 onClick={() =>
@@ -830,95 +838,97 @@ export default function SwapPage() {
 
             <div className="grid gap-3">
 
-              {/* YOU PAY AMOUNT */}
-<div className="mt-3 flex min-h-[60px] items-center gap-3">
-  <input
-  type="text"
-  inputMode="decimal"
-  placeholder="0.00"
-  value={amountIn}
-  onChange={(event) => {
-    const value = event.target.value;
+              {/* YOU PAY */}
+              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
-    // Allow only numbers and one decimal point
-    if (/^\d*\.?\d*$/.test(value)) {
-      handleAmountChange(value);
-    }
-  }}
-  className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-3xl font-black leading-[1] tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-  style={{
-    fontFamily: "inherit",
-    fontSize: "2.25rem",
-    fontWeight: 900,
-    lineHeight: "1",
-  }}
-/>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-bold text-white/35">
+                    You pay
+                  </p>
 
-  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-    <img
-      src={inputToken.logo}
-      alt={inputToken.symbol}
-      className="h-10 w-10 rounded-full object-contain"
-    />
+                  <div className="flex items-center gap-2">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-white/35"
+                    >
+                      <path
+                        d="M4 6.5C4 5.39543 4.89543 4.5 6 4.5H19C20.1046 4.5 21 5.39543 21 6.5V17.5C21 18.6046 20.1046 19.5 19 19.5H6C4.89543 19.5 4 18.6046 4 17.5V6.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
 
-    <span className="text-sm font-black">
-      {inputToken.symbol}
-    </span>
-  </div>
-</div>
+                      <path
+                        d="M16 13H21"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
 
-{/* YOU RECEIVE AMOUNT */}
-<div className="mt-3 flex min-h-[60px] items-center gap-3">
-  <span className="min-w-0 flex-1 truncate text-3xl font-black leading-[1] tracking-tight text-white sm:text-4xl">
-    {isLoading
-      ? "..."
-      : estimatedOutput || (amountIn ? "—" : "0.00")}
-  </span>
+                      <circle
+                        cx="16"
+                        cy="13"
+                        r="1"
+                        fill="currentColor"
+                      />
+                    </svg>
 
-  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-    <img
-      src={outputToken.logo}
-      alt={outputToken.symbol}
-      className="h-10 w-10 rounded-full object-contain"
-    />
+                    <span className="text-xs font-bold text-white/45">
+                      {isConnected
+                        ? displayBalance
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
 
-    <span className="text-sm font-black">
-      {outputToken.symbol}
-    </span>
-  </div>
-</div>
-
-                {/* AMOUNT */}
+                {/* SAME-SIZED AMOUNT AREA */}
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
-  <input
-    type="number"
-    inputMode="decimal"
-    min="0"
-    placeholder="0.00"
-    value={amountIn}
-    onChange={(event) =>
-      handleAmountChange(event.target.value)
-    }
-    className="min-w-0 flex-1 appearance-none truncate bg-transparent p-0 text-3xl font-black leading-none tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-    style={{
-      fontFamily: "inherit",
-      WebkitAppearance: "none",
-      MozAppearance: "textfield",
-    }}
-  />
 
-  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-    <img
-      src={inputToken.logo}
-      alt={inputToken.symbol}
-      className="h-10 w-10 rounded-full object-contain"
-    />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0.00"
+                    value={amountIn}
+                    onChange={(event) => {
+                      const value =
+                        event.target.value;
 
-    <span className="text-sm font-black">
-      {inputToken.symbol}
-    </span>
-  </div>
-</div>
+                      if (
+                        /^\d*\.?\d*$/.test(
+                          value
+                        )
+                      ) {
+                        handleAmountChange(
+                          value
+                        );
+                      }
+                    }}
+                    className={`${amountTextClass} border-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
+                    style={{
+                      fontFamily:
+                        "inherit",
+                      fontSize: "36px",
+                      fontWeight: 900,
+                      lineHeight: "1",
+                    }}
+                  />
+
+                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                    <img
+                      src={inputToken.logo}
+                      alt={inputToken.symbol}
+                      className="h-10 w-10 rounded-full object-contain"
+                    />
+
+                    <span className="text-sm font-black">
+                      {inputToken.symbol}
+                    </span>
+                  </div>
+
+                </div>
 
                 <div className="mt-2 flex items-center justify-between gap-3">
 
@@ -928,15 +938,17 @@ export default function SwapPage() {
 
                   <div className="flex items-center gap-1.5">
 
-                    {/* 50% */}
                     <button
                       type="button"
                       onClick={() =>
-                        handlePercentage(0.5)
+                        handlePercentage(
+                          0.5
+                        )
                       }
                       disabled={
                         !isConnected ||
-                        inputBalanceNumber <= 0
+                        inputBalanceNumber <=
+                          0
                       }
                       style={{
                         fontSize: "11px",
@@ -948,13 +960,13 @@ export default function SwapPage() {
                       50%
                     </button>
 
-                    {/* MAX */}
                     <button
                       type="button"
                       onClick={handleMax}
                       disabled={
                         !isConnected ||
-                        inputBalanceNumber <= 0
+                        inputBalanceNumber <=
+                          0
                       }
                       style={{
                         fontSize: "11px",
@@ -974,7 +986,9 @@ export default function SwapPage() {
               <div className="relative z-10 -my-6 flex justify-center">
                 <button
                   type="button"
-                  onClick={handleSwitchTokens}
+                  onClick={
+                    handleSwitchTokens
+                  }
                   aria-label="Switch tokens"
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-[#080a0d] text-sm font-semibold text-white/55 shadow-xl transition hover:border-white/[0.16] hover:bg-[#0c1016] hover:text-white"
                 >
@@ -989,9 +1003,14 @@ export default function SwapPage() {
                   You receive
                 </p>
 
+                {/* EXACT SAME TYPOGRAPHY AS YOU PAY */}
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
 
-                  <span className="min-w-0 flex-1 truncate text-3xl font-black tracking-tight text-white/70 sm:text-4xl">
+                  <span
+                    className={
+                      amountTextClass
+                    }
+                  >
                     {isLoading
                       ? "..."
                       : estimatedOutput ||
@@ -1047,7 +1066,6 @@ export default function SwapPage() {
             {/* SETTINGS POPUP */}
             {showSettings && (
               <>
-                {/* BACKDROP */}
                 <button
                   type="button"
                   aria-label="Close settings"
@@ -1057,18 +1075,18 @@ export default function SwapPage() {
                   className="fixed inset-0 z-40 cursor-default bg-black/20 backdrop-blur-[1px]"
                 />
 
-                {/* POPUP */}
                 <div
                   className="absolute right-4 top-[68px] z-50 w-[calc(100%-32px)] max-w-[340px] sm:right-6 sm:w-[340px] lg:right-7"
                   style={{
                     fontFamily:
-                      manrope.style.fontFamily,
+                      manrope.style
+                        .fontFamily,
                     fontWeight: 600,
                   }}
                 >
                   <div className="rounded-2xl border border-white/[0.08] bg-[#080a0d] p-4 shadow-2xl shadow-black/70">
 
-                    {/* HEADER */}
+                    {/* POPUP HEADER */}
                     <div className="flex items-center justify-between">
 
                       <div>
@@ -1084,7 +1102,9 @@ export default function SwapPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setShowSettings(false)
+                          setShowSettings(
+                            false
+                          )
                         }
                         aria-label="Close settings"
                         className="flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/[0.06] hover:text-white"
@@ -1173,11 +1193,8 @@ export default function SwapPage() {
                           <div className="relative mt-3">
 
                             <input
-                              type="number"
+                              type="text"
                               inputMode="decimal"
-                              min="0.01"
-                              max="50"
-                              step="0.01"
                               value={
                                 customSlippageInput
                               }
@@ -1200,7 +1217,6 @@ export default function SwapPage() {
 
                           </div>
 
-                          {/* PRESETS */}
                           <div className="mt-2 flex flex-wrap gap-1.5">
 
                             {customSlippageOptions.map(
@@ -1316,7 +1332,9 @@ export default function SwapPage() {
 
                   <button
                     type="button"
-                    onClick={handleNewSwap}
+                    onClick={
+                      handleNewSwap
+                    }
                     className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full border border-white/[0.06] bg-transparent px-4 py-3 text-sm font-semibold text-white/45 transition hover:border-white/[0.12] hover:bg-white/[0.04] hover:text-white"
                   >
                     New Swap
