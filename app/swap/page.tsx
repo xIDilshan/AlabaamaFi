@@ -712,120 +712,122 @@ export default function SwapPage() {
             <div className="grid gap-3">
 
               {/* YOU PAY */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold text-white/35">
-                    You pay
-                  </p>
+<div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+  <div className="flex items-center justify-between gap-4">
+    <p className="text-xs font-bold text-white/35">
+      You pay
+    </p>
 
-                  <svg
-  width="14"
-  height="14"
-  viewBox="0 0 24 24"
-  fill="none"
-  xmlns="http://www.w3.org/2000/svg"
-  className="text-white/35"
->
-  <path
-    d="M4 6.5C4 5.39543 4.89543 4.5 6 4.5H19C20.1046 4.5 21 5.39543 21 6.5V17.5C21 18.6046 20.1046 19.5 19 19.5H6C4.89543 19.5 4 18.6046 4 17.5V6.5Z"
-    stroke="currentColor"
-    strokeWidth="1.7"
-  />
-  <path
-    d="M16 13H21"
-    stroke="currentColor"
-    strokeWidth="1.7"
-    strokeLinecap="round"
-  />
-  <circle
-    cx="16"
-    cy="13"
-    r="1"
-    fill="currentColor"
-  />
-</svg>
+    <div className="flex items-center gap-2">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="text-white/35"
+      >
+        <path
+          d="M4 6.5C4 5.39543 4.89543 4.5 6 4.5H19C20.1046 4.5 21 5.39543 21 6.5V17.5C21 18.6046 20.1046 19.5 19 19.5H6C4.89543 19.5 4 18.6046 4 17.5V6.5Z"
+          stroke="currentColor"
+          strokeWidth="1.7"
+        />
+        <path
+          d="M16 13H21"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+        <circle
+          cx="16"
+          cy="13"
+          r="1"
+          fill="currentColor"
+        />
+      </svg>
 
-                    <span className="text-xs font-bold text-white/45">
-                      {isConnected
-                        ? displayBalance
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
+      <span className="text-xs font-bold text-white/45">
+        {isConnected
+          ? displayBalance
+          : "—"}
+      </span>
+    </div>
+  </div>
 
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    placeholder="0.00"
-                    value={amountIn}
-                    onChange={(event) =>
-                      handleAmountChange(
-                        event.target.value
-                      )
-                    }
-                    className="min-w-0 flex-1 bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-                  />
+  <div className="mt-3 flex min-h-[60px] items-center gap-3">
+    <input
+      type="number"
+      inputMode="decimal"
+      min="0"
+      placeholder="0.00"
+      value={amountIn}
+      onChange={(event) =>
+        handleAmountChange(
+          event.target.value
+        )
+      }
+      className="min-w-0 flex-1 bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
+    />
 
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-                    <img
-                      src={inputToken.logo}
-                      alt={inputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
-                    />
+    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+      <img
+        src={inputToken.logo}
+        alt={inputToken.symbol}
+        className="h-10 w-10 rounded-full object-contain"
+      />
 
-                    <span className="text-sm font-black">
-                      {inputToken.symbol}
-                    </span>
-                  </div>
-                </div>
+      <span className="text-sm font-black">
+        {inputToken.symbol}
+      </span>
+    </div>
+  </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <p className="text-xs font-medium text-white/20">
-                    {inputToken.name}
-                  </p>
+  <div className="mt-2 flex items-center justify-between gap-3">
+    <p className="text-xs font-medium text-white/20">
+      {inputToken.name}
+    </p>
 
-                  <div className="flex items-center gap-1">
-                    <button
-  type="button"
-  onClick={() =>
-    handlePercentage(0.5)
-  }
-  disabled={
-    !isConnected ||
-    inputBalanceNumber <= 0
-  }
-  style={{
-    fontSize: "8px",
-    lineHeight: "10.5px",
-    fontWeight: 600,
-    padding: "3px 6px",
-  }}
-  className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
->
-  50%
-</button>
-                    <button
-                      type="button"
-                      onClick={handleMax}
-                      disabled={
-                        !isConnected ||
-                        inputBalanceNumber <= 0
-                      }
-                      style={{
-    fontSize: "8px",
-    lineHeight: "10.5px",
-    fontWeight: 600,
-    padding: "3px 6px",
-  }}
-                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
-                    >
-                      MAX
-                    </button>
-                  </div>
-                </div>
-              </div>
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() =>
+          handlePercentage(0.5)
+        }
+        disabled={
+          !isConnected ||
+          inputBalanceNumber <= 0
+        }
+        style={{
+          fontSize: "8px",
+          lineHeight: "10.5px",
+          fontWeight: 600,
+          padding: "3px 6px",
+        }}
+        className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+      >
+        50%
+      </button>
+
+      <button
+        type="button"
+        onClick={handleMax}
+        disabled={
+          !isConnected ||
+          inputBalanceNumber <= 0
+        }
+        style={{
+          fontSize: "8px",
+          lineHeight: "10.5px",
+          fontWeight: 600,
+          padding: "3px 6px",
+        }}
+        className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1 py-0.5 text-white transition hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white disabled:cursor-not-allowed disabled:text-white/15"
+      >
+        MAX
+      </button>
+    </div>
+  </div>
+</div>
 
               {/* SWITCH */}
               <div className="relative z-10 -my-6 flex justify-center">
