@@ -718,10 +718,32 @@ export default function SwapPage() {
                     You pay
                   </p>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-white/25">
-                      Balance
-                    </span>
+                  <svg
+  width="14"
+  height="14"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  className="text-white/35"
+>
+  <path
+    d="M4 6.5C4 5.39543 4.89543 4.5 6 4.5H19C20.1046 4.5 21 5.39543 21 6.5V17.5C21 18.6046 20.1046 19.5 19 19.5H6C4.89543 19.5 4 18.6046 4 17.5V6.5Z"
+    stroke="currentColor"
+    strokeWidth="1.7"
+  />
+  <path
+    d="M16 13H21"
+    stroke="currentColor"
+    strokeWidth="1.7"
+    strokeLinecap="round"
+  />
+  <circle
+    cx="16"
+    cy="13"
+    r="1"
+    fill="currentColor"
+  />
+</svg>
 
                     <span className="text-xs font-bold text-white/45">
                       {isConnected
@@ -775,7 +797,7 @@ export default function SwapPage() {
     inputBalanceNumber <= 0
   }
   style={{
-    fontSize: "7px",
+    fontSize: "8px",
     lineHeight: "10px",
     fontWeight: 600,
     padding: "2px 4px",
@@ -792,7 +814,7 @@ export default function SwapPage() {
                         inputBalanceNumber <= 0
                       }
                       style={{
-    fontSize: "7px",
+    fontSize: "8px",
     lineHeight: "10px",
     fontWeight: 600,
     padding: "2px 4px",
