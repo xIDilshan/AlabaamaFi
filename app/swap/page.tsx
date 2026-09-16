@@ -46,6 +46,16 @@ const publicClient = createPublicClient({
   transport: http("https://rpc.testnet.arc.network"),
 });
 
+type SwapWalletClient = {
+  writeContract: (parameters: {
+    address: Address;
+    abi: readonly unknown[];
+    functionName: string;
+    args: readonly unknown[];
+    gas?: bigint;
+  }) => Promise<`0x${string}`>;
+};
+
 const tokens: Record<
   Token,
   {
@@ -218,9 +228,12 @@ const customSlippageOptions = [
 export default function SwapPage() {
   const { address, isConnected, chainId } = useAccount();
 
-  const { data: walletClient } = useWalletClient({
+  const { data: rawWalletClient } = useWalletClient({
     chainId: ARC_TESTNET_CHAIN_ID,
   });
+
+  const walletClient =
+    rawWalletClient as SwapWalletClient | undefined;
 
   const {
     data: usdcBalance,
@@ -581,7 +594,7 @@ export default function SwapPage() {
               maxUint256,
             ],
             gas: BigInt(100000),
-          } as any);
+          });
 
         const approvalReceipt =
           await publicClient.waitForTransactionReceipt(
@@ -664,7 +677,7 @@ export default function SwapPage() {
             deadline,
           ],
           gas: BigInt(250000),
-        } as any);
+        });
 
       const swapReceipt =
         await publicClient.waitForTransactionReceipt(
