@@ -827,7 +827,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -884,33 +884,71 @@ export default function SwapPage() {
                 </div>
 
                 {/* AMOUNT */}
-                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-2 sm:gap-3">
+                <div className="mt-3 min-w-0">
 
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    value={amountIn}
-                    onChange={(event) =>
-                      handleAmountChange(
-                        event.target.value
-                      )
-                    }
-                    className={`${amountTypography} min-w-0 bg-transparent p-0 outline-none placeholder:text-white/15`}
-                  />
+                  {/* MOBILE AMOUNT */}
+                  <div className="flex min-h-[60px] min-w-0 items-center sm:hidden">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={amountIn}
+                      onChange={(event) =>
+                        handleAmountChange(
+                          event.target.value
+                        )
+                      }
+                      className={`${amountTypography} w-full bg-transparent p-0 outline-none placeholder:text-white/15`}
+                    />
+                  </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+                  {/* DESKTOP AMOUNT + TOKEN */}
+                  <div className="hidden min-h-[60px] min-w-0 items-center gap-3 sm:flex">
 
-                    <img
-                      src={inputToken.logo}
-                      alt={inputToken.symbol}
-                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={amountIn}
+                      onChange={(event) =>
+                        handleAmountChange(
+                          event.target.value
+                        )
+                      }
+                      className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
                     />
 
-                    <span className="text-xs font-black sm:text-sm">
-                      {inputToken.symbol}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
 
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {inputToken.symbol}
+                      </span>
+
+                    </div>
+                  </div>
+
+                  {/* MOBILE TOKEN */}
+                  <div className="mt-2 flex justify-end sm:hidden">
+
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className="h-8 w-8 rounded-full object-contain"
+                      />
+
+                      <span className="text-xs font-black">
+                        {inputToken.symbol}
+                      </span>
+
+                    </div>
                   </div>
                 </div>
 
@@ -988,29 +1026,65 @@ export default function SwapPage() {
                 </p>
 
                 {/* AMOUNT */}
-                <div className="mt-3 flex min-w-0 min-h-[60px] items-center gap-2 sm:gap-3">
+                <div className="mt-3 min-w-0">
 
-                  <span className={amountTypography}>
-                    {isLoading
-                      ? "..."
-                      : estimatedOutput ||
-                        (amountIn
-                          ? "—"
-                          : "0.00")}
-                  </span>
+                  {/* MOBILE AMOUNT */}
+                  <div className="flex min-h-[60px] min-w-0 items-center sm:hidden">
 
-                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
-
-                    <img
-                      src={outputToken.logo}
-                      alt={outputToken.symbol}
-                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
-                    />
-
-                    <span className="text-xs font-black sm:text-sm">
-                      {outputToken.symbol}
+                    <span className={amountTypography}>
+                      {isLoading
+                        ? "..."
+                        : estimatedOutput ||
+                          (amountIn
+                            ? "—"
+                            : "0.00")}
                     </span>
 
+                  </div>
+
+                  {/* DESKTOP AMOUNT + TOKEN */}
+                  <div className="hidden min-h-[60px] min-w-0 items-center gap-3 sm:flex">
+
+                    <span className={amountTypography}>
+                      {isLoading
+                        ? "..."
+                        : estimatedOutput ||
+                          (amountIn
+                            ? "—"
+                            : "0.00")}
+                    </span>
+
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {outputToken.symbol}
+                      </span>
+
+                    </div>
+                  </div>
+
+                  {/* MOBILE TOKEN */}
+                  <div className="mt-2 flex justify-end sm:hidden">
+
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className="h-8 w-8 rounded-full object-contain"
+                      />
+
+                      <span className="text-xs font-black">
+                        {outputToken.symbol}
+                      </span>
+
+                    </div>
                   </div>
                 </div>
 
