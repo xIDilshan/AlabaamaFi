@@ -799,7 +799,7 @@ export default function SwapPage() {
     }
     style={{
       fontSize: "11px",
-      lineHeight: "13px",
+      lineHeight: "12.5px",
       fontWeight: 600,
       padding: "4.5px 9px",
     }}
@@ -817,7 +817,7 @@ export default function SwapPage() {
     }
     style={{
       fontSize: "11px",
-      lineHeight: "13px",
+      lineHeight: "12.5px",
       fontWeight: 600,
       padding: "4.5px 9px",
     }}
