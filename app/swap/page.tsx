@@ -744,7 +744,7 @@ export default function SwapPage() {
    * for both Pay and Receive amounts.
    */
   const amountTextClass =
-    "min-w-0 flex-1 truncate text-[28px] sm:text-[36px] font-black leading-none tracking-tight text-white";
+    "min-w-0 flex-1 truncate text-[32px] sm:text-[36px] font-black leading-none tracking-tight text-white";
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
