@@ -5,9 +5,7 @@ import {
   useAccount,
   useReadContract,
 } from "wagmi";
-import {
-  formatUnits,
-} from "viem";
+import { formatUnits } from "viem";
 
 import Header from "@/components/Header";
 import { createCircleViemAdapter } from "@/lib/circle";
@@ -120,9 +118,7 @@ export default function SwapPage() {
     useState(false);
 
   const [swapStage, setSwapStage] =
-    useState<
-      "idle" | "approving" | "confirming"
-    >("idle");
+    useState<"idle" | "confirming">("idle");
 
   const [error, setError] =
     useState("");
@@ -201,6 +197,12 @@ export default function SwapPage() {
 
   /*
    * Get a swap quote.
+   *
+   * We use the traditional "approve" allowance
+   * strategy instead of "permit".
+   *
+   * This prevents Circle from requesting a
+   * signature message from the user's wallet.
    */
   useEffect(() => {
     if (
@@ -243,7 +245,7 @@ export default function SwapPage() {
             amountIn,
             config: {
               slippageBps,
-              allowanceStrategy: "permit",
+              allowanceStrategy: "approve",
             },
           });
 
@@ -363,12 +365,22 @@ export default function SwapPage() {
    * Execute the swap.
    *
    * IMPORTANT:
-   * There is NO manual ERC-20 approval here.
-   * Circle App Kit handles the allowance strategy.
+   * There is NO manual ERC-20 approve() call here.
    *
-   * permit:
-   * - Uses a permit signature when supported.
-   * - Falls back to approve when necessary.
+   * Circle App Kit handles the allowance flow.
+   *
+   * "approve" is intentionally used instead of
+   * "permit" so the wallet does not request a
+   * signature message.
+   *
+   * Expected flow:
+   *
+   * First swap:
+   *   1. Approve token
+   *   2. Confirm swap
+   *
+   * Later swaps:
+   *   1. Confirm swap
    */
   const handleSwap = async () => {
     if (
@@ -403,7 +415,7 @@ export default function SwapPage() {
         amountIn,
         config: {
           slippageBps,
-          allowanceStrategy: "permit",
+          allowanceStrategy: "approve",
         },
       });
 
@@ -786,9 +798,7 @@ export default function SwapPage() {
               }`}
             >
               {isSwapping
-                ? swapStage === "approving"
-                  ? "Approving"
-                  : "Confirming Swap"
+                ? "Confirming Swap"
                 : !isConnected
                 ? "Connect Wallet"
                 : !amountIn
