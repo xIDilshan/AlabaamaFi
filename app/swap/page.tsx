@@ -800,7 +800,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M10 7C10 8.10457 9.10457 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
+                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -890,7 +890,7 @@ export default function SwapPage() {
                         event.target.value
                       )
                     }
-                    className="min-w-0 flex-1 truncate text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
+                    className="min-w-0 flex-1 truncate appearance-none bg-transparent p-0 text-3xl font-black tracking-tight text-white/70 outline-none placeholder:text-white/15 sm:text-4xl"
                   />
 
                   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
@@ -1005,11 +1005,13 @@ export default function SwapPage() {
                     </span>
 
                   </div>
+
                 </div>
 
                 <p className="mt-2 text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
+
               </div>
             </div>
 
@@ -1059,6 +1061,7 @@ export default function SwapPage() {
                     fontWeight: 600,
                   }}
                 >
+
                   <div className="rounded-2xl border border-white/[0.08] bg-[#080a0d] p-4 shadow-2xl shadow-black/70">
 
                     {/* HEADER */}
@@ -1082,6 +1085,7 @@ export default function SwapPage() {
                         aria-label="Close settings"
                         className="flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/[0.06] hover:text-white"
                       >
+
                         <svg
                           width="15"
                           height="15"
@@ -1095,6 +1099,7 @@ export default function SwapPage() {
                             strokeLinecap="round"
                           />
                         </svg>
+
                       </button>
 
                     </div>
@@ -1163,6 +1168,7 @@ export default function SwapPage() {
                       {slippageMode ===
                         "custom" && (
                         <>
+
                           <div className="relative mt-3">
 
                             <input
@@ -1243,19 +1249,23 @@ export default function SwapPage() {
             {/* ERRORS */}
             {insufficientBalance && (
               <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+
                 <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                   Insufficient{" "}
                   {inputToken.symbol} balance.
                 </p>
+
               </div>
             )}
 
             {error &&
               !insufficientBalance && (
                 <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+
                   <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                     {error}
                   </p>
+
                 </div>
               )}
 
@@ -1288,6 +1298,7 @@ export default function SwapPage() {
                       </span>
 
                     </div>
+
                   </div>
 
                   <a
