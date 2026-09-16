@@ -739,10 +739,6 @@ export default function SwapPage() {
     }
   };
 
-  /*
-   * Same typography is intentionally used
-   * for both Pay and Receive amounts.
-   */
   const amountTextClass =
     "min-w-0 flex-1 truncate text-[36px] font-black leading-none tracking-tight text-white";
 
@@ -883,8 +879,8 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                {/* COMPACT AMOUNT AREA */}
-                <div className="mt-2 flex min-h-[50px] items-center gap-2.5 sm:mt-3 sm:min-h-[60px] sm:gap-3">
+                {/* COMPACT AMOUNT */}
+                <div className="mt-1 flex items-center gap-2 sm:mt-3 sm:gap-3">
 
                   <input
                     type="text"
@@ -915,12 +911,12 @@ export default function SwapPage() {
                     }}
                   />
 
-                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+                  <div className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.07] bg-[#080a0d] px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-2">
 
                     <img
                       src={inputToken.logo}
                       alt={inputToken.symbol}
-                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
+                      className="h-7 w-7 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
                     <span className="text-sm font-black">
@@ -930,7 +926,7 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <div className="mt-1.5 flex items-center justify-between gap-3 sm:mt-2">
+                <div className="mt-1 flex items-center justify-between gap-3 sm:mt-2">
 
                   <p className="text-xs font-medium text-white/20">
                     {inputToken.name}
@@ -1003,8 +999,8 @@ export default function SwapPage() {
                   You receive
                 </p>
 
-                {/* SAME TYPOGRAPHY AS YOU PAY */}
-                <div className="mt-2 flex min-h-[50px] items-center gap-2.5 sm:mt-3 sm:min-h-[60px] sm:gap-3">
+                {/* COMPACT AMOUNT */}
+                <div className="mt-1 flex items-center gap-2 sm:mt-3 sm:gap-3">
 
                   <span
                     className={
@@ -1019,12 +1015,12 @@ export default function SwapPage() {
                           : "0.00")}
                   </span>
 
-                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+                  <div className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.07] bg-[#080a0d] px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-2">
 
                     <img
                       src={outputToken.logo}
                       alt={outputToken.symbol}
-                      className="h-8 w-8 rounded-full object-contain sm:h-10 sm:w-10"
+                      className="h-7 w-7 rounded-full object-contain sm:h-10 sm:w-10"
                     />
 
                     <span className="text-sm font-black">
@@ -1034,7 +1030,7 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <p className="mt-1.5 text-xs font-medium text-white/20 sm:mt-2">
+                <p className="mt-1 text-xs font-medium text-white/20 sm:mt-2">
                   {outputToken.name}
                 </p>
               </div>
