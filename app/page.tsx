@@ -240,12 +240,6 @@ const customSlippageOptions = [
   2,
 ];
 
-/*
- * Shared typography for the main swap amounts.
- *
- * Both "You pay" and "You receive" use this exact
- * same typography so their numbers match visually.
- */
 const amountTypography =
   "min-w-0 flex-1 truncate text-3xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
 
@@ -826,7 +820,7 @@ export default function SwapPage() {
                     strokeLinecap="round"
                   />
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -884,9 +878,8 @@ export default function SwapPage() {
                 <div className="mt-3 flex min-h-[60px] items-center gap-3">
 
                   <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    min="0"
                     placeholder="0.00"
                     value={amountIn}
                     onChange={(event) =>
@@ -894,7 +887,7 @@ export default function SwapPage() {
                         event.target.value
                       )
                     }
-                    className={`${amountTypography} appearance-none bg-transparent p-0 outline-none placeholder:text-white/15`}
+                    className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
                   />
 
                   <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
