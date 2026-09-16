@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAccount, useReadContract } from "wagmi";
-import { formatUnits } from "viem";
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+} from "wagmi";
+import {
+  formatUnits,
+  maxUint256,
+  parseUnits,
+  type Address,
+} from "viem";
 
 import Header from "@/components/Header";
 import { createCircleViemAdapter } from "@/lib/circle";
@@ -57,6 +66,54 @@ const erc20BalanceAbi = [
   },
 ] as const;
 
+const erc20AllowanceAbi = [
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "owner",
+        type: "address",
+      },
+      {
+        name: "spender",
+        type: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "allowance",
+        type: "uint256",
+      },
+    ],
+  },
+] as const;
+
+const erc20ApproveAbi = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "spender",
+        type: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
+  },
+] as const;
+
 const AUTO_SLIPPAGE = 0.5;
 
 const customSlippageOptions = [
@@ -69,6 +126,8 @@ const customSlippageOptions = [
 
 export default function SwapPage() {
   const { address, isConnected } = useAccount();
+
+  const { writeContractAsync } = useWriteContract();
 
   const {
     data: usdcBalance,
@@ -168,6 +227,11 @@ export default function SwapPage() {
 
   const inputToken = tokens[tokenIn];
   const outputToken = tokens[tokenOut];
+
+  const inputTokenAddress =
+    tokenIn === "USDC"
+      ? USDC_ADDRESS
+      : EURC_ADDRESS;
 
   const insufficientBalance =
     Boolean(amountIn) &&
@@ -363,24 +427,102 @@ export default function SwapPage() {
     }
 
     setIsSwapping(true);
-    setSwapStage("approving");
+    setSwapStage("confirming");
     setError("");
     setSwapResult(null);
 
     try {
+      /*
+       * Get the same Circle chain definition used by
+       * the working swap integration.
+       */
       const adapter =
         await createCircleViemAdapter();
 
       const kit = new AppKit();
 
+      const supportedChains =
+        kit.getSupportedChains("swap");
+
+      const arcTestnet =
+        supportedChains.find(
+          (chain) =>
+            chain.chain === "Arc_Testnet"
+        );
+
+      if (!arcTestnet) {
+        throw new Error(
+          "Arc Testnet is not available for swaps."
+        );
+      }
+
       /*
-       * The Circle SDK handles the approval and swap
-       * transactions internally.
-       *
-       * allowanceStrategy: "approve" is intentionally
-       * kept because this is the configuration that
-       * successfully fixed the Arc Testnet permit issue.
+       * Circle's adapter contract is the spender
+       * used for the token approval.
        */
+      const spender =
+        arcTestnet.kitContracts?.adapter;
+
+      if (!spender) {
+        throw new Error(
+          "Circle swap adapter contract is not configured for Arc Testnet."
+        );
+      }
+
+      const amountInUnits = parseUnits(
+        amountIn,
+        6
+      );
+
+      /*
+       * Read the existing allowance directly from
+       * the token contract.
+       */
+      const allowance =
+        await adapter.publicClient.readContract({
+          address: inputTokenAddress,
+          abi: erc20AllowanceAbi,
+          functionName: "allowance",
+          args: [
+            address,
+            spender as Address,
+          ],
+        });
+
+      const allowanceIsEnough =
+        allowance >= amountInUnits;
+
+      /*
+       * Only request an approval when the existing
+       * allowance is not enough.
+       */
+      if (!allowanceIsEnough) {
+        setSwapStage("approving");
+
+        const approvalTx =
+          await writeContractAsync({
+            address: inputTokenAddress,
+            abi: erc20ApproveAbi,
+            functionName: "approve",
+            args: [
+              spender as Address,
+              amountInUnits,
+            ],
+          });
+
+        await adapter.waitForTransaction(
+          approvalTx,
+          undefined,
+          arcTestnet
+        );
+      }
+
+      /*
+       * Approval is now complete or was already
+       * sufficient. Continue with the actual swap.
+       */
+      setSwapStage("confirming");
+
       const result = await kit.swap({
         from: {
           adapter,
@@ -394,17 +536,6 @@ export default function SwapPage() {
           allowanceStrategy: "approve",
         },
       });
-
-      /*
-       * The public typed App Kit API in the installed
-       * version does not expose a "swap.approve"
-       * action name. Therefore we do not subscribe to
-       * an unsupported event.
-       *
-       * Once kit.swap() returns successfully, the complete
-       * operation has finished.
-       */
-      setSwapStage("confirming");
 
       console.log(
         "Circle swap result:",
