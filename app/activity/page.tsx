@@ -1377,11 +1377,41 @@ export default function ActivityPage() {
             {/* PAGE INTRO */}
 
             <div className="text-center">
-              <p className="text-sm font-semibold text-white/35">
-                AlabaamaFi
-              </p>
+              <div className="flex justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-10 w-10 text-white/55 sm:h-11 sm:w-11"
+                >
+                  <path
+                    d="M4 18V13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10 18V9"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M16 18V5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M22 18V11"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
 
-              <h1 className="mt-1 text-3xl font-black sm:text-4xl">
+              <h1 className="mt-3 text-3xl font-black sm:text-4xl">
                 Wallet Activity
               </h1>
 
