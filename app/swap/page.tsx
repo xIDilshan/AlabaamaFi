@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
 import {
   useAccount,
+  usePublicClient,
   useReadContract,
   useWalletClient,
 } from "wagmi";
 import {
-  createPublicClient,
   defineChain,
   formatUnits,
   http,
@@ -25,7 +25,9 @@ const manrope = Manrope({
 });
 
 type Token = "USDC" | "EURC";
+
 type SlippageMode = "auto" | "custom";
+
 type SwapStage =
   | "idle"
   | "approving"
@@ -52,13 +54,6 @@ const arcTestnet = defineChain({
       url: "https://testnet.arcscan.app",
     },
   },
-});
-
-const publicClient = createPublicClient({
-  chain: arcTestnet,
-  transport: http(
-    "https://rpc.testnet.arc.network"
-  ),
 });
 
 type SwapWalletClient = {
@@ -241,22 +236,30 @@ const customSlippageOptions = [
 ];
 
 /*
- * Shared typography for the main swap amounts.
+ * Mobile: text-2xl
+ * Desktop: text-4xl
  *
- * Both "You pay" and "You receive" use this exact
- * same typography so their numbers match visually.
+ * Only the mobile amount size is reduced.
  */
 const amountTypography =
-  "min-w-0 flex-1 truncate text-3xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
+  "block w-full min-w-0 max-w-full truncate text-2xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
 
 export default function SwapPage() {
-  const { address, isConnected, chainId } =
-    useAccount();
+  const {
+    address,
+    isConnected,
+    chainId,
+  } = useAccount();
 
-  const { data: rawWalletClient } =
-    useWalletClient({
-      chainId: ARC_TESTNET_CHAIN_ID,
-    });
+  const publicClient = usePublicClient({
+    chainId: ARC_TESTNET_CHAIN_ID,
+  });
+
+  const {
+    data: rawWalletClient,
+  } = useWalletClient({
+    chainId: ARC_TESTNET_CHAIN_ID,
+  });
 
   const walletClient =
     rawWalletClient as
@@ -270,7 +273,9 @@ export default function SwapPage() {
     address: tokens.USDC.address,
     abi: erc20BalanceAbi,
     functionName: "balanceOf",
-    args: address ? [address] : undefined,
+    args: address
+      ? [address]
+      : undefined,
     query: {
       enabled: Boolean(address),
     },
@@ -283,7 +288,9 @@ export default function SwapPage() {
     address: tokens.EURC.address,
     abi: erc20BalanceAbi,
     functionName: "balanceOf",
-    args: address ? [address] : undefined,
+    args: address
+      ? [address]
+      : undefined,
     query: {
       enabled: Boolean(address),
     },
@@ -298,8 +305,10 @@ export default function SwapPage() {
   const [amountIn, setAmountIn] =
     useState("");
 
-  const [estimatedOutput, setEstimatedOutput] =
-    useState("");
+  const [
+    estimatedOutput,
+    setEstimatedOutput,
+  ] = useState("");
 
   const [isLoading, setIsLoading] =
     useState(false);
@@ -316,17 +325,25 @@ export default function SwapPage() {
   const [swapResult, setSwapResult] =
     useState<unknown>(null);
 
-  const [slippageMode, setSlippageMode] =
-    useState<SlippageMode>("auto");
+  const [
+    slippageMode,
+    setSlippageMode,
+  ] = useState<SlippageMode>("auto");
 
-  const [customSlippage, setCustomSlippage] =
-    useState(0.5);
+  const [
+    customSlippage,
+    setCustomSlippage,
+  ] = useState(0.5);
 
-  const [customSlippageInput, setCustomSlippageInput] =
-    useState("0.5");
+  const [
+    customSlippageInput,
+    setCustomSlippageInput,
+  ] = useState("0.5");
 
-  const [showSettings, setShowSettings] =
-    useState(false);
+  const [
+    showSettings,
+    setShowSettings,
+  ] = useState(false);
 
   const formattedUsdcBalance =
     usdcBalance !== undefined
@@ -368,7 +385,8 @@ export default function SwapPage() {
 
   const insufficientBalance =
     Boolean(amountIn) &&
-    Number(amountIn) > inputBalanceNumber;
+    Number(amountIn) >
+      inputBalanceNumber;
 
   const swapData =
     typeof swapResult === "object" &&
@@ -386,13 +404,16 @@ export default function SwapPage() {
   const formattedSlippage = useMemo(() => {
     return activeSlippage
       .toFixed(
-        activeSlippage % 1 === 0 ? 0 : 2
+        activeSlippage % 1 === 0
+          ? 0
+          : 2
       )
       .replace(/\.00$/, "");
   }, [activeSlippage]);
 
   useEffect(() => {
     if (
+      !publicClient ||
       !isConnected ||
       !address ||
       !amountIn ||
@@ -409,63 +430,72 @@ export default function SwapPage() {
 
     let cancelled = false;
 
-    const timer = setTimeout(async () => {
-      setIsLoading(true);
-      setEstimatedOutput("");
-      setError("");
+    const timer = setTimeout(
+      async () => {
+        setIsLoading(true);
+        setEstimatedOutput("");
+        setError("");
 
-      try {
-        const amountInUnits =
-          parseUnits(amountIn, 6);
+        try {
+          const amountInUnits =
+            parseUnits(amountIn, 6);
 
-        const amounts =
-          await publicClient.readContract({
-            address: SWAP_ROUTER,
-            abi: routerAbi,
-            functionName: "getAmountsOut",
-            args: [
-              amountInUnits,
-              [
-                inputToken.address,
-                outputToken.address,
+          const amounts =
+            await publicClient.readContract({
+              address: SWAP_ROUTER,
+              abi: routerAbi,
+              functionName:
+                "getAmountsOut",
+              args: [
+                amountInUnits,
+                [
+                  inputToken.address,
+                  outputToken.address,
+                ],
               ],
-            ],
-          });
+            });
 
-        const outputAmount = amounts[1];
+          const outputAmount =
+            amounts[1];
 
-        if (cancelled) {
-          return;
-        }
+          if (cancelled) {
+            return;
+          }
 
-        setEstimatedOutput(
-          formatUnits(outputAmount, 6)
-        );
-      } catch (err) {
-        if (!cancelled) {
-          console.error(
-            "Swap quote error:",
-            err
+          setEstimatedOutput(
+            formatUnits(
+              outputAmount,
+              6
+            )
           );
+        } catch (err) {
+          if (!cancelled) {
+            console.error(
+              "Swap quote error:",
+              err
+            );
 
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to get a swap quote."
-          );
+            setError(
+              err instanceof Error
+                ? err.message
+                : "Unable to get a swap quote."
+            );
+          }
+        } finally {
+          if (!cancelled) {
+            setIsLoading(false);
+          }
         }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }, 500);
+      },
+      500
+    );
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
   }, [
+    publicClient,
     amountIn,
     tokenIn,
     tokenOut,
@@ -498,7 +528,8 @@ export default function SwapPage() {
     }
 
     const amount =
-      inputBalanceNumber * percentage;
+      inputBalanceNumber *
+      percentage;
 
     setAmountIn(
       amount
@@ -549,14 +580,17 @@ export default function SwapPage() {
       return;
     }
 
-    const numericValue = Number(value);
+    const numericValue =
+      Number(value);
 
     if (
       Number.isFinite(numericValue) &&
       numericValue > 0 &&
       numericValue <= 50
     ) {
-      setCustomSlippage(numericValue);
+      setCustomSlippage(
+        numericValue
+      );
       setSlippageMode("custom");
       setEstimatedOutput("");
       setError("");
@@ -585,13 +619,15 @@ export default function SwapPage() {
 
   const handleSwap = async () => {
     if (
+      !publicClient ||
       !isConnected ||
       !address ||
       !walletClient ||
       chainId !== ARC_TESTNET_CHAIN_ID ||
       !amountIn ||
       Number(amountIn) <= 0 ||
-      Number(amountIn) > inputBalanceNumber ||
+      Number(amountIn) >
+        inputBalanceNumber ||
       !estimatedOutput
     ) {
       return;
@@ -617,12 +653,16 @@ export default function SwapPage() {
           ],
         });
 
-      if (currentAllowance < amountInUnits) {
+      if (
+        currentAllowance <
+        amountInUnits
+      ) {
         setSwapStage("approving");
 
         const approvalHash =
           await walletClient.writeContract({
-            address: inputToken.address,
+            address:
+              inputToken.address,
             abi: erc20ApproveAbi,
             functionName: "approve",
             args: [
@@ -653,7 +693,8 @@ export default function SwapPage() {
         await publicClient.readContract({
           address: SWAP_ROUTER,
           abi: routerAbi,
-          functionName: "getAmountsOut",
+          functionName:
+            "getAmountsOut",
           args: [
             amountInUnits,
             [
@@ -668,7 +709,9 @@ export default function SwapPage() {
 
       const amountOutMin =
         (quotedOutput *
-          BigInt(10000 - slippageBps)) /
+          BigInt(
+            10000 - slippageBps
+          )) /
         BigInt(10000);
 
       setSwapStage("confirming");
@@ -723,7 +766,8 @@ export default function SwapPage() {
 
       setSwapResult({
         txHash: swapHash,
-        explorerUrl: `https://testnet.arcscan.app/tx/${swapHash}`,
+        explorerUrl:
+          `https://testnet.arcscan.app/tx/${swapHash}`,
       });
 
       await Promise.all([
@@ -749,11 +793,11 @@ export default function SwapPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#030405] text-white">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#030405] text-white">
       <Header />
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
-        <div className="mx-auto max-w-2xl">
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto w-full max-w-2xl min-w-0">
 
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
@@ -772,22 +816,21 @@ export default function SwapPage() {
           </div>
 
           {/* MAIN SWAP CARD */}
-          <div className="relative rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
+          <div className="relative mx-auto w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:max-w-full sm:p-6 lg:p-7">
 
             {/* SWAP HEADER */}
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-white/80">
+            <div className="mb-5 flex min-w-0 items-center justify-between">
+              <h2 className="min-w-0 text-base font-bold text-white/80">
                 Swap
               </h2>
 
-              {/* SETTINGS BUTTON */}
               <button
                 type="button"
                 onClick={() =>
                   setShowSettings(true)
                 }
                 aria-label="Swap settings"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-white/40 transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-95"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-white/40 transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-95"
               >
                 <svg
                   width="17"
@@ -802,29 +845,34 @@ export default function SwapPage() {
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M18 7H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
+
                   <path
                     d="M4 17H8"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M12 17H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
+
                   <path
                     d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
@@ -834,17 +882,17 @@ export default function SwapPage() {
               </button>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid w-full min-w-0 gap-3">
 
               {/* YOU PAY */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold text-white/35">
+                <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs font-bold text-white/35">
                     You pay
                   </p>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <svg
                       width="14"
                       height="14"
@@ -858,12 +906,14 @@ export default function SwapPage() {
                         stroke="currentColor"
                         strokeWidth="1.7"
                       />
+
                       <path
                         d="M16 13H21"
                         stroke="currentColor"
                         strokeWidth="1.7"
                         strokeLinecap="round"
                       />
+
                       <circle
                         cx="16"
                         cy="13"
@@ -872,7 +922,7 @@ export default function SwapPage() {
                       />
                     </svg>
 
-                    <span className="text-xs font-bold text-white/45">
+                    <span className="shrink-0 text-xs font-bold text-white/45">
                       {isConnected
                         ? displayBalance
                         : "—"}
@@ -880,53 +930,82 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                {/* AMOUNT */}
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
-
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    placeholder="0.00"
-                    value={amountIn}
-                    onChange={(event) =>
-                      handleAmountChange(
-                        event.target.value
-                      )
-                    }
-                    className={`${amountTypography} appearance-none bg-transparent p-0 outline-none placeholder:text-white/15`}
-                  />
-
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-
-                    <img
-                      src={inputToken.logo}
-                      alt={inputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
+                {/* MOBILE AMOUNT */}
+                <div className="mt-3 w-full min-w-0 sm:hidden">
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={amountIn}
+                      onChange={(event) =>
+                        handleAmountChange(
+                          event.target.value
+                        )
+                      }
+                      className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
                     />
+                  </div>
 
-                    <span className="text-sm font-black">
-                      {inputToken.symbol}
-                    </span>
+                  <div className="mt-2 flex w-full justify-end">
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className="h-8 w-8 rounded-full object-contain"
+                      />
 
+                      <span className="text-xs font-black">
+                        {inputToken.symbol}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
+                {/* DESKTOP AMOUNT */}
+                <div className="mt-3 hidden min-w-0 sm:block">
+                  <div className="grid min-h-[60px] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                    <div className="min-w-0 w-full">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={amountIn}
+                        onChange={(event) =>
+                          handleAmountChange(
+                            event.target.value
+                          )
+                        }
+                        className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
+                      />
+                    </div>
 
-                  <p className="text-xs font-medium text-white/20">
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {inputToken.symbol}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex w-full min-w-0 items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs font-medium text-white/20">
                     {inputToken.name}
                   </p>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
 
                     {/* 50% */}
                     <button
                       type="button"
                       onClick={() =>
-                        handlePercentage(
-                          0.5
-                        )
+                        handlePercentage(0.5)
                       }
                       disabled={
                         !isConnected ||
@@ -961,7 +1040,6 @@ export default function SwapPage() {
                     >
                       MAX
                     </button>
-
                   </div>
                 </div>
               </div>
@@ -979,56 +1057,86 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
-                <div className="mt-3 flex min-h-[60px] items-center gap-3">
-
-                  <span className={amountTypography}>
-                    {isLoading
-                      ? "..."
-                      : estimatedOutput ||
-                        (amountIn
-                          ? "—"
-                          : "0.00")}
-                  </span>
-
-                  <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-
-                    <img
-                      src={outputToken.logo}
-                      alt={outputToken.symbol}
-                      className="h-10 w-10 rounded-full object-contain"
-                    />
-
-                    <span className="text-sm font-black">
-                      {outputToken.symbol}
+                {/* MOBILE AMOUNT */}
+                <div className="mt-3 w-full min-w-0 sm:hidden">
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
+                    <span
+                      className={`${amountTypography}`}
+                    >
+                      {isLoading
+                        ? "..."
+                        : estimatedOutput ||
+                          (amountIn
+                            ? "—"
+                            : "0.00")}
                     </span>
-
                   </div>
 
+                  <div className="mt-2 flex w-full justify-end">
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className="h-8 w-8 rounded-full object-contain"
+                      />
+
+                      <span className="text-xs font-black">
+                        {outputToken.symbol}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs font-medium text-white/20">
+                {/* DESKTOP AMOUNT */}
+                <div className="mt-3 hidden min-w-0 sm:block">
+                  <div className="grid min-h-[60px] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                    <div className="min-w-0 w-full">
+                      <span
+                        className={`${amountTypography}`}
+                      >
+                        {isLoading
+                          ? "..."
+                          : estimatedOutput ||
+                            (amountIn
+                              ? "—"
+                              : "0.00")}
+                      </span>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {outputToken.symbol}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-2 w-full min-w-0 truncate text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
-
               </div>
             </div>
 
             {/* ESTIMATED OUTPUT */}
-            <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
-
-              <div className="flex items-center justify-between gap-4">
-
-                <span className="text-xs font-semibold text-white/25">
+            <div className="mt-5 w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+              <div className="flex w-full min-w-0 items-center justify-between gap-4">
+                <span className="shrink-0 text-xs font-semibold text-white/25">
                   Estimated output
                 </span>
 
-                <span className="truncate text-right text-xs font-bold text-white/40">
+                <span className="min-w-0 truncate text-right text-xs font-bold text-white/40">
                   {isLoading
                     ? "Getting quote..."
                     : estimatedOutput
@@ -1039,7 +1147,6 @@ export default function SwapPage() {
                     ? "Waiting for quote"
                     : "Enter amount"}
                 </span>
-
               </div>
             </div>
 
@@ -1069,7 +1176,6 @@ export default function SwapPage() {
 
                     {/* HEADER */}
                     <div className="flex items-center justify-between">
-
                       <div>
                         <p className="text-sm font-semibold text-white/80">
                           Swap settings
@@ -1106,9 +1212,7 @@ export default function SwapPage() {
 
                     {/* SLIPPAGE */}
                     <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-
                       <div className="flex items-center justify-between">
-
                         <div>
                           <p className="text-xs font-semibold text-white/65">
                             Slippage tolerance
@@ -1122,12 +1226,10 @@ export default function SwapPage() {
                         <span className="text-xs font-semibold text-white/55">
                           {formattedSlippage}%
                         </span>
-
                       </div>
 
                       {/* AUTO / CUSTOM */}
                       <div className="mt-3 grid grid-cols-2 gap-1.5">
-
                         <button
                           type="button"
                           onClick={() =>
@@ -1161,16 +1263,13 @@ export default function SwapPage() {
                         >
                           Custom
                         </button>
-
                       </div>
 
                       {/* CUSTOM INPUT */}
                       {slippageMode ===
                         "custom" && (
                         <>
-
                           <div className="relative mt-3">
-
                             <input
                               type="number"
                               inputMode="decimal"
@@ -1180,9 +1279,7 @@ export default function SwapPage() {
                               value={
                                 customSlippageInput
                               }
-                              onChange={(
-                                event
-                              ) =>
+                              onChange={(event) =>
                                 handleCustomSlippageInput(
                                   event.target.value
                                 )
@@ -1194,12 +1291,10 @@ export default function SwapPage() {
                             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-white/35">
                               %
                             </span>
-
                           </div>
 
                           {/* PRESETS */}
                           <div className="mt-2 flex flex-wrap gap-1.5">
-
                             {customSlippageOptions.map(
                               (value) => (
                                 <button
@@ -1221,11 +1316,9 @@ export default function SwapPage() {
                                 </button>
                               )
                             )}
-
                           </div>
                         </>
                       )}
-
                     </div>
 
                     {/* DONE */}
@@ -1238,7 +1331,6 @@ export default function SwapPage() {
                     >
                       Done
                     </button>
-
                   </div>
                 </div>
               </>
@@ -1246,41 +1338,34 @@ export default function SwapPage() {
 
             {/* ERRORS */}
             {insufficientBalance && (
-              <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
-
+              <div className="mt-4 w-full min-w-0 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
                 <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                   Insufficient{" "}
                   {inputToken.symbol} balance.
                 </p>
-
               </div>
             )}
 
             {error &&
               !insufficientBalance && (
-                <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
-
+                <div className="mt-4 w-full min-w-0 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
                   <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                     {error}
                   </p>
-
                 </div>
               )}
 
             {/* SUCCESS */}
             {swapCompleted &&
               swapData?.txHash && (
-                <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
-
+                <div className="mt-4 w-full min-w-0 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
                   <p className="text-center text-sm font-bold text-green-300/90">
                     Swap completed successfully.
                   </p>
 
-                  <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-3">
-
-                    <div className="flex items-center justify-between gap-3">
-
-                      <span className="text-xs font-semibold text-white/30">
+                  <div className="mt-4 w-full min-w-0 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <span className="shrink-0 text-xs font-semibold text-white/30">
                         Transaction
                       </span>
 
@@ -1294,9 +1379,7 @@ export default function SwapPage() {
                           -8
                         )}
                       </span>
-
                     </div>
-
                   </div>
 
                   <a
@@ -1322,7 +1405,6 @@ export default function SwapPage() {
                   >
                     New Swap
                   </button>
-
                 </div>
               )}
 
@@ -1385,7 +1467,6 @@ export default function SwapPage() {
                 swapping.
               </p>
             )}
-
           </div>
         </div>
       </section>
