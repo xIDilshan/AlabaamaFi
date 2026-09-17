@@ -237,38 +237,13 @@ export default function SendPage() {
             {/* PAGE INTRO */}
 
             <div className="mb-6 text-center sm:mb-8 lg:mb-10">
-              <p className="text-sm font-semibold text-white/35">
-                AlabaamaFi
-              </p>
-
-              <div className="mt-2 flex items-center justify-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      d="M5 12H18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M13 7L18 12L13 17"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-
-                <h1 className="text-3xl font-black sm:text-4xl lg:text-5xl">
-                  Send USDC
-                </h1>
+              <div className="text-4xl font-medium leading-none text-white/55 sm:text-5xl">
+                ↗
               </div>
+
+              <h1 className="mt-3 text-3xl font-black sm:text-4xl lg:text-5xl">
+                Send USDC
+              </h1>
 
               <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-6 text-white/35 sm:text-base lg:leading-7">
                 Send USDC to another wallet on Arc Testnet.
