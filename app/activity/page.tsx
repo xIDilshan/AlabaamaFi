@@ -1009,16 +1009,6 @@ export default function ActivityPage() {
           transactions
         );
 
-        /*
-         * Get the current BTC/USD spot price.
-         *
-         * cirBTC is valued using:
-         *
-         * cirBTC balance × live BTC price
-         *
-         * We intentionally do not use
-         * Arcscan's USD value for cirBTC.
-         */
         let currentBtcPrice:
           number | null = null;
 
@@ -1065,9 +1055,6 @@ export default function ActivityPage() {
         let tokenHoldings:
           TokenHolding[] = [];
 
-        /*
-         * Arcscan token balances.
-         */
         try {
           const response =
             await fetch(
@@ -1190,9 +1177,6 @@ export default function ActivityPage() {
           tokenHoldings = [];
         }
 
-        /*
-         * Direct USDC balance.
-         */
         try {
           const paddedAddress =
             walletAddress
@@ -1280,11 +1264,6 @@ export default function ActivityPage() {
           );
         }
 
-        /*
-         * Keep the three main coins in order:
-         *
-         * USDC → EURC → cirBTC
-         */
         const tokenOrder: Record<
           string,
           number
@@ -1317,9 +1296,6 @@ export default function ActivityPage() {
           tokenHoldings
         );
 
-        /*
-         * Portfolio value.
-         */
         const totalValue =
           tokenHoldings.reduce(
             (
@@ -1397,39 +1373,33 @@ export default function ActivityPage() {
       >
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
           <div className="mx-auto max-w-6xl">
-            <p className="text-sm font-semibold text-white/35">
-              AlabaamaFi
-            </p>
 
-            <h1 className="mt-1 text-3xl font-black sm:text-4xl">
-              Wallet Activity
-            </h1>
+            {/* PAGE INTRO */}
 
-            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
-              Connect your wallet to view its token
-              holdings and recent transactions.
-            </p>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-white/35">
+                AlabaamaFi
+              </p>
+
+              <h1 className="mt-1 text-3xl font-black sm:text-4xl">
+                Wallet Activity
+              </h1>
+
+              <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
+                Connect your wallet to view its token holdings and recent transactions.
+              </p>
+
+              {isConnected &&
+                activityAddress && (
+                  <p className="mx-auto mt-4 max-w-full break-all px-4 font-mono text-sm font-semibold text-white/45">
+                    {activityAddress}
+                  </p>
+                )}
+            </div>
 
             {/* CHECKER */}
 
             <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
-              <label className="mb-2 block text-sm font-bold text-white/50">
-                Wallet Address
-              </label>
-
-              <input
-                type="text"
-                placeholder="Connect wallet first"
-                value={
-                  activityAddress
-                }
-                readOnly
-                disabled={
-                  !isConnected
-                }
-                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
-              />
-
               <button
                 onClick={() => {
                   if (
@@ -1449,7 +1419,7 @@ export default function ActivityPage() {
                   isConnected &&
                   activityLoading
                 }
-                className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
+                className={`min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
                   !isConnected
                     ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
                     : "border border-black/[0.08] bg-white text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
@@ -1480,6 +1450,7 @@ export default function ActivityPage() {
               activityTransactions.length >
                 0) && (
               <div className="mt-7 sm:mt-8">
+
                 {/* PORTFOLIO */}
 
                 <div className="rounded-2xl border border-white/[0.07] bg-[#060709] p-5 lg:p-6">
@@ -1532,8 +1503,6 @@ export default function ActivityPage() {
                             key={`${token.address}-${token.symbol}`}
                             className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                           >
-                            {/* COIN + BALANCE */}
-
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex min-w-0 items-center gap-3">
                                 {token.logo ? (
@@ -1577,8 +1546,6 @@ export default function ActivityPage() {
                                 </div>
                               </div>
 
-                              {/* BALANCE */}
-
                               <p className="shrink-0 text-right text-sm font-black text-white/75">
                                 {Number(
                                   token.amount
@@ -1606,8 +1573,6 @@ export default function ActivityPage() {
                                 </span>
                               </p>
                             </div>
-
-                            {/* USD VALUE */}
 
                             <div className="mt-5 border-t border-white/[0.06] pt-4">
                               <p className="text-sm font-black text-white">
@@ -1645,8 +1610,6 @@ export default function ActivityPage() {
                     found
                   </span>
                 </div>
-
-                {/* DESKTOP: ONE COLUMN */}
 
                 <div className="space-y-3">
                   {activityTransactions.map(
@@ -1700,8 +1663,6 @@ export default function ActivityPage() {
                           }
                           className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
                         >
-                          {/* HASH */}
-
                           <div className="min-w-0">
                             <p className="text-sm font-black">
                               Transaction
@@ -1776,8 +1737,6 @@ export default function ActivityPage() {
                             </div>
                           </div>
 
-                          {/* DATE / TIME */}
-
                           <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-xs font-bold text-white/25">
@@ -1803,8 +1762,6 @@ export default function ActivityPage() {
                               </span>
                             </div>
                           </div>
-
-                          {/* FROM / TO */}
 
                           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="min-w-0">
@@ -1868,8 +1825,6 @@ export default function ActivityPage() {
                               </p>
                             </div>
                           </div>
-
-                          {/* ARCSCAN */}
 
                           <div className="mt-4 border-t border-white/[0.06] pt-3">
                             <a
