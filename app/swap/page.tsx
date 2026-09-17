@@ -321,9 +321,6 @@ export default function SwapPage() {
   const [error, setError] =
     useState("");
 
-  const [swapResult, setSwapResult] =
-    useState<unknown>(null);
-
   const [
     slippageMode,
     setSlippageMode,
@@ -342,6 +339,11 @@ export default function SwapPage() {
   const [
     showSettings,
     setShowSettings,
+  ] = useState(false);
+
+  const [
+    showTradeSuccess,
+    setShowTradeSuccess,
   ] = useState(false);
 
   const formattedUsdcBalance =
@@ -386,19 +388,6 @@ export default function SwapPage() {
     Boolean(amountIn) &&
     Number(amountIn) >
       inputBalanceNumber;
-
-  const swapData =
-    typeof swapResult === "object" &&
-    swapResult !== null
-      ? (swapResult as {
-          txHash?: string;
-          explorerUrl?: string;
-          amountOut?: string;
-        })
-      : null;
-
-  const swapCompleted =
-    Boolean(swapData?.txHash);
 
   const formattedSlippage = useMemo(() => {
     return activeSlippage
@@ -506,13 +495,27 @@ export default function SwapPage() {
     outputToken.address,
   ]);
 
+  useEffect(() => {
+    if (!showTradeSuccess) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowTradeSuccess(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [showTradeSuccess]);
+
   const handleAmountChange = (
     value: string
   ) => {
     setAmountIn(value);
     setEstimatedOutput("");
     setError("");
-    setSwapResult(null);
+    setShowTradeSuccess(false);
     setSwapStage("idle");
   };
 
@@ -538,7 +541,7 @@ export default function SwapPage() {
 
     setEstimatedOutput("");
     setError("");
-    setSwapResult(null);
+    setShowTradeSuccess(false);
     setSwapStage("idle");
   };
 
@@ -552,7 +555,7 @@ export default function SwapPage() {
     setAmountIn("");
     setEstimatedOutput("");
     setError("");
-    setSwapResult(null);
+    setShowTradeSuccess(false);
     setSwapStage("idle");
   };
 
@@ -608,14 +611,6 @@ export default function SwapPage() {
     setError("");
   };
 
-  const handleNewSwap = () => {
-    setAmountIn("");
-    setEstimatedOutput("");
-    setError("");
-    setSwapResult(null);
-    setSwapStage("idle");
-  };
-
   const handleSwap = async () => {
     if (
       !publicClient ||
@@ -635,7 +630,7 @@ export default function SwapPage() {
     setIsSwapping(true);
     setSwapStage("idle");
     setError("");
-    setSwapResult(null);
+    setShowTradeSuccess(false);
 
     try {
       const amountInUnits =
@@ -763,11 +758,7 @@ export default function SwapPage() {
         swapHash
       );
 
-      setSwapResult({
-        txHash: swapHash,
-        explorerUrl:
-          `https://testnet.arcscan.app/tx/${swapHash}`,
-      });
+      setShowTradeSuccess(true);
 
       await Promise.all([
         refetchUsdcBalance(),
@@ -1349,57 +1340,13 @@ export default function SwapPage() {
               )}
 
             {/* SUCCESS */}
-            {swapCompleted &&
-              swapData?.txHash && (
-                <div className="mt-4 w-full min-w-0 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
-                  <p className="text-center text-sm font-bold text-green-300/90">
-                    Swap completed successfully.
-                  </p>
-
-                  <div className="mt-4 w-full min-w-0 rounded-xl border border-white/[0.06] bg-black/20 p-3">
-                    <div className="flex min-w-0 items-center justify-between gap-3">
-                      <span className="shrink-0 text-xs font-semibold text-white/30">
-                        Transaction
-                      </span>
-
-                      <span className="min-w-0 truncate text-right font-mono text-xs font-semibold text-white/60">
-                        {swapData.txHash.slice(
-                          0,
-                          8
-                        )}
-                        ...
-                        {swapData.txHash.slice(
-                          -8
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <a
-                    href={
-                      swapData.explorerUrl ||
-                      `https://testnet.arcscan.app/tx/${swapData.txHash}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 flex min-h-11 w-full items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/80 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white"
-                  >
-                    View on Arcscan
-
-                    <span className="ml-2 text-white/40">
-                      ↗
-                    </span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={handleNewSwap}
-                    className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full border border-white/[0.06] bg-transparent px-4 py-3 text-sm font-semibold text-white/45 transition hover:border-white/[0.12] hover:bg-white/[0.04] hover:text-white"
-                  >
-                    New Swap
-                  </button>
-                </div>
-              )}
+            {showTradeSuccess && (
+              <div className="mt-4 flex w-full min-w-0 items-center justify-center rounded-2xl border border-green-400/10 bg-green-400/[0.04] px-4 py-4">
+                <p className="text-sm font-bold text-green-300/90">
+                  Trade succeeded
+                </p>
+              </div>
+            )}
 
             {/* SWAP BUTTON */}
             <button
@@ -1413,7 +1360,7 @@ export default function SwapPage() {
                 isLoading ||
                 isSwapping ||
                 !estimatedOutput ||
-                swapCompleted ||
+                showTradeSuccess ||
                 chainId !==
                   ARC_TESTNET_CHAIN_ID
               }
@@ -1430,7 +1377,7 @@ export default function SwapPage() {
                 isLoading ||
                 isSwapping ||
                 !estimatedOutput ||
-                swapCompleted ||
+                showTradeSuccess ||
                 chainId !==
                   ARC_TESTNET_CHAIN_ID
                   ? "cursor-not-allowed border border-white/[0.05] bg-[#111318] text-white/20"
