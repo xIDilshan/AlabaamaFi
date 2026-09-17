@@ -82,7 +82,6 @@ const tokens: Record<
     address:
       "0x3600000000000000000000000000000000000000",
   },
-
   EURC: {
     symbol: "EURC",
     name: "Euro Coin",
@@ -191,7 +190,6 @@ const routerAbi = [
       },
     ],
   },
-
   {
     type: "function",
     name: "swapExactTokensForTokens",
@@ -237,8 +235,14 @@ const customSlippageOptions = [
   2,
 ];
 
+/*
+ * Mobile: text-2xl
+ * Desktop: text-4xl
+ *
+ * Only the mobile amount size is reduced.
+ */
 const amountTypography =
-  "block w-full min-w-0 max-w-full truncate text-3xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
+  "block w-full min-w-0 max-w-full truncate text-2xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
 
 export default function SwapPage() {
   const {
@@ -247,13 +251,6 @@ export default function SwapPage() {
     chainId,
   } = useAccount();
 
-  /*
-   * Wagmi provides the public client.
-   *
-   * Do not use getPublicClient() or createPublicClient()
-   * here. usePublicClient() also prevents the Promise/
-   * EVMChainDefinition typing errors from the previous version.
-   */
   const publicClient = usePublicClient({
     chainId: ARC_TESTNET_CHAIN_ID,
   });
@@ -414,9 +411,6 @@ export default function SwapPage() {
       .replace(/\.00$/, "");
   }, [activeSlippage]);
 
-  /*
-   * Get the swap quote.
-   */
   useEffect(() => {
     if (
       !publicClient ||
@@ -648,9 +642,6 @@ export default function SwapPage() {
       const amountInUnits =
         parseUnits(amountIn, 6);
 
-      /*
-       * Check allowance.
-       */
       const currentAllowance =
         await publicClient.readContract({
           address: inputToken.address,
@@ -662,9 +653,6 @@ export default function SwapPage() {
           ],
         });
 
-      /*
-       * Approve router when necessary.
-       */
       if (
         currentAllowance <
         amountInUnits
@@ -672,19 +660,17 @@ export default function SwapPage() {
         setSwapStage("approving");
 
         const approvalHash =
-          await walletClient.writeContract(
-            {
-              address:
-                inputToken.address,
-              abi: erc20ApproveAbi,
-              functionName: "approve",
-              args: [
-                SWAP_ROUTER,
-                maxUint256,
-              ],
-              gas: BigInt(100000),
-            }
-          );
+          await walletClient.writeContract({
+            address:
+              inputToken.address,
+            abi: erc20ApproveAbi,
+            functionName: "approve",
+            args: [
+              SWAP_ROUTER,
+              maxUint256,
+            ],
+            gas: BigInt(100000),
+          });
 
         const approvalReceipt =
           await publicClient.waitForTransactionReceipt(
@@ -703,9 +689,6 @@ export default function SwapPage() {
         }
       }
 
-      /*
-       * Refresh quote immediately before swap.
-       */
       const amounts =
         await publicClient.readContract({
           address: SWAP_ROUTER,
@@ -741,29 +724,24 @@ export default function SwapPage() {
             60 * 10
         );
 
-      /*
-       * Execute swap.
-       */
       const swapHash =
-        await walletClient.writeContract(
-          {
-            address: SWAP_ROUTER,
-            abi: routerAbi,
-            functionName:
-              "swapExactTokensForTokens",
-            args: [
-              amountInUnits,
-              amountOutMin,
-              [
-                inputToken.address,
-                outputToken.address,
-              ],
-              address,
-              deadline,
+        await walletClient.writeContract({
+          address: SWAP_ROUTER,
+          abi: routerAbi,
+          functionName:
+            "swapExactTokensForTokens",
+          args: [
+            amountInUnits,
+            amountOutMin,
+            [
+              inputToken.address,
+              outputToken.address,
             ],
-            gas: BigInt(250000),
-          }
-        );
+            address,
+            deadline,
+          ],
+          gas: BigInt(250000),
+        });
 
       const swapReceipt =
         await publicClient.waitForTransactionReceipt(
@@ -1031,7 +1009,8 @@ export default function SwapPage() {
                       }
                       disabled={
                         !isConnected ||
-                        inputBalanceNumber <= 0
+                        inputBalanceNumber <=
+                          0
                       }
                       style={{
                         fontSize: "11px",
@@ -1049,7 +1028,8 @@ export default function SwapPage() {
                       onClick={handleMax}
                       disabled={
                         !isConnected ||
-                        inputBalanceNumber <= 0
+                        inputBalanceNumber <=
+                          0
                       }
                       style={{
                         fontSize: "11px",
