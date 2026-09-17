@@ -243,7 +243,7 @@ const customSlippageOptions = [
 ];
 
 const amountTypography =
-  "min-w-0 flex-1 truncate text-3xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
+  "min-w-0 truncate text-3xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
 
 export default function SwapPage() {
   const { address, isConnected, chainId } =
@@ -745,11 +745,11 @@ export default function SwapPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#030405] text-white">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#030405] text-white">
       <Header />
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
-        <div className="mx-auto max-w-2xl min-w-0">
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto w-full max-w-2xl min-w-0">
 
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
@@ -768,11 +768,11 @@ export default function SwapPage() {
           </div>
 
           {/* MAIN SWAP CARD */}
-          <div className="relative min-w-0 max-w-full overflow-hidden rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:p-6 lg:p-7">
+          <div className="relative mx-auto w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:max-w-full sm:p-6 lg:p-7">
 
             {/* SWAP HEADER */}
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-white/80">
+            <div className="mb-5 flex min-w-0 items-center justify-between">
+              <h2 className="min-w-0 text-base font-bold text-white/80">
                 Swap
               </h2>
 
@@ -835,13 +835,13 @@ export default function SwapPage() {
               </button>
             </div>
 
-            <div className="grid min-w-0 gap-3">
+            <div className="grid w-full min-w-0 gap-3">
 
               {/* YOU PAY */}
-              <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
-                <div className="flex min-w-0 items-center justify-between gap-4">
-                  <p className="min-w-0 text-xs font-bold text-white/35">
+                <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs font-bold text-white/35">
                     You pay
                   </p>
 
@@ -875,7 +875,7 @@ export default function SwapPage() {
                       />
                     </svg>
 
-                    <span className="text-xs font-bold text-white/45">
+                    <span className="shrink-0 text-xs font-bold text-white/45">
                       {isConnected
                         ? displayBalance
                         : "—"}
@@ -883,11 +883,10 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                {/* AMOUNT */}
-                <div className="mt-3 min-w-0">
+                {/* MOBILE AMOUNT AREA */}
+                <div className="mt-3 w-full min-w-0 sm:hidden">
 
-                  {/* MOBILE AMOUNT */}
-                  <div className="flex min-h-[60px] min-w-0 items-center sm:hidden">
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -898,44 +897,12 @@ export default function SwapPage() {
                           event.target.value
                         )
                       }
-                      className={`${amountTypography} w-full bg-transparent p-0 outline-none placeholder:text-white/15`}
+                      className={`${amountTypography} block w-full max-w-full bg-transparent p-0 outline-none placeholder:text-white/15`}
                     />
-                  </div>
-
-                  {/* DESKTOP AMOUNT + TOKEN */}
-                  <div className="hidden min-h-[60px] min-w-0 items-center gap-3 sm:flex">
-
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      value={amountIn}
-                      onChange={(event) =>
-                        handleAmountChange(
-                          event.target.value
-                        )
-                      }
-                      className={`${amountTypography} bg-transparent p-0 outline-none placeholder:text-white/15`}
-                    />
-
-                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-
-                      <img
-                        src={inputToken.logo}
-                        alt={inputToken.symbol}
-                        className="h-10 w-10 rounded-full object-contain"
-                      />
-
-                      <span className="text-sm font-black">
-                        {inputToken.symbol}
-                      </span>
-
-                    </div>
                   </div>
 
                   {/* MOBILE TOKEN */}
-                  <div className="mt-2 flex justify-end sm:hidden">
-
+                  <div className="mt-2 flex w-full justify-end">
                     <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
 
                       <img
@@ -952,7 +919,43 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
+                {/* DESKTOP AMOUNT AREA */}
+                <div className="mt-3 hidden min-w-0 sm:block">
+
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center gap-3">
+
+                    <div className="min-w-0 flex-1">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={amountIn}
+                        onChange={(event) =>
+                          handleAmountChange(
+                            event.target.value
+                          )
+                        }
+                        className={`${amountTypography} block w-full max-w-full bg-transparent p-0 outline-none placeholder:text-white/15`}
+                      />
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {inputToken.symbol}
+                      </span>
+
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex w-full min-w-0 items-center justify-between gap-3">
 
                   <p className="min-w-0 truncate text-xs font-medium text-white/20">
                     {inputToken.name}
@@ -1019,19 +1022,19 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
                 </p>
 
-                {/* AMOUNT */}
-                <div className="mt-3 min-w-0">
+                {/* MOBILE AMOUNT AREA */}
+                <div className="mt-3 w-full min-w-0 sm:hidden">
 
-                  {/* MOBILE AMOUNT */}
-                  <div className="flex min-h-[60px] min-w-0 items-center sm:hidden">
-
-                    <span className={amountTypography}>
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
+                    <span
+                      className={`${amountTypography} block w-full max-w-full`}
+                    >
                       {isLoading
                         ? "..."
                         : estimatedOutput ||
@@ -1039,39 +1042,10 @@ export default function SwapPage() {
                             ? "—"
                             : "0.00")}
                     </span>
-
-                  </div>
-
-                  {/* DESKTOP AMOUNT + TOKEN */}
-                  <div className="hidden min-h-[60px] min-w-0 items-center gap-3 sm:flex">
-
-                    <span className={amountTypography}>
-                      {isLoading
-                        ? "..."
-                        : estimatedOutput ||
-                          (amountIn
-                            ? "—"
-                            : "0.00")}
-                    </span>
-
-                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
-
-                      <img
-                        src={outputToken.logo}
-                        alt={outputToken.symbol}
-                        className="h-10 w-10 rounded-full object-contain"
-                      />
-
-                      <span className="text-sm font-black">
-                        {outputToken.symbol}
-                      </span>
-
-                    </div>
                   </div>
 
                   {/* MOBILE TOKEN */}
-                  <div className="mt-2 flex justify-end sm:hidden">
-
+                  <div className="mt-2 flex w-full justify-end">
                     <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
 
                       <img
@@ -1088,16 +1062,50 @@ export default function SwapPage() {
                   </div>
                 </div>
 
-                <p className="mt-2 truncate text-xs font-medium text-white/20">
+                {/* DESKTOP AMOUNT AREA */}
+                <div className="mt-3 hidden min-w-0 sm:block">
+
+                  <div className="flex min-h-[60px] w-full min-w-0 items-center gap-3">
+
+                    <div className="min-w-0 flex-1">
+                      <span
+                        className={`${amountTypography} block w-full max-w-full`}
+                      >
+                        {isLoading
+                          ? "..."
+                          : estimatedOutput ||
+                            (amountIn
+                              ? "—"
+                              : "0.00")}
+                      </span>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2">
+
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+
+                      <span className="text-sm font-black">
+                        {outputToken.symbol}
+                      </span>
+
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-2 w-full min-w-0 truncate text-xs font-medium text-white/20">
                   {outputToken.name}
                 </p>
               </div>
             </div>
 
             {/* ESTIMATED OUTPUT */}
-            <div className="mt-5 min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+            <div className="mt-5 w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
 
-              <div className="flex min-w-0 items-center justify-between gap-4">
+              <div className="flex w-full min-w-0 items-center justify-between gap-4">
 
                 <span className="shrink-0 text-xs font-semibold text-white/25">
                   Estimated output
@@ -1319,7 +1327,7 @@ export default function SwapPage() {
 
             {/* ERRORS */}
             {insufficientBalance && (
-              <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+              <div className="mt-4 w-full min-w-0 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
 
                 <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                   Insufficient{" "}
@@ -1331,7 +1339,7 @@ export default function SwapPage() {
 
             {error &&
               !insufficientBalance && (
-                <div className="mt-4 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
+                <div className="mt-4 w-full min-w-0 rounded-2xl border border-red-400/10 bg-red-400/[0.04] p-3">
 
                   <p className="text-center text-xs font-semibold leading-5 text-red-300/70">
                     {error}
@@ -1343,17 +1351,17 @@ export default function SwapPage() {
             {/* SUCCESS */}
             {swapCompleted &&
               swapData?.txHash && (
-                <div className="mt-4 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
+                <div className="mt-4 w-full min-w-0 rounded-2xl border border-green-400/10 bg-green-400/[0.04] p-4">
 
                   <p className="text-center text-sm font-bold text-green-300/90">
                     Swap completed successfully.
                   </p>
 
-                  <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                  <div className="mt-4 w-full min-w-0 rounded-xl border border-white/[0.06] bg-black/20 p-3">
 
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
 
-                      <span className="text-xs font-semibold text-white/30">
+                      <span className="shrink-0 text-xs font-semibold text-white/30">
                         Transaction
                       </span>
 
