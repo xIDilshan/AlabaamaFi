@@ -11,7 +11,6 @@ import {
 import {
   defineChain,
   formatUnits,
-  http,
   maxUint256,
   parseUnits,
   type Address,
@@ -854,7 +853,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
+                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -931,8 +930,8 @@ export default function SwapPage() {
                 </div>
 
                 {/* MOBILE AMOUNT */}
-                <div className="mt-3 w-full min-w-0 sm:hidden">
-                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
+                <div className="mt-3 grid min-h-[60px] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:hidden">
+                  <div className="min-w-0 w-full">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -947,18 +946,16 @@ export default function SwapPage() {
                     />
                   </div>
 
-                  <div className="mt-2 flex w-full justify-end">
-                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
-                      <img
-                        src={inputToken.logo}
-                        alt={inputToken.symbol}
-                        className="h-8 w-8 rounded-full object-contain"
-                      />
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+                    <img
+                      src={inputToken.logo}
+                      alt={inputToken.symbol}
+                      className="h-8 w-8 rounded-full object-contain"
+                    />
 
-                      <span className="text-xs font-black">
-                        {inputToken.symbol}
-                      </span>
-                    </div>
+                    <span className="text-xs font-black">
+                      {inputToken.symbol}
+                    </span>
                   </div>
                 </div>
 
@@ -1064,11 +1061,9 @@ export default function SwapPage() {
                 </p>
 
                 {/* MOBILE AMOUNT */}
-                <div className="mt-3 w-full min-w-0 sm:hidden">
-                  <div className="flex min-h-[60px] w-full min-w-0 items-center">
-                    <span
-                      className={`${amountTypography}`}
-                    >
+                <div className="mt-3 grid min-h-[60px] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:hidden">
+                  <div className="min-w-0 w-full">
+                    <span className={`${amountTypography}`}>
                       {isLoading
                         ? "..."
                         : estimatedOutput ||
@@ -1078,18 +1073,16 @@ export default function SwapPage() {
                     </span>
                   </div>
 
-                  <div className="mt-2 flex w-full justify-end">
-                    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
-                      <img
-                        src={outputToken.logo}
-                        alt={outputToken.symbol}
-                        className="h-8 w-8 rounded-full object-contain"
-                      />
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5">
+                    <img
+                      src={outputToken.logo}
+                      alt={outputToken.symbol}
+                      className="h-8 w-8 rounded-full object-contain"
+                    />
 
-                      <span className="text-xs font-black">
-                        {outputToken.symbol}
-                      </span>
-                    </div>
+                    <span className="text-xs font-black">
+                      {outputToken.symbol}
+                    </span>
                   </div>
                 </div>
 
