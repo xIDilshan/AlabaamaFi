@@ -39,25 +39,18 @@ function shortenAddress(
     return "—";
   }
 
-  if (
-    address.length <=
-    start + end + 3
-  ) {
+  if (address.length <= start + end + 3) {
     return address;
   }
 
-  return `${address.slice(
-    0,
-    start
-  )}...${address.slice(-end)}`;
+  return `${address.slice(0, start)}...${address.slice(-end)}`;
 }
 
 function getTokenLogo(
   symbol: string,
   apiLogo: string | null
 ): string | null {
-  const upperSymbol =
-    symbol.toUpperCase();
+  const upperSymbol = symbol.toUpperCase();
 
   if (upperSymbol === "USDC") {
     return "/tokens/usdc.svg";
@@ -80,9 +73,7 @@ function getTokenLogo(
   return apiLogo;
 }
 
-function getTokenSymbol(
-  token: any
-): string {
+function getTokenSymbol(token: any): string {
   const rawSymbol =
     token.symbol ??
     token.tokenSymbol ??
@@ -92,8 +83,7 @@ function getTokenSymbol(
     token.metadata?.symbol ??
     "";
 
-  const upper =
-    String(rawSymbol).toUpperCase();
+  const upper = String(rawSymbol).toUpperCase();
 
   if (
     upper === "EUROC" ||
@@ -141,9 +131,7 @@ function getTokenName(
     token.metadata?.name ??
     "";
 
-  return String(
-    apiName || symbol
-  );
+  return String(apiName || symbol);
 }
 
 function getTokenDecimals(
@@ -160,15 +148,11 @@ function getTokenDecimals(
     token.metadata?.decimals,
   ];
 
-  for (
-    const value of possibleDecimals
-  ) {
+  for (const value of possibleDecimals) {
     const decimals = Number(value);
 
     if (
-      Number.isFinite(
-        decimals
-      ) &&
+      Number.isFinite(decimals) &&
       decimals >= 0 &&
       decimals <= 36
     ) {
@@ -176,8 +160,7 @@ function getTokenDecimals(
     }
   }
 
-  const upperSymbol =
-    symbol.toUpperCase();
+  const upperSymbol = symbol.toUpperCase();
 
   if (
     upperSymbol === "USDC" ||
@@ -187,9 +170,7 @@ function getTokenDecimals(
     return 6;
   }
 
-  if (
-    upperSymbol === "CIRBTC"
-  ) {
+  if (upperSymbol === "CIRBTC") {
     return 8;
   }
 
@@ -207,67 +188,53 @@ function formatTokenAmount(
     return "0";
   }
 
-  if (
-    typeof value === "object"
-  ) {
+  if (typeof value === "object") {
     if (
-      value.formatted !==
-        undefined &&
+      value.formatted !== undefined &&
       value.formatted !== null
     ) {
-      return String(
-        value.formatted
-      );
+      return String(value.formatted);
     }
 
     if (
-      value.display !==
-        undefined &&
+      value.display !== undefined &&
       value.display !== null
     ) {
-      return String(
-        value.display
-      );
+      return String(value.display);
     }
 
     if (
-      value.amount !==
-        undefined &&
+      value.amount !== undefined &&
       value.amount !== null
     ) {
       return formatTokenAmount(
         value.amount,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
 
     if (
-      value.raw !==
-        undefined &&
+      value.raw !== undefined &&
       value.raw !== null
     ) {
       return formatTokenAmount(
         value.raw,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
 
     if (
-      value.value !==
-        undefined &&
+      value.value !== undefined &&
       value.value !== null
     ) {
       return formatTokenAmount(
         value.value,
         Number(
-          value.decimals ??
-            decimals
+          value.decimals ?? decimals
         )
       );
     }
@@ -280,15 +247,12 @@ function formatTokenAmount(
     return "0";
   }
 
-  if (
-    stringValue.includes(".")
-  ) {
+  if (stringValue.includes(".")) {
     return stringValue;
   }
 
   try {
-    const raw =
-      BigInt(stringValue);
+    const raw = BigInt(stringValue);
 
     if (decimals === 0) {
       return raw.toString();
@@ -296,15 +260,13 @@ function formatTokenAmount(
 
     const zero = BigInt(0);
 
-    const negative =
-      raw < zero;
+    const negative = raw < zero;
 
     const absolute =
       negative ? -raw : raw;
 
     const divisor =
-      BigInt(10) **
-      BigInt(decimals);
+      BigInt(10) ** BigInt(decimals);
 
     const whole =
       absolute / divisor;
@@ -338,136 +300,6 @@ function formatTokenAmount(
   }
 }
 
-/*
- * Find the Money object belonging to the
- * actual token holding.
- *
- * Arcscan may nest the Money object at
- * different levels depending on the response.
- */
-function getHoldingMoney(
-  token: any
-): any | null {
-  const visited = new Set();
-
-  function search(
-    value: any,
-    depth = 0
-  ): any | null {
-    if (
-      value === null ||
-      value === undefined ||
-      depth > 8 ||
-      typeof value !==
-        "object"
-    ) {
-      return null;
-    }
-
-    if (
-      visited.has(value)
-    ) {
-      return null;
-    }
-
-    visited.add(value);
-
-    const hasAmount =
-      value.raw !==
-        undefined ||
-      value.formatted !==
-        undefined ||
-      value.amount !==
-        undefined ||
-      value.balance !==
-        undefined ||
-      value.quantity !==
-        undefined;
-
-    const hasUsd =
-      value.usd !==
-        undefined &&
-      value.usd !== null;
-
-    if (
-      hasAmount &&
-      hasUsd
-    ) {
-      return value;
-    }
-
-    const priorityKeys = [
-      "amount",
-      "balance",
-      "tokenAmount",
-      "token_amount",
-      "holding",
-      "token",
-      "asset",
-      "value",
-      "money",
-    ];
-
-    for (
-      const key of priorityKeys
-    ) {
-      const child =
-        value[key];
-
-      if (
-        child !== null &&
-        child !== undefined &&
-        typeof child ===
-          "object"
-      ) {
-        const result =
-          search(
-            child,
-            depth + 1
-          );
-
-        if (result) {
-          return result;
-        }
-      }
-    }
-
-    for (
-      const [key, child] of Object.entries(
-        value
-      )
-    ) {
-      if (
-        priorityKeys.includes(
-          key
-        )
-      ) {
-        continue;
-      }
-
-      if (
-        child !== null &&
-        typeof child ===
-          "object"
-      ) {
-        const result =
-          search(
-            child,
-            depth + 1
-          );
-
-        if (result) {
-          return result;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  return search(token);
-}
-
 function getTokenAmount(
   token: any,
   decimals: number
@@ -489,9 +321,7 @@ function getTokenAmount(
     token.token?.value,
   ];
 
-  for (
-    const candidate of candidates
-  ) {
+  for (const candidate of candidates) {
     if (
       candidate === null ||
       candidate === undefined
@@ -542,15 +372,6 @@ function getTokenAmount(
   return "0";
 }
 
-/*
- * Get the TOTAL USD value belonging to
- * the actual token holding.
- *
- * Arcscan returns token amounts as Money
- * objects.
- *
- * Used for tokens other than cirBTC.
- */
 function getTokenUsdValue(
   token: any
 ): number | null {
@@ -567,10 +388,8 @@ function getTokenUsdValue(
     }
 
     if (
-      typeof value ===
-        "number" ||
-      typeof value ===
-        "string"
+      typeof value === "number" ||
+      typeof value === "string"
     ) {
       const numeric =
         Number(value);
@@ -853,8 +672,10 @@ export default function ActivityPage() {
     setActivityAddress,
   ] = useState("");
 
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false);
 
   const [
     activityTransactions,
@@ -900,11 +721,15 @@ export default function ActivityPage() {
   } = useAccount();
 
   useEffect(() => {
-    const handleMenuState = (event: Event) => {
+    const handleMenuState = (
+      event: Event
+    ) => {
       const customEvent =
         event as CustomEvent<boolean>;
 
-      setMobileMenuOpen(customEvent.detail);
+      setMobileMenuOpen(
+        customEvent.detail
+      );
     };
 
     window.addEventListener(
@@ -930,9 +755,7 @@ export default function ActivityPage() {
       );
     } else {
       setActivityAddress("");
-      setActivityTransactions(
-        []
-      );
+      setActivityTransactions([]);
       setActivityTokens([]);
       setPortfolioValue(null);
       setActivityError("");
@@ -967,9 +790,7 @@ export default function ActivityPage() {
   const handleCheckActivity =
     async () => {
       setActivityError("");
-      setActivityTransactions(
-        []
-      );
+      setActivityTransactions([]);
       setActivityTokens([]);
       setPortfolioValue(null);
 
@@ -1374,67 +1195,54 @@ export default function ActivityPage() {
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
           <div className="mx-auto max-w-6xl">
 
-            {/* PAGE INTRO */}
+            {/* INTRO */}
 
-            <div className="text-center">
-              <div className="flex justify-center">
+            <div className="mb-6 text-center sm:mb-8 lg:mb-10">
+              <div className="flex justify-center text-white/55">
                 <svg
+                  width="42"
+                  height="42"
                   viewBox="0 0 24 24"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-white/55 sm:h-11 sm:w-11"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
                 >
-                  <path
-                    d="M4 18V13"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M10 18V9"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M16 18V5"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M22 18V11"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
+                  <path d="M3 3v18h18" />
+                  <path d="m7 16 4-5 3 3 5-7" />
                 </svg>
               </div>
 
-              <h1 className="mt-3 text-3xl font-black sm:text-4xl">
+              <h1 className="mt-3 text-3xl font-black sm:text-4xl lg:text-5xl">
                 Wallet Activity
               </h1>
 
-              <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
+              <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-6 text-white/35 sm:text-base lg:leading-7">
                 Connect your wallet to view its token holdings and recent transactions.
               </p>
-
-              {isConnected &&
-                activityAddress && (
-                  <p className="mx-auto mt-4 max-w-full break-all px-4 font-mono text-sm font-semibold text-white/45">
-                    {activityAddress}
-                  </p>
-                )}
             </div>
 
             {/* CHECKER */}
 
             <div className="mt-7 rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#0a0f16] via-[#06080b] to-[#030303] p-4 shadow-2xl shadow-black/60 sm:mt-8 sm:p-6 lg:p-7">
+              <label className="mb-2 block text-sm font-bold text-white/50">
+                Wallet Address
+              </label>
+
+              <input
+                type="text"
+                placeholder="Connect wallet first"
+                value={activityAddress}
+                readOnly
+                disabled={!isConnected}
+                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
+              />
+
               <button
                 onClick={() => {
-                  if (
-                    !isConnected
-                  ) {
+                  if (!isConnected) {
                     window.dispatchEvent(
                       new Event(
                         "open-wallet-modal"
@@ -1449,7 +1257,7 @@ export default function ActivityPage() {
                   isConnected &&
                   activityLoading
                 }
-                className={`min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
+                className={`mt-4 min-h-13 w-full rounded-full px-5 py-4 text-sm font-black ${
                   !isConnected
                     ? "border border-white/[0.05] bg-[#111318] text-white/35 transition hover:bg-[#151820]"
                     : "border border-black/[0.08] bg-white text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
@@ -1465,9 +1273,7 @@ export default function ActivityPage() {
               {activityError && (
                 <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
                   <p className="text-sm font-semibold leading-5 text-red-400">
-                    {
-                      activityError
-                    }
+                    {activityError}
                   </p>
                 </div>
               )}
@@ -1475,10 +1281,8 @@ export default function ActivityPage() {
 
             {/* RESULTS */}
 
-            {(activityTokens.length >
-              0 ||
-              activityTransactions.length >
-                0) && (
+            {(activityTokens.length > 0 ||
+              activityTransactions.length > 0) && (
               <div className="mt-7 sm:mt-8">
 
                 {/* PORTFOLIO */}
@@ -1491,11 +1295,8 @@ export default function ActivityPage() {
                       </p>
 
                       <p className="mt-2 text-3xl font-black">
-                        {portfolioValue !==
-                        null
-                          ? `$${portfolioValue.toFixed(
-                              2
-                            )}`
+                        {portfolioValue !== null
+                          ? `$${portfolioValue.toFixed(2)}`
                           : "Value unavailable"}
                       </p>
                     </div>
@@ -1508,8 +1309,7 @@ export default function ActivityPage() {
 
                 {/* TOKEN HOLDINGS */}
 
-                {activityTokens.length >
-                  0 && (
+                {activityTokens.length > 0 && (
                   <div className="mt-7 sm:mt-8">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="font-black">
@@ -1517,30 +1317,25 @@ export default function ActivityPage() {
                       </h2>
 
                       <span className="text-xs font-bold text-white/25">
-                        {
-                          activityTokens.length
-                        }{" "}
-                        tokens
+                        {activityTokens.length} tokens
                       </span>
                     </div>
 
                     <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
                       {activityTokens.map(
-                        (
-                          token
-                        ) => (
+                        (token) => (
                           <div
                             key={`${token.address}-${token.symbol}`}
                             className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4"
                           >
+                            {/* COIN + BALANCE */}
+
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex min-w-0 items-center gap-3">
                                 {token.logo ? (
                                   <div className="flex h-10 w-10 shrink-0 items-center justify-center">
                                     <img
-                                      src={
-                                        token.logo
-                                      }
+                                      src={token.logo}
                                       alt={`${token.symbol} logo`}
                                       className={
                                         token.symbol ===
@@ -1553,28 +1348,23 @@ export default function ActivityPage() {
                                 ) : (
                                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b1017] text-sm font-bold">
                                     {token.symbol
-                                      .slice(
-                                        0,
-                                        1
-                                      )
+                                      .slice(0, 1)
                                       .toUpperCase()}
                                   </div>
                                 )}
 
                                 <div className="min-w-0">
                                   <p className="font-black">
-                                    {
-                                      token.symbol
-                                    }
+                                    {token.symbol}
                                   </p>
 
                                   <p className="mt-1 truncate text-xs font-medium text-white/25">
-                                    {
-                                      token.name
-                                    }
+                                    {token.name}
                                   </p>
                                 </div>
                               </div>
+
+                              {/* BALANCE */}
 
                               <p className="shrink-0 text-right text-sm font-black text-white/75">
                                 {Number(
@@ -1597,20 +1387,17 @@ export default function ActivityPage() {
                                       }
                                 )}{" "}
                                 <span className="text-white/40">
-                                  {
-                                    token.symbol
-                                  }
+                                  {token.symbol}
                                 </span>
                               </p>
                             </div>
 
+                            {/* USD VALUE */}
+
                             <div className="mt-5 border-t border-white/[0.06] pt-4">
                               <p className="text-sm font-black text-white">
-                                {token.usdValue !==
-                                null
-                                  ? `$${token.usdValue.toFixed(
-                                      2
-                                    )}`
+                                {token.usdValue !== null
+                                  ? `$${token.usdValue.toFixed(2)}`
                                   : "USD value unavailable"}
                               </p>
                             </div>
@@ -1625,8 +1412,7 @@ export default function ActivityPage() {
 
             {/* RECENT TRANSACTIONS */}
 
-            {activityTransactions.length >
-              0 && (
+            {activityTransactions.length > 0 && (
               <div className="mt-7 sm:mt-8">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="font-black">
@@ -1634,18 +1420,15 @@ export default function ActivityPage() {
                   </h2>
 
                   <span className="text-xs font-bold text-white/25">
-                    {
-                      activityTransactions.length
-                    }{" "}
-                    found
+                    {activityTransactions.length} found
                   </span>
                 </div>
 
+                {/* DESKTOP: ONE COLUMN */}
+
                 <div className="space-y-3">
                   {activityTransactions.map(
-                    (
-                      tx
-                    ) => {
+                    (tx) => {
                       const transactionDate =
                         tx.timestamp
                           ? new Date(
@@ -1677,10 +1460,8 @@ export default function ActivityPage() {
                               undefined,
                               {
                                 hour: "2-digit",
-                                minute:
-                                  "2-digit",
-                                second:
-                                  "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
                                 hour12: false,
                               }
                             )
@@ -1688,11 +1469,11 @@ export default function ActivityPage() {
 
                       return (
                         <div
-                          key={
-                            tx.hash
-                          }
+                          key={tx.hash}
                           className="rounded-2xl border border-white/[0.07] bg-[#060709] p-4 sm:p-5"
                         >
+                          {/* HASH */}
+
                           <div className="min-w-0">
                             <p className="text-sm font-black">
                               Transaction
@@ -1767,6 +1548,8 @@ export default function ActivityPage() {
                             </div>
                           </div>
 
+                          {/* DATE / TIME */}
+
                           <div className="mt-4 rounded-xl border border-white/[0.05] bg-[#020202] px-3 py-2.5">
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-xs font-bold text-white/25">
@@ -1774,9 +1557,7 @@ export default function ActivityPage() {
                               </span>
 
                               <span className="text-right text-xs font-semibold text-white/55">
-                                {
-                                  formattedDate
-                                }
+                                {formattedDate}
                               </span>
                             </div>
 
@@ -1786,12 +1567,12 @@ export default function ActivityPage() {
                               </span>
 
                               <span className="text-right text-xs font-semibold text-white/55">
-                                {
-                                  formattedTime
-                                }
+                                {formattedTime}
                               </span>
                             </div>
                           </div>
+
+                          {/* FROM / TO */}
 
                           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="min-w-0">
@@ -1800,14 +1581,10 @@ export default function ActivityPage() {
                               </p>
 
                               <p
-                                title={
-                                  tx.from
-                                }
+                                title={tx.from}
                                 className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                               >
-                                {
-                                  tx.from
-                                }
+                                {tx.from}
                               </p>
                             </div>
 
@@ -1817,14 +1594,10 @@ export default function ActivityPage() {
                               </p>
 
                               <p
-                                title={
-                                  tx.to
-                                }
+                                title={tx.to}
                                 className="mt-1 w-full whitespace-normal break-all font-mono text-xs font-semibold leading-5 text-white/55"
                               >
-                                {
-                                  tx.to
-                                }
+                                {tx.to}
                               </p>
                             </div>
 
@@ -1834,9 +1607,7 @@ export default function ActivityPage() {
                               </p>
 
                               <p className="mt-1 break-words text-sm font-black text-white/65">
-                                {
-                                  tx.value
-                                }
+                                {tx.value}
                                 {tx.tokenSymbol
                                   ? ` ${tx.tokenSymbol}`
                                   : ""}
@@ -1849,12 +1620,12 @@ export default function ActivityPage() {
                               </p>
 
                               <p className="mt-1 text-sm font-black text-green-400">
-                                {
-                                  tx.status
-                                }
+                                {tx.status}
                               </p>
                             </div>
                           </div>
+
+                          {/* ARCSCAN */}
 
                           <div className="mt-4 border-t border-white/[0.06] pt-3">
                             <a
