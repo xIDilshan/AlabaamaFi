@@ -236,22 +236,16 @@ export default function SendPage() {
           <div className="mx-auto w-full max-w-3xl">
             {/* PAGE INTRO */}
 
-            <div className="mb-6 sm:mb-8 lg:mb-10">
+            <div className="mb-6 text-center sm:mb-8 lg:mb-10">
               <p className="text-sm font-semibold text-white/35">
                 AlabaamaFi
               </p>
 
-              <div className="mt-1 flex items-center justify-between gap-4">
-                <h1 className="text-3xl font-black sm:text-4xl lg:text-5xl">
-                  Send USDC
-                </h1>
+              <h1 className="mt-1 text-3xl font-black sm:text-4xl lg:text-5xl">
+                Send USDC
+              </h1>
 
-                <span className="shrink-0 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-1 text-xs font-bold text-white/45">
-                  Testnet
-                </span>
-              </div>
-
-              <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-white/35 sm:text-base lg:mt-3 lg:leading-7">
+              <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-white/35 sm:text-base lg:mt-3 lg:leading-7">
                 Send USDC to another wallet on Arc Testnet.
               </p>
             </div>
@@ -386,22 +380,22 @@ export default function SendPage() {
 
               {/* SUCCESS */}
 
-{isConfirmed && hash && (
-  <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
-    <p className="text-sm font-bold text-green-400">
-      Transaction confirmed
-    </p>
+              {isConfirmed && hash && (
+                <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
+                  <p className="text-sm font-bold text-green-400">
+                    Transaction confirmed
+                  </p>
 
-    <a
-      href={`https://testnet.arcscan.app/tx/${hash}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
-    >
-      View Transaction on ArcScan
-    </a>
-  </div>
-)}
+                  <a
+                    href={`https://testnet.arcscan.app/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block break-words text-sm font-bold text-white/50 underline transition hover:text-white"
+                  >
+                    View Transaction on ArcScan
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </section>
