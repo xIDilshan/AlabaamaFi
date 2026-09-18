@@ -24,13 +24,8 @@ const manrope = Manrope({
 });
 
 type Token = "USDC" | "EURC" | "cirBTC";
-
 type SlippageMode = "auto" | "custom";
-
-type SwapStage =
-  | "idle"
-  | "approving"
-  | "confirming";
+type SwapStage = "idle" | "approving" | "confirming";
 
 const ARC_TESTNET_CHAIN_ID = 5042002;
 
@@ -112,11 +107,8 @@ const tokens: Record<
   },
 };
 
-/*
- * Arc Testnet Uniswap V2 Router02.
- *
- * This is used only for USDC <-> EURC.
- */
+const tokenList: Token[] = ["USDC", "EURC", "cirBTC"];
+
 const SWAP_ROUTER =
   "0xe27d5d256b370604f1ff060fb489c6a8e3f8a6d9" as Address;
 
@@ -256,12 +248,6 @@ const customSlippageOptions = [
   2,
 ];
 
-/*
- * Mobile: text-2xl
- * Desktop: text-4xl
- *
- * Only the mobile amount size is reduced.
- */
 const amountTypography =
   "block w-full min-w-0 max-w-full truncate text-2xl font-black tracking-tight leading-normal text-white/70 sm:text-4xl";
 
@@ -435,6 +421,13 @@ export default function SwapPage() {
     setShowTradeSuccess,
   ] = useState(false);
 
+  const [
+    openTokenSelector,
+    setOpenTokenSelector,
+  ] = useState<"input" | "output" | null>(
+    null
+  );
+
   const formattedUsdcBalance =
     usdcBalance !== undefined
       ? formatUnits(
@@ -469,13 +462,16 @@ export default function SwapPage() {
   const inputBalanceNumber =
     Number(inputBalance);
 
+  const inputToken = tokens[tokenIn];
+  const outputToken = tokens[tokenOut];
+
   const displayBalance =
     Number(inputBalance).toLocaleString(
       undefined,
       {
         minimumFractionDigits: 2,
         maximumFractionDigits:
-          inputTokenDecimals(tokenIn),
+          inputToken.decimals,
       }
     );
 
@@ -486,9 +482,6 @@ export default function SwapPage() {
 
   const slippageBps =
     Math.round(activeSlippage * 100);
-
-  const inputToken = tokens[tokenIn];
-  const outputToken = tokens[tokenOut];
 
   const insufficientBalance =
     Boolean(amountIn) &&
@@ -506,61 +499,48 @@ export default function SwapPage() {
         .replace(/\.00$/, "");
     }, [activeSlippage]);
 
-  function inputTokenDecimals(
+  const handleTokenSelect = (
+    type: "input" | "output",
     token: Token
-  ) {
-    return tokens[token].decimals;
-  }
+  ) => {
+    if (type === "input") {
+      if (token === tokenOut) {
+        return;
+      }
 
-  function cycleToken(
-    current: Token
-  ): Token {
-    const order: Token[] = [
-      "USDC",
-      "EURC",
-      "cirBTC",
-    ];
+      setTokenIn(token);
+    } else {
+      if (token === tokenIn) {
+        return;
+      }
 
-    const index =
-      order.indexOf(current);
+      setTokenOut(token);
+    }
 
-    return order[
-      (index + 1) % order.length
-    ];
-  }
+    setOpenTokenSelector(null);
+    setAmountIn("");
+    setEstimatedOutput("");
+    setError("");
+    setShowTradeSuccess(false);
+    setSwapStage("idle");
+  };
 
   const handleInputTokenClick =
     () => {
-      let next =
-        cycleToken(tokenIn);
-
-      if (next === tokenOut) {
-        next = cycleToken(next);
-      }
-
-      setTokenIn(next);
-      setAmountIn("");
-      setEstimatedOutput("");
-      setError("");
-      setShowTradeSuccess(false);
-      setSwapStage("idle");
+      setOpenTokenSelector(
+        openTokenSelector === "input"
+          ? null
+          : "input"
+      );
     };
 
   const handleOutputTokenClick =
     () => {
-      let next =
-        cycleToken(tokenOut);
-
-      if (next === tokenIn) {
-        next = cycleToken(next);
-      }
-
-      setTokenOut(next);
-      setAmountIn("");
-      setEstimatedOutput("");
-      setError("");
-      setShowTradeSuccess(false);
-      setSwapStage("idle");
+      setOpenTokenSelector(
+        openTokenSelector === "output"
+          ? null
+          : "output"
+      );
     };
 
   useEffect(() => {
@@ -814,6 +794,7 @@ export default function SwapPage() {
     setError("");
     setShowTradeSuccess(false);
     setSwapStage("idle");
+    setOpenTokenSelector(null);
   };
 
   const handleSlippageMode = (
@@ -958,16 +939,6 @@ export default function SwapPage() {
           );
         }
       }
-
-      console.log(
-        "Synthra transaction gas:",
-        {
-          estimatedOrProvidedGas:
-            gasLimit.toString(),
-          originalGasLimit:
-            transaction.gasLimit,
-        }
-      );
 
       const hash =
         await walletClient.sendTransaction(
@@ -1114,11 +1085,6 @@ export default function SwapPage() {
       await waitForTransaction(
         swapHash
       );
-
-      console.log(
-        "Direct Arc swap transaction:",
-        swapHash
-      );
     };
 
   const handleSynthraSwap =
@@ -1208,14 +1174,8 @@ export default function SwapPage() {
 
       setSwapStage("confirming");
 
-      const swapHash =
-        await sendSynthraTransaction(
-          swapData.transaction
-        );
-
-      console.log(
-        "Synthra swap transaction:",
-        swapHash
+      await sendSynthraTransaction(
+        swapData.transaction
       );
     };
 
@@ -1298,6 +1258,92 @@ export default function SwapPage() {
     }
   };
 
+  const renderTokenOptions = (
+    type: "input" | "output"
+  ) => {
+    const currentToken =
+      type === "input"
+        ? tokenIn
+        : tokenOut;
+
+    const otherToken =
+      type === "input"
+        ? tokenOut
+        : tokenIn;
+
+    return (
+      <div className="absolute right-0 top-full z-50 mt-2 w-[190px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#080a0d] p-1.5 shadow-2xl shadow-black/70">
+        {tokenList.map((token) => {
+          const item = tokens[token];
+          const disabled =
+            token === otherToken;
+
+          return (
+            <button
+              key={token}
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                handleTokenSelect(
+                  type,
+                  token
+                )
+              }
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                disabled
+                  ? "cursor-not-allowed opacity-25"
+                  : currentToken ===
+                    token
+                  ? "bg-white/[0.08]"
+                  : "hover:bg-white/[0.05]"
+              }`}
+            >
+              <img
+                src={item.logo}
+                alt={item.symbol}
+                className={
+                  token ===
+                  "cirBTC"
+                    ? "h-7 w-7 shrink-0 rounded-full object-contain"
+                    : "h-8 w-8 shrink-0 rounded-full object-contain"
+                }
+              />
+
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-white/80">
+                  {item.symbol}
+                </p>
+
+                <p className="truncate text-[10px] font-medium text-white/30">
+                  {item.name}
+                </p>
+              </div>
+
+              {currentToken ===
+                token && (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="ml-auto shrink-0 text-white/65"
+                >
+                  <path
+                    d="M5 12L10 17L19 8"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-[#030405] text-white">
       <Header />
@@ -1307,15 +1353,15 @@ export default function SwapPage() {
 
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-3xl font-medium leading-none text-white/55">
-                ⇄
-              </span>
+            <div className="flex flex-col items-center">
+  <span className="text-3xl font-medium leading-none text-white/55">
+    ⇄
+  </span>
 
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-                Token Swap
-              </h1>
-            </div>
+  <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+    Token Swap
+  </h1>
+</div>
 
             <p className="mx-auto mt-3 max-w-lg text-sm font-medium leading-6 text-white/35">
               Swap supported assets directly on Arc
@@ -1345,7 +1391,6 @@ export default function SwapPage() {
                   height="17"
                   viewBox="0 0 24 24"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M4 7H14"
@@ -1353,34 +1398,29 @@ export default function SwapPage() {
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M18 7H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
-
                   <path
                     d="M4 17H8"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M12 17H20"
                     stroke="currentColor"
                     strokeWidth="1.7"
                     strokeLinecap="round"
                   />
-
                   <path
                     d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
@@ -1393,7 +1433,7 @@ export default function SwapPage() {
             <div className="grid w-full min-w-0 gap-3">
 
               {/* YOU PAY */}
-              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-visible rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
                 <div className="flex w-full min-w-0 items-center justify-between gap-3">
                   <p className="min-w-0 truncate text-xs font-bold text-white/35">
@@ -1406,7 +1446,6 @@ export default function SwapPage() {
                       height="14"
                       viewBox="0 0 24 24"
                       fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
                       className="text-white/35"
                     >
                       <path
@@ -1414,14 +1453,12 @@ export default function SwapPage() {
                         stroke="currentColor"
                         strokeWidth="1.7"
                       />
-
                       <path
                         d="M16 13H21"
                         stroke="currentColor"
                         strokeWidth="1.7"
                         strokeLinecap="round"
                       />
-
                       <circle
                         cx="16"
                         cy="13"
@@ -1455,44 +1492,52 @@ export default function SwapPage() {
                     />
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={
-                      handleInputTokenClick
-                    }
-                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
-                  >
-                    <img
-                      src={inputToken.logo}
-                      alt={inputToken.symbol}
-                      className={
-                        inputToken.symbol ===
-                        "cirBTC"
-                          ? "h-7 w-7 rounded-full object-contain"
-                          : "h-8 w-8 rounded-full object-contain"
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={
+                        handleInputTokenClick
                       }
-                    />
-
-                    <span className="text-xs font-black">
-                      {inputToken.symbol}
-                    </span>
-
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="shrink-0 text-white/55"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                     >
-                      <path
-                        d="M6 9L12 15L18 9"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <img
+                        src={inputToken.logo}
+                        alt={inputToken.symbol}
+                        className={
+                          inputToken.symbol ===
+                          "cirBTC"
+                            ? "h-6 w-6 rounded-full object-contain"
+                            : "h-8 w-8 rounded-full object-contain"
+                        }
                       />
-                    </svg>
-                  </button>
+
+                      <span className="text-xs font-black">
+                        {inputToken.symbol}
+                      </span>
+
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="shrink-0 text-white/55"
+                      >
+                        <path
+                          d="M6 9L12 15L18 9"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {openTokenSelector ===
+                      "input" &&
+                      renderTokenOptions(
+                        "input"
+                      )}
+                  </div>
                 </div>
 
                 {/* DESKTOP AMOUNT */}
@@ -1513,44 +1558,52 @@ export default function SwapPage() {
                       />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={
-                        handleInputTokenClick
-                      }
-                      className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
-                    >
-                      <img
-                        src={inputToken.logo}
-                        alt={inputToken.symbol}
-                        className={
-                          inputToken.symbol ===
-                          "cirBTC"
-                            ? "h-9 w-9 rounded-full object-contain"
-                            : "h-10 w-10 rounded-full object-contain"
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={
+                          handleInputTokenClick
                         }
-                      />
-
-                      <span className="text-sm font-black">
-                        {inputToken.symbol}
-                      </span>
-
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="shrink-0 text-white/55"
+                        className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                       >
-                        <path
-                          d="M6 9L12 15L18 9"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <img
+                          src={inputToken.logo}
+                          alt={inputToken.symbol}
+                          className={
+                            inputToken.symbol ===
+                            "cirBTC"
+                              ? "h-8 w-8 rounded-full object-contain"
+                              : "h-10 w-10 rounded-full object-contain"
+                          }
                         />
-                      </svg>
-                    </button>
+
+                        <span className="text-sm font-black">
+                          {inputToken.symbol}
+                        </span>
+
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="shrink-0 text-white/55"
+                        >
+                          <path
+                            d="M6 9L12 15L18 9"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+
+                      {openTokenSelector ===
+                        "input" &&
+                        renderTokenOptions(
+                          "input"
+                        )}
+                    </div>
                   </div>
                 </div>
 
@@ -1560,8 +1613,6 @@ export default function SwapPage() {
                   </p>
 
                   <div className="flex shrink-0 items-center gap-1.5">
-
-                    {/* 50% */}
                     <button
                       type="button"
                       onClick={() =>
@@ -1584,7 +1635,6 @@ export default function SwapPage() {
                       50%
                     </button>
 
-                    {/* MAX */}
                     <button
                       type="button"
                       onClick={handleMax}
@@ -1607,7 +1657,7 @@ export default function SwapPage() {
               </div>
 
               {/* SWITCH */}
-              <div className="relative z-10 -my-6 flex justify-center">
+              <div className="relative z-20 -my-6 flex justify-center">
                 <button
                   type="button"
                   onClick={handleSwitchTokens}
@@ -1619,7 +1669,7 @@ export default function SwapPage() {
               </div>
 
               {/* YOU RECEIVE */}
-              <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
+              <div className="w-full min-w-0 max-w-full overflow-visible rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
                 <p className="text-xs font-bold text-white/35">
                   You receive
@@ -1638,44 +1688,52 @@ export default function SwapPage() {
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={
-                      handleOutputTokenClick
-                    }
-                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
-                  >
-                    <img
-                      src={outputToken.logo}
-                      alt={outputToken.symbol}
-                      className={
-                        outputToken.symbol ===
-                        "cirBTC"
-                          ? "h-7 w-7 rounded-full object-contain"
-                          : "h-8 w-8 rounded-full object-contain"
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={
+                        handleOutputTokenClick
                       }
-                    />
-
-                    <span className="text-xs font-black">
-                      {outputToken.symbol}
-                    </span>
-
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="shrink-0 text-white/55"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                     >
-                      <path
-                        d="M6 9L12 15L18 9"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <img
+                        src={outputToken.logo}
+                        alt={outputToken.symbol}
+                        className={
+                          outputToken.symbol ===
+                          "cirBTC"
+                            ? "h-6 w-6 rounded-full object-contain"
+                            : "h-8 w-8 rounded-full object-contain"
+                        }
                       />
-                    </svg>
-                  </button>
+
+                      <span className="text-xs font-black">
+                        {outputToken.symbol}
+                      </span>
+
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="shrink-0 text-white/55"
+                      >
+                        <path
+                          d="M6 9L12 15L18 9"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {openTokenSelector ===
+                      "output" &&
+                      renderTokenOptions(
+                        "output"
+                      )}
+                  </div>
                 </div>
 
                 {/* DESKTOP AMOUNT */}
@@ -1694,44 +1752,52 @@ export default function SwapPage() {
                       </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={
-                        handleOutputTokenClick
-                      }
-                      className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
-                    >
-                      <img
-                        src={outputToken.logo}
-                        alt={outputToken.symbol}
-                        className={
-                          outputToken.symbol ===
-                          "cirBTC"
-                            ? "h-9 w-9 rounded-full object-contain"
-                            : "h-10 w-10 rounded-full object-contain"
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={
+                          handleOutputTokenClick
                         }
-                      />
-
-                      <span className="text-sm font-black">
-                        {outputToken.symbol}
-                      </span>
-
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="shrink-0 text-white/55"
+                        className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                       >
-                        <path
-                          d="M6 9L12 15L18 9"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <img
+                          src={outputToken.logo}
+                          alt={outputToken.symbol}
+                          className={
+                            outputToken.symbol ===
+                            "cirBTC"
+                              ? "h-8 w-8 rounded-full object-contain"
+                              : "h-10 w-10 rounded-full object-contain"
+                          }
                         />
-                      </svg>
-                    </button>
+
+                        <span className="text-sm font-black">
+                          {outputToken.symbol}
+                        </span>
+
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="shrink-0 text-white/55"
+                        >
+                          <path
+                            d="M6 9L12 15L18 9"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+
+                      {openTokenSelector ===
+                        "output" &&
+                        renderTokenOptions(
+                          "output"
+                        )}
+                    </div>
                   </div>
                 </div>
 
@@ -1765,7 +1831,6 @@ export default function SwapPage() {
             {/* SETTINGS POPUP */}
             {showSettings && (
               <>
-                {/* BACKDROP */}
                 <button
                   type="button"
                   aria-label="Close settings"
@@ -1775,7 +1840,6 @@ export default function SwapPage() {
                   className="fixed inset-0 z-40 cursor-default bg-black/20 backdrop-blur-[1px]"
                 />
 
-                {/* POPUP */}
                 <div
                   className="absolute right-4 top-[68px] z-50 w-[calc(100%-32px)] max-w-[340px] sm:right-6 sm:w-[340px] lg:right-7"
                   style={{
@@ -1786,7 +1850,6 @@ export default function SwapPage() {
                 >
                   <div className="rounded-2xl border border-white/[0.08] bg-[#080a0d] p-4 shadow-2xl shadow-black/70">
 
-                    {/* HEADER */}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-white/80">
@@ -1822,7 +1885,6 @@ export default function SwapPage() {
                       </button>
                     </div>
 
-                    {/* SLIPPAGE */}
                     <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                       <div className="flex items-center justify-between">
                         <div>
@@ -1840,7 +1902,6 @@ export default function SwapPage() {
                         </span>
                       </div>
 
-                      {/* AUTO / CUSTOM */}
                       <div className="mt-3 grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
@@ -1877,7 +1938,6 @@ export default function SwapPage() {
                         </button>
                       </div>
 
-                      {/* CUSTOM INPUT */}
                       {slippageMode ===
                         "custom" && (
                         <>
@@ -1905,7 +1965,6 @@ export default function SwapPage() {
                             </span>
                           </div>
 
-                          {/* PRESETS */}
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {customSlippageOptions.map(
                               (value) => (
@@ -1933,7 +1992,6 @@ export default function SwapPage() {
                       )}
                     </div>
 
-                    {/* DONE */}
                     <button
                       type="button"
                       onClick={() =>
