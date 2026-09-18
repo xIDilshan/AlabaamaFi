@@ -1516,12 +1516,7 @@ export default function SwapPage() {
                       <img
                         src={inputToken.logo}
                         alt={inputToken.symbol}
-                        className={
-                          inputToken.symbol ===
-                          "cirBTC"
-                            ? "h-7 w-7 rounded-full object-contain"
-                            : "h-8 w-8 rounded-full object-contain"
-                        }
+                        className="h-8 w-8 rounded-full object-contain"
                       />
 
                       <span className="text-xs font-black">
