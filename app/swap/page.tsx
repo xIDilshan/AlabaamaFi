@@ -1317,14 +1317,10 @@ export default function SwapPage() {
               }`}
             >
               <img
-                src={item.logo}
-                alt={item.symbol}
-                className={
-                  token ===
-                  "cirBTC"
-                    "h-8 w-8 shrink-0 rounded-full object-contain"
-                }
-              />
+  src={item.logo}
+  alt={item.symbol}
+  className="h-8 w-8 shrink-0 rounded-full object-contain"
+/>
 
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-white/80">
