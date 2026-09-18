@@ -92,7 +92,7 @@ logo: "/tokens/usdc.svg",
 address:
 "0x3600000000000000000000000000000000000000",
 decimals: 6,
-},»
+},
 
 EURC: {
 symbol: "EURC",
