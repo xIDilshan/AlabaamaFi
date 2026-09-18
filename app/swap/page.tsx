@@ -1516,7 +1516,7 @@ export default function SwapPage() {
                       onClick={
                         handleInputTokenClick
                       }
-                      className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                     >
                       <img
                         src={inputToken.logo}
@@ -1524,7 +1524,7 @@ export default function SwapPage() {
                         className={
                           inputToken.symbol ===
                           "cirBTC"
-                            ? "h-7 w-7 rounded-full object-contain"
+                            ? "h-6.5 w-6.5 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1590,7 +1590,7 @@ export default function SwapPage() {
                           className={
                             inputToken.symbol ===
                             "cirBTC"
-                              ? "h-8 w-8 rounded-full object-contain"
+                              ? "h-7.5 w-7.5 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
@@ -1752,7 +1752,7 @@ export default function SwapPage() {
                       onClick={
                         handleOutputTokenClick
                       }
-                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                     >
                       <img
                         src={outputToken.logo}
@@ -1760,7 +1760,7 @@ export default function SwapPage() {
                         className={
                           outputToken.symbol ===
                           "cirBTC"
-                            ? "h-7 w-7 rounded-full object-contain"
+                            ? "h-6.5 w-6.5 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1824,7 +1824,7 @@ export default function SwapPage() {
                           className={
                             outputToken.symbol ===
                             "cirBTC"
-                              ? "h-8 w-8 rounded-full object-contain"
+                              ? "h-7.5 w-7.5 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
