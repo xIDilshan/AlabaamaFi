@@ -53,12 +53,12 @@ const [mobileMenuOpen, setMobileMenuOpen] =
 React.useState(false);
 
 const shortAddress = address
-? "${address.slice(0, 6)}...${address.slice(-4)}"
-: "";
+  ? `${address.slice(0, 6)}...${address.slice(-4)}`
+  : "";
 
 const menuAddress = address
-? "${address.slice(0, 10)}...${address.slice(-8)}"
-: "";
+  ? `${address.slice(0, 10)}...${address.slice(-8)}`
+  : "";
 
 const connectedWallet = React.useMemo(() => {
 if (!connector) {
