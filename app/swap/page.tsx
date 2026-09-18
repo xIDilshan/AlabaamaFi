@@ -1524,7 +1524,7 @@ export default function SwapPage() {
                         className={
                           inputToken.symbol ===
                           "cirBTC"
-                            ? "h-5 w-5 rounded-full object-contain"
+                            ? "h-7 w-7 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1590,7 +1590,7 @@ export default function SwapPage() {
                           className={
                             inputToken.symbol ===
                             "cirBTC"
-                              ? "h-7 w-7 rounded-full object-contain"
+                              ? "h-8 w-8 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
@@ -1760,7 +1760,7 @@ export default function SwapPage() {
                         className={
                           outputToken.symbol ===
                           "cirBTC"
-                            ? "h-5 w-5 rounded-full object-contain"
+                            ? "h-7 w-7 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1824,7 +1824,7 @@ export default function SwapPage() {
                           className={
                             outputToken.symbol ===
                             "cirBTC"
-                              ? "h-7 w-7 rounded-full object-contain"
+                              ? "h-8 w-8 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
