@@ -83,8 +83,7 @@ logo: string;
 address: Address;
 decimals: number;
 }
-
-= {
+> = {
 USDC: {
 symbol: "USDC",
 name: "USD Coin",
