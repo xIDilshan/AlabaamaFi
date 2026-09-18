@@ -791,13 +791,15 @@ export default function SwapPage() {
 
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
-            <p className="text-sm font-semibold text-white/35">
-              AlabaamaFi
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-3xl font-medium leading-none text-white/55">
+                ⇄
+              </span>
 
-            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-              Token Swap
-            </h1>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                Token Swap
+              </h1>
+            </div>
 
             <p className="mx-auto mt-3 max-w-lg text-sm font-medium leading-6 text-white/35">
               Swap supported assets directly on Arc
@@ -844,7 +846,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10457 5 10 5 10 7Z"
+                    d="M10 7C10 8.10457 9.10443 9 8 9C6.89543 9 6 8.10457 6 7C6 5.89543 6.89543 5 8 5C9.10443 5 10 5 10 7Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -864,7 +866,7 @@ export default function SwapPage() {
                   />
 
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
