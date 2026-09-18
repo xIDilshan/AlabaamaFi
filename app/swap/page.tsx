@@ -1489,12 +1489,12 @@ return (
                       false
                     );
                   }}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
+                  className="flex h-11 w-[120px] shrink-0 items-center justify-between rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                 >
                   <img
                     src={inputToken.logo}
                     alt={inputToken.symbol}
-                    className={`h-8 w-8 rounded-full object-contain ${
+                    className={`h-7 w-7 rounded-full object-contain ${
                       tokenIn === "cirBTC"
                         ? "scale-[0.82]"
                         : ""
@@ -1548,7 +1548,7 @@ return (
                                 token
                               ].symbol
                             }
-                            className={`h-7 w-7 rounded-full object-contain ${
+                            className={`h-6 w-6 rounded-full object-contain ${
                               token ===
                               "cirBTC"
                                 ? "scale-[0.82]"
@@ -1600,7 +1600,7 @@ return (
                         false
                       );
                     }}
-                    className="flex shrink-0 items-center gap-2 rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
+                   className="flex h-14 w-[150px] shrink-0 items-center justify-between rounded-full border border-white/[0.07] bg-[#080a0d] px-3 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                   >
                     <img
                       src={
@@ -1609,7 +1609,7 @@ return (
                       alt={
                         inputToken.symbol
                       }
-                      className={`h-10 w-10 rounded-full object-contain ${
+                      className={`h-9 w-9 rounded-full object-contain ${
                         tokenIn ===
                         "cirBTC"
                           ? "scale-[0.82]"
@@ -1617,15 +1617,13 @@ return (
                       }`}
                     />
 
-                    <span className="text-sm font-black">
-                      {
-                        inputToken.symbol
-                      }
-                    </span>
+                    <span className="text-xs font-black">
+  {inputToken.symbol}
+</span>
 
-                    <span className="text-[10px] text-white/35">
-                      ▾
-                    </span>
+<span className="text-lg leading-none text-white/40">
+  ⌄
+</span>
                   </button>
 
                   {showInputTokenSelector && (
@@ -1668,7 +1666,7 @@ return (
                                   token
                                 ].symbol
                               }
-                              className={`h-8 w-8 rounded-full object-contain ${
+                              className={`h-7 w-7 rounded-full object-contain ${
                                 token ===
                                 "cirBTC"
                                   ? "scale-[0.82]"
