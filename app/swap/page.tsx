@@ -107,7 +107,11 @@ const tokens: Record<
   },
 };
 
-const tokenList: Token[] = ["USDC", "EURC", "cirBTC"];
+const tokenList: Token[] = [
+  "USDC",
+  "EURC",
+  "cirBTC",
+];
 
 const SWAP_ROUTER =
   "0xe27d5d256b370604f1ff060fb489c6a8e3f8a6d9" as Address;
@@ -332,9 +336,7 @@ export default function SwapPage() {
     address: tokens.USDC.address,
     abi: erc20BalanceAbi,
     functionName: "balanceOf",
-    args: address
-      ? [address]
-      : undefined,
+    args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address),
     },
@@ -347,9 +349,7 @@ export default function SwapPage() {
     address: tokens.EURC.address,
     abi: erc20BalanceAbi,
     functionName: "balanceOf",
-    args: address
-      ? [address]
-      : undefined,
+    args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address),
     },
@@ -362,9 +362,7 @@ export default function SwapPage() {
     address: tokens.cirBTC.address,
     abi: erc20BalanceAbi,
     functionName: "balanceOf",
-    args: address
-      ? [address]
-      : undefined,
+    args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address),
     },
@@ -424,9 +422,9 @@ export default function SwapPage() {
   const [
     openTokenSelector,
     setOpenTokenSelector,
-  ] = useState<"input" | "output" | null>(
-    null
-  );
+  ] = useState<
+    "input" | "output" | null
+  >(null);
 
   const formattedUsdcBalance =
     usdcBalance !== undefined
@@ -459,6 +457,13 @@ export default function SwapPage() {
       ? formattedEurcBalance
       : formattedCirbtcBalance;
 
+  const outputBalance =
+    tokenOut === "USDC"
+      ? formattedUsdcBalance
+      : tokenOut === "EURC"
+      ? formattedEurcBalance
+      : formattedCirbtcBalance;
+
   const inputBalanceNumber =
     Number(inputBalance);
 
@@ -475,29 +480,38 @@ export default function SwapPage() {
       }
     );
 
+  const displayOutputBalance =
+    Number(outputBalance).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits:
+          outputToken.decimals,
+      }
+    );
+
   const activeSlippage =
     slippageMode === "auto"
       ? AUTO_SLIPPAGE
       : customSlippage;
 
-  const slippageBps =
-    Math.round(activeSlippage * 100);
+  const slippageBps = Math.round(
+    activeSlippage * 100
+  );
 
   const insufficientBalance =
     Boolean(amountIn) &&
-    Number(amountIn) >
-      inputBalanceNumber;
+    Number(amountIn) > inputBalanceNumber;
 
-  const formattedSlippage =
-    useMemo(() => {
-      return activeSlippage
-        .toFixed(
-          activeSlippage % 1 === 0
-            ? 0
-            : 2
-        )
-        .replace(/\.00$/, "");
-    }, [activeSlippage]);
+  const formattedSlippage = useMemo(() => {
+    return activeSlippage
+      .toFixed(
+        activeSlippage % 1 === 0
+          ? 0
+          : 2
+      )
+      .replace(/\.00$/, "");
+  }, [activeSlippage]);
 
   const handleTokenSelect = (
     type: "input" | "output",
@@ -525,23 +539,21 @@ export default function SwapPage() {
     setSwapStage("idle");
   };
 
-  const handleInputTokenClick =
-    () => {
-      setOpenTokenSelector(
-        openTokenSelector === "input"
-          ? null
-          : "input"
-      );
-    };
+  const handleInputTokenClick = () => {
+    setOpenTokenSelector(
+      openTokenSelector === "input"
+        ? null
+        : "input"
+    );
+  };
 
-  const handleOutputTokenClick =
-    () => {
-      setOpenTokenSelector(
-        openTokenSelector === "output"
-          ? null
-          : "output"
-      );
-    };
+  const handleOutputTokenClick = () => {
+    setOpenTokenSelector(
+      openTokenSelector === "output"
+        ? null
+        : "output"
+    );
+  };
 
   useEffect(() => {
     if (
@@ -552,8 +564,7 @@ export default function SwapPage() {
       Number(amountIn) <= 0 ||
       insufficientBalance ||
       tokenIn === tokenOut ||
-      chainId !==
-        ARC_TESTNET_CHAIN_ID
+      chainId !== ARC_TESTNET_CHAIN_ID
     ) {
       setEstimatedOutput("");
       setError("");
@@ -770,9 +781,7 @@ export default function SwapPage() {
 
     setAmountIn(
       amount
-        .toFixed(
-          inputToken.decimals
-        )
+        .toFixed(inputToken.decimals)
         .replace(/\.?0+$/, "")
     );
 
@@ -811,32 +820,33 @@ export default function SwapPage() {
     }
   };
 
-  const handleCustomSlippageInput =
-    (value: string) => {
-      setCustomSlippageInput(value);
+  const handleCustomSlippageInput = (
+    value: string
+  ) => {
+    setCustomSlippageInput(value);
 
-      if (value === "") {
-        return;
-      }
+    if (value === "") {
+      return;
+    }
 
-      const numericValue =
-        Number(value);
+    const numericValue =
+      Number(value);
 
-      if (
-        Number.isFinite(
-          numericValue
-        ) &&
-        numericValue > 0 &&
-        numericValue <= 50
-      ) {
-        setCustomSlippage(
-          numericValue
-        );
-        setSlippageMode("custom");
-        setEstimatedOutput("");
-        setError("");
-      }
-    };
+    if (
+      Number.isFinite(
+        numericValue
+      ) &&
+      numericValue > 0 &&
+      numericValue <= 50
+    ) {
+      setCustomSlippage(
+        numericValue
+      );
+      setSlippageMode("custom");
+      setEstimatedOutput("");
+      setError("");
+    }
+  };
 
   const handleCustomSlippage = (
     value: number
@@ -873,311 +883,315 @@ export default function SwapPage() {
     }
   };
 
-  const sendSynthraTransaction =
-    async (
-      transaction: SynthraPreparedTransaction
-    ) => {
-      if (!walletClient || !address) {
-        throw new Error(
-          "Wallet connection is not ready."
-        );
-      }
+  const sendSynthraTransaction = async (
+    transaction: SynthraPreparedTransaction
+  ) => {
+    if (
+      !walletClient ||
+      !address
+    ) {
+      throw new Error(
+        "Wallet connection is not ready."
+      );
+    }
 
-      if (!publicClient) {
-        throw new Error(
-          "Arc network client is not ready."
-        );
-      }
+    if (!publicClient) {
+      throw new Error(
+        "Arc network client is not ready."
+      );
+    }
 
-      if (!transaction.to) {
-        throw new Error(
-          "Invalid transaction returned by Synthra."
-        );
-      }
+    if (!transaction.to) {
+      throw new Error(
+        "Invalid transaction returned by Synthra."
+      );
+    }
 
-      const value =
-        parseTransactionValue(
-          transaction.value
-        );
+    const value =
+      parseTransactionValue(
+        transaction.value
+      );
 
-      let gasLimit: bigint;
+    let gasLimit: bigint;
 
-      try {
-        const estimatedGas =
-          await publicClient.estimateGas(
-            {
-              account: address,
-              to: transaction.to,
-              data: transaction.data,
-              value,
-            }
-          );
-
-        gasLimit =
-          (estimatedGas *
-            BigInt(130)) /
-          BigInt(100);
-      } catch (estimateError) {
-        console.warn(
-          "Gas estimation failed, using Synthra gas limit:",
-          estimateError
-        );
-
-        if (
-          transaction.gasLimit !==
-          undefined
-        ) {
-          gasLimit =
-            (parseTransactionValue(
-              transaction.gasLimit
-            ) *
-              BigInt(130)) /
-            BigInt(100);
-        } else {
-          throw new Error(
-            "Unable to estimate gas for the swap transaction."
-          );
-        }
-      }
-
-      const hash =
-        await walletClient.sendTransaction(
+    try {
+      const estimatedGas =
+        await publicClient.estimateGas(
           {
             account: address,
-            chain: arcTestnet,
             to: transaction.to,
             data: transaction.data,
             value,
-            gas: gasLimit,
           }
         );
 
-      await waitForTransaction(hash);
+      gasLimit =
+        (estimatedGas *
+          BigInt(130)) /
+        BigInt(100);
+    } catch (estimateError) {
+      console.warn(
+        "Gas estimation failed, using Synthra gas limit:",
+        estimateError
+      );
 
-      return hash;
-    };
-
-  const handleDirectSwap =
-    async (
-      amountInUnits: bigint
-    ) => {
       if (
-        !publicClient ||
-        !walletClient ||
-        !address
+        transaction.gasLimit !==
+        undefined
       ) {
+        gasLimit =
+          (parseTransactionValue(
+            transaction.gasLimit
+          ) *
+            BigInt(130)) /
+          BigInt(100);
+      } else {
         throw new Error(
-          "Wallet connection is not ready."
+          "Unable to estimate gas for the swap transaction."
         );
       }
+    }
 
-      const currentAllowance =
-        await publicClient.readContract(
-          {
-            address:
-              inputToken.address,
-            abi: erc20AllowanceAbi,
-            functionName:
-              "allowance",
-            args: [
-              address,
-              SWAP_ROUTER,
-            ],
-          }
-        );
+    const hash =
+      await walletClient.sendTransaction(
+        {
+          account: address,
+          chain: arcTestnet,
+          to: transaction.to,
+          data: transaction.data,
+          value,
+          gas: gasLimit,
+        }
+      );
 
-      if (
-        currentAllowance <
-        amountInUnits
-      ) {
-        setSwapStage(
-          "approving"
-        );
+    await waitForTransaction(hash);
 
-        const approvalHash =
-          await walletClient.writeContract(
-            {
-              address:
-                inputToken.address,
-              abi: erc20ApproveAbi,
-              functionName:
-                "approve",
-              args: [
-                SWAP_ROUTER,
-                maxUint256,
-              ],
-              gas: BigInt(
-                100000
-              ),
-            }
-          );
+    return hash;
+  };
 
-        await waitForTransaction(
-          approvalHash
-        );
-      }
+  const handleDirectSwap = async (
+    amountInUnits: bigint
+  ) => {
+    if (
+      !publicClient ||
+      !walletClient ||
+      !address
+    ) {
+      throw new Error(
+        "Wallet connection is not ready."
+      );
+    }
 
-      const amounts =
-        await publicClient.readContract(
-          {
-            address:
-              SWAP_ROUTER,
-            abi: routerAbi,
-            functionName:
-              "getAmountsOut",
-            args: [
-              amountInUnits,
-              [
-                inputToken.address,
-                outputToken.address,
-              ],
-            ],
-          }
-        );
+    const currentAllowance =
+      await publicClient.readContract(
+        {
+          address:
+            inputToken.address,
+          abi: erc20AllowanceAbi,
+          functionName:
+            "allowance",
+          args: [
+            address,
+            SWAP_ROUTER,
+          ],
+        }
+      );
 
-      const quotedOutput =
-        amounts[
-          amounts.length - 1
-        ];
+    if (
+      currentAllowance <
+      amountInUnits
+    ) {
+      setSwapStage(
+        "approving"
+      );
 
-      const amountOutMin =
-        (quotedOutput *
-          BigInt(
-            10000 -
-              slippageBps
-          )) /
-        BigInt(10000);
-
-      setSwapStage("confirming");
-
-      const deadline =
-        BigInt(
-          Math.floor(
-            Date.now() / 1000
-          ) +
-            60 * 10
-        );
-
-      const swapHash =
+      const approvalHash =
         await walletClient.writeContract(
           {
             address:
-              SWAP_ROUTER,
-            abi: routerAbi,
+              inputToken.address,
+            abi: erc20ApproveAbi,
             functionName:
-              "swapExactTokensForTokens",
+              "approve",
             args: [
-              amountInUnits,
-              amountOutMin,
-              [
-                inputToken.address,
-                outputToken.address,
-              ],
-              address,
-              deadline,
+              SWAP_ROUTER,
+              maxUint256,
             ],
             gas: BigInt(
-              250000
+              100000
             ),
           }
         );
 
       await waitForTransaction(
-        swapHash
+        approvalHash
       );
-    };
+    }
 
-  const handleSynthraSwap =
-    async (
-      amountInUnits: bigint
-    ) => {
-      if (!address) {
-        throw new Error(
-          "Wallet address is not available."
-        );
-      }
+    const amounts =
+      await publicClient.readContract(
+        {
+          address:
+            SWAP_ROUTER,
+          abi: routerAbi,
+          functionName:
+            "getAmountsOut",
+          args: [
+            amountInUnits,
+            [
+              inputToken.address,
+              outputToken.address,
+            ],
+          ],
+        }
+      );
 
-      const response =
-        await fetch(
-          "/api/swap",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              action: "swap",
-              chainId:
-                ARC_TESTNET_CHAIN_ID,
-              tokenIn:
-                inputToken.address,
-              tokenOut:
-                outputToken.address,
-              amount:
-                amountInUnits.toString(),
-              sender: address,
-              recipient: address,
-              approvalMode:
-                "erc20",
-              slippageBps:
-                slippageBps,
-            }),
-          }
-        );
+    const quotedOutput =
+      amounts[
+        amounts.length - 1
+      ];
 
-      const data =
-        (await response.json()) as
-          | SynthraSwapResponse
-          | {
-              error?: string;
-              details?: unknown;
-            };
+    const amountOutMin =
+      (quotedOutput *
+        BigInt(
+          10000 -
+            slippageBps
+        )) /
+      BigInt(10000);
 
-      if (!response.ok) {
-        const message =
-          "error" in data &&
-          data.error
-            ? data.error
-            : "Synthra swap request failed.";
+    setSwapStage(
+      "confirming"
+    );
 
-        throw new Error(message);
-      }
+    const deadline =
+      BigInt(
+        Math.floor(
+          Date.now() / 1000
+        ) +
+          60 * 10
+      );
 
-      const swapData =
-        data as SynthraSwapResponse;
+    const swapHash =
+      await walletClient.writeContract(
+        {
+          address:
+            SWAP_ROUTER,
+          abi: routerAbi,
+          functionName:
+            "swapExactTokensForTokens",
+          args: [
+            amountInUnits,
+            amountOutMin,
+            [
+              inputToken.address,
+              outputToken.address,
+            ],
+            address,
+            deadline,
+          ],
+          gas: BigInt(
+            250000
+          ),
+        }
+      );
 
-      const tokenApproval =
-        swapData.approval
-          ?.tokenApproval;
+    await waitForTransaction(
+      swapHash
+    );
+  };
 
-      if (
-        tokenApproval?.needsApproval &&
-        tokenApproval.approveTransaction
-      ) {
-        setSwapStage(
-          "approving"
-        );
+  const handleSynthraSwap = async (
+    amountInUnits: bigint
+  ) => {
+    if (!address) {
+      throw new Error(
+        "Wallet address is not available."
+      );
+    }
 
-        await sendSynthraTransaction(
-          tokenApproval.approveTransaction
-        );
-      }
+    const response =
+      await fetch(
+        "/api/swap",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            action: "swap",
+            chainId:
+              ARC_TESTNET_CHAIN_ID,
+            tokenIn:
+              inputToken.address,
+            tokenOut:
+              outputToken.address,
+            amount:
+              amountInUnits.toString(),
+            sender: address,
+            recipient: address,
+            approvalMode:
+              "erc20",
+            slippageBps:
+              slippageBps,
+          }),
+        }
+      );
 
-      if (
-        !swapData.transaction
-      ) {
-        throw new Error(
-          "Synthra did not return a swap transaction."
-        );
-      }
+    const data =
+      (await response.json()) as
+        | SynthraSwapResponse
+        | {
+            error?: string;
+            details?: unknown;
+          };
 
-      setSwapStage("confirming");
+    if (!response.ok) {
+      const message =
+        "error" in data &&
+        data.error
+          ? data.error
+          : "Synthra swap request failed.";
+
+      throw new Error(message);
+    }
+
+    const swapData =
+      data as SynthraSwapResponse;
+
+    const tokenApproval =
+      swapData.approval
+        ?.tokenApproval;
+
+    if (
+      tokenApproval?.needsApproval &&
+      tokenApproval.approveTransaction
+    ) {
+      setSwapStage(
+        "approving"
+      );
 
       await sendSynthraTransaction(
-        swapData.transaction
+        tokenApproval.approveTransaction
       );
-    };
+    }
+
+    if (
+      !swapData.transaction
+    ) {
+      throw new Error(
+        "Synthra did not return a swap transaction."
+      );
+    }
+
+    setSwapStage(
+      "confirming"
+    );
+
+    await sendSynthraTransaction(
+      swapData.transaction
+    );
+  };
 
   const handleSwap = async () => {
     if (
@@ -1233,7 +1247,9 @@ export default function SwapPage() {
         );
       }
 
-      setShowTradeSuccess(true);
+      setShowTradeSuccess(
+        true
+      );
 
       await Promise.all([
         refetchUsdcBalance(),
@@ -1274,7 +1290,9 @@ export default function SwapPage() {
     return (
       <div className="absolute right-0 top-full z-50 mt-2 w-[190px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#080a0d] p-1.5 shadow-2xl shadow-black/70">
         {tokenList.map((token) => {
-          const item = tokens[token];
+          const item =
+            tokens[token];
+
           const disabled =
             token === otherToken;
 
@@ -1304,7 +1322,7 @@ export default function SwapPage() {
                 className={
                   token ===
                   "cirBTC"
-                    ? "h-7 w-7 shrink-0 rounded-full object-contain"
+                    ? "h-6 w-6 shrink-0 rounded-full object-contain"
                     : "h-8 w-8 shrink-0 rounded-full object-contain"
                 }
               />
@@ -1345,7 +1363,7 @@ export default function SwapPage() {
   };
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#030405] text-white">
+    <main className="min-h-screen">
       <Header />
 
       <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
@@ -1354,14 +1372,14 @@ export default function SwapPage() {
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
             <div className="flex flex-col items-center">
-  <span className="text-3xl font-medium leading-none text-white/55">
-    ⇄
-  </span>
+              <span className="text-4xl font-medium leading-none text-white/55">
+                ⇄
+              </span>
 
-  <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-    Token Swap
-  </h1>
-</div>
+              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                Token Swap
+              </h1>
+            </div>
 
             <p className="mx-auto mt-3 max-w-lg text-sm font-medium leading-6 text-white/35">
               Swap supported assets directly on Arc
@@ -1422,7 +1440,7 @@ export default function SwapPage() {
                     strokeLinecap="round"
                   />
                   <path
-                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.8954 15 12 15C13.1046 15 14 15 14 17Z"
+                    d="M14 17C14 18.1046 13.1046 19 12 19C10.8954 19 10 18.1046 10 17C10 15.8954 10.1046 15 12 15C13.1046 15 14 15 14 17Z"
                     stroke="currentColor"
                     strokeWidth="1.7"
                   />
@@ -1506,7 +1524,7 @@ export default function SwapPage() {
                         className={
                           inputToken.symbol ===
                           "cirBTC"
-                            ? "h-6 w-6 rounded-full object-contain"
+                            ? "h-5 w-5 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1572,7 +1590,7 @@ export default function SwapPage() {
                           className={
                             inputToken.symbol ===
                             "cirBTC"
-                              ? "h-8 w-8 rounded-full object-contain"
+                              ? "h-7 w-7 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
@@ -1660,7 +1678,9 @@ export default function SwapPage() {
               <div className="relative z-20 -my-6 flex justify-center">
                 <button
                   type="button"
-                  onClick={handleSwitchTokens}
+                  onClick={
+                    handleSwitchTokens
+                  }
                   aria-label="Switch tokens"
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-[#080a0d] text-sm font-semibold text-white/55 shadow-xl transition hover:border-white/[0.16] hover:bg-[#0c1016] hover:text-white"
                 >
@@ -1671,14 +1691,52 @@ export default function SwapPage() {
               {/* YOU RECEIVE */}
               <div className="w-full min-w-0 max-w-full overflow-visible rounded-2xl border border-white/[0.07] bg-[#020202] p-4 sm:p-5">
 
-                <p className="text-xs font-bold text-white/35">
-                  You receive
-                </p>
+                <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs font-bold text-white/35">
+                    You receive
+                  </p>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-white/35"
+                    >
+                      <path
+                        d="M4 6.5C4 5.39543 4.89543 4.5 6 4.5H19C20.1046 4.5 21 5.39543 21 6.5V17.5C21 18.6046 20.1046 19.5 19 19.5H6C4.89543 19.5 4 18.6046 4 17.5V6.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                      <path
+                        d="M16 13H21"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                      <circle
+                        cx="16"
+                        cy="13"
+                        r="1"
+                        fill="currentColor"
+                      />
+                    </svg>
+
+                    <span className="shrink-0 text-xs font-bold text-white/45">
+                      {isConnected
+                        ? displayOutputBalance
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
 
                 {/* MOBILE AMOUNT */}
                 <div className="mt-3 grid min-h-[60px] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:hidden">
                   <div className="min-w-0 w-full">
-                    <span className={`${amountTypography}`}>
+                    <span
+                      className={`${amountTypography}`}
+                    >
                       {isLoading
                         ? "..."
                         : estimatedOutput ||
@@ -1702,7 +1760,7 @@ export default function SwapPage() {
                         className={
                           outputToken.symbol ===
                           "cirBTC"
-                            ? "h-6 w-6 rounded-full object-contain"
+                            ? "h-5 w-5 rounded-full object-contain"
                             : "h-8 w-8 rounded-full object-contain"
                         }
                       />
@@ -1766,7 +1824,7 @@ export default function SwapPage() {
                           className={
                             outputToken.symbol ===
                             "cirBTC"
-                              ? "h-8 w-8 rounded-full object-contain"
+                              ? "h-7 w-7 rounded-full object-contain"
                               : "h-10 w-10 rounded-full object-contain"
                           }
                         />
@@ -1951,7 +2009,9 @@ export default function SwapPage() {
                               value={
                                 customSlippageInput
                               }
-                              onChange={(event) =>
+                              onChange={(
+                                event
+                              ) =>
                                 handleCustomSlippageInput(
                                   event.target.value
                                 )
