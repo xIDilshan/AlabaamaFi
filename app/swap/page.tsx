@@ -302,7 +302,7 @@ value === undefined ||
 value === null ||
 value === ""
 ) {
-return 0n;
+return BigInt(0);
 }
 
 const stringValue = String(value);
@@ -1172,7 +1172,7 @@ try {
       inputToken.decimals
     );
 
-  if (amountInUnits <= 0n) {
+  if (amountInUnits <= BigInt(0)) {
     throw new Error(
       "Invalid swap amount."
     );
