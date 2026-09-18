@@ -1317,10 +1317,15 @@ export default function SwapPage() {
               }`}
             >
               <img
-  src={item.logo}
-  alt={item.symbol}
-  className="h-8 w-8 shrink-0 rounded-full object-contain"
-/>
+                src={item.logo}
+                alt={item.symbol}
+                className={
+                  token ===
+                  "cirBTC"
+                    ? "h-6 w-6 shrink-0 rounded-full object-contain"
+                    : "h-8 w-8 shrink-0 rounded-full object-contain"
+                }
+              />
 
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-white/80">
@@ -1516,7 +1521,12 @@ export default function SwapPage() {
                       <img
                         src={inputToken.logo}
                         alt={inputToken.symbol}
-                        className="h-8 w-8 rounded-full object-contain"
+                        className={
+                          inputToken.symbol ===
+                          "cirBTC"
+                            ? "h-7 w-7 rounded-full object-contain"
+                            : "h-8 w-8 rounded-full object-contain"
+                        }
                       />
 
                       <span className="text-xs font-black">
@@ -1742,7 +1752,7 @@ export default function SwapPage() {
                       onClick={
                         handleOutputTokenClick
                       }
-                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-1.5 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.07] bg-[#080a0d] px-2.5 py-2 transition hover:border-white/[0.14] hover:bg-[#0c1016]"
                     >
                       <img
                         src={outputToken.logo}
