@@ -1322,8 +1322,7 @@ export default function SwapPage() {
                 className={
                   token ===
                   "cirBTC"
-                    ? "h-6 w-6 shrink-0 rounded-full object-contain"
-                    : "h-8 w-8 shrink-0 rounded-full object-contain"
+                    "h-8 w-8 shrink-0 rounded-full object-contain"
                 }
               />
 
