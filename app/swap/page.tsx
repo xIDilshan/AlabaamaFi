@@ -2116,7 +2116,7 @@ export default function SwapPage() {
                   manrope.style.fontFamily,
                 fontWeight: 600,
               }}
-              className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm tracking-tight transition-all duration-200 ${
+              className={`mt-5 min-h-13 w-full rounded-full py-3.5 text-sm tracking-normal transition-all duration-200 ${
                 !isConnected ||
                 !amountIn ||
                 Number(amountIn) <= 0 ||
