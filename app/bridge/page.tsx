@@ -8,6 +8,13 @@ createViemAdapterFromProvider,
 type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
 import { NetworkIcon } from "@web3icons/react/dynamic";
+
+import {
+  NetworkCodex,
+  NetworkHyperEvm,
+  NetworkPlume,
+  NetworkSonic,
+} from "@web3icons/react";
 import {
 useAccount,
 useChainId,
@@ -75,95 +82,95 @@ aria-label={`${network?.name ?? "Network"} logo`}
 }
 
 function NetworkLogo({
-network,
-size = "normal",
+  network,
+  size = "normal",
 }: {
-network: BridgeNetwork | FutureNetwork | null;
-size?: "small" | "normal";
+  network: BridgeNetwork | FutureNetwork | null;
+  size?: "small" | "normal";
 }) {
-const dimensions =
-size === "small"
-? "h-8 w-8"
-: "h-10 w-10";
+  const dimensions =
+    size === "small"
+      ? "h-8 w-8"
+      : "h-10 w-10";
 
-if (!network) {
-return (
-<div
-className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]"}
->
-<span className="text-sm text-white/25">
-?
-</span>
-</div>
-);
-}
+  if (!network) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]`}
+      >
+        <span className="text-sm text-white/25">
+          ?
+        </span>
+      </div>
+    );
+  }
 
-const networkMap: Record<number, string> = {
-  // Current networks
-  5042002: "arc",
-  11155111: "ethereum",
-  43113: "avalanche",
-  11155420: "optimism",
-  421614: "arbitrum-one",
-  84532: "base",
-  80002: "polygon",
-  59141: "linea",
-  1301: "unichain",
+  const networkMap: Record<number, string> = {
+    // Current networks
+    5042002: "arc",
+    11155111: "ethereum",
+    43113: "avalanche",
+    11155420: "optimism",
+    421614: "arbitrum-one",
+    84532: "base",
+    80002: "polygon",
+    59141: "linea",
+    1301: "unichain",
 
-  // Additional networks
-  5115: "codex",
-  57054: "sonic",
-  4801: "world",
-  1328: "sei",
-  51: "xdc-network",
-  999: "hyper-evm",
-  763373: "ink",
-  161221135: "plume",
-  46630: "robinhood",
+    // Additional networks
+    5115: "codex",
+    57054: "sonic",
+    4801: "world",
+    1328: "sei",
+    51: "xdc-network",
+    999: "hyper-evm",
+    763373: "ink",
+    161221135: "plume",
+    46630: "robinhood",
 
-  // More testnets
-  338: "cronos",
-  202: "edgeless",
-  1439: "injective",
-  10143: "monad",
-  2710: "morph",
-  688689: "pharos",
-  9746: "plasma",
-  1952: "x-layer",
-};
+    // More testnets
+    338: "cronos",
+    202: "edgeless",
+    1439: "injective",
+    10143: "monad",
+    2710: "morph",
+    688689: "pharos",
+    9746: "plasma",
+    1952: "x-layer",
+  };
 
-const iconNetwork =
-networkMap[network.chainId];
+  const iconNetwork =
+    networkMap[network.chainId];
 
-if (!iconNetwork) {
-return (
-<div
-className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
->
-<FallbackNetworkMark
-network={network}
-/>
-</div>
-);
-}
+  if (!iconNetwork) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
+      >
+        <FallbackNetworkMark
+          network={network}
+        />
+      </div>
+    );
+  }
 
-return (
-<div
-className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
->
-<NetworkIcon
-name={iconNetwork}
-size={28}
-variant="branded"
-aria-label={"${network.name} logo"}
-fallback={
-<FallbackNetworkMark
-network={network}
-/>
-}
-/>
-</div>
-);
+  return (
+    <div
+      className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
+    >
+      <NetworkIcon
+        name={iconNetwork}
+        size={28}
+        variant="branded"
+        aria-label={`${network.name} logo`}
+        fallback={
+          <FallbackNetworkMark
+            network={network}
+          />
+        }
+      />
+    </div>
+  );
 }
 
 function ChevronDown() {
