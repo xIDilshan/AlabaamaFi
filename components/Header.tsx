@@ -356,7 +356,11 @@ return (
         <div className="flex min-w-0 items-center justify-end">
           <button
             onClick={handleWalletClick}
-            className={`${manrope.className} flex max-w-[120px] items-center gap-1 truncate rounded-full px-2 py-1.5 text-[9px] font-semibold tracking-normal sm:max-w-none sm:gap-2 sm:px-5 sm:py-3 sm:text-xs ${connectGlassButton}`}
+            className={`${manrope.className} flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold ${
+  pathname === "/swap"
+    ? "tracking-normal"
+    : "tracking-tight"
+} ${connectGlassButton}`}
           >
             <span className="truncate">
               {isConnected
