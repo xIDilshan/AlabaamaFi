@@ -55,14 +55,256 @@ const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
   available: false,
 };
 
+function NetworkLogo({
+  network,
+  size = "normal",
+}: {
+  network: BridgeNetwork | FutureNetwork | null;
+  size?: "small" | "normal";
+}) {
+  const dimensions =
+    size === "small"
+      ? "h-8 w-8"
+      : "h-10 w-10";
+
+  if (!network) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]`}
+      >
+        <span className="text-sm text-white/25">
+          ?
+        </span>
+      </div>
+    );
+  }
+
+  const id = network.id.toLowerCase();
+
+  if (id.includes("arc")) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-white text-black`}
+      >
+        <svg
+          viewBox="0 0 32 32"
+          className="h-[58%] w-[58%]"
+          aria-hidden="true"
+        >
+          <path
+            d="M16 5.5 7.5 25h4.2l1.5-3.8h5.6l1.5 3.8h4.2L16 5.5Zm0 7.1 1.7 5.1h-3.4L16 12.6Z"
+            fill="currentColor"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  const logoMap: Record<string, string> = {
+    ethereum: "https://cdn.simpleicons.org/ethereum",
+    avalanche: "https://cdn.simpleicons.org/avalanche",
+    optimism: "https://cdn.simpleicons.org/optimism",
+    arbitrum: "https://cdn.simpleicons.org/arbitrum",
+    base: "https://cdn.simpleicons.org/base",
+    polygon: "https://cdn.simpleicons.org/polygon",
+    linea: "https://cdn.simpleicons.org/linea",
+    unichain: "https://cdn.simpleicons.org/uniswap",
+    sonic: "https://cdn.simpleicons.org/sonic",
+    world: "https://cdn.simpleicons.org/worldcoin",
+    sei: "https://cdn.simpleicons.org/sei",
+    xdc: "https://cdn.simpleicons.org/xdc",
+    ink: "https://cdn.simpleicons.org/ink",
+    plume: "https://cdn.simpleicons.org/plume",
+    robinhood: "https://cdn.simpleicons.org/robinhood",
+  };
+
+  let logoKey = "";
+
+  if (id.includes("ethereum")) {
+    logoKey = "ethereum";
+  } else if (id.includes("avalanche")) {
+    logoKey = "avalanche";
+  } else if (id.includes("optimism")) {
+    logoKey = "optimism";
+  } else if (id.includes("arbitrum")) {
+    logoKey = "arbitrum";
+  } else if (id.includes("base")) {
+    logoKey = "base";
+  } else if (id.includes("polygon")) {
+    logoKey = "polygon";
+  } else if (id.includes("linea")) {
+    logoKey = "linea";
+  } else if (id.includes("unichain")) {
+    logoKey = "unichain";
+  } else if (id.includes("sonic")) {
+    logoKey = "sonic";
+  } else if (id.includes("world")) {
+    logoKey = "world";
+  } else if (id.includes("sei")) {
+    logoKey = "sei";
+  } else if (id.includes("xdc")) {
+    logoKey = "xdc";
+  } else if (id.includes("ink")) {
+    logoKey = "ink";
+  } else if (id.includes("plume")) {
+    logoKey = "plume";
+  } else if (id.includes("robinhood")) {
+    logoKey = "robinhood";
+  }
+
+  const logoUrl = logoMap[logoKey];
+
+  if (logoUrl) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-2`}
+      >
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045]`}
+    >
+      <svg
+        viewBox="0 0 32 32"
+        className="h-[52%] w-[52%] text-white/50"
+        aria-hidden="true"
+      >
+        <circle
+          cx="16"
+          cy="16"
+          r="10"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          d="M11 16h10M16 11v10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function ChevronDown() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-4 w-4 text-white/35"
+      aria-hidden="true"
+    >
+      <path
+        d="m5 7.5 5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ArrowDown() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        d="M10 4v11M6 11l4 4 4-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        d="m5.5 10.5 3 3 6-7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function AlertIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        d="M10 3.5 17 16H3L10 3.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 7.5v4M10 13.8v.1"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function LoaderIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-4 w-4 animate-spin"
+      aria-hidden="true"
+    >
+      <circle
+        cx="10"
+        cy="10"
+        r="7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeDasharray="22 22"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function BridgePage() {
   const { isConnected, connector } = useAccount();
   const currentChainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
 
-  const [circleChains, setCircleChains] = useState<
-    BridgeNetwork[]
-  >([]);
+  const [circleChains, setCircleChains] =
+    useState<BridgeNetwork[]>([]);
 
   const [sourceChain, setSourceChain] =
     useState<BridgeNetwork | null>(null);
@@ -143,13 +385,6 @@ export default function BridgePage() {
 
         setCircleChains(networks);
 
-        /*
-         * Arc remains the initial default only.
-         * It is NOT locked as the source.
-         *
-         * Both source and destination can be changed
-         * to any supported Circle CCTP testnet.
-         */
         const arc =
           networks.find(
             (chain) =>
@@ -345,17 +580,6 @@ export default function BridgePage() {
     try {
       setIsBridging(true);
 
-      /*
-       * The wallet is switched to the SELECTED
-       * source network, not automatically to Arc.
-       *
-       * This allows:
-       * Arc -> Base
-       * Base -> Arc
-       * Base -> Ethereum
-       * Ethereum -> Arbitrum
-       * etc.
-       */
       if (
         currentChainId !==
         sourceChain.chainId
@@ -374,11 +598,6 @@ export default function BridgePage() {
         `Preparing ${sourceChain.shortName} → ${destinationChain.shortName}...`
       );
 
-      /*
-       * Get the provider AFTER switching chains.
-       * This ensures BridgeKit receives the wallet
-       * provider for the currently selected source.
-       */
       const provider =
         (await connector.getProvider()) as BrowserWalletProvider;
 
@@ -397,12 +616,6 @@ export default function BridgePage() {
         "Confirm the bridge transaction in your wallet..."
       );
 
-      /*
-       * Both chains are selected dynamically.
-       *
-       * No Arc-specific source or destination is
-       * hard-coded into the bridge transaction.
-       */
       const result =
         await bridgeKit.bridge({
           from: {
@@ -516,35 +729,47 @@ export default function BridgePage() {
         onClick={() =>
           onSelect(network)
         }
-        className="flex min-h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.05]"
+        className="group flex min-h-[68px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.055] active:bg-white/[0.07]"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
-          {network.shortName
-            .slice(0, 2)
-            .toUpperCase()}
-        </div>
+        <NetworkLogo
+          network={network}
+          size="small"
+        />
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-white">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13px] font-semibold text-white">
               {network.name}
             </span>
 
             {!network.available && (
-              <span className="shrink-0 rounded-full border border-white/[0.07] px-2 py-0.5 text-[9px] font-medium text-white/30">
+              <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/30">
                 Soon
               </span>
             )}
           </div>
 
-          <div className="text-xs text-white/35">
-            {network.description}
+          <div className="mt-1 flex items-center gap-1.5">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                network.available
+                  ? "bg-emerald-400"
+                  : "bg-white/20"
+              }`}
+            />
+
+            <span className="truncate text-[11px] text-white/35">
+              {network.available
+                ? "Circle CCTP · Testnet"
+                : network.description}
+            </span>
           </div>
         </div>
 
-        {network.provider ===
-          "circle" && (
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/80" />
+        {network.available && (
+          <span className="shrink-0 text-[10px] font-medium text-white/20 transition group-hover:text-white/40">
+            Select
+          </span>
         )}
       </button>
     );
@@ -554,26 +779,40 @@ export default function BridgePage() {
     <main className="min-h-screen bg-[#030405] text-white">
       <Header />
 
-      <div className="mx-auto flex max-w-5xl justify-center px-4 pb-20 pt-10 sm:px-6 sm:pt-14 lg:px-8">
-        <section className="w-full max-w-[520px]">
-          <div className="mb-7 text-center">
+      <div className="mx-auto flex max-w-5xl justify-center px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-12 lg:px-8">
+        <section className="w-full max-w-[540px]">
+          <div className="mb-6 text-center sm:mb-8">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                Circle CCTP · Testnet
+              </span>
+            </div>
+
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bridge
             </h1>
 
-            <p className="mt-2 text-sm text-white/45 sm:text-base">
-              Move USDC across networks with AlabaamaFi.
+            <p className="mx-auto mt-2 max-w-[400px] text-sm leading-6 text-white/40 sm:text-base">
+              Move native USDC across supported
+              testnet networks.
             </p>
           </div>
 
-          <div className="rounded-[28px] border border-white/[0.08] bg-white/[0.025] p-4 shadow-2xl shadow-black/20 sm:p-5">
-            <div className="rounded-[22px] border border-white/[0.07] bg-[#08090a] p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-white/40">
+          <div className="rounded-[30px] border border-white/[0.08] bg-white/[0.025] p-2.5 shadow-2xl shadow-black/20 sm:p-3">
+            <div className="rounded-[25px] border border-white/[0.07] bg-[#08090a] p-3.5 sm:p-4">
+              <div className="mb-3 flex items-center justify-between px-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
                   From
                 </span>
 
-                <span className="text-xs text-white/35">
+                <span className="flex items-center gap-1.5 text-[11px] text-white/30">
+                  <img
+                    src="/tokens/usdc.svg"
+                    alt=""
+                    className="h-4 w-4"
+                  />
                   USDC
                 </span>
               </div>
@@ -593,39 +832,44 @@ export default function BridgePage() {
                       false
                     );
                   }}
-                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex min-h-[72px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.11] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
-                      {sourceChain
-                        ? sourceChain.shortName
-                            .slice(0, 2)
-                            .toUpperCase()
-                        : "--"}
-                    </div>
+                    <NetworkLogo
+                      network={sourceChain}
+                    />
 
                     <div className="min-w-0 text-left">
-                      <div className="truncate text-sm font-semibold text-white">
-                        {isLoadingChains
-                          ? "Loading networks..."
-                          : sourceChain?.name ??
-                            "Select network"}
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-semibold text-white sm:text-[15px]">
+                          {isLoadingChains
+                            ? "Loading networks..."
+                            : sourceChain?.name ??
+                              "Select network"}
+                        </span>
                       </div>
 
-                      <div className="mt-0.5 truncate text-xs text-white/35">
-                        {sourceChain?.description ??
-                          "Choose a source network"}
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+                        <span className="truncate text-[11px] text-white/35">
+                          {sourceChain
+                            ? "Circle CCTP · Testnet"
+                            : "Choose source network"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <span className="ml-3 shrink-0 text-white/40">
-                    ▾
-                  </span>
+                  <ChevronDown />
                 </button>
 
                 {showSourceChains && (
-                  <div className="absolute left-0 right-0 top-[66px] z-30 max-h-[390px] overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
+                  <div className="absolute left-0 right-0 top-[78px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                    <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
+                      Select source network
+                    </div>
+
                     {circleChains.map(
                       (network) =>
                         renderNetworkOption(
@@ -642,46 +886,48 @@ export default function BridgePage() {
                 )}
               </div>
 
-              <div className="mt-4 flex items-end justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <label
-                    htmlFor="bridge-amount"
-                    className="sr-only"
-                  >
-                    Amount
-                  </label>
+              <div className="mt-4 rounded-[20px] border border-white/[0.06] bg-black/10 px-4 py-3.5 sm:py-4">
+                <div className="flex items-end justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <label
+                      htmlFor="bridge-amount"
+                      className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25"
+                    >
+                      Amount
+                    </label>
 
-                  <input
-                    id="bridge-amount"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={amount}
-                    onChange={(event) =>
-                      handleAmountChange(
-                        event.target.value
-                      )
-                    }
-                    placeholder="0.00"
-                    disabled={isBridging}
-                    className="w-full min-w-0 bg-transparent text-3xl font-black tracking-tight text-white outline-none placeholder:text-white/15 sm:text-4xl"
-                  />
-                </div>
+                    <input
+                      id="bridge-amount"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={amount}
+                      onChange={(event) =>
+                        handleAmountChange(
+                          event.target.value
+                        )
+                      }
+                      placeholder="0.00"
+                      disabled={isBridging}
+                      className="w-full min-w-0 bg-transparent text-[34px] font-black tracking-tight text-white outline-none placeholder:text-white/[0.12] sm:text-[40px]"
+                    />
+                  </div>
 
-                <div className="flex shrink-0 items-center gap-2 pb-1">
-                  <img
-                    src="/tokens/usdc.svg"
-                    alt="USDC"
-                    className="h-7 w-7"
-                  />
+                  <div className="flex shrink-0 items-center gap-2 pb-1">
+                    <img
+                      src="/tokens/usdc.svg"
+                      alt="USDC"
+                      className="h-7 w-7"
+                    />
 
-                  <span className="text-sm font-semibold text-white">
-                    USDC
-                  </span>
+                    <span className="text-sm font-semibold text-white">
+                      USDC
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-10 -my-2 flex justify-center">
+            <div className="relative z-10 flex h-12 items-center justify-center">
               <button
                 type="button"
                 onClick={handleSwapChains}
@@ -691,19 +937,37 @@ export default function BridgePage() {
                   !destinationChain
                 }
                 aria-label="Switch bridge networks"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-[#101112] text-lg text-white/65 shadow-lg transition hover:border-white/[0.18] hover:bg-[#151617] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-[#111213] text-white/55 shadow-xl shadow-black/30 transition hover:border-white/[0.18] hover:bg-[#171819] hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                ⇅
+                <svg
+                  viewBox="0 0 20 20"
+                  className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 4v10M3.5 11.5 6 14l2.5-2.5M14 16V6M11.5 8.5 14 6l2.5 2.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.07] bg-[#08090a] p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-white/40">
+            <div className="rounded-[25px] border border-white/[0.07] bg-[#08090a] p-3.5 sm:p-4">
+              <div className="mb-3 flex items-center justify-between px-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
                   To
                 </span>
 
-                <span className="text-xs text-white/35">
+                <span className="flex items-center gap-1.5 text-[11px] text-white/30">
+                  <img
+                    src="/tokens/usdc.svg"
+                    alt=""
+                    className="h-4 w-4"
+                  />
                   USDC
                 </span>
               </div>
@@ -723,39 +987,42 @@ export default function BridgePage() {
                       false
                     );
                   }}
-                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex min-h-[72px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.11] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
-                      {destinationChain
-                        ? destinationChain.shortName
-                            .slice(0, 2)
-                            .toUpperCase()
-                        : "--"}
-                    </div>
+                    <NetworkLogo
+                      network={destinationChain}
+                    />
 
                     <div className="min-w-0 text-left">
-                      <div className="truncate text-sm font-semibold text-white">
+                      <div className="truncate text-sm font-semibold text-white sm:text-[15px]">
                         {isLoadingChains
                           ? "Loading networks..."
                           : destinationChain?.name ??
                             "Select network"}
                       </div>
 
-                      <div className="mt-0.5 truncate text-xs text-white/35">
-                        {destinationChain?.description ??
-                          "Choose a destination network"}
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+                        <span className="truncate text-[11px] text-white/35">
+                          {destinationChain
+                            ? "Circle CCTP · Testnet"
+                            : "Choose destination network"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <span className="ml-3 shrink-0 text-white/40">
-                    ▾
-                  </span>
+                  <ChevronDown />
                 </button>
 
                 {showDestinationChains && (
-                  <div className="absolute left-0 right-0 top-[66px] z-30 max-h-[390px] overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
+                  <div className="absolute left-0 right-0 top-[78px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                    <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
+                      Select destination network
+                    </div>
+
                     {circleChains.map(
                       (network) =>
                         renderNetworkOption(
@@ -772,8 +1039,8 @@ export default function BridgePage() {
                 )}
               </div>
 
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-white/35">
+              <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3.5 py-3">
+                <span className="text-[11px] text-white/30">
                   You send
                 </span>
 
@@ -784,24 +1051,49 @@ export default function BridgePage() {
             </div>
 
             {sameChain && (
-              <div className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-center text-xs text-white/45">
-                Select two different networks
-                to bridge.
+              <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-amber-400/10 bg-amber-400/[0.035] px-3.5 py-3 text-xs text-amber-200/60">
+                <AlertIcon />
+
+                <span>
+                  Select two different networks
+                  to bridge.
+                </span>
               </div>
             )}
 
             {error && (
-              <div className="mt-3 rounded-2xl border border-red-400/10 bg-red-400/[0.05] px-4 py-3 text-sm leading-5 text-red-300/85">
-                {error}
+              <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-red-400/10 bg-red-400/[0.045] px-3.5 py-3 text-xs leading-5 text-red-300/85">
+                <span className="mt-0.5 shrink-0">
+                  <AlertIcon />
+                </span>
+
+                <span className="break-words">
+                  {error}
+                </span>
               </div>
             )}
 
             {status && !error && (
               <div
                 aria-live="polite"
-                className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-center text-sm text-white/55"
+                className="mt-3 flex items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 text-xs text-white/55"
               >
-                {status}
+                {status ===
+                "Bridge completed successfully." ? (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
+                    <CheckIcon />
+                  </span>
+                ) : isBridging ? (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-white/45">
+                    <LoaderIcon />
+                  </span>
+                ) : (
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/35" />
+                )}
+
+                <span className="min-w-0 break-words">
+                  {status}
+                </span>
               </div>
             )}
 
@@ -809,8 +1101,12 @@ export default function BridgePage() {
               type="button"
               onClick={handleBridge}
               disabled={!canBridge}
-              className={`${manrope.className} mt-4 flex min-h-[54px] w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-semibold tracking-normal text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/[0.08] disabled:text-white/25`}
+              className={`${manrope.className} mt-3.5 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[18px] bg-white px-5 text-sm font-semibold tracking-normal text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/[0.08] disabled:text-white/25 sm:mt-4`}
             >
+              {isBridging && (
+                <LoaderIcon />
+              )}
+
               {!isConnected
                 ? "Connect Wallet"
                 : isLoadingChains
@@ -825,39 +1121,80 @@ export default function BridgePage() {
                 : "Bridge USDC"}
             </button>
 
-            <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-white/25">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
-              Circle CCTP
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-2 text-[10px] text-white/25">
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
+                Circle CCTP
+              </span>
+
+              <span className="h-3 w-px bg-white/[0.08]" />
+
+              <span>Native USDC</span>
+
+              <span className="h-3 w-px bg-white/[0.08]" />
+
+              <span>Testnet</span>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-2 py-3">
-              <div className="text-xs font-semibold text-white/70">
-                Native USDC
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
+              <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
+                  <CheckIcon />
+                </span>
+
+                <div className="text-xs font-semibold text-white/70">
+                  Native USDC
+                </div>
               </div>
 
-              <div className="mt-1 text-[10px] text-white/25">
+              <div className="text-[10px] leading-4 text-white/25">
                 CCTP burn & mint
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-2 py-3">
-              <div className="text-xs font-semibold text-white/70">
-                Multi-chain
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
+              <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
+                  <ArrowDown />
+                </span>
+
+                <div className="text-xs font-semibold text-white/70">
+                  Multi-chain
+                </div>
               </div>
 
-              <div className="mt-1 text-[10px] text-white/25">
+              <div className="text-[10px] leading-4 text-white/25">
                 Dynamic network list
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-2 py-3">
-              <div className="text-xs font-semibold text-white/70">
-                More routes
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
+              <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
+                  <svg
+                    viewBox="0 0 20 20"
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 10h12M11 5l5 5-5 5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+
+                <div className="text-xs font-semibold text-white/70">
+                  More routes
+                </div>
               </div>
 
-              <div className="mt-1 text-[10px] text-white/25">
+              <div className="text-[10px] leading-4 text-white/25">
                 Partner bridges next
               </div>
             </div>
