@@ -175,7 +175,7 @@ function NetworkLogo({
 
         case 421614:
           return (
-            <NetworkArbitrum
+            <NetworkArbitrumOne
               size={28}
               variant="branded"
               aria-label="Arbitrum"
