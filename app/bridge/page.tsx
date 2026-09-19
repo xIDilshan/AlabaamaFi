@@ -135,7 +135,7 @@ export default function BridgePage() {
                 "Arc_Testnet"
                   ? "USDC-native Arc network"
                   : "Circle CCTP network",
-              provider: "circle",
+              provider: "circle" as const,
               available: true,
             }))
             .sort((a, b) => {
