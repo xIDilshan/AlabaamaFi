@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
-import { AppKit } from "@circle-fin/app-kit";
+import { BridgeKit } from "@circle-fin/bridge-kit";
 import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
-import { useAccount } from "wagmi";
+import {
+  useAccount,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
 
 import Header from "@/components/Header";
 
@@ -19,50 +23,70 @@ const manrope = Manrope({
 type BrowserWalletProvider =
   CreateViemAdapterFromProviderParams["provider"];
 
-type BridgeChain = {
+type CircleChain = ReturnType<
+  BridgeKit["getSupportedChains"]
+>[number];
+
+type BridgeNetwork = {
   id: string;
   name: string;
   shortName: string;
   chainId: number;
-  logo: string;
   description: string;
+  provider: "circle";
+  available: boolean;
 };
 
-const ARC_TESTNET: BridgeChain = {
-  id: "Arc_Testnet",
-  name: "Arc Testnet",
-  shortName: "Arc",
-  chainId: 5042002,
-  logo: "/tokens/usdc.svg",
-  description: "USDC-native Arc network",
+type FutureNetwork = {
+  id: string;
+  name: string;
+  shortName: string;
+  chainId: number;
+  description: string;
+  provider: "partner";
+  available: boolean;
 };
 
-const ETHEREUM_SEPOLIA: BridgeChain = {
-  id: "Ethereum_Sepolia",
-  name: "Ethereum Sepolia",
-  shortName: "Ethereum",
-  chainId: 11155111,
-  logo: "/tokens/usdc.svg",
-  description: "Ethereum Sepolia testnet",
+const bridgeKit = new BridgeKit();
+
+const ROBINHOOD_CHAIN: FutureNetwork = {
+  id: "Robinhood_Chain",
+  name: "Robinhood Chain",
+  shortName: "Robinhood",
+  chainId: 4663,
+  description: "Robinhood Chain",
+  provider: "partner",
+  available: false,
 };
 
-const BRIDGE_CHAINS = [
-  ARC_TESTNET,
-  ETHEREUM_SEPOLIA,
-];
-
-const bridgeKit = new AppKit();
+const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
+  id: "Robinhood_Chain_Testnet",
+  name: "Robinhood Chain Testnet",
+  shortName: "Robinhood",
+  chainId: 46630,
+  description: "Robinhood Chain testnet",
+  provider: "partner",
+  available: false,
+};
 
 export default function BridgePage() {
   const { isConnected, connector } = useAccount();
+  const currentChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+
+  const [circleChains, setCircleChains] =
+    useState<BridgeNetwork[]>([]);
 
   const [sourceChain, setSourceChain] =
-    useState<BridgeChain>(ARC_TESTNET);
+    useState<BridgeNetwork | null>(null);
 
   const [destinationChain, setDestinationChain] =
-    useState<BridgeChain>(ETHEREUM_SEPOLIA);
+    useState<BridgeNetwork | null>(null);
 
   const [amount, setAmount] = useState("");
+
+  const [isLoadingChains, setIsLoadingChains] =
+    useState(true);
 
   const [isBridging, setIsBridging] =
     useState(false);
@@ -77,27 +101,150 @@ export default function BridgePage() {
   const [showDestinationChains, setShowDestinationChains] =
     useState(false);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadChains = () => {
+      try {
+        const supportedChains =
+          bridgeKit.getSupportedChains();
+
+        const testnetChains =
+          supportedChains.filter(
+            (chain) => chain.isTestnet
+          );
+
+        const networks: BridgeNetwork[] =
+          testnetChains
+            .filter(
+              (chain) =>
+                chain.type === "evm"
+            )
+            .map((chain) => ({
+              id: chain.chain,
+              name: chain.name,
+              shortName:
+                chain.name
+                  .replace(" Testnet", "")
+                  .replace(" Sepolia", "")
+                  .replace(" Fuji", "")
+                  .replace(" Amoy", ""),
+              chainId: chain.chainId,
+              description:
+                chain.chain ===
+                "Arc_Testnet"
+                  ? "USDC-native Arc network"
+                  : "Circle CCTP network",
+              provider: "circle",
+              available: true,
+            }))
+            .sort((a, b) => {
+              if (
+                a.id === "Arc_Testnet"
+              ) {
+                return -1;
+              }
+
+              if (
+                b.id === "Arc_Testnet"
+              ) {
+                return 1;
+              }
+
+              return a.name.localeCompare(
+                b.name
+              );
+            });
+
+        if (!mounted) {
+          return;
+        }
+
+        setCircleChains(networks);
+
+        const arc =
+          networks.find(
+            (chain) =>
+              chain.id ===
+              "Arc_Testnet"
+          ) ?? null;
+
+        const firstDestination =
+          networks.find(
+            (chain) =>
+              chain.id !==
+              "Arc_Testnet"
+          ) ?? null;
+
+        setSourceChain(arc);
+        setDestinationChain(
+          firstDestination
+        );
+      } catch (loadError) {
+        console.error(
+          "Unable to load Circle bridge chains:",
+          loadError
+        );
+
+        if (mounted) {
+          setError(
+            "Unable to load supported bridge networks."
+          );
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingChains(false);
+        }
+      }
+    };
+
+    loadChains();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const allNetworks = useMemo(
+    () => [
+      ...circleChains,
+      ROBINHOOD_CHAIN_TESTNET,
+    ],
+    [circleChains]
+  );
+
   const sameChain =
-    sourceChain.id === destinationChain.id;
+    sourceChain !== null &&
+    destinationChain !== null &&
+    sourceChain.id ===
+      destinationChain.id;
+
+  const numericAmount = Number(amount);
 
   const canBridge =
     isConnected &&
     !isBridging &&
+    !isLoadingChains &&
+    sourceChain !== null &&
+    destinationChain !== null &&
     !sameChain &&
-    Number(amount) > 0;
+    sourceChain.available &&
+    destinationChain.available &&
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0;
 
   const amountDisplay = useMemo(() => {
     if (!amount) {
       return "0.00";
     }
 
-    const numericAmount = Number(amount);
+    const value = Number(amount);
 
-    if (!Number.isFinite(numericAmount)) {
+    if (!Number.isFinite(value)) {
       return "0.00";
     }
 
-    return numericAmount.toLocaleString(
+    return value.toLocaleString(
       undefined,
       {
         minimumFractionDigits: 2,
@@ -107,13 +254,56 @@ export default function BridgePage() {
   }, [amount]);
 
   const handleSwapChains = () => {
-    const previousSource = sourceChain;
+    if (
+      !sourceChain ||
+      !destinationChain
+    ) {
+      return;
+    }
 
     setSourceChain(destinationChain);
-    setDestinationChain(previousSource);
+    setDestinationChain(sourceChain);
 
-    setStatus("");
     setError("");
+    setStatus("");
+  };
+
+  const handleSourceSelect = (
+    network: BridgeNetwork | FutureNetwork
+  ) => {
+    if (!network.available) {
+      setError(
+        `${network.name} is coming in a future bridge integration.`
+      );
+      return;
+    }
+
+    setSourceChain(
+      network as BridgeNetwork
+    );
+
+    setShowSourceChains(false);
+    setError("");
+    setStatus("");
+  };
+
+  const handleDestinationSelect = (
+    network: BridgeNetwork | FutureNetwork
+  ) => {
+    if (!network.available) {
+      setError(
+        `${network.name} is not available through Circle CCTP yet.`
+      );
+      return;
+    }
+
+    setDestinationChain(
+      network as BridgeNetwork
+    );
+
+    setShowDestinationChains(false);
+    setError("");
+    setStatus("");
   };
 
   const handleBridge = async () => {
@@ -121,12 +311,26 @@ export default function BridgePage() {
     setStatus("");
 
     if (!isConnected) {
-      setError("Connect your wallet first.");
+      setError(
+        "Connect your wallet first."
+      );
       return;
     }
 
     if (!connector) {
-      setError("Wallet connection is not ready.");
+      setError(
+        "Wallet connection is not ready."
+      );
+      return;
+    }
+
+    if (
+      !sourceChain ||
+      !destinationChain
+    ) {
+      setError(
+        "Select both networks."
+      );
       return;
     }
 
@@ -137,19 +341,46 @@ export default function BridgePage() {
       return;
     }
 
-    const numericAmount = Number(amount);
+    if (
+      !sourceChain.available ||
+      !destinationChain.available
+    ) {
+      setError(
+        "This bridge route is not available yet."
+      );
+      return;
+    }
 
     if (
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0
     ) {
-      setError("Enter a valid USDC amount.");
+      setError(
+        "Enter a valid USDC amount."
+      );
       return;
     }
 
     try {
       setIsBridging(true);
-      setStatus("Preparing bridge...");
+
+      if (
+        currentChainId !==
+        sourceChain.chainId
+      ) {
+        setStatus(
+          `Switching wallet to ${sourceChain.name}...`
+        );
+
+        await switchChainAsync({
+          chainId:
+            sourceChain.chainId,
+        });
+      }
+
+      setStatus(
+        `Preparing ${sourceChain.shortName} → ${destinationChain.shortName}...`
+      );
 
       const provider =
         (await connector.getProvider()) as BrowserWalletProvider;
@@ -160,56 +391,74 @@ export default function BridgePage() {
         );
       }
 
-      setStatus(
-        `Preparing ${sourceChain.shortName} → ${destinationChain.shortName}...`
-      );
-
       const adapter =
         await createViemAdapterFromProvider({
           provider,
         });
 
-      setStatus("Confirm the transaction in your wallet...");
+      setStatus(
+        "Confirm the bridge transaction in your wallet..."
+      );
 
-      let result = await bridgeKit.bridge({
-        from: {
-          adapter,
-          chain: sourceChain.id,
-        },
-        to: {
-          adapter,
-          chain: destinationChain.id,
-        },
-        amount: amount.trim(),
-      });
-
-      if (result.state === "error") {
-        setStatus(
-          "The bridge needs to continue from the previous step..."
-        );
-
-        result = await bridgeKit.retryBridge(
-          result,
-          {
-            from: adapter,
-            to: adapter,
-          }
-        );
-      }
+      const result =
+        await bridgeKit.bridge({
+          from: {
+            adapter,
+            chain: sourceChain.id as Parameters<
+              BridgeKit["bridge"]
+            >[0]["from"]["chain"],
+          },
+          to: {
+            adapter,
+            chain: destinationChain.id as Parameters<
+              BridgeKit["bridge"]
+            >[0]["to"]["chain"],
+          },
+          amount: amount.trim(),
+          token: "USDC",
+        });
 
       if (result.state === "success") {
         setStatus(
           "Bridge completed successfully."
         );
         setAmount("");
-      } else {
+        return;
+      }
+
+      if (result.state === "error") {
         setStatus(
-          "Bridge process finished with an incomplete step."
+          "The bridge needs to continue from the failed step..."
         );
-        setError(
-          "The bridge did not complete fully. Please check the transaction status and try again if needed."
+
+        const retryResult =
+          await bridgeKit.retry(
+            result,
+            {
+              from: adapter,
+              to: adapter,
+            }
+          );
+
+        if (
+          retryResult.state ===
+          "success"
+        ) {
+          setStatus(
+            "Bridge completed successfully."
+          );
+          setAmount("");
+          return;
+        }
+
+        throw new Error(
+          "The bridge could not be completed. Please try again."
         );
       }
+
+      setStatus(
+        "Bridge is still processing."
+      );
     } catch (bridgeError) {
       console.error(
         "Bridge error:",
@@ -234,6 +483,7 @@ export default function BridgePage() {
     if (value === "") {
       setAmount("");
       setError("");
+      setStatus("");
       return;
     }
 
@@ -244,6 +494,55 @@ export default function BridgePage() {
     setAmount(value);
     setError("");
     setStatus("");
+  };
+
+  const renderNetworkOption = (
+    network: BridgeNetwork | FutureNetwork,
+    onSelect: (
+      network:
+        | BridgeNetwork
+        | FutureNetwork
+    ) => void
+  ) => {
+    return (
+      <button
+        key={network.id}
+        type="button"
+        onClick={() =>
+          onSelect(network)
+        }
+        className="flex min-h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.05]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
+          {network.shortName
+            .slice(0, 2)
+            .toUpperCase()}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold text-white">
+              {network.name}
+            </span>
+
+            {!network.available && (
+              <span className="shrink-0 rounded-full border border-white/[0.07] px-2 py-0.5 text-[9px] font-medium text-white/30">
+                Soon
+              </span>
+            )}
+          </div>
+
+          <div className="text-xs text-white/35">
+            {network.description}
+          </div>
+        </div>
+
+        {network.provider ===
+          "circle" && (
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/80" />
+        )}
+      </button>
+    );
   };
 
   return (
@@ -258,7 +557,7 @@ export default function BridgePage() {
             </h1>
 
             <p className="mt-2 text-sm text-white/45 sm:text-base">
-              Move USDC across networks with Arc.
+              Move USDC across networks with AlabaamaFi.
             </p>
           </div>
 
@@ -277,73 +576,62 @@ export default function BridgePage() {
               <div className="relative">
                 <button
                   type="button"
+                  disabled={
+                    isLoadingChains ||
+                    isBridging
+                  }
                   onClick={() => {
                     setShowSourceChains(
                       !showSourceChains
                     );
-                    setShowDestinationChains(false);
+                    setShowDestinationChains(
+                      false
+                    );
                   }}
-                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055]"
+                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={sourceChain.logo}
-                      alt=""
-                      className="h-9 w-9"
-                    />
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
+                      {sourceChain
+                        ? sourceChain.shortName
+                            .slice(0, 2)
+                            .toUpperCase()
+                        : "--"}
+                    </div>
 
-                    <div className="text-left">
-                      <div className="text-sm font-semibold text-white">
-                        {sourceChain.name}
+                    <div className="min-w-0 text-left">
+                      <div className="truncate text-sm font-semibold text-white">
+                        {isLoadingChains
+                          ? "Loading networks..."
+                          : sourceChain?.name ??
+                            "Select network"}
                       </div>
 
-                      <div className="mt-0.5 text-xs text-white/35">
-                        {sourceChain.description}
+                      <div className="mt-0.5 truncate text-xs text-white/35">
+                        {sourceChain?.description ??
+                          "Choose a source network"}
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-white/40">
+                  <span className="ml-3 shrink-0 text-white/40">
                     ▾
                   </span>
                 </button>
 
                 {showSourceChains && (
-                  <div className="absolute left-0 right-0 top-[66px] z-30 overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
-                    {BRIDGE_CHAINS.map(
-                      (chain) => (
-                        <button
-                          key={chain.id}
-                          type="button"
-                          onClick={() => {
-                            setSourceChain(
-                              chain
-                            );
-                            setShowSourceChains(
-                              false
-                            );
-                            setError("");
-                            setStatus("");
-                          }}
-                          className="flex min-h-[58px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.05]"
-                        >
-                          <img
-                            src={chain.logo}
-                            alt=""
-                            className="h-8 w-8"
-                          />
+                  <div className="absolute left-0 right-0 top-[66px] z-30 max-h-[390px] overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
+                    {circleChains.map(
+                      (network) =>
+                        renderNetworkOption(
+                          network,
+                          handleSourceSelect
+                        )
+                    )}
 
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-white">
-                              {chain.name}
-                            </div>
-
-                            <div className="text-xs text-white/35">
-                              {chain.description}
-                            </div>
-                          </div>
-                        </button>
-                      )
+                    {renderNetworkOption(
+                      ROBINHOOD_CHAIN_TESTNET,
+                      handleSourceSelect
                     )}
                   </div>
                 )}
@@ -392,7 +680,11 @@ export default function BridgePage() {
               <button
                 type="button"
                 onClick={handleSwapChains}
-                disabled={isBridging}
+                disabled={
+                  isBridging ||
+                  !sourceChain ||
+                  !destinationChain
+                }
                 aria-label="Switch bridge networks"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-[#101112] text-lg text-white/65 shadow-lg transition hover:border-white/[0.18] hover:bg-[#151617] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -414,79 +706,62 @@ export default function BridgePage() {
               <div className="relative">
                 <button
                   type="button"
+                  disabled={
+                    isLoadingChains ||
+                    isBridging
+                  }
                   onClick={() => {
                     setShowDestinationChains(
                       !showDestinationChains
                     );
-                    setShowSourceChains(false);
+                    setShowSourceChains(
+                      false
+                    );
                   }}
-                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055]"
+                  className="flex min-h-[58px] w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        destinationChain.logo
-                      }
-                      alt=""
-                      className="h-9 w-9"
-                    />
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[10px] font-bold text-white/70">
+                      {destinationChain
+                        ? destinationChain.shortName
+                            .slice(0, 2)
+                            .toUpperCase()
+                        : "--"}
+                    </div>
 
-                    <div className="text-left">
-                      <div className="text-sm font-semibold text-white">
-                        {
-                          destinationChain.name
-                        }
+                    <div className="min-w-0 text-left">
+                      <div className="truncate text-sm font-semibold text-white">
+                        {isLoadingChains
+                          ? "Loading networks..."
+                          : destinationChain?.name ??
+                            "Select network"}
                       </div>
 
-                      <div className="mt-0.5 text-xs text-white/35">
-                        {
-                          destinationChain.description
-                        }
+                      <div className="mt-0.5 truncate text-xs text-white/35">
+                        {destinationChain?.description ??
+                          "Choose a destination network"}
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-white/40">
+                  <span className="ml-3 shrink-0 text-white/40">
                     ▾
                   </span>
                 </button>
 
                 {showDestinationChains && (
-                  <div className="absolute left-0 right-0 top-[66px] z-30 overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
-                    {BRIDGE_CHAINS.map(
-                      (chain) => (
-                        <button
-                          key={chain.id}
-                          type="button"
-                          onClick={() => {
-                            setDestinationChain(
-                              chain
-                            );
-                            setShowDestinationChains(
-                              false
-                            );
-                            setError("");
-                            setStatus("");
-                          }}
-                          className="flex min-h-[58px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.05]"
-                        >
-                          <img
-                            src={chain.logo}
-                            alt=""
-                            className="h-8 w-8"
-                          />
+                  <div className="absolute left-0 right-0 top-[66px] z-30 max-h-[390px] overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl">
+                    {circleChains.map(
+                      (network) =>
+                        renderNetworkOption(
+                          network,
+                          handleDestinationSelect
+                        )
+                    )}
 
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-white">
-                              {chain.name}
-                            </div>
-
-                            <div className="text-xs text-white/35">
-                              {chain.description}
-                            </div>
-                          </div>
-                        </button>
-                      )
+                    {renderNetworkOption(
+                      ROBINHOOD_CHAIN_TESTNET,
+                      handleDestinationSelect
                     )}
                   </div>
                 )}
@@ -533,19 +808,21 @@ export default function BridgePage() {
             >
               {!isConnected
                 ? "Connect Wallet"
+                : isLoadingChains
+                ? "Loading Networks..."
                 : isBridging
                 ? "Bridging..."
                 : sameChain
                 ? "Choose Different Networks"
                 : !amount ||
-                  Number(amount) <= 0
+                  numericAmount <= 0
                 ? "Enter Amount"
                 : "Bridge USDC"}
             </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-white/25">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
-              Powered by Circle CCTP
+              Circle CCTP
             </div>
           </div>
 
@@ -554,26 +831,29 @@ export default function BridgePage() {
               <div className="text-xs font-semibold text-white/70">
                 Native USDC
               </div>
+
               <div className="mt-1 text-[10px] text-white/25">
-                No wrapped tokens
+                CCTP burn & mint
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-2 py-3">
               <div className="text-xs font-semibold text-white/70">
-                CCTP
+                Multi-chain
               </div>
+
               <div className="mt-1 text-[10px] text-white/25">
-                Circle infrastructure
+                Dynamic network list
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-2 py-3">
               <div className="text-xs font-semibold text-white/70">
-                Cross-chain
+                More routes
               </div>
+
               <div className="mt-1 text-[10px] text-white/25">
-                Arc ↔ Ethereum
+                Partner bridges next
               </div>
             </div>
           </div>
