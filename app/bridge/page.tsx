@@ -8,7 +8,7 @@ import {
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
 import {
-  NetworkArbitrum,
+  NetworkArbitrumOne,
   NetworkAvalanche,
   NetworkBase,
   NetworkEthereum,
