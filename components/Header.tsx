@@ -360,8 +360,8 @@ return (
           >
             <span className="truncate">
               {isConnected
-                ? shortAddress
-                : "Connect"}
+  ? mobileShortAddress
+  : "Connect"}
             </span>
 
             {isConnected && (
