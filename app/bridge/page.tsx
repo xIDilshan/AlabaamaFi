@@ -99,24 +99,37 @@ className={"${dimensions} flex shrink-0 items-center justify-center rounded-full
 }
 
 const networkMap: Record<number, string> = {
-5042002: "arc",
-11155111: "sepolia",
-43113: "avalanche-fuji",
-11155420: "optimism-sepolia",
-421614: "arbitrum-sepolia",
-84532: "base-sepolia",
-80002: "polygon-amoy",
-59141: "linea-sepolia",
-1301: "unichain",
-5115: "codex",
-57054: "sonic",
-4801: "world",
-1328: "sei",
-51: "xdc",
-999: "hyper-evm",
-763373: "ink",
-161221135: "plume",
-46630: "robinhood",
+  // Current networks
+  5042002: "arc",
+  11155111: "ethereum",
+  43113: "avalanche",
+  11155420: "optimism",
+  421614: "arbitrum-one",
+  84532: "base",
+  80002: "polygon",
+  59141: "linea",
+  1301: "unichain",
+
+  // Additional networks
+  5115: "codex",
+  57054: "sonic",
+  4801: "world",
+  1328: "sei",
+  51: "xdc-network",
+  999: "hyper-evm",
+  763373: "ink",
+  161221135: "plume",
+  46630: "robinhood",
+
+  // More testnets
+  338: "cronos",
+  202: "edgeless",
+  1439: "injective",
+  10143: "monad",
+  2710: "morph",
+  688689: "pharos",
+  9746: "plasma",
+  1952: "x-layer",
 };
 
 const iconNetwork =
