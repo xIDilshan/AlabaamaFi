@@ -100,95 +100,109 @@ function NetworkLogo({
       <div
         className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]`}
       >
-        <span className="text-sm text-white/25">
-          ?
-        </span>
+        <span className="text-sm text-white/25">?</span>
       </div>
     );
   }
 
-  const id = network.id.toLowerCase();
-  const name = network.name.toLowerCase();
   const chainId = network.chainId;
 
-  /*
-   * Map testnet chain IDs to their parent network icon.
-   * Web3 Icons provides the branded logo for each parent network.
-   */
-  const networkIcon =
-    (() => {
-      switch (chainId) {
-        case 5042002:
-          return "arc";
+  const renderIcon = () => {
+    switch (chainId) {
+      case 5042002:
+        return (
+          <svg
+            viewBox="0 0 32 32"
+            className="h-7 w-7"
+            aria-label="Arc"
+            role="img"
+          >
+            <circle
+              cx="16"
+              cy="16"
+              r="15"
+              fill="#ffffff"
+            />
+            <path
+              d="M16 7.25 8.5 24.75h3.8l1.25-3.1h4.9l1.25 3.1h3.8L16 7.25Zm0 5.9 1.45 5.15h-2.9L16 13.15Z"
+              fill="#050505"
+            />
+          </svg>
+        );
 
-        case 11155111:
-          return "ethereum";
+      case 11155111:
+        return (
+          <NetworkEthereum
+            size={28}
+            variant="branded"
+            aria-label="Ethereum"
+          />
+        );
 
-        case 43113:
-          return "avalanche";
+      case 43113:
+        return (
+          <NetworkAvalanche
+            size={28}
+            variant="branded"
+            aria-label="Avalanche"
+          />
+        );
 
-        case 11155420:
-          return "optimism";
+      case 11155420:
+        return (
+          <NetworkOptimism
+            size={28}
+            variant="branded"
+            aria-label="Optimism"
+          />
+        );
 
-        case 421614:
-          return "arbitrum";
+      case 421614:
+        return (
+          <NetworkArbitrumOne
+            size={28}
+            variant="branded"
+            aria-label="Arbitrum"
+          />
+        );
 
-        case 84532:
-          return "base";
+      case 84532:
+        return (
+          <NetworkBase
+            size={28}
+            variant="branded"
+            aria-label="Base"
+          />
+        );
 
-        case 80002:
-          return "polygon";
+      case 80002:
+        return (
+          <NetworkPolygon
+            size={28}
+            variant="branded"
+            aria-label="Polygon"
+          />
+        );
 
-        case 59141:
-          return "linea";
+      case 59141:
+        return (
+          <NetworkLinea
+            size={28}
+            variant="branded"
+            aria-label="Linea"
+          />
+        );
 
-        case 1301:
-          return "unichain";
-
-        case 5115:
-          return "codex";
-
-        case 57054:
-          return "sonic";
-
-        case 4801:
-          return "world-chain";
-
-        case 1328:
-          return "sei";
-
-        case 51:
-          return "xdc-network";
-
-        case 999:
-          return "hyper-evm";
-
-        case 763373:
-          return "ink";
-
-        case 161221135:
-          return "plume";
-
-        default:
-          /*
-           * Try BridgeKit's own network identifiers/names
-           * for any future supported networks.
-           */
-          return id || name;
-      }
-    })();
+      default:
+        return <FallbackNetworkMark network={network} />;
+    }
+  };
 
   return (
     <div
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      <NetworkIcon
-        network={networkIcon}
-        size={28}
-        variant="branded"
-        fallback={<FallbackNetworkMark network={network} />}
-        aria-label={network.name}
-      />
+      {renderIcon()}
     </div>
   );
 }
