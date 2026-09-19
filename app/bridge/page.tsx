@@ -7,6 +7,7 @@ import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
+import { ChainIcon } from "react-web3-icons/dynamic";
 import {
   useAccount,
   useChainId,
@@ -55,6 +56,39 @@ const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
   available: false,
 };
 
+function FallbackNetworkMark() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      className="h-[52%] w-[52%] text-white/45"
+      aria-hidden="true"
+    >
+      <circle
+        cx="16"
+        cy="16"
+        r="9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+
+      <circle
+        cx="16"
+        cy="16"
+        r="3"
+        fill="currentColor"
+      />
+
+      <path
+        d="M16 7v6M16 19v6M7 16h6M19 16h6"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function NetworkLogo({
   network,
   size = "normal",
@@ -80,8 +114,16 @@ function NetworkLogo({
   }
 
   const id = network.id.toLowerCase();
+  const name = network.name.toLowerCase();
 
-  if (id.includes("arc")) {
+  /*
+   * Arc has its own inline mark so it never depends
+   * on an external image or icon package.
+   */
+  if (
+    id.includes("arc") ||
+    name.includes("arc")
+  ) {
     return (
       <div
         className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-white text-black`}
@@ -100,98 +142,22 @@ function NetworkLogo({
     );
   }
 
-  const logoMap: Record<string, string> = {
-    ethereum: "https://cdn.simpleicons.org/ethereum",
-    avalanche: "https://cdn.simpleicons.org/avalanche",
-    optimism: "https://cdn.simpleicons.org/optimism",
-    arbitrum: "https://cdn.simpleicons.org/arbitrum",
-    base: "https://cdn.simpleicons.org/base",
-    polygon: "https://cdn.simpleicons.org/polygon",
-    linea: "https://cdn.simpleicons.org/linea",
-    unichain: "https://cdn.simpleicons.org/uniswap",
-    sonic: "https://cdn.simpleicons.org/sonic",
-    world: "https://cdn.simpleicons.org/worldcoin",
-    sei: "https://cdn.simpleicons.org/sei",
-    xdc: "https://cdn.simpleicons.org/xdc",
-    ink: "https://cdn.simpleicons.org/ink",
-    plume: "https://cdn.simpleicons.org/plume",
-    robinhood: "https://cdn.simpleicons.org/robinhood",
-  };
-
-  let logoKey = "";
-
-  if (id.includes("ethereum")) {
-    logoKey = "ethereum";
-  } else if (id.includes("avalanche")) {
-    logoKey = "avalanche";
-  } else if (id.includes("optimism")) {
-    logoKey = "optimism";
-  } else if (id.includes("arbitrum")) {
-    logoKey = "arbitrum";
-  } else if (id.includes("base")) {
-    logoKey = "base";
-  } else if (id.includes("polygon")) {
-    logoKey = "polygon";
-  } else if (id.includes("linea")) {
-    logoKey = "linea";
-  } else if (id.includes("unichain")) {
-    logoKey = "unichain";
-  } else if (id.includes("sonic")) {
-    logoKey = "sonic";
-  } else if (id.includes("world")) {
-    logoKey = "world";
-  } else if (id.includes("sei")) {
-    logoKey = "sei";
-  } else if (id.includes("xdc")) {
-    logoKey = "xdc";
-  } else if (id.includes("ink")) {
-    logoKey = "ink";
-  } else if (id.includes("plume")) {
-    logoKey = "plume";
-  } else if (id.includes("robinhood")) {
-    logoKey = "robinhood";
-  }
-
-  const logoUrl = logoMap[logoKey];
-
-  if (logoUrl) {
-    return (
-      <div
-        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-2`}
-      >
-        <img
-          src={logoUrl}
-          alt=""
-          className="h-full w-full object-contain"
-        />
-      </div>
-    );
-  }
-
+  /*
+   * react-web3-icons resolves the newest bundled
+   * network icon using the EVM chain ID.
+   *
+   * This avoids external CDN image URLs entirely.
+   */
   return (
     <div
-      className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045]`}
+      className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      <svg
-        viewBox="0 0 32 32"
-        className="h-[52%] w-[52%] text-white/50"
-        aria-hidden="true"
-      >
-        <circle
-          cx="16"
-          cy="16"
-          r="10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <path
-          d="M11 16h10M16 11v10"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
+      <ChainIcon
+        chainId={network.chainId}
+        size="100%"
+        aria-label={`${network.name} logo`}
+        fallback={<FallbackNetworkMark />}
+      />
     </div>
   );
 }
@@ -267,6 +233,7 @@ function AlertIcon() {
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
+
       <path
         d="M10 7.5v4M10 13.8v.1"
         stroke="currentColor"
