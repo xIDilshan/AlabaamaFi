@@ -1397,18 +1397,23 @@ export default function ActivityPage() {
       >
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
           <div className="mx-auto max-w-6xl">
-            <p className="text-sm font-semibold text-white/35">
-              AlabaamaFi
-            </p>
 
-            <h1 className="mt-1 text-3xl font-black sm:text-4xl">
-              Wallet Activity
-            </h1>
+            {/* INTRO */}
 
-            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
-              Connect your wallet to view its token
-              holdings and recent transactions.
-            </p>
+            <div className="mb-6 text-center sm:mb-8 lg:mb-10">
+              <div className="text-4xl font-medium leading-none text-white/55">
+                ◷
+              </div>
+
+              <h1 className="mt-3 text-3xl font-black sm:text-4xl">
+                Wallet Activity
+              </h1>
+
+              <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-6 text-white/35">
+                Connect your wallet to view its token
+                holdings and recent transactions.
+              </p>
+            </div>
 
             {/* CHECKER */}
 
@@ -1427,7 +1432,7 @@ export default function ActivityPage() {
                 disabled={
                   !isConnected
                 }
-                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
+                className="min-h-13 w-full cursor-not-allowed rounded-2xl border border-white/[0.07] bg-[#020202] px-4 py-3 text-center text-sm font-semibold text-white/65 outline-none placeholder:text-white/15 disabled:text-white/20"
               />
 
               <button
