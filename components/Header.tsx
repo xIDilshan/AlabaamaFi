@@ -356,11 +356,7 @@ return (
         <div className="flex min-w-0 items-center justify-end">
           <button
             onClick={handleWalletClick}
-            className={`${manrope.className} flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold ${
-  pathname === "/swap"
-    ? "tracking-normal"
-    : "tracking-tight"
-} ${connectGlassButton}`}
+            className={`${manrope.className} flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-normal ${connectGlassButton}`}
           >
             <span className="truncate">
               {isConnected
@@ -527,7 +523,7 @@ return (
           <div className="absolute right-0">
             <button
               onClick={handleWalletClick}
-              className={`${manrope.className} flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight ${connectGlassButton}`}
+              className={`${manrope.className} flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-normal ${connectGlassButton}`}
             >
               <span>
                 {isConnected
