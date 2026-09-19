@@ -17,6 +17,7 @@
     "@tanstack/react-query": "latest",
     "@walletconnect/ethereum-provider": "^2.24.0",
     "@walletconnect/modal": "^2.7.0",
+    "@web3icons/react": "^4.1.22",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
