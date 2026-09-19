@@ -57,7 +57,7 @@ const shortAddress = address
   : "";
 
 const mobileShortAddress = address
-  ? `${address.slice(0, 2)}...${address.slice(-3)}`
+  ? `${address.slice(0, 3)}...${address.slice(-3)}`
   : "";
 
 const menuAddress = address
