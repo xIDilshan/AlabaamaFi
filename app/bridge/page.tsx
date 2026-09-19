@@ -7,7 +7,15 @@ import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
-import { NetworkIcon } from "@web3icons/react/dynamic";
+import {
+  NetworkArbitrum,
+  NetworkAvalanche,
+  NetworkBase,
+  NetworkEthereum,
+  NetworkOptimism,
+  NetworkPolygon,
+  NetworkLinea,
+} from "@web3icons/react";
 import {
   useAccount,
   useChainId,
