@@ -64,36 +64,21 @@ const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
   available: false,
 };
 
-function FallbackNetworkMark() {
+function FallbackNetworkMark({
+  network,
+}: {
+  network?: BridgeNetwork | FutureNetwork | null;
+}) {
+  const label =
+    network?.shortName?.slice(0, 2).toUpperCase() || "?";
+
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className="h-[52%] w-[52%] text-white/45"
-      aria-hidden="true"
+    <div
+      className="flex h-full w-full items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-bold tracking-tight text-white/45"
+      aria-label={`${network?.name ?? "Network"} logo`}
     >
-      <circle
-        cx="16"
-        cy="16"
-        r="9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-
-      <circle
-        cx="16"
-        cy="16"
-        r="3"
-        fill="currentColor"
-      />
-
-      <path
-        d="M16 7v6M16 19v6M7 16h6M19 16h6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
+      {label}
+    </div>
   );
 }
 
@@ -123,6 +108,7 @@ function NetworkLogo({
 
   const id = network.id.toLowerCase();
   const name = network.name.toLowerCase();
+  const chainId = network.chainId;
 
   /*
    * Arc has its own inline mark so it never depends
@@ -130,7 +116,8 @@ function NetworkLogo({
    */
   if (
     id.includes("arc") ||
-    name.includes("arc")
+    name.includes("arc") ||
+    chainId === 5042002
   ) {
     return (
       <div
@@ -151,20 +138,89 @@ function NetworkLogo({
   }
 
   /*
-   * react-web3-icons resolves the newest bundled
-   * network icon using the EVM chain ID.
+   * The official Web3 Icons React package provides static,
+   * tree-shakable branded network components.
    *
-   * This avoids external CDN image URLs entirely.
+   * Testnets use the logo of their parent network.
    */
+  const icon =
+    (() => {
+      switch (chainId) {
+        case 11155111:
+          return (
+            <NetworkEthereum
+              size={28}
+              variant="branded"
+              aria-label="Ethereum"
+            />
+          );
+
+        case 43113:
+          return (
+            <NetworkAvalanche
+              size={28}
+              variant="branded"
+              aria-label="Avalanche"
+            />
+          );
+
+        case 11155420:
+          return (
+            <NetworkOptimism
+              size={28}
+              variant="branded"
+              aria-label="Optimism"
+            />
+          );
+
+        case 421614:
+          return (
+            <NetworkArbitrum
+              size={28}
+              variant="branded"
+              aria-label="Arbitrum"
+            />
+          );
+
+        case 84532:
+          return (
+            <NetworkBase
+              size={28}
+              variant="branded"
+              aria-label="Base"
+            />
+          );
+
+        case 80002:
+          return (
+            <NetworkPolygon
+              size={28}
+              variant="branded"
+              aria-label="Polygon"
+            />
+          );
+
+        case 59141:
+          return (
+            <NetworkLinea
+              size={28}
+              variant="branded"
+              aria-label="Linea"
+            />
+          );
+
+        default:
+          return null;
+      }
+    })();
+
   return (
     <div
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      <NetworkIcon
-  network={network.name}
-  size={32}
-  variant="branded"
-/>
+      {icon ?? (
+        <FallbackNetworkMark network={network} />
+      )}
     </div>
   );
 }
