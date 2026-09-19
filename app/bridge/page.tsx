@@ -7,7 +7,7 @@ import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
-import { ChainIcon } from "react-web3-icons/dynamic";
+import { NetworkIcon } from "@web3icons/react/dynamic";
 import {
   useAccount,
   useChainId,
@@ -152,12 +152,11 @@ function NetworkLogo({
     <div
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      <ChainIcon
-        chainId={network.chainId}
-        size="100%"
-        aria-label={`${network.name} logo`}
-        fallback={<FallbackNetworkMark />}
-      />
+      <NetworkIcon
+  network={network.name}
+  size={32}
+  variant="branded"
+/>
     </div>
   );
 }
