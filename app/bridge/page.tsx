@@ -8,24 +8,7 @@ import {
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
 import {
-  NetworkArbitrumOne,
-  NetworkAvalanche,
-  NetworkBase,
-  NetworkCodex,
-  NetworkEthereum,
-  NetworkHyperEvm,
-  NetworkInk,
-  NetworkLinea,
-  NetworkOptimism,
-  NetworkPlume,
-  NetworkPolygon,
-  NetworkRobinhood,
-  NetworkSei,
-  NetworkSonic,
-  NetworkUnichain,
-  NetworkWorldChain,
-  NetworkXdcNetwork,
-  NetworkArc,
+  NetworkIcon,
 } from "@web3icons/react";
 import {
   useAccount,
@@ -117,186 +100,51 @@ function NetworkLogo({
     );
   }
 
-  const chainId = network.chainId;
-
-  const renderIcon = () => {
-    switch (chainId) {
-      case 5042002:
-        return (
-          <NetworkArc
-            size={28}
-            variant="branded"
-            aria-label="Arc"
-          />
-        );
-
-      case 11155111:
-        return (
-          <NetworkEthereum
-            size={28}
-            variant="branded"
-            aria-label="Ethereum"
-          />
-        );
-
-      case 43113:
-        return (
-          <NetworkAvalanche
-            size={28}
-            variant="branded"
-            aria-label="Avalanche"
-          />
-        );
-
-      case 11155420:
-        return (
-          <NetworkOptimism
-            size={28}
-            variant="branded"
-            aria-label="Optimism"
-          />
-        );
-
-      case 421614:
-        return (
-          <NetworkArbitrumOne
-            size={28}
-            variant="branded"
-            aria-label="Arbitrum"
-          />
-        );
-
-      case 84532:
-        return (
-          <NetworkBase
-            size={28}
-            variant="branded"
-            aria-label="Base"
-          />
-        );
-
-      case 80002:
-        return (
-          <NetworkPolygon
-            size={28}
-            variant="branded"
-            aria-label="Polygon"
-          />
-        );
-
-      case 59141:
-        return (
-          <NetworkLinea
-            size={28}
-            variant="branded"
-            aria-label="Linea"
-          />
-        );
-
-      case 1301:
-        return (
-          <NetworkUnichain
-            size={28}
-            variant="branded"
-            aria-label="Unichain"
-          />
-        );
-
-      case 5115:
-        return (
-          <NetworkCodex
-            size={28}
-            variant="branded"
-            aria-label="Codex"
-          />
-        );
-
-      case 57054:
-        return (
-          <NetworkSonic
-            size={28}
-            variant="branded"
-            aria-label="Sonic"
-          />
-        );
-
-      case 4801:
-        return (
-          <NetworkWorldChain
-            size={28}
-            variant="branded"
-            aria-label="World Chain"
-          />
-        );
-
-      case 1328:
-        return (
-          <NetworkSei
-            size={28}
-            variant="branded"
-            aria-label="Sei"
-          />
-        );
-
-      case 51:
-        return (
-          <NetworkXdcNetwork
-            size={28}
-            variant="branded"
-            aria-label="XDC Network"
-          />
-        );
-
-      case 999:
-        return (
-          <NetworkHyperEvm
-            size={28}
-            variant="branded"
-            aria-label="HyperEVM"
-          />
-        );
-
-      case 763373:
-        return (
-          <NetworkInk
-            size={28}
-            variant="branded"
-            aria-label="Ink"
-          />
-        );
-
-      case 161221135:
-        return (
-          <NetworkPlume
-            size={28}
-            variant="branded"
-            aria-label="Plume"
-          />
-        );
-
-      case 46630:
-        return (
-          <NetworkRobinhood
-            size={28}
-            variant="branded"
-            aria-label="Robinhood"
-          />
-        );
-
-      default:
-        return (
-          <FallbackNetworkMark
-            network={network}
-          />
-        );
-    }
+  const networkMap: Record<number, string> = {
+    5042002: "arc",
+    11155111: "ethereum",
+    43113: "avalanche",
+    11155420: "optimism",
+    421614: "arbitrum",
+    84532: "base",
+    80002: "polygon",
+    59141: "linea",
+    1301: "unichain",
+    5115: "codex",
+    57054: "sonic",
+    4801: "world-chain",
+    1328: "sei",
+    51: "xdc",
+    999: "hyper-evm",
+    763373: "ink",
+    161221135: "plume",
+    46630: "robinhood",
   };
+
+  const networkName = networkMap[network.chainId];
+
+  const iconSize = size === "small" ? 22 : 28;
+
+  if (!networkName) {
+    return (
+      <div
+        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
+      >
+        <FallbackNetworkMark network={network} />
+      </div>
+    );
+  }
 
   return (
     <div
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      {renderIcon()}
+      <NetworkIcon
+        network={networkName}
+        size={iconSize}
+        variant="branded"
+        aria-label={`${network.name} logo`}
+      />
     </div>
   );
 }
