@@ -7,15 +7,7 @@ import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
-import {
-  NetworkArbitrumOne,
-  NetworkAvalanche,
-  NetworkBase,
-  NetworkEthereum,
-  NetworkOptimism,
-  NetworkPolygon,
-  NetworkLinea,
-} from "@web3icons/react";
+import { NetworkIcon } from "@web3icons/react/dynamic";
 import {
   useAccount,
   useChainId,
@@ -82,6 +74,7 @@ function FallbackNetworkMark({
   );
 }
 
+
 function NetworkLogo({
   network,
   size = "normal",
@@ -111,106 +104,69 @@ function NetworkLogo({
   const chainId = network.chainId;
 
   /*
-   * Arc has its own inline mark so it never depends
-   * on an external image or icon package.
+   * Map testnet chain IDs to their parent network icon.
+   * Web3 Icons provides the branded logo for each parent network.
    */
-  if (
-    id.includes("arc") ||
-    name.includes("arc") ||
-    chainId === 5042002
-  ) {
-    return (
-      <div
-        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-white text-black`}
-      >
-        <svg
-          viewBox="0 0 32 32"
-          className="h-[58%] w-[58%]"
-          aria-hidden="true"
-        >
-          <path
-            d="M16 5.5 7.5 25h4.2l1.5-3.8h5.6l1.5 3.8h4.2L16 5.5Zm0 7.1 1.7 5.1h-3.4L16 12.6Z"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
-    );
-  }
-
-  /*
-   * The official Web3 Icons React package provides static,
-   * tree-shakable branded network components.
-   *
-   * Testnets use the logo of their parent network.
-   */
-  const icon =
+  const networkIcon =
     (() => {
       switch (chainId) {
+        case 5042002:
+          return "arc";
+
         case 11155111:
-          return (
-            <NetworkEthereum
-              size={28}
-              variant="branded"
-              aria-label="Ethereum"
-            />
-          );
+          return "ethereum";
 
         case 43113:
-          return (
-            <NetworkAvalanche
-              size={28}
-              variant="branded"
-              aria-label="Avalanche"
-            />
-          );
+          return "avalanche";
 
         case 11155420:
-          return (
-            <NetworkOptimism
-              size={28}
-              variant="branded"
-              aria-label="Optimism"
-            />
-          );
+          return "optimism";
 
         case 421614:
-          return (
-            <NetworkArbitrumOne
-              size={28}
-              variant="branded"
-              aria-label="Arbitrum"
-            />
-          );
+          return "arbitrum";
 
         case 84532:
-          return (
-            <NetworkBase
-              size={28}
-              variant="branded"
-              aria-label="Base"
-            />
-          );
+          return "base";
 
         case 80002:
-          return (
-            <NetworkPolygon
-              size={28}
-              variant="branded"
-              aria-label="Polygon"
-            />
-          );
+          return "polygon";
 
         case 59141:
-          return (
-            <NetworkLinea
-              size={28}
-              variant="branded"
-              aria-label="Linea"
-            />
-          );
+          return "linea";
+
+        case 1301:
+          return "unichain";
+
+        case 5115:
+          return "codex";
+
+        case 57054:
+          return "sonic";
+
+        case 4801:
+          return "world-chain";
+
+        case 1328:
+          return "sei";
+
+        case 51:
+          return "xdc-network";
+
+        case 999:
+          return "hyper-evm";
+
+        case 763373:
+          return "ink";
+
+        case 161221135:
+          return "plume";
 
         default:
-          return null;
+          /*
+           * Try BridgeKit's own network identifiers/names
+           * for any future supported networks.
+           */
+          return id || name;
       }
     })();
 
@@ -218,9 +174,13 @@ function NetworkLogo({
     <div
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
-      {icon ?? (
-        <FallbackNetworkMark network={network} />
-      )}
+      <NetworkIcon
+        network={networkIcon}
+        size={28}
+        variant="branded"
+        fallback={<FallbackNetworkMark network={network} />}
+        aria-label={network.name}
+      />
     </div>
   );
 }
