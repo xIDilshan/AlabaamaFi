@@ -11,10 +11,21 @@ import {
   NetworkArbitrumOne,
   NetworkAvalanche,
   NetworkBase,
+  NetworkCodex,
   NetworkEthereum,
-  NetworkOptimism,
-  NetworkPolygon,
+  NetworkHyperEvm,
+  NetworkInk,
   NetworkLinea,
+  NetworkOptimism,
+  NetworkPlume,
+  NetworkPolygon,
+  NetworkRobinhood,
+  NetworkSei,
+  NetworkSonic,
+  NetworkUnichain,
+  NetworkWorldChain,
+  NetworkXdcNetwork,
+  NetworkArc,
 } from "@web3icons/react";
 import {
   useAccount,
@@ -82,7 +93,6 @@ function FallbackNetworkMark({
   );
 }
 
-
 function NetworkLogo({
   network,
   size = "normal",
@@ -100,7 +110,9 @@ function NetworkLogo({
       <div
         className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]`}
       >
-        <span className="text-sm text-white/25">?</span>
+        <span className="text-sm text-white/25">
+          ?
+        </span>
       </div>
     );
   }
@@ -111,23 +123,11 @@ function NetworkLogo({
     switch (chainId) {
       case 5042002:
         return (
-          <svg
-            viewBox="0 0 32 32"
-            className="h-7 w-7"
+          <NetworkArc
+            size={28}
+            variant="branded"
             aria-label="Arc"
-            role="img"
-          >
-            <circle
-              cx="16"
-              cy="16"
-              r="15"
-              fill="#ffffff"
-            />
-            <path
-              d="M16 7.25 8.5 24.75h3.8l1.25-3.1h4.9l1.25 3.1h3.8L16 7.25Zm0 5.9 1.45 5.15h-2.9L16 13.15Z"
-              fill="#050505"
-            />
-          </svg>
+          />
         );
 
       case 11155111:
@@ -193,8 +193,102 @@ function NetworkLogo({
           />
         );
 
+      case 1301:
+        return (
+          <NetworkUnichain
+            size={28}
+            variant="branded"
+            aria-label="Unichain"
+          />
+        );
+
+      case 5115:
+        return (
+          <NetworkCodex
+            size={28}
+            variant="branded"
+            aria-label="Codex"
+          />
+        );
+
+      case 57054:
+        return (
+          <NetworkSonic
+            size={28}
+            variant="branded"
+            aria-label="Sonic"
+          />
+        );
+
+      case 4801:
+        return (
+          <NetworkWorldChain
+            size={28}
+            variant="branded"
+            aria-label="World Chain"
+          />
+        );
+
+      case 1328:
+        return (
+          <NetworkSei
+            size={28}
+            variant="branded"
+            aria-label="Sei"
+          />
+        );
+
+      case 51:
+        return (
+          <NetworkXdcNetwork
+            size={28}
+            variant="branded"
+            aria-label="XDC Network"
+          />
+        );
+
+      case 999:
+        return (
+          <NetworkHyperEvm
+            size={28}
+            variant="branded"
+            aria-label="HyperEVM"
+          />
+        );
+
+      case 763373:
+        return (
+          <NetworkInk
+            size={28}
+            variant="branded"
+            aria-label="Ink"
+          />
+        );
+
+      case 161221135:
+        return (
+          <NetworkPlume
+            size={28}
+            variant="branded"
+            aria-label="Plume"
+          />
+        );
+
+      case 46630:
+        return (
+          <NetworkRobinhood
+            size={28}
+            variant="branded"
+            aria-label="Robinhood"
+          />
+        );
+
       default:
-        return <FallbackNetworkMark network={network} />;
+        return (
+          <FallbackNetworkMark
+            network={network}
+          />
+        );
     }
   };
 
