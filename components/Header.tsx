@@ -356,7 +356,7 @@ return (
         <div className="flex min-w-0 items-center justify-end">
           <button
             onClick={handleWalletClick}
-            className={`${manrope.className} flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-semibold tracking-normal ${connectGlassButton}`}
+            className={`${manrope.className} flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold tracking-normal ${connectGlassButton}`}
           >
             <span className="truncate">
               {isConnected
@@ -366,8 +366,8 @@ return (
 
             {isConnected && (
               <svg
-                width="11"
-                height="11"
+                width="10"
+                height="10"
                 viewBox="0 0 24 24"
                 fill="none"
                 className="shrink-0 text-white/55"
