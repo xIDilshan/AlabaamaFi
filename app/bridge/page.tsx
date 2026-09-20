@@ -98,44 +98,40 @@ function NetworkLogo({
   }
 
   const networkMap: Record<number, string> = {
-    // Arc
-    5042002: "arc",
+  // Current networks
+  5042002: "arc",
+  11155111: "ethereum",
+  43113: "avalanche",
+  11155420: "optimism",
+  421614: "arbitrum-one",
+  84532: "base",
+  80002: "polygon",
+  59141: "linea",
+  1301: "unichain",
 
-    // Current Circle testnets
-    11155111: "ethereum",
-    43113: "avalanche",
-    11155420: "optimism",
-    421614: "arbitrum-one",
-    84532: "base",
-    80002: "polygon",
-    59141: "linea",
-    1301: "unichain",
+  // Additional networks
+  4801: "world",
+  1328: "sei",
+  51: "xdc-network",
+  763373: "ink",
+  46630: "robinhood",
 
-    // Additional Circle networks
-    5115: "codex",
-    4801: "world",
-    1328: "sei",
-    51: "xdc-network",
-    999: "hyper-evm",
-    763373: "ink",
-    161221135: "plume",
+  // Testnet networks
+  656476: "codex",
+  99876: "edgeless",
+  998: "hyper-evm",
+  2910: "morph",
+  688688: "pharos",
+  98867: "plume",
+  57054: "sonic",
 
-    // Additional testnets
-    33431: "edge",
-    2910: "morph",
-    688689: "pharos",
-    14601: "sonic",
-
-    // Other networks
-    338: "cronos",
-    1439: "injective",
-    10143: "monad",
-    9746: "plasma",
-    1952: "x-layer",
-
-    // Partner network
-    46630: "robinhood",
-  };
+  // Other networks
+  338: "cronos",
+  1439: "injective",
+  10143: "monad",
+  9746: "plasma",
+  1952: "x-layer",
+};
 
   const iconNetwork =
     networkMap[network.chainId];
