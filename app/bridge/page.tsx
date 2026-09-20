@@ -132,8 +132,10 @@ function NetworkLogo({
   1952: "x-layer",
 };
 
-  const iconNetwork =
-    networkMap[network.chainId];
+const iconNetwork =
+  network.chainId === 99876
+    ? "edge"
+    : networkMap[network.chainId];
 
   return (
     <div
