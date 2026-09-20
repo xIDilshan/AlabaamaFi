@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
-import { AppKit } from "@circle-fin/app-kit";
 import { BridgeKit } from "@circle-fin/bridge-kit";
 import {
   createViemAdapterFromProvider,
@@ -44,7 +43,6 @@ type BridgeNetwork = {
 };
 
 const bridgeKit = new BridgeKit();
-const appKit = new AppKit();
 
 const USDC_ABI = [
   {
@@ -923,22 +921,25 @@ export default function BridgePage() {
             );
 
           const estimateResult =
-            await appKit.estimateBridge(
-              {
-                from: {
-                  adapter,
-                  chain:
-                    sourceChain.id,
-                },
-                to: {
-                  adapter,
-                  chain:
-                    destinationChain.id,
-                },
-                amount:
-                  amount.trim(),
-              }
-            );
+  await bridgeKit.estimate({
+    from: {
+      adapter,
+      chain:
+        sourceChain.id as Parameters<
+          BridgeKit["estimate"]
+        >[0]["from"]["chain"],
+    },
+    to: {
+      adapter,
+      chain:
+        destinationChain.id as Parameters<
+          BridgeKit["estimate"]
+        >[0]["to"]["chain"],
+    },
+    amount:
+      amount.trim(),
+    token: "USDC",
+  });
 
           if (cancelled) {
             return;
