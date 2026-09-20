@@ -303,7 +303,7 @@ export default function BridgePage() {
   useEffect(() => {
     let mounted = true;
 
-    const loadChains = () => {
+    const loadChains = async () => {
   try {
     const supportedChains = await bridgeKit.getSupportedChains();
 
