@@ -508,19 +508,26 @@ return (
           </div>
 
           {/* LOGO */}
+<Link
+  href="/"
+  className="flex items-center gap-2.5"
+>
+  <img
+    src="/alabaamafi-logo.png"
+    alt="AlabaamaFi"
+    className="h-10 w-10 shrink-0 object-contain"
+  />
 
-          <Link
-            href="/"
-            className="text-center"
-          >
-            <h1 className="text-xl font-bold tracking-tight">
-              AlabaamaFi
-            </h1>
+  <div className="text-left">
+    <h1 className="text-xl font-bold tracking-tight">
+      AlabaamaFi
+    </h1>
 
-            <p className="mt-0.5 text-xs font-semibold text-white/30">
-              Powered by Arc
-            </p>
-          </Link>
+    <p className="mt-0.5 text-xs font-semibold text-white/30">
+      Powered by Arc
+    </p>
+  </div>
+</Link>
 
           {/* WALLET */}
 
