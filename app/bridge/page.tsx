@@ -54,7 +54,7 @@ const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
   chainId: 46630,
   description: "Partner bridge integration",
   provider: "partner",
-  available: false,
+  available: true,
 };
 
 function FallbackNetworkMark({
@@ -305,8 +305,17 @@ export default function BridgePage() {
 
     const loadChains = () => {
   try {
-    const supportedChains =
-  bridgeKit.getSupportedChains();
+    const supportedChains = await bridgeKit.getSupportedChains();
+
+console.log(
+  "Circle supported chains:",
+  supportedChains.map((chain) => ({
+    name: chain.name,
+    chainId: chain.type === "evm" ? chain.chainId : undefined,
+    type: chain.type,
+    isTestnet: chain.isTestnet,
+  }))
+);
 
 const testnetChains =
   supportedChains.filter(
