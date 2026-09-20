@@ -309,9 +309,15 @@ export default function BridgePage() {
       bridgeKit.getSupportedChains();
 
     const testnetChains =
-      supportedChains.filter(
-        (chain) => chain.isTestnet
-      );
+  supportedChains.filter(
+    (chain) =>
+      chain.isTestnet &&
+      ![
+        "Edge Testnet",
+        "Pharos Atlantic",
+        "Morph Hoodi",
+      ].includes(chain.name)
+  );
 
     const networks: BridgeNetwork[] =
       testnetChains
