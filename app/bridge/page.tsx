@@ -10,11 +10,12 @@ type CreateViemAdapterFromProviderParams,
 import { NetworkIcon } from "@web3icons/react/dynamic";
 
 import {
-  NetworkCodex,
-  NetworkHyperEvm,
-  NetworkPlume,
-  NetworkSonic,
+NetworkCodex,
+NetworkHyperEvm,
+NetworkPlume,
+NetworkSonic,
 } from "@web3icons/react";
+
 import {
 useAccount,
 useChainId,
@@ -74,103 +75,161 @@ network?.shortName?.slice(0, 2).toUpperCase() || "?";
 return (
 <div
 className="flex h-full w-full items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-bold tracking-tight text-white/45"
-aria-label={`${network?.name ?? "Network"} logo`}
+aria-label={"${network?.name ?? "Network"} logo"}
 >
 {label}
 </div>
 );
 }
 
-function NetworkLogo({
-  network,
-  size = "normal",
+function SpecialNetworkIcon({
+network,
 }: {
-  network: BridgeNetwork | FutureNetwork | null;
-  size?: "small" | "normal";
+network: BridgeNetwork | FutureNetwork;
 }) {
-  const dimensions =
-    size === "small"
-      ? "h-8 w-8"
-      : "h-10 w-10";
+const iconClass =
+"h-full w-full object-contain";
 
-  if (!network) {
-    return (
-      <div
-        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]`}
-      >
-        <span className="text-sm text-white/25">
-          ?
-        </span>
-      </div>
-    );
-  }
+switch (network.chainId) {
+case 5115:
+return (
+<NetworkCodex
+className={iconClass}
+variant="branded"
+/>
+);
 
-  const networkMap: Record<number, string> = {
-    // Current networks
-    5042002: "arc",
-    11155111: "ethereum",
-    43113: "avalanche",
-    11155420: "optimism",
-    421614: "arbitrum-one",
-    84532: "base",
-    80002: "polygon",
-    59141: "linea",
-    1301: "unichain",
-
-    // Additional networks
-    5115: "codex",
-    57054: "sonic",
-    4801: "world",
-    1328: "sei",
-    51: "xdc-network",
-    999: "hyper-evm",
-    763373: "ink",
-    161221135: "plume",
-    46630: "robinhood",
-
-    // More testnets
-    338: "cronos",
-    202: "edgeless",
-    1439: "injective",
-    10143: "monad",
-    2710: "morph",
-    688689: "pharos",
-    9746: "plasma",
-    1952: "x-layer",
-  };
-
-  const iconNetwork =
-    networkMap[network.chainId];
-
-  if (!iconNetwork) {
-    return (
-      <div
-        className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
-      >
-        <FallbackNetworkMark
-          network={network}
-        />
-      </div>
-    );
-  }
-
+case 999:
   return (
-    <div
-      className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
-    >
-      <NetworkIcon
-        network={iconNetwork}
-        size={28}
-        variant="branded"
-        aria-label={`${network.name} logo`}
-        fallback={
-          <FallbackNetworkMark
-            network={network}
-          />
-        }
-      />
-    </div>
+    <NetworkHyperEvm
+      className={iconClass}
+      variant="branded"
+    />
   );
+
+case 161221135:
+  return (
+    <NetworkPlume
+      className={iconClass}
+      variant="branded"
+    />
+  );
+
+case 57054:
+  return (
+    <NetworkSonic
+      className={iconClass}
+      variant="branded"
+    />
+  );
+
+default:
+  return null;
+
+}
+}
+
+function NetworkLogo({
+network,
+size = "normal",
+}: {
+network: BridgeNetwork | FutureNetwork | null;
+size?: "small" | "normal";
+}) {
+const dimensions =
+size === "small"
+? "h-8 w-8"
+: "h-10 w-10";
+
+if (!network) {
+return (
+<div
+className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035]"}
+>
+<span className="text-sm text-white/25">
+?
+</span>
+</div>
+);
+}
+
+const specialIcon = SpecialNetworkIcon({
+network,
+});
+
+if (specialIcon) {
+return (
+<div
+className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
+>
+{specialIcon}
+</div>
+);
+}
+
+const networkMap: Record<number, string> = {
+// Current networks
+5042002: "arc",
+11155111: "ethereum",
+43113: "avalanche",
+11155420: "optimism",
+421614: "arbitrum-one",
+84532: "base",
+80002: "polygon",
+59141: "linea",
+1301: "unichain",
+
+// Additional networks
+4801: "world",
+1328: "sei",
+51: "xdc-network",
+763373: "ink",
+46630: "robinhood",
+
+// More testnets
+338: "cronos",
+202: "edgeless",
+1439: "injective",
+10143: "monad",
+2710: "morph",
+688689: "pharos",
+9746: "plasma",
+1952: "x-layer",
+
+};
+
+const iconNetwork =
+networkMap[network.chainId];
+
+if (!iconNetwork) {
+return (
+<div
+className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
+>
+<FallbackNetworkMark
+network={network}
+/>
+</div>
+);
+}
+
+return (
+<div
+className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
+>
+<NetworkIcon
+name={iconNetwork}
+size={28}
+variant="branded"
+aria-label={"${network.name} logo"}
+fallback={
+<FallbackNetworkMark
+network={network}
+/>
+}
+/>
+</div>
+);
 }
 
 function ChevronDown() {
@@ -469,7 +528,7 @@ network:
 ) => {
 if (!network.available) {
 setError(
-`${network.name} is coming in a future bridge integration.`
+"${network.name} is coming in a future bridge integration."
 );
 return;
 }
@@ -491,7 +550,7 @@ network:
 ) => {
 if (!network.available) {
 setError(
-`${network.name} is not available through Circle CCTP yet.`
+"${network.name} is not available through Circle CCTP yet."
 );
 return;
 }
