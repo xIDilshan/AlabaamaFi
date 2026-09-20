@@ -218,10 +218,10 @@ return (
 className={"${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5"}
 >
 <NetworkIcon
-name={iconNetwork}
-size={28}
-variant="branded"
-aria-label={"${network.name} logo"}
+  network={iconNetwork}
+  size={28}
+  variant="branded"
+  aria-label={`${network?.name ?? "Network"} logo`}
 fallback={
 <FallbackNetworkMark
 network={network}
