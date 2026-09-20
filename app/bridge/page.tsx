@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
+import { AppKit } from "@circle-fin/app-kit";
 import { BridgeKit } from "@circle-fin/bridge-kit";
 import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
 } from "@circle-fin/adapter-viem-v2";
 import { NetworkIcon } from "@web3icons/react/dynamic";
+import {
+  createPublicClient,
+  formatUnits,
+  http,
+} from "viem";
 
 import {
   useAccount,
@@ -33,9 +39,32 @@ type BridgeNetwork = {
   description: string;
   provider: "circle";
   available: boolean;
+  rpcUrl: string;
+  usdcAddress: string | null;
 };
 
 const bridgeKit = new BridgeKit();
+const appKit = new AppKit();
+
+const USDC_ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+      },
+    ],
+  },
+] as const;
 
 function FallbackNetworkMark({
   network,
@@ -285,149 +314,470 @@ function formatBalance(
   );
 }
 
+function formatTime(
+  value: unknown
+): string | null {
+  if (
+    typeof value !== "number" &&
+    typeof value !== "string"
+  ) {
+    return null;
+  }
+
+  const seconds = Number(value);
+
+  if (
+    !Number.isFinite(seconds) ||
+    seconds <= 0
+  ) {
+    return null;
+  }
+
+  if (seconds < 60) {
+    return `~${Math.ceil(seconds)} sec`;
+  }
+
+  const minutes = seconds / 60;
+
+  if (minutes < 60) {
+    return `~${Math.ceil(minutes)} min`;
+  }
+
+  const hours = minutes / 60;
+
+  return `~${hours.toFixed(1)} hr`;
+}
+
+function formatFeeValue(
+  value: unknown
+): string | null {
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    const text = String(value);
+
+    if (!text) {
+      return null;
+    }
+
+    return text;
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    const record =
+      value as Record<
+        string,
+        unknown
+      >;
+
+    const amount =
+      record.amount ??
+      record.value ??
+      record.gasAmount ??
+      record.feeAmount;
+
+    const token =
+      record.token ??
+      record.currency ??
+      record.symbol;
+
+    if (
+      amount !== undefined &&
+      token !== undefined
+    ) {
+      return `${String(amount)} ${String(token)}`;
+    }
+
+    if (
+      amount !== undefined
+    ) {
+      return String(amount);
+    }
+  }
+
+  return null;
+}
+
+function findNestedValue(
+  value: unknown,
+  keys: string[],
+  depth = 0
+): unknown {
+  if (
+    value === null ||
+    value === undefined ||
+    depth > 5
+  ) {
+    return undefined;
+  }
+
+  if (
+    typeof value !== "object"
+  ) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found =
+        findNestedValue(
+          item,
+          keys,
+          depth + 1
+        );
+
+      if (
+        found !== undefined
+      ) {
+        return found;
+      }
+    }
+
+    return undefined;
+  }
+
+  const record =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  for (const key of keys) {
+    if (
+      record[key] !== undefined &&
+      record[key] !== null
+    ) {
+      return record[key];
+    }
+  }
+
+  for (const child of Object.values(
+    record
+  )) {
+    const found =
+      findNestedValue(
+        child,
+        keys,
+        depth + 1
+      );
+
+    if (
+      found !== undefined
+    ) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+async function getUsdcBalance(
+  network: BridgeNetwork,
+  address: `0x${string}`
+) {
+  if (
+    !network.rpcUrl ||
+    !network.usdcAddress
+  ) {
+    return null;
+  }
+
+  try {
+    const chain = {
+      id: network.chainId,
+      name: network.name,
+      nativeCurrency: {
+        name: "Native",
+        symbol: "NATIVE",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: [network.rpcUrl],
+        },
+      },
+    };
+
+    const client =
+      createPublicClient({
+        chain,
+        transport: http(
+          network.rpcUrl
+        ),
+      });
+
+    const balance =
+      await client.readContract({
+        address:
+          network.usdcAddress as `0x${string}`,
+        abi: USDC_ABI,
+        functionName:
+          "balanceOf",
+        args: [address],
+      });
+
+    return formatUnits(
+      balance,
+      6
+    );
+  } catch (balanceError) {
+    console.error(
+      `Unable to load USDC balance on ${network.name}:`,
+      balanceError
+    );
+
+    return null;
+  }
+}
+
 export default function BridgePage() {
-  const { isConnected, connector, address } =
-    useAccount();
+  const {
+    isConnected,
+    connector,
+    address,
+  } = useAccount();
 
-  const currentChainId = useChainId();
+  const currentChainId =
+    useChainId();
 
-  const { switchChainAsync } =
-    useSwitchChain();
+  const {
+    switchChainAsync,
+  } = useSwitchChain();
 
-  const [circleChains, setCircleChains] =
-    useState<BridgeNetwork[]>([]);
+  const [
+    circleChains,
+    setCircleChains,
+  ] = useState<
+    BridgeNetwork[]
+  >([]);
 
-  const [sourceChain, setSourceChain] =
-    useState<BridgeNetwork | null>(null);
+  const [
+    sourceChain,
+    setSourceChain,
+  ] = useState<
+    BridgeNetwork | null
+  >(null);
 
-  const [destinationChain, setDestinationChain] =
-    useState<BridgeNetwork | null>(null);
+  const [
+    destinationChain,
+    setDestinationChain,
+  ] = useState<
+    BridgeNetwork | null
+  >(null);
 
-  const [amount, setAmount] =
-    useState("");
+  const [
+    amount,
+    setAmount,
+  ] = useState("");
 
-  const [isLoadingChains, setIsLoadingChains] =
-    useState(true);
+  const [
+    isLoadingChains,
+    setIsLoadingChains,
+  ] = useState(true);
 
-  const [isBridging, setIsBridging] =
-    useState(false);
+  const [
+    isBridging,
+    setIsBridging,
+  ] = useState(false);
 
-  const [status, setStatus] =
-    useState("");
+  const [
+    status,
+    setStatus,
+  ] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-  const [sourceBalance, setSourceBalance] =
-    useState<string | null>(null);
+  const [
+    sourceBalance,
+    setSourceBalance,
+  ] = useState<
+    string | null
+  >(null);
 
-  const [destinationBalance, setDestinationBalance] =
-    useState<string | null>(null);
+  const [
+    destinationBalance,
+    setDestinationBalance,
+  ] = useState<
+    string | null
+  >(null);
 
-  const [showSourceChains, setShowSourceChains] =
-    useState(false);
+  const [
+    isLoadingBalances,
+    setIsLoadingBalances,
+  ] = useState(false);
 
-  const [showDestinationChains, setShowDestinationChains] =
-    useState(false);
+  const [
+    bridgeFee,
+    setBridgeFee,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
+    estimatedTime,
+    setEstimatedTime,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
+    isEstimating,
+    setIsEstimating,
+  ] = useState(false);
+
+  const [
+    showSourceChains,
+    setShowSourceChains,
+  ] = useState(false);
+
+  const [
+    showDestinationChains,
+    setShowDestinationChains,
+  ] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const loadChains = async () => {
-      try {
-        const supportedChains =
-          await bridgeKit.getSupportedChains();
+    const loadChains =
+      async () => {
+        try {
+          const supportedChains =
+            await bridgeKit.getSupportedChains();
 
-        const testnetChains =
-          supportedChains.filter(
-            (chain) => chain.isTestnet
-          );
-
-        const networks: BridgeNetwork[] =
-          testnetChains
-            .filter(
+          const testnetChains =
+            supportedChains.filter(
               (chain) =>
-                chain.type === "evm"
-            )
-            .filter(
-              (chain) =>
-                ![
-                  "Edge Testnet",
-                  "Pharos Atlantic",
-                  "Morph Hoodi",
-                ].includes(chain.name)
-            )
-            .map((chain) => ({
-              id: chain.chain,
-              name: chain.name,
-              shortName:
-                chain.name
-                  .replace(" Testnet", "")
-                  .replace(" Sepolia", "")
-                  .replace(" Fuji", "")
-                  .replace(" Amoy", ""),
-              chainId: chain.chainId,
-              description: "",
-              provider: "circle" as const,
-              available: true,
-            }))
-            .sort((a, b) => {
-              if (
-                a.id === "Arc_Testnet"
-              ) {
-                return -1;
-              }
+                chain.isTestnet
+            );
 
-              if (
-                b.id === "Arc_Testnet"
-              ) {
-                return 1;
-              }
+          const networks: BridgeNetwork[] =
+            testnetChains
+              .filter(
+                (chain) =>
+                  chain.type ===
+                  "evm"
+              )
+              .filter(
+                (chain) =>
+                  ![
+                    "Edge Testnet",
+                    "Pharos Atlantic",
+                    "Morph Hoodi",
+                  ].includes(
+                    chain.name
+                  )
+              )
+              .map((chain) => ({
+                id: chain.chain,
+                name: chain.name,
+                shortName:
+                  chain.name
+                    .replace(
+                      " Testnet",
+                      ""
+                    )
+                    .replace(
+                      " Sepolia",
+                      ""
+                    )
+                    .replace(
+                      " Fuji",
+                      ""
+                    )
+                    .replace(
+                      " Amoy",
+                      ""
+                    ),
+                chainId:
+                  chain.chainId,
+                description:
+                  "",
+                provider:
+                  "circle" as const,
+                available:
+                  true,
+                rpcUrl:
+                  chain.rpcEndpoints?.[0] ??
+                  "",
+                usdcAddress:
+                  chain.usdcAddress ??
+                  null,
+              }))
+              .sort(
+                (a, b) => {
+                  if (
+                    a.id ===
+                    "Arc_Testnet"
+                  ) {
+                    return -1;
+                  }
 
-              return a.name.localeCompare(
-                b.name
+                  if (
+                    b.id ===
+                    "Arc_Testnet"
+                  ) {
+                    return 1;
+                  }
+
+                  return a.name.localeCompare(
+                    b.name
+                  );
+                }
               );
-            });
 
-        if (!mounted) {
-          return;
-        }
+          if (!mounted) {
+            return;
+          }
 
-        setCircleChains(networks);
-
-        const arc =
-          networks.find(
-            (chain) =>
-              chain.id === "Arc_Testnet"
-          ) ?? null;
-
-        const firstDestination =
-          networks.find(
-            (chain) =>
-              chain.id !== "Arc_Testnet"
-          ) ?? null;
-
-        setSourceChain(arc);
-        setDestinationChain(
-          firstDestination
-        );
-      } catch (loadError) {
-        console.error(
-          "Unable to load Circle bridge chains:",
-          loadError
-        );
-
-        if (mounted) {
-          setError(
-            "Unable to load supported bridge networks."
+          setCircleChains(
+            networks
           );
+
+          const arc =
+            networks.find(
+              (chain) =>
+                chain.id ===
+                "Arc_Testnet"
+            ) ?? null;
+
+          const firstDestination =
+            networks.find(
+              (chain) =>
+                chain.id !==
+                "Arc_Testnet"
+            ) ?? null;
+
+          setSourceChain(arc);
+
+          setDestinationChain(
+            firstDestination
+          );
+        } catch (loadError) {
+          console.error(
+            "Unable to load Circle bridge chains:",
+            loadError
+          );
+
+          if (mounted) {
+            setError(
+              "Unable to load supported bridge networks."
+            );
+          }
+        } finally {
+          if (mounted) {
+            setIsLoadingChains(
+              false
+            );
+          }
         }
-      } finally {
-        if (mounted) {
-          setIsLoadingChains(false);
-        }
-      }
-    };
+      };
 
     loadChains();
 
@@ -436,20 +786,255 @@ export default function BridgePage() {
     };
   }, []);
 
+  /*
+   * Load the wallet's real USDC balance
+   * on both selected networks.
+   */
   useEffect(() => {
-    if (!isConnected || !address) {
-      setSourceBalance(null);
-      setDestinationBalance(null);
-      return;
-    }
+    let mounted = true;
 
-    setSourceBalance(null);
-    setDestinationBalance(null);
+    const loadBalances =
+      async () => {
+        if (
+          !isConnected ||
+          !address ||
+          !sourceChain ||
+          !destinationChain
+        ) {
+          setSourceBalance(
+            null
+          );
+          setDestinationBalance(
+            null
+          );
+          return;
+        }
+
+        setIsLoadingBalances(
+          true
+        );
+
+        try {
+          const [
+            source,
+            destination,
+          ] =
+            await Promise.all([
+              getUsdcBalance(
+                sourceChain,
+                address
+              ),
+              getUsdcBalance(
+                destinationChain,
+                address
+              ),
+            ]);
+
+          if (!mounted) {
+            return;
+          }
+
+          setSourceBalance(
+            source
+          );
+
+          setDestinationBalance(
+            destination
+          );
+        } finally {
+          if (mounted) {
+            setIsLoadingBalances(
+              false
+            );
+          }
+        }
+      };
+
+    loadBalances();
+
+    return () => {
+      mounted = false;
+    };
   }, [
     address,
     isConnected,
     sourceChain?.chainId,
     destinationChain?.chainId,
+  ]);
+
+  /*
+   * Get a real Circle bridge estimate.
+   *
+   * App Kit exposes estimateBridge() for
+   * pre-flight bridge cost estimation.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const estimate =
+      async () => {
+        setBridgeFee(null);
+        setEstimatedTime(
+          null
+        );
+
+        if (
+          !isConnected ||
+          !connector ||
+          !sourceChain ||
+          !destinationChain ||
+          sameChainPlaceholder(
+            sourceChain,
+            destinationChain
+          ) ||
+          !amount ||
+          Number(amount) <= 0 ||
+          !Number.isFinite(
+            Number(amount)
+          )
+        ) {
+          return;
+        }
+
+        if (
+          currentChainId !==
+          sourceChain.chainId
+        ) {
+          return;
+        }
+
+        try {
+          setIsEstimating(
+            true
+          );
+
+          const provider =
+            (await connector.getProvider()) as BrowserWalletProvider;
+
+          if (!provider) {
+            return;
+          }
+
+          const adapter =
+            await createViemAdapterFromProvider(
+              {
+                provider,
+              }
+            );
+
+          const estimateResult =
+            await appKit.estimateBridge(
+              {
+                from: {
+                  adapter,
+                  chain:
+                    sourceChain.id,
+                },
+                to: {
+                  adapter,
+                  chain:
+                    destinationChain.id,
+                },
+                amount:
+                  amount.trim(),
+              }
+            );
+
+          if (cancelled) {
+            return;
+          }
+
+          const estimate =
+            estimateResult as unknown;
+
+          /*
+           * Circle's estimate response can evolve
+           * between SDK versions, so read the known
+           * fee/time fields safely.
+           */
+          const fees =
+            findNestedValue(
+              estimate,
+              [
+                "gasFee",
+                "networkFee",
+                "totalFee",
+                "fee",
+                "fees",
+              ]
+            );
+
+          const time =
+            findNestedValue(
+              estimate,
+              [
+                "estimatedTime",
+                "estimatedTimeSeconds",
+                "timeEstimate",
+                "duration",
+              ]
+            );
+
+          const formattedFee =
+            formatFeeValue(
+              fees
+            );
+
+          const formattedTime =
+            formatTime(time);
+
+          setBridgeFee(
+            formattedFee
+          );
+
+          setEstimatedTime(
+            formattedTime
+          );
+        } catch (estimateError) {
+          if (
+            !cancelled
+          ) {
+            console.error(
+              "Bridge estimate error:",
+              estimateError
+            );
+
+            setBridgeFee(
+              null
+            );
+
+            setEstimatedTime(
+              null
+            );
+          }
+        } finally {
+          if (!cancelled) {
+            setIsEstimating(
+              false
+            );
+          }
+        }
+      };
+
+    const timer =
+      window.setTimeout(
+        estimate,
+        500
+      );
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [
+    amount,
+    connector,
+    currentChainId,
+    destinationChain,
+    isConnected,
+    sourceChain,
   ]);
 
   const sameChain =
@@ -470,7 +1055,9 @@ export default function BridgePage() {
     !sameChain &&
     sourceChain.available &&
     destinationChain.available &&
-    Number.isFinite(numericAmount) &&
+    Number.isFinite(
+      numericAmount
+    ) &&
     numericAmount > 0;
 
   const amountDisplay =
@@ -479,9 +1066,14 @@ export default function BridgePage() {
         return "0.00";
       }
 
-      const value = Number(amount);
+      const value =
+        Number(amount);
 
-      if (!Number.isFinite(value)) {
+      if (
+        !Number.isFinite(
+          value
+        )
+      ) {
         return "0.00";
       }
 
@@ -496,184 +1088,195 @@ export default function BridgePage() {
 
   const estimatedReceive =
     numericAmount > 0 &&
-    Number.isFinite(numericAmount)
+    Number.isFinite(
+      numericAmount
+    )
       ? amountDisplay
       : "0.00";
 
-  const handleSwapChains = () => {
-    if (
-      !sourceChain ||
-      !destinationChain
-    ) {
-      return;
-    }
-
-    setSourceChain(
-      destinationChain
-    );
-
-    setDestinationChain(
-      sourceChain
-    );
-
-    setError("");
-    setStatus("");
-  };
-
-  const handleSourceSelect = (
-    network: BridgeNetwork
-  ) => {
-    setSourceChain(network);
-    setShowSourceChains(false);
-    setError("");
-    setStatus("");
-  };
-
-  const handleDestinationSelect = (
-    network: BridgeNetwork
-  ) => {
-    setDestinationChain(network);
-    setShowDestinationChains(false);
-    setError("");
-    setStatus("");
-  };
-
-  const handleBridge = async () => {
-    setError("");
-    setStatus("");
-
-    if (!isConnected) {
-      setError(
-        "Connect your wallet first."
-      );
-      return;
-    }
-
-    if (!connector) {
-      setError(
-        "Wallet connection is not ready."
-      );
-      return;
-    }
-
-    if (
-      !sourceChain ||
-      !destinationChain
-    ) {
-      setError(
-        "Select both networks."
-      );
-      return;
-    }
-
-    if (sameChain) {
-      setError(
-        "Choose two different networks."
-      );
-      return;
-    }
-
-    if (
-      !Number.isFinite(
-        numericAmount
-      ) ||
-      numericAmount <= 0
-    ) {
-      setError(
-        "Enter a valid USDC amount."
-      );
-      return;
-    }
-
-    try {
-      setIsBridging(true);
-
+  const handleSwapChains =
+    () => {
       if (
-        currentChainId !==
-        sourceChain.chainId
+        !sourceChain ||
+        !destinationChain
       ) {
-        setStatus(
-          `Switching to ${sourceChain.shortName}...`
-        );
-
-        await switchChainAsync({
-          chainId:
-            sourceChain.chainId,
-        });
+        return;
       }
 
-      setStatus(
-        `Preparing ${sourceChain.shortName} → ${destinationChain.shortName}...`
+      setSourceChain(
+        destinationChain
       );
 
-      const provider =
-        (await connector.getProvider()) as BrowserWalletProvider;
+      setDestinationChain(
+        sourceChain
+      );
 
-      if (!provider) {
-        throw new Error(
-          "Unable to access your wallet provider."
+      setBridgeFee(null);
+      setEstimatedTime(
+        null
+      );
+      setError("");
+      setStatus("");
+    };
+
+  const handleSourceSelect =
+    (
+      network: BridgeNetwork
+    ) => {
+      setSourceChain(
+        network
+      );
+
+      setShowSourceChains(
+        false
+      );
+
+      setBridgeFee(null);
+      setEstimatedTime(
+        null
+      );
+      setError("");
+      setStatus("");
+    };
+
+  const handleDestinationSelect =
+    (
+      network: BridgeNetwork
+    ) => {
+      setDestinationChain(
+        network
+      );
+
+      setShowDestinationChains(
+        false
+      );
+
+      setBridgeFee(null);
+      setEstimatedTime(
+        null
+      );
+      setError("");
+      setStatus("");
+    };
+
+  const handleBridge =
+    async () => {
+      setError("");
+      setStatus("");
+
+      if (!isConnected) {
+        setError(
+          "Connect your wallet first."
         );
+        return;
       }
 
-      const adapter =
-        await createViemAdapterFromProvider({
-          provider,
-        });
-
-      setStatus(
-        "Confirm the bridge transaction in your wallet..."
-      );
-
-      const result =
-        await bridgeKit.bridge({
-          from: {
-            adapter,
-            chain:
-              sourceChain.id as Parameters<
-                BridgeKit["bridge"]
-              >[0]["from"]["chain"],
-          },
-          to: {
-            adapter,
-            chain:
-              destinationChain.id as Parameters<
-                BridgeKit["bridge"]
-              >[0]["to"]["chain"],
-          },
-          amount:
-            amount.trim(),
-          token: "USDC",
-        });
-
-      if (
-        result.state === "success"
-      ) {
-        setStatus(
-          "Bridge completed successfully."
+      if (!connector) {
+        setError(
+          "Wallet connection is not ready."
         );
-
-        setAmount("");
         return;
       }
 
       if (
-        result.state === "error"
+        !sourceChain ||
+        !destinationChain
       ) {
-        setStatus(
-          "Continuing the bridge..."
+        setError(
+          "Select both networks."
+        );
+        return;
+      }
+
+      if (sameChain) {
+        setError(
+          "Choose two different networks."
+        );
+        return;
+      }
+
+      if (
+        !Number.isFinite(
+          numericAmount
+        ) ||
+        numericAmount <= 0
+      ) {
+        setError(
+          "Enter a valid USDC amount."
+        );
+        return;
+      }
+
+      try {
+        setIsBridging(
+          true
         );
 
-        const retryResult =
-          await bridgeKit.retry(
-            result,
+        if (
+          currentChainId !==
+          sourceChain.chainId
+        ) {
+          setStatus(
+            `Switching to ${sourceChain.shortName}...`
+          );
+
+          await switchChainAsync(
             {
-              from: adapter,
-              to: adapter,
+              chainId:
+                sourceChain.chainId,
+            }
+          );
+        }
+
+        setStatus(
+          `Preparing ${sourceChain.shortName} → ${destinationChain.shortName}...`
+        );
+
+        const provider =
+          (await connector.getProvider()) as BrowserWalletProvider;
+
+        if (!provider) {
+          throw new Error(
+            "Unable to access your wallet provider."
+          );
+        }
+
+        const adapter =
+          await createViemAdapterFromProvider(
+            {
+              provider,
+            }
+          );
+
+        setStatus(
+          "Confirm the bridge transaction in your wallet..."
+        );
+
+        const result =
+          await bridgeKit.bridge(
+            {
+              from: {
+                adapter,
+                chain:
+                  sourceChain.id as Parameters<
+                    BridgeKit["bridge"]
+                  >[0]["from"]["chain"],
+              },
+              to: {
+                adapter,
+                chain:
+                  destinationChain.id as Parameters<
+                    BridgeKit["bridge"]
+                  >[0]["to"]["chain"],
+              },
+              amount:
+                amount.trim(),
+              token: "USDC",
             }
           );
 
         if (
-          retryResult.state ===
+          result.state ===
           "success"
         ) {
           setStatus(
@@ -681,92 +1284,153 @@ export default function BridgePage() {
           );
 
           setAmount("");
+
           return;
         }
 
-        throw new Error(
-          "The bridge could not be completed. Please try again."
+        if (
+          result.state ===
+          "error"
+        ) {
+          setStatus(
+            "Continuing the bridge..."
+          );
+
+          const retryResult =
+            await bridgeKit.retry(
+              result,
+              {
+                from: adapter,
+                to: adapter,
+              }
+            );
+
+          if (
+            retryResult.state ===
+            "success"
+          ) {
+            setStatus(
+              "Bridge completed successfully."
+            );
+
+            setAmount("");
+
+            return;
+          }
+
+          throw new Error(
+            "The bridge could not be completed. Please try again."
+          );
+        }
+
+        setStatus(
+          "Bridge is still processing."
+        );
+      } catch (
+        bridgeError
+      ) {
+        console.error(
+          "Bridge error:",
+          bridgeError
+        );
+
+        const message =
+          bridgeError instanceof
+          Error
+            ? bridgeError.message
+            : "Unable to complete the bridge.";
+
+        setError(
+          message
+        );
+
+        setStatus("");
+      } finally {
+        setIsBridging(
+          false
         );
       }
+    };
 
-      setStatus(
-        "Bridge is still processing."
+  const handleAmountChange =
+    (
+      value: string
+    ) => {
+      if (value === "") {
+        setAmount("");
+        setBridgeFee(
+          null
+        );
+        setEstimatedTime(
+          null
+        );
+        setError("");
+        setStatus("");
+        return;
+      }
+
+      if (
+        !/^\d*\.?\d*$/.test(
+          value
+        )
+      ) {
+        return;
+      }
+
+      setAmount(value);
+      setBridgeFee(
+        null
       );
-    } catch (bridgeError) {
-      console.error(
-        "Bridge error:",
-        bridgeError
+      setEstimatedTime(
+        null
       );
-
-      const message =
-        bridgeError instanceof Error
-          ? bridgeError.message
-          : "Unable to complete the bridge.";
-
-      setError(message);
-      setStatus("");
-    } finally {
-      setIsBridging(false);
-    }
-  };
-
-  const handleAmountChange = (
-    value: string
-  ) => {
-    if (value === "") {
-      setAmount("");
       setError("");
       setStatus("");
-      return;
-    }
+    };
 
-    if (
-      !/^\d*\.?\d*$/.test(value)
-    ) {
-      return;
-    }
+  const renderNetworkOption =
+    (
+      network: BridgeNetwork,
+      onSelect: (
+        network: BridgeNetwork
+      ) => void
+    ) => {
+      return (
+        <button
+          key={network.id}
+          type="button"
+          onClick={() =>
+            onSelect(
+              network
+            )
+          }
+          className="group flex min-h-[64px] w-full items-center gap-3 rounded-2xl px-3 text-left transition hover:bg-white/[0.055] active:bg-white/[0.07]"
+        >
+          <NetworkLogo
+            network={
+              network
+            }
+            size="small"
+          />
 
-    setAmount(value);
-    setError("");
-    setStatus("");
-  };
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-white">
+              {
+                network.name
+              }
+            </div>
 
-  const renderNetworkOption = (
-    network: BridgeNetwork,
-    onSelect: (
-      network: BridgeNetwork
-    ) => void
-  ) => {
-    return (
-      <button
-        key={network.id}
-        type="button"
-        onClick={() =>
-          onSelect(network)
-        }
-        className="group flex min-h-[64px] w-full items-center gap-3 rounded-2xl px-3 text-left transition hover:bg-white/[0.055] active:bg-white/[0.07]"
-      >
-        <NetworkLogo
-          network={network}
-          size="small"
-        />
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-semibold text-white">
-            {network.name}
+              <span className="text-[11px] text-white/35">
+                Available
+              </span>
+            </div>
           </div>
-
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
-            <span className="text-[11px] text-white/35">
-              Available
-            </span>
-          </div>
-        </div>
-      </button>
-    );
-  };
+        </button>
+      );
+    };
 
   return (
     <main className="min-h-screen bg-[#030405] text-white">
@@ -795,6 +1459,7 @@ export default function BridgePage() {
 
           <div className="mx-auto w-full max-w-6xl rounded-[30px] border border-white/[0.07] bg-[#08090a] p-3 shadow-2xl shadow-black/20 sm:p-4 lg:p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_1fr] xl:items-stretch xl:gap-4">
+
               {/* SEND */}
 
               <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.025] p-4 sm:p-5">
@@ -807,9 +1472,11 @@ export default function BridgePage() {
                     <WalletIcon />
 
                     <span>
-                      {formatBalance(
-                        sourceBalance
-                      )}{" "}
+                      {isLoadingBalances
+                        ? "Loading..."
+                        : formatBalance(
+                            sourceBalance
+                          )}{" "}
                       USDC
                     </span>
                   </span>
@@ -835,7 +1502,9 @@ export default function BridgePage() {
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <NetworkLogo
-                        network={sourceChain}
+                        network={
+                          sourceChain
+                        }
                       />
 
                       <div className="min-w-0 text-left">
@@ -862,7 +1531,9 @@ export default function BridgePage() {
                       </div>
 
                       {circleChains.map(
-                        (network) =>
+                        (
+                          network
+                        ) =>
                           renderNetworkOption(
                             network,
                             handleSourceSelect
@@ -886,14 +1557,22 @@ export default function BridgePage() {
                         id="bridge-amount"
                         inputMode="decimal"
                         autoComplete="off"
-                        value={amount}
-                        onChange={(event) =>
+                        value={
+                          amount
+                        }
+                        onChange={(
+                          event
+                        ) =>
                           handleAmountChange(
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
                         placeholder="0.00"
-                        disabled={isBridging}
+                        disabled={
+                          isBridging
+                        }
                         className="w-full min-w-0 bg-transparent text-[34px] font-black tracking-tight text-white outline-none placeholder:text-white/[0.12] sm:text-[42px]"
                       />
                     </div>
@@ -918,7 +1597,9 @@ export default function BridgePage() {
               <div className="relative z-20 flex items-center justify-center">
                 <button
                   type="button"
-                  onClick={handleSwapChains}
+                  onClick={
+                    handleSwapChains
+                  }
                   disabled={
                     isBridging ||
                     !sourceChain ||
@@ -943,9 +1624,11 @@ export default function BridgePage() {
                     <WalletIcon />
 
                     <span>
-                      {formatBalance(
-                        destinationBalance
-                      )}{" "}
+                      {isLoadingBalances
+                        ? "Loading..."
+                        : formatBalance(
+                            destinationBalance
+                          )}{" "}
                       USDC
                     </span>
                   </span>
@@ -1000,7 +1683,9 @@ export default function BridgePage() {
                       </div>
 
                       {circleChains.map(
-                        (network) =>
+                        (
+                          network
+                        ) =>
                           renderNetworkOption(
                             network,
                             handleDestinationSelect
@@ -1018,7 +1703,9 @@ export default function BridgePage() {
                       </div>
 
                       <div className="text-[28px] font-black tracking-tight text-white sm:text-[34px]">
-                        {estimatedReceive}
+                        {
+                          estimatedReceive
+                        }
                       </div>
                     </div>
 
@@ -1047,13 +1734,20 @@ export default function BridgePage() {
               !sameChain && (
                 <div className="mt-4 rounded-[22px] border border-white/[0.06] bg-white/[0.02] px-4 py-2 sm:px-5">
                   <div className="divide-y divide-white/[0.05]">
+
                     <div className="flex min-h-[48px] items-center justify-between gap-4">
                       <span className="text-xs text-white/40">
                         Network fee
                       </span>
 
-                      <span className="text-xs font-medium text-white/65">
-                        Calculated in wallet
+                      <span className="text-right text-xs font-medium text-white/65">
+                        {isEstimating
+                          ? "Calculating..."
+                          : bridgeFee ??
+                            (currentChainId !==
+                            sourceChain.chainId
+                              ? "Switch to source network"
+                              : "Unavailable")}
                       </span>
                     </div>
 
@@ -1062,8 +1756,11 @@ export default function BridgePage() {
                         Estimated time
                       </span>
 
-                      <span className="text-xs font-medium text-white/65">
-                        Route dependent
+                      <span className="text-right text-xs font-medium text-white/65">
+                        {isEstimating
+                          ? "Calculating..."
+                          : estimatedTime ??
+                            "Unavailable"}
                       </span>
                     </div>
 
@@ -1073,7 +1770,7 @@ export default function BridgePage() {
                       </span>
 
                       <span className="text-xs font-medium text-white/65">
-                        Not applicable
+                        0.00%
                       </span>
                     </div>
 
@@ -1083,7 +1780,7 @@ export default function BridgePage() {
                       </span>
 
                       <span className="text-xs font-medium text-white/65">
-                        Not applicable
+                        0.00%
                       </span>
                     </div>
                   </div>
@@ -1112,34 +1809,39 @@ export default function BridgePage() {
               </div>
             )}
 
-            {status && !error && (
-              <div
-                aria-live="polite"
-                className="mt-4 flex items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 text-xs text-white/55"
-              >
-                {status ===
-                "Bridge completed successfully." ? (
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
-                    <CheckIcon />
-                  </span>
-                ) : isBridging ? (
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-white/45">
-                    <LoaderIcon />
-                  </span>
-                ) : (
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/35" />
-                )}
+            {status &&
+              !error && (
+                <div
+                  aria-live="polite"
+                  className="mt-4 flex items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 text-xs text-white/55"
+                >
+                  {status ===
+                  "Bridge completed successfully." ? (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
+                      <CheckIcon />
+                    </span>
+                  ) : isBridging ? (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center text-white/45">
+                      <LoaderIcon />
+                    </span>
+                  ) : (
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/35" />
+                  )}
 
-                <span className="min-w-0 break-words">
-                  {status}
-                </span>
-              </div>
-            )}
+                  <span className="min-w-0 break-words">
+                    {status}
+                  </span>
+                </div>
+              )}
 
             <button
               type="button"
-              onClick={handleBridge}
-              disabled={!canBridge}
+              onClick={
+                handleBridge
+              }
+              disabled={
+                !canBridge
+              }
               className={`${manrope.className} mt-4 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[18px] bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/[0.08] disabled:text-white/25`}
             >
               {isBridging && (
@@ -1163,5 +1865,19 @@ export default function BridgePage() {
         </section>
       </div>
     </main>
+  );
+}
+
+/*
+ * Kept outside the component so the
+ * estimate effect stays easy to read.
+ */
+function sameChainPlaceholder(
+  source: BridgeNetwork,
+  destination: BridgeNetwork
+) {
+  return (
+    source.id ===
+    destination.id
   );
 }
