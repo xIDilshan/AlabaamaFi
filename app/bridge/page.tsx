@@ -320,63 +320,49 @@ export default function BridgePage() {
   );
 
     const networks: BridgeNetwork[] =
-      testnetChains
-        .filter(
-  (chain) =>.filter(
-  (chain) =>
-    chain.type === "evm"
-)
-.filter(
-  (chain) =>
-    ![
-      "Edge",
-      "Edge Testnet",
-      "Pharos",
-      "Pharos Atlantic",
-      "Pharos Testnet",
-      "Morph",
-      "Morph Hoodi",
-      "Morph Testnet",
-    ].some((name) =>
-      chain.name
-        .toLowerCase()
-        .includes(name.toLowerCase())
+  testnetChains
+    .filter(
+      (chain) =>
+        chain.type === "evm"
     )
-)
-        .map((chain) => ({
-          id: chain.chain,
-          name: chain.name,
-          shortName:
-            chain.name
-              .replace(" Testnet", "")
-              .replace(" Sepolia", "")
-              .replace(" Fuji", "")
-              .replace(" Amoy", ""),
-          chainId: chain.chainId,
-          description:
-            chain.chain === "Arc_Testnet"
-              ? "USDC-native Arc network"
-              : "Circle CCTP network",
-          provider: "circle" as const,
-          available: true,
-        }))
-            .sort((a, b) => {
-              if (
-                a.id === "Arc_Testnet"
-              ) {
-                return -1;
-              }
+    .filter(
+      (chain) =>
+        ![
+          "Edge Testnet",
+          "Pharos Atlantic",
+          "Morph Hoodi",
+        ].includes(chain.name)
+    )
+    .map((chain) => ({
+      id: chain.chain,
+      name: chain.name,
+      shortName:
+        chain.name
+          .replace(" Testnet", "")
+          .replace(" Sepolia", "")
+          .replace(" Fuji", "")
+          .replace(" Amoy", ""),
+      chainId: chain.chainId,
+      description:
+        chain.chain === "Arc_Testnet"
+          ? "USDC-native Arc network"
+          : "Circle CCTP network",
+      provider: "circle" as const,
+      available: true,
+    }))
+    .sort((a, b) => {
+      if (a.id === "Arc_Testnet") {
+        return -1;
+      }
 
-              if (
-                b.id === "Arc_Testnet"
-              ) {
-                return 1;
-              }
+      if (b.id === "Arc_Testnet") {
+        return 1;
+      }
 
-              return a.name.localeCompare(
-                b.name
-              );
-            });
+      return a.name.localeCompare(
+        b.name
+      );
+    });
 
         if (!mounted) {
           return;
