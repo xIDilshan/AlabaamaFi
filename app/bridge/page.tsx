@@ -159,7 +159,7 @@ function NetworkLogo({
       className={`${dimensions} flex shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.045] p-1.5`}
     >
       <NetworkIcon
-        name={iconNetwork}
+        network={iconNetwork}
         size={28}
         variant="branded"
         aria-label={`${network.name} logo`}
@@ -469,7 +469,7 @@ network:
 ) => {
 if (!network.available) {
 setError(
-"${network.name} is coming in a future bridge integration."
+`${network.name} is coming in a future bridge integration.`
 );
 return;
 }
@@ -491,7 +491,7 @@ network:
 ) => {
 if (!network.available) {
 setError(
-"${network.name} is not available through Circle CCTP yet."
+`${network.name} is not available through Circle CCTP yet.`
 );
 return;
 }
