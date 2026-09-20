@@ -118,8 +118,7 @@ function NetworkLogo({
 
   // Testnet networks
   812242: "codex",
-  202: "edgeless",
-  99876: "edge",
+  99876: "edge-matrix-chain",
   998: "hyper-evm",
   98867: "plume",
   14601: "sonic",
@@ -133,9 +132,7 @@ function NetworkLogo({
 };
 
 const iconNetwork =
-  network.chainId === 99876
-    ? "edge"
-    : networkMap[network.chainId];
+  networkMap[network.chainId];
 
   return (
     <div
