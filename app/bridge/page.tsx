@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
 import { BridgeKit } from "@circle-fin/bridge-kit";
-import { getQuote } from "@lifi/sdk";
 import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
@@ -36,32 +35,12 @@ type BridgeNetwork = {
   available: boolean;
 };
 
-type FutureNetwork = {
-  id: string;
-  name: string;
-  shortName: string;
-  chainId: number;
-  description: string;
-  provider: "partner";
-  available: boolean;
-};
-
 const bridgeKit = new BridgeKit();
-
-const ROBINHOOD_CHAIN_TESTNET: FutureNetwork = {
-  id: "Robinhood_Chain_Testnet",
-  name: "Robinhood Chain Testnet",
-  shortName: "Robinhood",
-  chainId: 46630,
-  description: "Partner bridge integration",
-  provider: "partner",
-  available: true,
-};
 
 function FallbackNetworkMark({
   network,
 }: {
-  network?: BridgeNetwork | FutureNetwork | null;
+  network?: BridgeNetwork | null;
 }) {
   const label =
     network?.shortName?.slice(0, 2).toUpperCase() || "?";
@@ -80,7 +59,7 @@ function NetworkLogo({
   network,
   size = "normal",
 }: {
-  network: BridgeNetwork | FutureNetwork | null;
+  network: BridgeNetwork | null;
   size?: "small" | "normal";
 }) {
   const dimensions =
@@ -99,40 +78,39 @@ function NetworkLogo({
   }
 
   const networkMap: Record<number, string> = {
-  // Current networks
-  5042002: "arc",
-  11155111: "ethereum",
-  43113: "avalanche",
-  11155420: "optimism",
-  421614: "arbitrum-one",
-  84532: "base",
-  80002: "polygon",
-  59141: "linea",
-  1301: "unichain",
+    // Current networks
+    5042002: "arc",
+    11155111: "ethereum",
+    43113: "avalanche",
+    11155420: "optimism",
+    421614: "arbitrum-one",
+    84532: "base",
+    80002: "polygon",
+    59141: "linea",
+    1301: "unichain",
 
-  // Additional networks
-  4801: "world",
-  1328: "sei",
-  51: "xdc-network",
-  763373: "ink",
-  46630: "robinhood",
+    // Additional networks
+    4801: "world",
+    1328: "sei",
+    51: "xdc-network",
+    763373: "ink",
 
-  // Testnet networks
-  812242: "codex",
-  998: "hyper-evm",
-  98867: "plume",
-  14601: "sonic",
+    // Testnet networks
+    812242: "codex",
+    998: "hyper-evm",
+    98867: "plume",
+    14601: "sonic",
 
-  // Other networks
-  338: "cronos",
-  1439: "injective",
-  10143: "monad",
-  9746: "plasma",
-  1952: "x-layer",
-};
+    // Other networks
+    338: "cronos",
+    1439: "injective",
+    10143: "monad",
+    9746: "plasma",
+    1952: "x-layer",
+  };
 
-const iconNetwork =
-  networkMap[network.chainId];
+  const iconNetwork =
+    networkMap[network.chainId];
 
   return (
     <div
@@ -168,25 +146,6 @@ function ChevronDown() {
     >
       <path
         d="m5 7.5 5 5 5-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ArrowDown() {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M10 4v11M6 11l4 4 4-4"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.7"
@@ -262,8 +221,30 @@ function LoaderIcon() {
   );
 }
 
+function formatBalance(
+  value: string | null
+) {
+  if (value === null) {
+    return "—";
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "—";
+  }
+
+  return number.toLocaleString(
+    undefined,
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    }
+  );
+}
+
 export default function BridgePage() {
-  const { isConnected, connector } =
+  const { isConnected, connector, address } =
     useAccount();
 
   const currentChainId = useChainId();
@@ -295,6 +276,12 @@ export default function BridgePage() {
   const [error, setError] =
     useState("");
 
+  const [sourceBalance, setSourceBalance] =
+    useState<string | null>(null);
+
+  const [destinationBalance, setDestinationBalance] =
+    useState<string | null>(null);
+
   const [showSourceChains, setShowSourceChains] =
     useState(false);
 
@@ -305,67 +292,60 @@ export default function BridgePage() {
     let mounted = true;
 
     const loadChains = async () => {
-  try {
-    const supportedChains = await bridgeKit.getSupportedChains();
-console.log(
-  "Circle supported chains:",
-  supportedChains.map((chain) => ({
-    name: chain.name,
-    chainId: chain.type === "evm" ? chain.chainId : undefined,
-    type: chain.type,
-    isTestnet: chain.isTestnet,
-  }))
-);
+      try {
+        const supportedChains =
+          await bridgeKit.getSupportedChains();
 
-const testnetChains =
-  supportedChains.filter(
-    (chain) => chain.isTestnet
-  );
+        const testnetChains =
+          supportedChains.filter(
+            (chain) => chain.isTestnet
+          );
 
-const networks: BridgeNetwork[] =
-  testnetChains
-    .filter(
-      (chain) =>
-        chain.type === "evm"
-    )
-    .filter(
-      (chain) =>
-        ![
-          "Edge Testnet",
-          "Pharos Atlantic",
-          "Morph Hoodi",
-        ].includes(chain.name)
-    )
-    .map((chain) => ({
-      id: chain.chain,
-      name: chain.name,
-      shortName:
-        chain.name
-          .replace(" Testnet", "")
-          .replace(" Sepolia", "")
-          .replace(" Fuji", "")
-          .replace(" Amoy", ""),
-      chainId: chain.chainId,
-      description:
-        chain.chain === "Arc_Testnet"
-          ? "USDC-native Arc network"
-          : "Circle CCTP network",
-      provider: "circle" as const,
-      available: true,
-    }))
-    .sort((a, b) => {
-      if (a.id === "Arc_Testnet") {
-        return -1;
-      }
+        const networks: BridgeNetwork[] =
+          testnetChains
+            .filter(
+              (chain) =>
+                chain.type === "evm"
+            )
+            .filter(
+              (chain) =>
+                ![
+                  "Edge Testnet",
+                  "Pharos Atlantic",
+                  "Morph Hoodi",
+                ].includes(chain.name)
+            )
+            .map((chain) => ({
+              id: chain.chain,
+              name: chain.name,
+              shortName:
+                chain.name
+                  .replace(" Testnet", "")
+                  .replace(" Sepolia", "")
+                  .replace(" Fuji", "")
+                  .replace(" Amoy", ""),
+              chainId: chain.chainId,
+              description: "",
+              provider: "circle" as const,
+              available: true,
+            }))
+            .sort((a, b) => {
+              if (
+                a.id === "Arc_Testnet"
+              ) {
+                return -1;
+              }
 
-      if (b.id === "Arc_Testnet") {
-        return 1;
-      }
+              if (
+                b.id === "Arc_Testnet"
+              ) {
+                return 1;
+              }
 
-      return a.name.localeCompare(
-        b.name
-      );
-    });
+              return a.name.localeCompare(
+                b.name
+              );
+            });
 
         if (!mounted) {
           return;
@@ -415,6 +395,22 @@ const networks: BridgeNetwork[] =
     };
   }, []);
 
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setSourceBalance(null);
+      setDestinationBalance(null);
+      return;
+    }
+
+    setSourceBalance(null);
+    setDestinationBalance(null);
+  }, [
+    address,
+    isConnected,
+    sourceChain?.chainId,
+    destinationChain?.chainId,
+  ]);
+
   const sameChain =
     sourceChain !== null &&
     destinationChain !== null &&
@@ -457,6 +453,12 @@ const networks: BridgeNetwork[] =
       );
     }, [amount]);
 
+  const estimatedReceive =
+    numericAmount > 0 &&
+    Number.isFinite(numericAmount)
+      ? amountDisplay
+      : "0.00";
+
   const handleSwapChains = () => {
     if (
       !sourceChain ||
@@ -478,42 +480,18 @@ const networks: BridgeNetwork[] =
   };
 
   const handleSourceSelect = (
-    network:
-      | BridgeNetwork
-      | FutureNetwork
+    network: BridgeNetwork
   ) => {
-    if (!network.available) {
-      setError(
-        `${network.name} is coming in a future bridge integration.`
-      );
-      return;
-    }
-
-    setSourceChain(
-      network as BridgeNetwork
-    );
-
+    setSourceChain(network);
     setShowSourceChains(false);
     setError("");
     setStatus("");
   };
 
   const handleDestinationSelect = (
-    network:
-      | BridgeNetwork
-      | FutureNetwork
+    network: BridgeNetwork
   ) => {
-    if (!network.available) {
-      setError(
-        `${network.name} is not available through Circle CCTP yet.`
-      );
-      return;
-    }
-
-    setDestinationChain(
-      network as BridgeNetwork
-    );
-
+    setDestinationChain(network);
     setShowDestinationChains(false);
     setError("");
     setStatus("");
@@ -555,16 +533,6 @@ const networks: BridgeNetwork[] =
     }
 
     if (
-      !sourceChain.available ||
-      !destinationChain.available
-    ) {
-      setError(
-        "This bridge route is not available yet."
-      );
-      return;
-    }
-
-    if (
       !Number.isFinite(
         numericAmount
       ) ||
@@ -584,7 +552,7 @@ const networks: BridgeNetwork[] =
         sourceChain.chainId
       ) {
         setStatus(
-          `Switching wallet to ${sourceChain.name}...`
+          `Switching to ${sourceChain.shortName}...`
         );
 
         await switchChainAsync({
@@ -651,7 +619,7 @@ const networks: BridgeNetwork[] =
         result.state === "error"
       ) {
         setStatus(
-          "The bridge needs to continue from the failed step..."
+          "Continuing the bridge..."
         );
 
         const retryResult =
@@ -723,13 +691,9 @@ const networks: BridgeNetwork[] =
   };
 
   const renderNetworkOption = (
-    network:
-      | BridgeNetwork
-      | FutureNetwork,
+    network: BridgeNetwork,
     onSelect: (
-      network:
-        | BridgeNetwork
-        | FutureNetwork
+      network: BridgeNetwork
     ) => void
   ) => {
     return (
@@ -739,7 +703,7 @@ const networks: BridgeNetwork[] =
         onClick={() =>
           onSelect(network)
         }
-        className="group flex min-h-[68px] w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-white/[0.055] active:bg-white/[0.07]"
+        className="group flex min-h-[64px] w-full items-center gap-3 rounded-2xl px-3 text-left transition hover:bg-white/[0.055] active:bg-white/[0.07]"
       >
         <NetworkLogo
           network={network}
@@ -747,40 +711,18 @@ const networks: BridgeNetwork[] =
         />
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[13px] font-semibold text-white">
-              {network.name}
-            </span>
-
-            {!network.available && (
-              <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/30">
-                Soon
-              </span>
-            )}
+          <div className="truncate text-[13px] font-semibold text-white">
+            {network.name}
           </div>
 
           <div className="mt-1 flex items-center gap-1.5">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                network.available
-                  ? "bg-emerald-400"
-                  : "bg-white/20"
-              }`}
-            />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 
-            <span className="truncate text-[11px] text-white/35">
-              {network.available
-                ? "Circle CCTP · Testnet"
-                : network.description}
+            <span className="text-[11px] text-white/35">
+              Available
             </span>
           </div>
         </div>
-
-        {network.available && (
-          <span className="shrink-0 text-[10px] font-medium text-white/20 transition group-hover:text-white/40">
-            Select
-          </span>
-        )}
       </button>
     );
   };
@@ -790,39 +732,29 @@ const networks: BridgeNetwork[] =
       <Header />
 
       <div className="mx-auto flex max-w-5xl justify-center px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-12 lg:px-8">
-        <section className="w-full max-w-[540px]">
-          <div className="mb-6 text-center sm:mb-8">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                Circle CCTP · Testnet
-              </span>
-            </div>
-
+        <section className="w-full max-w-[520px]">
+          <div className="mb-7 text-center sm:mb-8">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bridge
             </h1>
 
-            <p className="mx-auto mt-2 max-w-[400px] text-sm leading-6 text-white/40 sm:text-base">
-              Move native USDC across supported
-              testnet networks.
+            <p className="mt-2 text-sm text-white/40 sm:text-base">
+              Move USDC across supported networks.
             </p>
           </div>
 
-          <div className="rounded-[30px] border border-white/[0.08] bg-white/[0.025] p-2.5 shadow-2xl shadow-black/20 sm:p-3">
-            <div className="rounded-[25px] border border-white/[0.07] bg-[#08090a] p-3.5 sm:p-4">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
+          <div className="rounded-[28px] border border-white/[0.07] bg-[#08090a] p-3 shadow-2xl shadow-black/20 sm:p-4">
+            <div className="rounded-[22px] bg-white/[0.025] p-3.5 sm:p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-medium text-white/40">
                   From
                 </span>
 
-                <span className="flex items-center gap-1.5 text-[11px] text-white/30">
-                  <img
-                    src="/tokens/usdc.svg"
-                    alt=""
-                    className="h-4 w-4"
-                  />
+                <span className="text-[11px] text-white/30">
+                  Balance:{" "}
+                  {formatBalance(
+                    sourceBalance
+                  )}{" "}
                   USDC
                 </span>
               </div>
@@ -838,12 +770,11 @@ const networks: BridgeNetwork[] =
                     setShowSourceChains(
                       !showSourceChains
                     );
-
                     setShowDestinationChains(
                       false
                     );
                   }}
-                  className="flex min-h-[72px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.11] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+                  className="flex min-h-[68px] w-full items-center justify-between rounded-[18px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.12] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <NetworkLogo
@@ -851,24 +782,12 @@ const networks: BridgeNetwork[] =
                     />
 
                     <div className="min-w-0 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-white sm:text-[15px]">
-                          {isLoadingChains
-                            ? "Loading networks..."
-                            : sourceChain?.name ??
-                              "Select network"}
-                        </span>
-                      </div>
-
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
-                        <span className="truncate text-[11px] text-white/35">
-                          {sourceChain
-                            ? "Circle CCTP · Testnet"
-                            : "Choose source network"}
-                        </span>
-                      </div>
+                      <span className="block truncate text-sm font-semibold text-white">
+                        {isLoadingChains
+                          ? "Loading networks..."
+                          : sourceChain?.name ??
+                            "Select network"}
+                      </span>
                     </div>
                   </div>
 
@@ -876,9 +795,9 @@ const networks: BridgeNetwork[] =
                 </button>
 
                 {showSourceChains && (
-                  <div className="absolute left-0 right-0 top-[78px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                  <div className="absolute left-0 right-0 top-[74px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
                     <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
-                      Select source network
+                      Source network
                     </div>
 
                     {circleChains.map(
@@ -888,25 +807,13 @@ const networks: BridgeNetwork[] =
                           handleSourceSelect
                         )
                     )}
-
-                    {renderNetworkOption(
-                      ROBINHOOD_CHAIN_TESTNET,
-                      handleSourceSelect
-                    )}
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 rounded-[20px] border border-white/[0.06] bg-black/10 px-4 py-3.5 sm:py-4">
-                <div className="flex items-end justify-between gap-3">
+              <div className="mt-3 rounded-[18px] border border-white/[0.06] bg-black/20 px-4 py-3.5">
+                <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <label
-                      htmlFor="bridge-amount"
-                      className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25"
-                    >
-                      Amount
-                    </label>
-
                     <input
                       id="bridge-amount"
                       inputMode="decimal"
@@ -919,18 +826,18 @@ const networks: BridgeNetwork[] =
                       }
                       placeholder="0.00"
                       disabled={isBridging}
-                      className="w-full min-w-0 bg-transparent text-[34px] font-black tracking-tight text-white outline-none placeholder:text-white/[0.12] sm:text-[40px]"
+                      className="w-full min-w-0 bg-transparent text-[32px] font-black tracking-tight text-white outline-none placeholder:text-white/[0.12] sm:text-[38px]"
                     />
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2 pb-1">
+                  <div className="flex shrink-0 items-center gap-2">
                     <img
                       src="/tokens/usdc.svg"
                       alt="USDC"
                       className="h-7 w-7"
                     />
 
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-semibold">
                       USDC
                     </span>
                   </div>
@@ -938,7 +845,7 @@ const networks: BridgeNetwork[] =
               </div>
             </div>
 
-            <div className="relative z-10 flex h-12 items-center justify-center">
+            <div className="relative z-10 flex h-11 items-center justify-center">
               <button
                 type="button"
                 onClick={handleSwapChains}
@@ -948,11 +855,11 @@ const networks: BridgeNetwork[] =
                   !destinationChain
                 }
                 aria-label="Switch bridge networks"
-                className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-[#111213] text-white/55 shadow-xl shadow-black/30 transition hover:border-white/[0.18] hover:bg-[#171819] hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#111213] text-white/55 shadow-xl shadow-black/30 transition hover:border-white/[0.18] hover:bg-[#171819] hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg
                   viewBox="0 0 20 20"
-                  className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180"
+                  className="h-4 w-4"
                   aria-hidden="true"
                 >
                   <path
@@ -967,18 +874,17 @@ const networks: BridgeNetwork[] =
               </button>
             </div>
 
-            <div className="rounded-[25px] border border-white/[0.07] bg-[#08090a] p-3.5 sm:p-4">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
+            <div className="rounded-[22px] bg-white/[0.025] p-3.5 sm:p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-medium text-white/40">
                   To
                 </span>
 
-                <span className="flex items-center gap-1.5 text-[11px] text-white/30">
-                  <img
-                    src="/tokens/usdc.svg"
-                    alt=""
-                    className="h-4 w-4"
-                  />
+                <span className="text-[11px] text-white/30">
+                  Balance:{" "}
+                  {formatBalance(
+                    destinationBalance
+                  )}{" "}
                   USDC
                 </span>
               </div>
@@ -994,12 +900,11 @@ const networks: BridgeNetwork[] =
                     setShowDestinationChains(
                       !showDestinationChains
                     );
-
                     setShowSourceChains(
                       false
                     );
                   }}
-                  className="flex min-h-[72px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.11] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+                  className="flex min-h-[68px] w-full items-center justify-between rounded-[18px] border border-white/[0.07] bg-white/[0.035] px-3.5 transition hover:border-white/[0.12] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <NetworkLogo
@@ -1009,22 +914,12 @@ const networks: BridgeNetwork[] =
                     />
 
                     <div className="min-w-0 text-left">
-                      <div className="truncate text-sm font-semibold text-white sm:text-[15px]">
+                      <span className="block truncate text-sm font-semibold text-white">
                         {isLoadingChains
                           ? "Loading networks..."
                           : destinationChain?.name ??
                             "Select network"}
-                      </div>
-
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
-                        <span className="truncate text-[11px] text-white/35">
-                          {destinationChain
-                            ? "Circle CCTP · Testnet"
-                            : "Choose destination network"}
-                        </span>
-                      </div>
+                      </span>
                     </div>
                   </div>
 
@@ -1032,9 +927,9 @@ const networks: BridgeNetwork[] =
                 </button>
 
                 {showDestinationChains && (
-                  <div className="absolute left-0 right-0 top-[78px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                  <div className="absolute left-0 right-0 top-[74px] z-30 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
                     <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
-                      Select destination network
+                      Destination network
                     </div>
 
                     {circleChains.map(
@@ -1044,33 +939,79 @@ const networks: BridgeNetwork[] =
                           handleDestinationSelect
                         )
                     )}
-
-                    {renderNetworkOption(
-                      ROBINHOOD_CHAIN_TESTNET,
-                      handleDestinationSelect
-                    )}
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3.5 py-3">
-                <span className="text-[11px] text-white/30">
-                  You send
-                </span>
+              {amount &&
+                numericAmount > 0 && (
+                  <div className="mt-3 rounded-[18px] border border-white/[0.06] bg-black/20 px-4 py-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/35">
+                        You receive
+                      </span>
 
-                <span className="text-sm font-semibold text-white/65">
-                  {amountDisplay} USDC
-                </span>
-              </div>
+                      <span className="text-sm font-semibold text-white">
+                        {estimatedReceive}{" "}
+                        USDC
+                      </span>
+                    </div>
+                  </div>
+                )}
             </div>
+
+            {amount &&
+              numericAmount > 0 &&
+              sourceChain &&
+              destinationChain &&
+              !sameChain && (
+                <div className="mt-3 border-t border-white/[0.06] pt-3">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 px-1 sm:grid-cols-4">
+                    <div>
+                      <div className="text-[10px] text-white/25">
+                        Network fee
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-white/65">
+                        Calculated at confirmation
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] text-white/25">
+                        Estimated time
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-white/65">
+                        Route dependent
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] text-white/25">
+                        Price impact
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-white/65">
+                        0.00%
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] text-white/25">
+                        Slippage
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-white/65">
+                        0.00%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             {sameChain && (
               <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-amber-400/10 bg-amber-400/[0.035] px-3.5 py-3 text-xs text-amber-200/60">
                 <AlertIcon />
 
                 <span>
-                  Select two different networks
-                  to bridge.
+                  Select two different networks.
                 </span>
               </div>
             )}
@@ -1115,7 +1056,7 @@ const networks: BridgeNetwork[] =
               type="button"
               onClick={handleBridge}
               disabled={!canBridge}
-              className={`${manrope.className} mt-3.5 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[18px] bg-white px-5 text-sm font-semibold tracking-normal text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/[0.08] disabled:text-white/25 sm:mt-4`}
+              className={`${manrope.className} mt-3.5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[17px] bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/[0.08] disabled:text-white/25 sm:mt-4`}
             >
               {isBridging && (
                 <LoaderIcon />
@@ -1134,84 +1075,6 @@ const networks: BridgeNetwork[] =
                 ? "Enter Amount"
                 : "Bridge USDC"}
             </button>
-
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-2 text-[10px] text-white/25">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
-                Circle CCTP
-              </span>
-
-              <span className="h-3 w-px bg-white/[0.08]" />
-
-              <span>Native USDC</span>
-
-              <span className="h-3 w-px bg-white/[0.08]" />
-
-              <span>Testnet</span>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
-              <div className="mb-1.5 flex items-center justify-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
-                  <CheckIcon />
-                </span>
-
-                <div className="text-xs font-semibold text-white/70">
-                  Native USDC
-                </div>
-              </div>
-
-              <div className="text-[10px] leading-4 text-white/25">
-                CCTP burn & mint
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
-              <div className="mb-1.5 flex items-center justify-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
-                  <ArrowDown />
-                </span>
-
-                <div className="text-xs font-semibold text-white/70">
-                  Multi-chain
-                </div>
-              </div>
-
-              <div className="text-[10px] leading-4 text-white/25">
-                Dynamic network list
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3.5 text-center">
-              <div className="mb-1.5 flex items-center justify-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.05] text-white/45">
-                  <svg
-                    viewBox="0 0 20 20"
-                    className="h-3.5 w-3.5"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 10h12M11 5l5 5-5 5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-
-                <div className="text-xs font-semibold text-white/70">
-                  More routes
-                </div>
-              </div>
-
-              <div className="text-[10px] leading-4 text-white/25">
-                Partner bridges next
-              </div>
-            </div>
           </div>
         </section>
       </div>
