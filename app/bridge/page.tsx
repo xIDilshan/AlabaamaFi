@@ -118,7 +118,8 @@ function NetworkLogo({
 
   // Testnet networks
   812242: "codex",
-  202: "edgeless-testnet",
+  202: "edgeless",
+  99876: "edge",
   998: "hyper-evm",
   98867: "plume",
   14601: "sonic",
