@@ -118,7 +118,6 @@ function NetworkLogo({
 
   // Testnet networks
   812242: "codex",
-  99876: "edge-matrix-chain",
   998: "hyper-evm",
   98867: "plume",
   14601: "sonic",
@@ -305,38 +304,43 @@ export default function BridgePage() {
     let mounted = true;
 
     const loadChains = () => {
-      try {
-        const supportedChains =
-          bridgeKit.getSupportedChains();
+  try {
+    const supportedChains =
+      bridgeKit.getSupportedChains();
 
-        const testnetChains =
-          supportedChains.filter(
-            (chain) => chain.isTestnet
-          );
+    const testnetChains =
+      supportedChains.filter(
+        (chain) => chain.isTestnet
+      );
 
-        const networks: BridgeNetwork[] =
-          testnetChains
-            .filter(
-              (chain) =>
-                chain.type === "evm"
-            )
-            .map((chain) => ({
-              id: chain.chain,
-              name: chain.name,
-              shortName:
-                chain.name
-                  .replace(" Testnet", "")
-                  .replace(" Sepolia", "")
-                  .replace(" Fuji", "")
-                  .replace(" Amoy", ""),
-              chainId: chain.chainId,
-              description:
-                chain.chain === "Arc_Testnet"
-                  ? "USDC-native Arc network"
-                  : "Circle CCTP network",
-              provider: "circle" as const,
-              available: true,
-            }))
+    const networks: BridgeNetwork[] =
+      testnetChains
+        .filter(
+          (chain) =>
+            chain.type === "evm" &&
+            ![
+              99876,  // Edge Testnet
+              688688, // Pharos Atlantic
+              2910,   // Morph Hoodi
+            ].includes(chain.chainId)
+        )
+        .map((chain) => ({
+          id: chain.chain,
+          name: chain.name,
+          shortName:
+            chain.name
+              .replace(" Testnet", "")
+              .replace(" Sepolia", "")
+              .replace(" Fuji", "")
+              .replace(" Amoy", ""),
+          chainId: chain.chainId,
+          description:
+            chain.chain === "Arc_Testnet"
+              ? "USDC-native Arc network"
+              : "Circle CCTP network",
+          provider: "circle" as const,
+          available: true,
+        }))
             .sort((a, b) => {
               if (
                 a.id === "Arc_Testnet"
