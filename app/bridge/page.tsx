@@ -75,7 +75,7 @@ network?.shortName?.slice(0, 2).toUpperCase() || "?";
 return (
 <div
 className="flex h-full w-full items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-bold tracking-tight text-white/45"
-aria-label={`${network?.name ?? "Network"} logo´}
+aria-label={`${network?.name ?? "Network"} logo`}
 >
 {label}
 </div>
