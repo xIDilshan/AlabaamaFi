@@ -348,7 +348,7 @@ return (
       <img
         src="/alabaamafi-logo.png"
         alt="AlabaamaFi"
-        className="h-7 w-7 shrink-0 object-contain"
+        className="h-11 w-11 shrink-0 object-contain"
       />
 
       <h1 className="truncate text-sm font-bold sm:text-base">
@@ -521,7 +521,7 @@ return (
   <img
     src="/alabaamafi-logo.png"
     alt="AlabaamaFi"
-    className="h-12 w-12 shrink-0 object-contain"
+    className="h-14 w-14 shrink-0 object-contain"
   />
 
   <div className="text-left">
