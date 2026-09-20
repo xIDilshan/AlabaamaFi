@@ -307,6 +307,24 @@ export default function BridgePage() {
     const loadChains = async () => {
   try {
     const supportedChains = await bridgeKit.getSupportedChains();
+    const lifiChains = await getChains({
+  chainTypes: ["EVM"],
+});
+
+console.log(
+  "LI.FI chains:",
+  lifiChains.chains
+    .filter(
+      (chain) =>
+        chain.id === 46630 ||
+        chain.name.toLowerCase().includes("arc")
+    )
+    .map((chain) => ({
+      id: chain.id,
+      name: chain.name,
+      key: chain.key,
+    }))
+);
 
 console.log(
   "Circle supported chains:",
