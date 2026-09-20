@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Manrope } from "next/font/google";
 import { BridgeKit } from "@circle-fin/bridge-kit";
-import { createConfig, getQuote } from "@lifi/sdk";
+import { getQuote } from "@lifi/sdk";
 import {
   createViemAdapterFromProvider,
   type CreateViemAdapterFromProviderParams,
@@ -307,25 +307,6 @@ export default function BridgePage() {
     const loadChains = async () => {
   try {
     const supportedChains = await bridgeKit.getSupportedChains();
-    const lifiChains = await getChains({
-  chainTypes: ["EVM"],
-});
-
-console.log(
-  "LI.FI chains:",
-  lifiChains.chains
-    .filter(
-      (chain) =>
-        chain.id === 46630 ||
-        chain.name.toLowerCase().includes("arc")
-    )
-    .map((chain) => ({
-      id: chain.id,
-      name: chain.name,
-      key: chain.key,
-    }))
-);
-
 console.log(
   "Circle supported chains:",
   supportedChains.map((chain) => ({
