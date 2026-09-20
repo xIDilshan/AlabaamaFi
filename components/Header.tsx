@@ -338,23 +338,29 @@ return (
           </div>
         </div>
 
-        {/* CENTER */}
-
         <div className="min-w-0 text-center">
-          <Link
-            href="/"
-            onClick={handleNavigation}
-          >
-            <h1 className="truncate text-sm font-bold sm:text-base">
-              AlabaamaFi
-            </h1>
+  <Link
+    href="/"
+    onClick={handleNavigation}
+    className="inline-flex flex-col items-center"
+  >
+    <div className="flex items-center gap-1.5">
+      <img
+        src="/alabaamafi-logo.png"
+        alt="AlabaamaFi"
+        className="h-7 w-7 shrink-0 object-contain"
+      />
 
-            <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px]">
-              Powered by Arc
-            </p>
-          </Link>
-        </div>
+      <h1 className="truncate text-sm font-bold sm:text-base">
+        AlabaamaFi
+      </h1>
+    </div>
 
+    <p className="mt-0.5 text-[9px] font-semibold text-white/30 sm:text-[10px]">
+      Powered by Arc
+    </p>
+  </Link>
+</div>
         {/* RIGHT */}
 
         <div className="flex min-w-0 items-center justify-end">
@@ -515,7 +521,7 @@ return (
   <img
     src="/alabaamafi-logo.png"
     alt="AlabaamaFi"
-    className="h-10 w-10 shrink-0 object-contain"
+    className="h-12 w-12 shrink-0 object-contain"
   />
 
   <div className="text-left">
