@@ -316,13 +316,7 @@ export default function BridgePage() {
     const networks: BridgeNetwork[] =
       testnetChains
         .filter(
-  (chain) =>
-    chain.type === "evm" &&
-    ![
-      "Edge Testnet",
-      "Pharos Atlantic",
-      "Morph Hoodi",
-    ].includes(chain.name)
+  (chain) => chain.type === "evm"
 )
         .map((chain) => ({
           id: chain.chain,
