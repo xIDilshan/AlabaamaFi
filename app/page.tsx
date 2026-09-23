@@ -504,14 +504,14 @@ export default function Home() {
                     icon: "⇄",
                     title: "Swap Tokens",
                     text: "Swap supported assets on Arc.",
-                    disabled: true,
+                    disabled: false,
                   },
                   {
                     id: "bridge" as Section,
                     icon: "⇅",
                     title: "Bridge USDC",
                     text: "Move assets across networks.",
-                    disabled: true,
+                    disabled: false,
                   },
                   {
                     id: "activity" as Section,
