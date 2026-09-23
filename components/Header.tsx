@@ -416,30 +416,6 @@ export default function Header({
                 {navItems.map((item) => {
                   const active = isActive(item.href);
 
-                  if (item.disabled) {
-                    return (
-                      <button
-                        key={item.href}
-                        type="button"
-                        disabled
-                        aria-disabled="true"
-                        className="my-1 flex min-h-[56px] w-full cursor-not-allowed items-center gap-4 rounded-full border border-white/[0.045] bg-white/[0.018] px-5 text-left text-white/30"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[20px] font-semibold leading-none">
-                          {item.icon}
-                        </span>
-
-                        <span className="text-sm font-semibold tracking-tight">
-                          {item.label}
-                        </span>
-
-                        <span className="ml-auto rounded-full border border-white/[0.08] bg-white/[0.035] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/30">
-                          Soon
-                        </span>
-                      </button>
-                    );
-                  }
-
                   return (
                     <Link
                       key={item.href}
@@ -574,24 +550,6 @@ export default function Header({
 
               {navItems.map((item) => {
                 const active = isActive(item.href);
-
-                if (item.disabled) {
-                  return (
-                    <button
-                      key={item.href}
-                      type="button"
-                      disabled
-                      aria-disabled="true"
-                      className="flex cursor-not-allowed items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white/25"
-                    >
-                      <span>{item.label}</span>
-
-                      <span className="rounded-full border border-white/[0.08] bg-white/[0.035] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white/25">
-                        Soon
-                      </span>
-                    </button>
-                  );
-                }
 
                 return (
                   <Link
