@@ -1372,7 +1372,7 @@ export default function SwapPage() {
           {/* PAGE TITLE */}
           <div className="mb-8 text-center lg:mb-10">
             <div className="flex flex-col items-center">
-              <span className="text-4xl font-medium leading-none text-white/55">
+              <span className="text-4xl font-semibold tracking-[-0.08em] text-white/80 sm:text-5xl">
                 ⇄
               </span>
 
