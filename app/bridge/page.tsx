@@ -532,6 +532,14 @@ async function getUsdcBalance(
   }
 }
 
+const sameChainPlaceholder = (
+  source: BridgeNetwork | null,
+  destination: BridgeNetwork | null
+) =>
+  !!source &&
+  !!destination &&
+  source.chainId === destination.chainId;
+
 export default function BridgePage() {
   const {
     isConnected,
@@ -877,18 +885,15 @@ export default function BridgePage() {
         );
 
         if (
-          !isConnected ||
-          !connector ||
-          !sourceChain ||
-          !destinationChain ||
-          const sameChainPlaceholder = (
-  source: BridgeNetwork | null,
-  destination: BridgeNetwork | null
-) =>
-  !!source &&
-  !!destination &&
-  source.chainId === destination.chainId; ||
-          !amount ||
+  !isConnected ||
+  !connector ||
+  !sourceChain ||
+  !destinationChain ||
+  sameChainPlaceholder(
+    sourceChain,
+    destinationChain
+  ) ||
+  !amount ||
           Number(amount) <= 0 ||
           !Number.isFinite(
             Number(amount)
