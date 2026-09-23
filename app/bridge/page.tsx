@@ -921,25 +921,25 @@ export default function BridgePage() {
             );
 
           const estimateResult =
-  await bridgeKit.estimate({
-    from: {
-      adapter,
-      chain:
-        sourceChain.id as Parameters<
-          BridgeKit["estimate"]
-        >[0]["from"]["chain"],
-    },
-    to: {
-      adapter,
-      chain:
-        destinationChain.id as Parameters<
-          BridgeKit["estimate"]
-        >[0]["to"]["chain"],
-    },
-    amount:
-      amount.trim(),
-    token: "USDC",
-  });
+            await bridgeKit.estimate({
+              from: {
+                adapter,
+                chain:
+                  sourceChain.id as Parameters<
+                    BridgeKit["estimate"]
+                  >[0]["from"]["chain"],
+              },
+              to: {
+                adapter,
+                chain:
+                  destinationChain.id as Parameters<
+                    BridgeKit["estimate"]
+                  >[0]["to"]["chain"],
+              },
+              amount:
+                amount.trim(),
+              token: "USDC",
+            });
 
           if (cancelled) {
             return;
@@ -1458,12 +1458,12 @@ export default function BridgePage() {
             </p>
           </div>
 
-          <div className="mx-auto w-full max-w-6xl rounded-[30px] border border-white/[0.07] bg-[#08090a] p-3 shadow-2xl shadow-black/20 sm:p-4 lg:p-5">
+          <div className="mx-auto w-full max-w-6xl rounded-[30px] border border-white/[0.07] bg-gradient-to-br from-[#0b1017] via-[#06080b] to-[#030303] p-3 shadow-2xl shadow-black/20 sm:p-4 lg:p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_1fr] xl:items-stretch xl:gap-4">
 
               {/* SEND */}
 
-              <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.025] p-4 sm:p-5">
+              <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/35">
                     Send
@@ -1499,7 +1499,7 @@ export default function BridgePage() {
                         false
                       );
                     }}
-                    className="flex min-h-[76px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-4 transition hover:border-white/[0.12] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[60px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-[#080a0d] px-4 transition hover:border-white/[0.14] hover:bg-[#0c1016] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <NetworkLogo
@@ -1526,7 +1526,7 @@ export default function BridgePage() {
                   </button>
 
                   {showSourceChains && (
-                    <div className="absolute left-0 right-0 top-[82px] z-40 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                    <div className="absolute left-0 right-0 top-[66px] z-40 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#080a0d] p-1.5 shadow-2xl shadow-black/50">
                       <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
                         Source network
                       </div>
@@ -1615,7 +1615,7 @@ export default function BridgePage() {
 
               {/* RECEIVE */}
 
-              <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.025] p-4 sm:p-5">
+              <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/35">
                     Receive
@@ -1651,7 +1651,7 @@ export default function BridgePage() {
                         false
                       );
                     }}
-                    className="flex min-h-[76px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-white/[0.035] px-4 transition hover:border-white/[0.12] hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[60px] w-full items-center justify-between rounded-[20px] border border-white/[0.07] bg-[#080a0d] px-4 transition hover:border-white/[0.14] hover:bg-[#0c1016] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <NetworkLogo
@@ -1678,7 +1678,7 @@ export default function BridgePage() {
                   </button>
 
                   {showDestinationChains && (
-                    <div className="absolute left-0 right-0 top-[82px] z-40 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#0b0c0d] p-1.5 shadow-2xl shadow-black/50">
+                    <div className="absolute left-0 right-0 top-[66px] z-40 max-h-[390px] overflow-y-auto rounded-[20px] border border-white/[0.09] bg-[#080a0d] p-1.5 shadow-2xl shadow-black/50">
                       <div className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
                         Destination network
                       </div>
@@ -1866,19 +1866,5 @@ export default function BridgePage() {
         </section>
       </div>
     </main>
-  );
-}
-
-/*
- * Kept outside the component so the
- * estimate effect stays easy to read.
- */
-function sameChainPlaceholder(
-  source: BridgeNetwork,
-  destination: BridgeNetwork
-) {
-  return (
-    source.id ===
-    destination.id
   );
 }
