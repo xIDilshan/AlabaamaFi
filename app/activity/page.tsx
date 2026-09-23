@@ -1401,9 +1401,9 @@ export default function ActivityPage() {
             {/* INTRO */}
 
             <div className="mb-6 text-center sm:mb-8 lg:mb-10">
-              <div className="text-4xl font-medium leading-none text-white/55">
+              <span className="text-4xl font-semibold tracking-[-0.08em] text-white/80 sm:text-5xl">
                 ◷
-              </div>
+              </span>
 
               <h1 className="mt-3 text-3xl font-black sm:text-4xl">
                 Wallet Activity
