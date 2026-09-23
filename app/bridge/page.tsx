@@ -863,7 +863,7 @@ export default function BridgePage() {
   /*
    * Get a real Circle bridge estimate.
    *
-   * App Kit exposes estimateBridge() for
+   * Bridge Kit exposes estimateBridge() for
    * pre-flight bridge cost estimation.
    */
   useEffect(() => {
@@ -881,10 +881,13 @@ export default function BridgePage() {
           !connector ||
           !sourceChain ||
           !destinationChain ||
-          sameChainPlaceholder(
-            sourceChain,
-            destinationChain
-          ) ||
+          const sameChainPlaceholder = (
+  source: BridgeNetwork | null,
+  destination: BridgeNetwork | null
+) =>
+  !!source &&
+  !!destination &&
+  source.chainId === destination.chainId; ||
           !amount ||
           Number(amount) <= 0 ||
           !Number.isFinite(
