@@ -13,11 +13,11 @@ const manrope = Manrope({
 });
 
 const navItems = [
-  { href: "/", label: "Home", icon: "⌂", disabled: false },
-  { href: "/send", label: "Send", icon: "↗", disabled: false },
-  { href: "/swap", label: "Swap", icon: "⇄", disabled: false },
-  { href: "/bridge", label: "Bridge", icon: "⇅", disabled: true },
-  { href: "/activity", label: "Activity", icon: "◷", disabled: false },
+  { href: "/", label: "Home", icon: "⌂", },
+  { href: "/send", label: "Send", icon: "↗", },
+  { href: "/swap", label: "Swap", icon: "⇄", },
+  { href: "/bridge", label: "Bridge", icon: "⇅", },
+  { href: "/activity", label: "Activity", icon: "◷", },
 ];
 
 type HeaderProps = {
