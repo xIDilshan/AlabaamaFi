@@ -5,10 +5,6 @@ import {
   walletConnect,
 } from "wagmi/connectors";
 import { defineChain } from "viem";
-import { arc } from "viem/chains";
-import { isMainnet } from "./environment";
-
-export const arcMainnet = arc;
 
 export const arcTestnet = defineChain({
   id: 5042002,
@@ -20,13 +16,13 @@ export const arcTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.testnet.arc.io"],
+      http: ["https://rpc.testnet.arc.network"],
     },
   },
   blockExplorers: {
     default: {
       name: "Arcscan",
-      url: "https://explorer.testnet.arc.io",
+      url: "https://testnet.arcscan.app",
     },
   },
 });
@@ -41,7 +37,9 @@ export const ethereumSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://ethereum-sepolia-rpc.publicnode.com"],
+      http: [
+        "https://ethereum-sepolia-rpc.publicnode.com",
+      ],
     },
   },
   blockExplorers: {
@@ -54,15 +52,17 @@ export const ethereumSepolia = defineChain({
 
 export const avalancheFuji = defineChain({
   id: 43113,
-  name: "Avalanche",
+  name: "Avalanche Fuji",
   nativeCurrency: {
-    name: "AVAX",
+    name: "Avalanche",
     symbol: "AVAX",
     decimals: 18,
   },
   rpcUrls: {
     default: {
-      http: ["https://api.avax-test.network/ext/bc/C/rpc"],
+      http: [
+        "https://api.avax-test.network/ext/bc/C/rpc",
+      ],
     },
   },
   blockExplorers: {
@@ -104,7 +104,9 @@ export const arbitrumSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://sepolia-rollup.arbitrum.io/rpc"],
+      http: [
+        "https://sepolia-rollup.arbitrum.io/rpc",
+      ],
     },
   },
   blockExplorers: {
@@ -146,7 +148,9 @@ export const polygonAmoy = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc-amoy.polygon.technology"],
+      http: [
+        "https://rpc-amoy.polygon.technology",
+      ],
     },
   },
   blockExplorers: {
@@ -167,7 +171,9 @@ export const lineaSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.sepolia.linea.build"],
+      http: [
+        "https://rpc.sepolia.linea.build",
+      ],
     },
   },
   blockExplorers: {
@@ -230,7 +236,9 @@ export const sonicTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.testnet.soniclabs.com"],
+      http: [
+        "https://rpc.testnet.soniclabs.com",
+      ],
     },
   },
   blockExplorers: {
@@ -251,7 +259,9 @@ export const worldChainSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://worldchain-sepolia.g.alchemy.com/public"],
+      http: [
+        "https://worldchain-sepolia.g.alchemy.com/public",
+      ],
     },
   },
   blockExplorers: {
@@ -272,7 +282,9 @@ export const seiTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://evm-rpc-testnet.sei-apis.com"],
+      http: [
+        "https://evm-rpc-testnet.sei-apis.com",
+      ],
     },
   },
   blockExplorers: {
@@ -314,7 +326,9 @@ export const hyperEvmTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://api.testnet.hyperevm.com"],
+      http: [
+        "https://api.testnet.hyperevm.com",
+      ],
     },
   },
   blockExplorers: {
@@ -335,7 +349,9 @@ export const inkTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc-gel-sepolia.inkonchain.com"],
+      http: [
+        "https://rpc-gel-sepolia.inkonchain.com",
+      ],
     },
   },
   blockExplorers: {
@@ -356,23 +372,23 @@ export const plumeTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://testnet-rpc.plumenetwork.xyz"],
+      http: [
+        "https://testnet-rpc.plumenetwork.xyz",
+      ],
     },
   },
   blockExplorers: {
     default: {
-      name: "Plume Testnet Explorer",
+      name: "Plume Explorer",
       url: "https://testnet.explorer.plumenetwork.xyz",
     },
   },
 });
 
-const activeArcChain = isMainnet ? arcMainnet : arcTestnet;
-
 export const config = createConfig({
   chains: [
-  activeArcChain,
-  ethereumSepolia,
+    arcTestnet,
+    ethereumSepolia,
     avalancheFuji,
     optimismSepolia,
     arbitrumSepolia,
@@ -396,7 +412,8 @@ export const config = createConfig({
     }),
 
     walletConnect({
-      projectId: "7446a3643b847491e6e35af95995715e",
+      projectId:
+        "7446a3643b847491e6e35af95995715e",
       showQrModal: true,
     }),
 
@@ -406,8 +423,9 @@ export const config = createConfig({
   ],
 
   transports: {
-    [arcMainnet.id]: http("https://rpc.mainnet.arc.io"),
-    [arcTestnet.id]: http("https://rpc.testnet.arc.io"),
+    [arcTestnet.id]: http(
+      "https://rpc.testnet.arc.network"
+    ),
 
     [ethereumSepolia.id]: http(
       "https://ethereum-sepolia-rpc.publicnode.com"
