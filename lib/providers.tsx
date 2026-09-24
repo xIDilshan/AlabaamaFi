@@ -5,13 +5,12 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { WagmiProvider, createConfig, http } from "wagmi";
 import {
-  WagmiProvider,
-  createConfig,
-} from "wagmi";
-import {
-  http,
-} from "wagmi";
+  coinbaseWallet,
+  injected,
+  walletConnect,
+} from "wagmi/connectors";
 import {
   arcMainnet,
   arcTestnet,
@@ -39,15 +38,32 @@ export default function Providers({
 
     const activeConfig = createConfig({
       chains: [activeArcChain],
+
+      connectors: [
+        injected({
+          shimDisconnect: true,
+        }),
+
+        walletConnect({
+          projectId:
+            "7446a3643b847491e6e35af95995715e",
+          showQrModal: true,
+        }),
+
+        coinbaseWallet({
+          appName: "AlabaamaFi",
+        }),
+      ],
+
       transports: {
         [arcMainnet.id]: http(
           "https://rpc.mainnet.arc.io"
         ),
+
         [arcTestnet.id]: http(
           "https://rpc.testnet.arc.io"
         ),
       },
-      connectors: [],
     });
 
     setConfig(activeConfig);
