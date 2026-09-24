@@ -367,10 +367,12 @@ export const plumeTestnet = defineChain({
   },
 });
 
+const activeArcChain = isMainnet ? arcMainnet : arcTestnet;
+
 export const config = createConfig({
   chains: [
-    ...(isMainnet ? [arcMainnet] : [arcTestnet]),
-    ethereumSepolia,
+  activeArcChain,
+  ethereumSepolia,
     avalancheFuji,
     optimismSepolia,
     arbitrumSepolia,
