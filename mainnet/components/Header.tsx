@@ -736,7 +736,7 @@ export default function Header({
                         />
 
                         <path
-                          d="M15 9V7C15 5.9 14.1 5 13 5H7C5.9 5 5 5.9 5 7V13C5 14.1 5 15 7 15H9"
+                          d="M15 9V7C15 5.9 14.1 5 13 5H7C5.9 5 5 5.9 5 7V13C5 14.1 5.9 15 7 15H9"
                           stroke="currentColor"
                           strokeWidth="1.8"
                         />
