@@ -14,7 +14,6 @@
     "@circle-fin/bridge-kit": "^1.15.1",
     "@circle-fin/swap-kit": "^1.6.1",
     "@coinbase/wallet-sdk": "^4.3.7",
-    "@lifi/sdk": "^4.7.0",
     "@tanstack/react-query": "latest",
     "@walletconnect/ethereum-provider": "^2.24.0",
     "@walletconnect/modal": "^2.7.0",
