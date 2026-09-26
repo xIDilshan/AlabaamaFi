@@ -18,7 +18,6 @@ const navItems = [
   { href: "/swap", label: "Swap" },
   { href: "/bridge", label: "Bridge" },
   { href: "/activity", label: "Activity" },
-  { href: "/faucet", label: "Faucet" },
 ];
 
 const connectButton =
@@ -349,7 +348,7 @@ export default function Header({
                 <img
                   src="/alabaamafi-logo.png"
                   alt="AlabaamaFi"
-                  className="h-8 w-8 shrink-0 object-contain"
+                  className="h-7 w-7 shrink-0 object-contain"
                 />
 
                 <div className="min-w-0">
@@ -467,7 +466,7 @@ export default function Header({
                 <img
                   src="/alabaamafi-logo.png"
                   alt="AlabaamaFi"
-                  className="h-11 w-11 shrink-0 object-contain lg:h-14 lg:w-14"
+                  className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14"
                 />
 
                 <div className="text-left">
