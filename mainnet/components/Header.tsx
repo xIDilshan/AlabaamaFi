@@ -358,10 +358,6 @@ export default function Header({
                       Fi
                     </span>
                   </h1>
-
-                  <p className="mt-0.5 text-[8px] font-semibold leading-tight text-white/30 sm:text-[9px]">
-                    Powered by Arc
-                  </p>
                 </div>
               </Link>
 
@@ -476,10 +472,6 @@ export default function Header({
                       Fi
                     </span>
                   </h1>
-
-                  <p className="mt-1 text-[10px] font-semibold leading-tight text-white/30 lg:text-[11px]">
-                    Powered by Arc
-                  </p>
                 </div>
               </Link>
 
