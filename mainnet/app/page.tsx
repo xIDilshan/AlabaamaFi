@@ -49,45 +49,43 @@ export default function Home() {
 
       <div
         className={`min-w-0 transition-[filter] duration-300 ${
-          mobileMenuOpen
-            ? "blur-md"
-            : "blur-0"
+          mobileMenuOpen ? "blur-md" : "blur-0"
         }`}
       >
         {/* HERO */}
 
-        <section className="relative isolate min-h-[calc(100vh-72px)] overflow-hidden border-b border-white/[0.06] bg-[#020408]">
-          {/* Background glow */}
+        <section className="relative isolate h-[560px] overflow-hidden border-b border-white/[0.06] bg-[#020408] sm:h-[600px] lg:h-[620px]">
+          {/* Background atmosphere */}
 
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute left-1/2 top-[-180px] h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-[#0757c9]/[0.10] blur-[130px]" />
+            <div className="absolute left-[30%] top-[-220px] h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#0757c9]/[0.08] blur-[140px]" />
 
-            <div className="absolute right-[-180px] top-[20%] h-[520px] w-[520px] rounded-full bg-[#1267e8]/[0.12] blur-[120px]" />
+            <div className="absolute right-[-180px] top-[5%] h-[520px] w-[520px] rounded-full bg-[#1267e8]/[0.10] blur-[120px]" />
 
-            <div className="absolute left-[10%] top-[45%] h-[300px] w-[500px] rounded-full bg-[#073b86]/[0.06] blur-[120px]" />
+            <div className="absolute left-[5%] bottom-[-180px] h-[320px] w-[600px] rounded-full bg-[#073b86]/[0.05] blur-[120px]" />
           </div>
 
           {/* Orbital lines */}
 
-          <div className="pointer-events-none absolute right-[-220px] top-[42%] hidden h-[620px] w-[620px] rounded-full border border-[#1b6cff]/20 lg:block" />
+          <div className="pointer-events-none absolute right-[-190px] top-[50%] hidden h-[680px] w-[680px] -translate-y-1/2 rounded-full border border-[#1b6cff]/20 lg:block" />
 
-          <div className="pointer-events-none absolute right-[-180px] top-[46%] hidden h-[520px] w-[520px] rounded-full border border-[#2580ff]/20 lg:block" />
+          <div className="pointer-events-none absolute right-[-125px] top-[50%] hidden h-[550px] w-[550px] -translate-y-1/2 rounded-full border border-[#2580ff]/20 lg:block" />
 
-          <div className="pointer-events-none absolute right-[-120px] top-[51%] hidden h-[400px] w-[400px] rounded-full border border-[#3b8cff]/20 lg:block" />
+          <div className="pointer-events-none absolute right-[-55px] top-[50%] hidden h-[420px] w-[420px] -translate-y-1/2 rounded-full border border-[#3b8cff]/20 lg:block" />
 
           {/* Blue planet */}
 
-          <div className="pointer-events-none absolute bottom-[-260px] right-[-100px] hidden h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle_at_35%_30%,#2c8cff_0%,#0b4ca8_22%,#03132e_55%,#020408_72%)] shadow-[0_0_100px_rgba(28,111,255,0.25)] lg:block" />
+          <div className="pointer-events-none absolute bottom-[-310px] right-[-80px] hidden h-[690px] w-[690px] rounded-full bg-[radial-gradient(circle_at_35%_28%,#3696ff_0%,#1260c8_20%,#06306c_42%,#03132e_62%,#020408_75%)] shadow-[0_0_120px_rgba(28,111,255,0.28)] lg:block" />
 
-          <div className="pointer-events-none absolute bottom-[-190px] right-[-20px] hidden h-[480px] w-[480px] rounded-full border border-[#4a9aff]/20 lg:block" />
+          <div className="pointer-events-none absolute bottom-[-230px] right-[10px] hidden h-[520px] w-[520px] rounded-full border border-[#4a9aff]/20 lg:block" />
 
           {/* Hero content */}
 
-          <div className="relative mx-auto flex min-h-[calc(100vh-72px)] max-w-7xl items-center px-5 py-20 sm:px-6 sm:py-24 lg:px-10 lg:py-28">
-            <div className="max-w-4xl">
+          <div className="relative mx-auto flex h-full max-w-7xl items-center px-5 sm:px-8 lg:px-10">
+            <div className="relative z-10 max-w-3xl pb-2 lg:max-w-2xl">
               {/* Network pill */}
 
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#3182ff]/45 bg-[#071326]/80 px-4 py-2 text-sm font-semibold text-[#a9c8ff] shadow-[0_0_30px_rgba(32,112,255,0.08)] backdrop-blur-xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#3182ff]/40 bg-[#071326]/75 px-4 py-2 text-sm font-semibold text-[#a9c8ff] shadow-[0_0_30px_rgba(32,112,255,0.08)] backdrop-blur-xl">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#18d99a] shadow-[0_0_10px_rgba(24,217,154,0.65)]" />
 
                 <span>Arc Network</span>
@@ -95,19 +93,19 @@ export default function Home() {
 
               {/* Heading */}
 
-              <h1 className="mt-7 max-w-4xl text-[3.6rem] font-black leading-[0.9] tracking-[-0.055em] sm:text-7xl lg:text-[6.8rem]">
+              <h1 className="mt-6 max-w-3xl text-[3.4rem] font-black leading-[0.92] tracking-[-0.055em] sm:mt-7 sm:text-6xl lg:text-[5.8rem]">
                 <span className="block text-white">
                   One place.
                 </span>
 
-                <span className="mt-2 block bg-gradient-to-r from-[#ffffff] via-[#2994ff] to-[#0870ff] bg-clip-text text-transparent">
+                <span className="mt-2 block bg-gradient-to-r from-white via-[#2994ff] to-[#0870ff] bg-clip-text text-transparent">
                   Every move.
                 </span>
               </h1>
 
               {/* Description */}
 
-              <p className="mt-7 max-w-2xl text-base font-medium leading-7 text-white/45 sm:mt-8 sm:text-lg sm:leading-8">
+              <p className="mt-6 max-w-xl text-base font-medium leading-7 text-white/45 sm:mt-7 sm:text-lg sm:leading-8">
                 Explore, manage and move your digital
                 assets on Arc with a clean and simple
                 DeFi experience built for everyday use.
@@ -115,7 +113,7 @@ export default function Home() {
 
               {/* Actions */}
 
-              <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row">
                 <button
                   type="button"
                   onClick={() =>
@@ -145,9 +143,7 @@ export default function Home() {
 
       <footer
         className={`border-t border-white/[0.06] bg-[#020408] transition-[filter] duration-300 ${
-          mobileMenuOpen
-            ? "blur-md"
-            : "blur-0"
+          mobileMenuOpen ? "blur-md" : "blur-0"
         }`}
       >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-7 text-center sm:py-8">
