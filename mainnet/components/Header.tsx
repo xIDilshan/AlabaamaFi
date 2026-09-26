@@ -349,7 +349,7 @@ export default function Header({
                 <img
                   src="/alabaamafi-logo.png"
                   alt="AlabaamaFi"
-                  className="h-9 w-9 shrink-0 object-contain"
+                  className="h-8 w-8 shrink-0 object-contain"
                 />
 
                 <div className="min-w-0">
@@ -372,41 +372,7 @@ export default function Header({
                 onClick={handleWalletClick}
                 className={`${manrope.className} flex h-10 max-w-[108px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-normal sm:max-w-none sm:px-4 sm:text-sm ${connectButton}`}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="shrink-0"
-                >
-                  <path
-                    d="M4 7.5C4 6.67 4.67 6 5.5 6H19C19.55 6 20 6.45 20 7V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V7.5Z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-
-                  <path
-                    d="M4 8V6C4 4.9 4.9 4 6 4H17"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-
-                  <path
-                    d="M16 13H20"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-
-                  <circle
-                    cx="16"
-                    cy="13"
-                    r="0.8"
-                    fill="currentColor"
-                  />
-                </svg>
-
+                
                 <span className="truncate">
                   {isConnected
                     ? mobileShortAddress
@@ -501,7 +467,7 @@ export default function Header({
                 <img
                   src="/alabaamafi-logo.png"
                   alt="AlabaamaFi"
-                  className="h-12 w-12 shrink-0 object-contain lg:h-14 lg:w-14"
+                  className="h-11 w-11 shrink-0 object-contain lg:h-14 lg:w-14"
                 />
 
                 <div className="text-left">
@@ -552,40 +518,6 @@ export default function Header({
                   onClick={handleWalletClick}
                   className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} lg:px-6`}
                 >
-                  <svg
-                    width="19"
-                    height="19"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="shrink-0"
-                  >
-                    <path
-                      d="M4 7.5C4 6.67 4.67 6 5.5 6H19C19.55 6 20 6.45 20 7V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V7.5Z"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    />
-
-                    <path
-                      d="M4 8V6C4 4.9 4.9 4 6 4H17"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-
-                    <path
-                      d="M16 13H20"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-
-                    <circle
-                      cx="16"
-                      cy="13"
-                      r="0.8"
-                      fill="currentColor"
-                    />
-                  </svg>
 
                   <span>
                     {isConnected
