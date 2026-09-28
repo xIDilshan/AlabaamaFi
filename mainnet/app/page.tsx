@@ -14,6 +14,8 @@ const ARC = {
   x: "https://x.com/arc",
 };
 
+const CONTAINER = "w-full px-5 sm:px-8 lg:px-12 xl:px-[5vw]";
+
 const ACTIONS = [
   { href: "/send", title: "Send", text: "Send USDC to any address. Gas is paid in USDC too.", icon: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" },
   { href: "/swap", title: "Swap", text: "Swap stablecoins onchain with clear pricing.", icon: "M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" },
@@ -121,21 +123,21 @@ export default function Home() {
         {/* ---------------- HERO ---------------- */}
         <section className="relative overflow-hidden border-b border-white/5">
           {/* planet arc, bottom-right */}
-          <div aria-hidden className="pointer-events-none absolute -bottom-[38rem] -right-[26rem] h-[52rem] w-[52rem] rounded-full border border-[#2f7bff]/40 bg-[radial-gradient(ellipse_at_30%_20%,rgba(37,99,235,0.55),rgba(10,30,90,0.35)_45%,transparent_70%)] shadow-[0_0_120px_rgba(37,99,235,0.35)] sm:-bottom-[34rem] lg:-bottom-[30rem] lg:-right-[16rem]" />
+          <div aria-hidden className="pointer-events-none absolute -bottom-[38rem] -right-[26rem] h-[52rem] w-[52rem] rounded-full border border-[#2f7bff]/40 bg-[radial-gradient(ellipse_at_30%_20%,rgba(37,99,235,0.55),rgba(10,30,90,0.35)_45%,transparent_70%)] shadow-[0_0_120px_rgba(37,99,235,0.35)] sm:-bottom-[34rem] lg:h-[55vw] lg:w-[55vw] lg:-bottom-[34vw] lg:-right-[12vw]" />
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#020408_35%,transparent_80%)]" />
 
-          <div className="relative mx-auto max-w-7xl px-5 pb-24 pt-16 sm:px-8 sm:pb-32 sm:pt-24 lg:pt-28">
+          <div className={`relative pb-24 pt-16 sm:pb-32 sm:pt-24 lg:pt-28 xl:pb-[9vw] xl:pt-[7vw] ${CONTAINER}`}>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#2f4fbf]/60 bg-[#0a1230]/60 px-4 py-2 text-sm text-[#b9c8ff]">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
               Arc Network
             </div>
 
-            <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-[clamp(4.5rem,6.2vw,9rem)]">
               One place. <span className="text-[#2f8bff]">Every move.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-slate-400 sm:text-xl">A simple interface for Arc</p>
+            <p className="mt-5 max-w-xl text-lg text-slate-400 sm:text-xl xl:max-w-[50vw] xl:text-[clamp(1.25rem,1.8vw,2.5rem)]">A simple interface for Arc</p>
 
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-400">
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-400 xl:max-w-[40vw] xl:text-[clamp(1rem,1.2vw,1.75rem)]">
               Send, swap, and bridge USDC on Arc mainnet. Fees are paid in USDC and blocks settle in under a second.
             </p>
 
@@ -166,8 +168,8 @@ export default function Home() {
         </section>
 
         {/* ---------------- ACTIONS ---------------- */}
-        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-          <h2 className="text-3xl font-semibold tracking-tight">Everything you do on Arc</h2>
+        <section className={`py-20 xl:py-[6vw] ${CONTAINER}`}>
+          <h2 className="text-3xl font-semibold tracking-tight xl:text-[clamp(1.875rem,2.4vw,3.5rem)]">Everything you do on Arc</h2>
           <p className="mt-3 max-w-xl text-slate-400">Pick an action. Connect your wallet when you are ready.</p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -185,9 +187,9 @@ export default function Home() {
 
         {/* ---------------- WHY ARC ---------------- */}
         <section className="border-y border-white/5 bg-[#040811]">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_1.4fr]">
+          <div className={`grid gap-12 py-20 lg:grid-cols-[1fr_1.4fr] xl:py-[6vw] ${CONTAINER}`}>
             <div>
-              <h2 className="text-3xl font-semibold tracking-tight">Why Arc</h2>
+              <h2 className="text-3xl font-semibold tracking-tight xl:text-[clamp(1.875rem,2.4vw,3.5rem)]">Why Arc</h2>
               <p className="mt-4 max-w-md leading-relaxed text-slate-400">
                 Arc is Circle&apos;s EVM-compatible Layer 1 for onchain finance with stablecoins. Public mainnet launched on 16 September 2026.
               </p>
@@ -207,10 +209,10 @@ export default function Home() {
         </section>
 
         {/* ---------------- NETWORK ---------------- */}
-        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+        <section className={`py-20 xl:py-[6vw] ${CONTAINER}`}>
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <h2 className="text-3xl font-semibold tracking-tight">Add Arc to your wallet</h2>
+              <h2 className="text-3xl font-semibold tracking-tight xl:text-[clamp(1.875rem,2.4vw,3.5rem)]">Add Arc to your wallet</h2>
               <p className="mt-3 max-w-md text-slate-400">One click adds the mainnet settings to any EVM wallet.</p>
               <button onClick={addArcToWallet} className="mt-6 rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#2f8bff] px-7 py-3 font-medium transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f8bff]">
                 Add Arc Mainnet
@@ -237,8 +239,8 @@ export default function Home() {
         </section>
 
         {/* ---------------- USE CASES ---------------- */}
-        <section className="mx-auto max-w-7xl px-5 pb-20 sm:px-8">
-          <h2 className="text-3xl font-semibold tracking-tight">What people build on Arc</h2>
+        <section className={`pb-20 xl:pb-[6vw] ${CONTAINER}`}>
+          <h2 className="text-3xl font-semibold tracking-tight xl:text-[clamp(1.875rem,2.4vw,3.5rem)]">What people build on Arc</h2>
           <ul className="mt-8 flex flex-wrap gap-3">
             {USE_CASES.map((u) => (
               <li key={u} className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm text-slate-300">
@@ -250,7 +252,7 @@ export default function Home() {
 
         {/* ---------------- FOOTER ---------------- */}
         <footer className="border-t border-white/5">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className={`flex flex-col gap-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between ${CONTAINER}`}>
             <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
             <nav className="flex gap-6">
               <a href={ARC.docs} target="_blank" rel="noreferrer" className="hover:text-white">Docs</a>
