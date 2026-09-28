@@ -73,23 +73,6 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
 
 /** Fixed full-page animated background (same look as the hero): orbits, comets, ripples, stars. */
 function BackgroundArt() {
-  const wrap = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const y = Math.min(window.scrollY * 0.16, window.innerHeight * 0.28);
-        if (wrap.current) wrap.current.style.transform = `translate3d(0,${-y}px,0)`;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
   const stars = useMemo(() => {
     let seed = 7;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -128,8 +111,8 @@ function BackgroundArt() {
   );
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div ref={wrap} className="absolute inset-x-0 top-0 h-[135%] will-change-transform">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[115vh] min-h-[640px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_55%,transparent)] [mask-image:linear-gradient(to_bottom,#000_55%,transparent)]">
+      <div className="absolute inset-0">
         <svg className="h-full w-full" viewBox="0 0 1200 700" preserveAspectRatio="xMaxYMax slice">
           <defs>
             <linearGradient id="ringGrad" x1="0" y1="1" x2="1" y2="0">
@@ -173,6 +156,7 @@ function BackgroundArt() {
           {cluster(main, 1, "main")}
           {cluster(side, 0.45, "side")}
         </svg>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(2,4,8,0.72),rgba(2,4,8,0.3)_55%,transparent)]" />
       </div>
     </div>
   );
@@ -236,15 +220,14 @@ export default function Home() {
         @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.anim,.blob,.marquee{animation:none!important}}
       `}</style>
 
-      {/* page-wide gradient (fixed, so every section shares the header's look) */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#020408_0%,#04102b_40%,#030a1c_75%,#020408_100%)]" />
-        <div className="blob absolute -left-[15vw] top-[20vh] h-[45vw] w-[45vw] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.26),transparent)] blur-2xl" style={{ animation: "drift 22s ease-in-out infinite" }} />
+      {/* one continuous page gradient (scrolls with the page, no fixed layers) */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#020408_0%,#04102b_22%,#041333_45%,#030d24_70%,#020408_100%)]" />
+        <div className="blob absolute -left-[15vw] top-[38%] h-[45vw] w-[45vw] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.22),transparent)] blur-2xl" style={{ animation: "drift 22s ease-in-out infinite" }} />
+        <div className="blob absolute -right-[12vw] top-[62%] h-[42vw] w-[42vw] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.16),transparent)] blur-2xl" style={{ animation: "drift 28s ease-in-out infinite reverse" }} />
       </div>
 
       <BackgroundArt />
-      {/* keeps text readable over the animation */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(to_right,rgba(2,4,8,0.72),rgba(2,4,8,0.3)_55%,transparent)]" />
 
       <div className="relative z-10">
         <Header />
