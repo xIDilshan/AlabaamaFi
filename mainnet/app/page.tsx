@@ -111,7 +111,7 @@ function BackgroundArt() {
   );
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[115vh] min-h-[640px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_55%,transparent)] [mask-image:linear-gradient(to_bottom,#000_55%,transparent)]">
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_72%,transparent)] [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
       <div className="absolute inset-0">
         <svg className="h-full w-full" viewBox="0 0 1200 700" preserveAspectRatio="xMaxYMax slice">
           <defs>
@@ -227,14 +227,14 @@ export default function Home() {
         <div className="blob absolute -right-[12vw] top-[62%] h-[42vw] w-[42vw] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.16),transparent)] blur-2xl" style={{ animation: "drift 28s ease-in-out infinite reverse" }} />
       </div>
 
-      <BackgroundArt />
-
       <div className="relative z-10">
         <Header />
 
         <div className={`min-w-0 transition-[filter] duration-300 ${mobileMenuOpen ? "blur-md" : "blur-0"}`}>
           {/* ---------------- HERO ---------------- */}
           <section className={`relative pb-24 pt-20 sm:pb-32 sm:pt-28 lg:pt-32 xl:pb-[9vw] xl:pt-[8vw] ${CONTAINER}`}>
+            <BackgroundArt />
+            <div className="relative z-10">
             <Reveal>
               <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-[clamp(4.5rem,6.2vw,9rem)]">
                 One place. <span className="bg-gradient-to-r from-[#2f8bff] to-[#5fd0ff] bg-clip-text text-transparent">Every move.</span>
@@ -252,6 +252,7 @@ export default function Home() {
                 <Link href="/bridge" className="rounded-full bg-white/[0.07] px-7 py-3 font-medium transition hover:bg-white/[0.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f8bff]">Bridge to Arc</Link>
               </div>
             </Reveal>
+            </div>
           </section>
 
           {/* ---------------- ACTIONS ---------------- */}
