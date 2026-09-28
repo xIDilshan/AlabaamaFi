@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 
-/* ---------- Arc mainnet constants (source: docs.arc.io/arc/references/rpc-endpoints) ---------- */
+/* ---------- Arc Mainnet ---------- */
+
 const ARC = {
   chainId: 5042,
   chainIdHex: "0x13b2",
@@ -14,16 +15,40 @@ const ARC = {
   x: "https://x.com/arc",
 };
 
-const CONTAINER = "w-full px-5 sm:px-8 lg:px-12 xl:px-[5vw]";
-const H2 = "text-3xl font-semibold tracking-tight xl:text-[clamp(1.875rem,2.4vw,3.5rem)]";
-const GLASS = "border border-white/10 bg-gradient-to-br from-white/[0.07] via-white/[0.02] to-transparent backdrop-blur-sm";
-const BTN = "rounded-full bg-gradient-to-r from-[#1d4ed8] to-[#2f8bff] px-7 py-3 font-medium shadow-[0_8px_30px_rgba(37,99,235,0.4)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f8bff]";
+/* ---------- Shared styles ---------- */
+
+const CONTAINER =
+  "w-full px-5 sm:px-8 lg:px-12 xl:px-[5vw]";
+
+const H2 =
+  "text-3xl font-semibold tracking-[-0.035em] sm:text-4xl xl:text-[clamp(2rem,3vw,3.5rem)]";
+
+const BUTTON =
+  "rounded-full bg-gradient-to-r from-[#1599ff] via-[#2377ff] to-[#3039e8] px-7 py-3.5 font-semibold text-white shadow-[0_8px_30px_rgba(35,119,255,0.28)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110";
+
+/* ---------- Data ---------- */
 
 const FEATURES = [
-  { title: "USDC as gas", text: "Fees are paid in USDC, so costs stay predictable and dollar-denominated.", icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
-  { title: "Sub-second finality", text: "Blocks settle deterministically in under a second on Malachite BFT consensus.", icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z" },
-  { title: "EVM compatible", text: "Use the wallets, tools, and Solidity contracts you already know.", icon: "m16 18 6-6-6-6M8 6l-6 6 6 6" },
-  { title: "Built for payments", text: "Designed for payments, stablecoin FX, lending, and tokenized assets.", icon: "M2 7h20v12H2zM2 11h20" },
+  {
+    title: "USDC as gas",
+    text: "Fees are paid in USDC, keeping transaction costs predictable.",
+    icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  },
+  {
+    title: "Sub-second finality",
+    text: "Arc is designed for fast deterministic settlement.",
+    icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z",
+  },
+  {
+    title: "EVM compatible",
+    text: "Use familiar wallets, tools and Solidity-based applications.",
+    icon: "m16 18 6-6-6-6M8 6l-6 6 6 6",
+  },
+  {
+    title: "Built for payments",
+    text: "Designed around stablecoins, payments and onchain finance.",
+    icon: "M2 7h20v12H2zM2 11h20",
+  },
 ];
 
 const NETWORK_ROWS: [string, string][] = [
@@ -34,304 +59,819 @@ const NETWORK_ROWS: [string, string][] = [
   ["Explorer", ARC.explorer.replace("https://", "")],
 ];
 
-const USE_CASES = ["Peer-to-peer payments", "eCommerce checkout", "Stablecoin FX", "Agentic economy", "Prediction markets", "Borrow and lend"];
+/* ---------- Icons ---------- */
 
-/* ---------- helpers ---------- */
-function Icon({ d, size = 22 }: { d: string; size?: number }) {
+function Icon({
+  d,
+  size = 22,
+}: {
+  d: string;
+  size?: number;
+}) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d={d} />
     </svg>
   );
 }
 
-/** Fades + slides content in when it scrolls into view. */
-function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+/* ---------- Scroll reveal ---------- */
+
+function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
+
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
+    const element = ref.current;
+
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
           setShown(true);
-          io.disconnect();
+          observer.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -6% 0px",
+      }
     );
-    io.observe(el);
-    return () => io.disconnect();
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
   }, []);
+
   return (
-    <div ref={ref} className={`reveal ${shown ? "in" : ""} ${className}`} style={{ ["--d" as string]: `${delay}ms` }}>
+    <div
+      ref={ref}
+      className={`reveal ${
+        shown ? "reveal-in" : ""
+      } ${className}`}
+      style={{
+        ["--delay" as string]: `${delay}ms`,
+      }}
+    >
       {children}
     </div>
   );
 }
 
-/** Animated orbital rings + comets + particles (hero background). */
+/* ---------- Hero orbital artwork ---------- */
+
 function OrbitArt() {
-  const CX = 1150, CY = 780;
+  const CX = 1150;
+  const CY = 690;
+
   const rings = [
-    { r: 300, dur: 46, rev: false, dots: 2 },
-    { r: 410, dur: 62, rev: true, dots: 3 },
-    { r: 530, dur: 80, rev: false, dots: 2 },
-    { r: 670, dur: 104, rev: true, dots: 3 },
+    { r: 280, duration: 42, reverse: false },
+    { r: 380, duration: 58, reverse: true },
+    { r: 500, duration: 76, reverse: false },
+    { r: 630, duration: 96, reverse: true },
   ];
+
   return (
-    <svg aria-hidden className="absolute inset-0 h-full w-full" viewBox="0 0 1200 700" preserveAspectRatio="xMaxYMax slice">
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 1200 620"
+      preserveAspectRatio="xMaxYMax slice"
+    >
       <defs>
-        <linearGradient id="ringGrad" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="#1d4ed8" stopOpacity="0" />
-          <stop offset="0.6" stopColor="#3b82f6" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#7dd3fc" stopOpacity="0.9" />
+        <linearGradient
+          id="orbit-gradient"
+          x1="0"
+          y1="1"
+          x2="1"
+          y2="0"
+        >
+          <stop
+            offset="0"
+            stopColor="#1d4ed8"
+            stopOpacity="0"
+          />
+
+          <stop
+            offset="0.58"
+            stopColor="#3286ff"
+            stopOpacity="0.35"
+          />
+
+          <stop
+            offset="1"
+            stopColor="#6cc8ff"
+            stopOpacity="0.9"
+          />
         </linearGradient>
-        <linearGradient id="cometGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#2f8bff" stopOpacity="0" />
-          <stop offset="1" stopColor="#9bdcff" />
-        </linearGradient>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+
+        <radialGradient id="planet-gradient">
+          <stop
+            offset="0"
+            stopColor="#3ba0ff"
+            stopOpacity="0.95"
+          />
+
+          <stop
+            offset="0.35"
+            stopColor="#1166d8"
+            stopOpacity="0.75"
+          />
+
+          <stop
+            offset="0.72"
+            stopColor="#06255b"
+            stopOpacity="0.7"
+          />
+
+          <stop
+            offset="1"
+            stopColor="#020408"
+            stopOpacity="0"
+          />
+        </radialGradient>
+
+        <filter
+          id="orbit-glow"
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="200%"
+        >
+          <feGaussianBlur
+            stdDeviation="4"
+            result="blur"
+          />
+
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
         </filter>
       </defs>
 
-      {/* long thin sweeping curves */}
-      {["M 380 760 Q 820 330 1200 90", "M 560 780 Q 930 470 1200 250"].map((d, i) => (
-        <g key={d}>
-          <path d={d} fill="none" stroke="#2f6bff" strokeOpacity="0.18" />
-          <path d={d} fill="none" stroke="#7dd3fc" strokeWidth="1.5" strokeLinecap="round" pathLength={1000} strokeDasharray="70 930" filter="url(#glow)" className="anim" style={{ animation: `dash ${9 + i * 4}s linear infinite` }} />
+      {/* Planet */}
+
+      <circle
+        cx="1230"
+        cy="640"
+        r="310"
+        fill="url(#planet-gradient)"
+      />
+
+      {/* Large atmospheric glow */}
+
+      <circle
+        cx="1230"
+        cy="640"
+        r="250"
+        fill="none"
+        stroke="#2d82ff"
+        strokeOpacity="0.16"
+        strokeWidth="2"
+      />
+
+      {/* Orbit rings */}
+
+      {rings.map((ring) => (
+        <g key={ring.r}>
+          <circle
+            cx={CX}
+            cy={CY}
+            r={ring.r}
+            fill="none"
+            stroke="url(#orbit-gradient)"
+            strokeWidth="1"
+            opacity="0.75"
+          />
+
+          <circle
+            cx={CX}
+            cy={CY}
+            r={ring.r}
+            fill="none"
+            stroke="#7dc9ff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray="90 910"
+            filter="url(#orbit-glow)"
+            className="orbit-line"
+            style={{
+              transformOrigin: `${CX}px ${CY}px`,
+              animation: `${
+                ring.reverse
+                  ? "orbit-reverse"
+                  : "orbit"
+              } ${ring.duration}s linear infinite`,
+            }}
+          />
         </g>
       ))}
 
-      {rings.map((o, i) => (
-        <g key={o.r}>
-          <circle cx={CX} cy={CY} r={o.r} fill="none" stroke="url(#ringGrad)" strokeWidth={i === 0 ? 1.6 : 1} />
-          <g className="anim" style={{ transformOrigin: `${CX}px ${CY}px`, animation: `${o.rev ? "spin-rev" : "spin"} ${o.dur}s linear infinite` }}>
-            <circle cx={CX} cy={CY} r={o.r} fill="none" stroke="url(#cometGrad)" strokeWidth="2.2" strokeLinecap="round" pathLength={1000} strokeDasharray="120 880" filter="url(#glow)" />
-            {Array.from({ length: o.dots }).map((_, k) => {
-              const a = Math.PI * (0.55 + (k * 0.28) + i * 0.07);
-              return <circle key={k} cx={CX + o.r * Math.cos(a)} cy={CY + o.r * Math.sin(a) * -1} r={k % 2 ? 2 : 3} fill="#9bdcff" filter="url(#glow)" />;
-            })}
-          </g>
-        </g>
-      ))}
+      {/* Fine sweeping lines */}
+
+      <path
+        d="M520 640 Q850 310 1200 80"
+        fill="none"
+        stroke="#3b82f6"
+        strokeOpacity="0.15"
+      />
+
+      <path
+        d="M690 620 Q930 420 1200 230"
+        fill="none"
+        stroke="#60a5fa"
+        strokeOpacity="0.18"
+      />
     </svg>
   );
 }
 
-function ActionCard({ href, title, text, icon, className = "", children }: { href: string; title: string; text: string; icon: string; className?: string; children?: ReactNode }) {
+/* ---------- Action card ---------- */
+
+function ActionCard({
+  href,
+  title,
+  text,
+  icon,
+  children,
+  className = "",
+}: {
+  href: string;
+  title: string;
+  text: string;
+  icon: string;
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
-    <Link href={href} className={`group relative flex flex-col overflow-hidden rounded-3xl p-7 transition duration-300 hover:border-[#2f8bff]/60 hover:shadow-[0_0_60px_-10px_rgba(47,139,255,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2f8bff] ${GLASS} ${className}`}>
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1d4ed8]/40 to-[#38bdf8]/20 text-[#7dc0ff]">
+    <Link
+      href={href}
+      className={`group relative overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-white/[0.025] p-6 transition duration-300 hover:border-[#3185ff]/40 hover:bg-white/[0.045] hover:shadow-[0_0_60px_-25px_rgba(47,139,255,0.7)] ${className}`}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1678ff]/10 text-[#69b7ff]">
         <Icon d={icon} />
-      </span>
-      <h3 className="mt-5 text-xl font-semibold">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">{text}</p>
+      </div>
+
+      <h3 className="mt-5 text-xl font-semibold tracking-tight">
+        {title}
+      </h3>
+
+      <p className="mt-2 max-w-md text-sm leading-6 text-white/45">
+        {text}
+      </p>
+
       {children}
-      <span className="mt-auto pt-6 text-sm text-[#7dc0ff] transition group-hover:translate-x-1">Open {title.toLowerCase()} →</span>
+
+      <div className="mt-6 text-sm font-medium text-[#65b5ff] transition-transform duration-200 group-hover:translate-x-1">
+        Open {title.toLowerCase()} →
+      </div>
     </Link>
   );
 }
 
+/* ---------- Home ---------- */
+
 export default function Home() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [block, setBlock] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
+  const [block, setBlock] = useState<number | null>(
+    null
+  );
+
   const [walletMsg, setWalletMsg] = useState("");
+
+  /* Mobile menu blur */
 
   useEffect(() => {
     const handleMenuState = (event: Event) => {
-      const customEvent = event as CustomEvent<boolean>;
+      const customEvent =
+        event as CustomEvent<boolean>;
+
       setMobileMenuOpen(customEvent.detail);
     };
-    window.addEventListener("mobile-menu-state", handleMenuState);
-    return () => window.removeEventListener("mobile-menu-state", handleMenuState);
+
+    window.addEventListener(
+      "mobile-menu-state",
+      handleMenuState
+    );
+
+    return () => {
+      window.removeEventListener(
+        "mobile-menu-state",
+        handleMenuState
+      );
+    };
   }, []);
 
-  // Live block height from Arc's public RPC (open CORS, no key needed)
+  /* Live Arc block */
+
   useEffect(() => {
     let alive = true;
-    const load = async () => {
+
+    const loadBlock = async () => {
       try {
-        const res = await fetch(ARC.rpc, {
+        const response = await fetch(ARC.rpc, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_blockNumber",
+            params: [],
+          }),
         });
-        const json = await res.json();
-        if (alive && json?.result) setBlock(parseInt(json.result, 16));
+
+        const json = await response.json();
+
+        if (alive && json?.result) {
+          setBlock(parseInt(json.result, 16));
+        }
       } catch {
-        /* keep last value */
+        /* Keep previous value */
       }
     };
-    load();
-    const id = setInterval(load, 5000);
+
+    loadBlock();
+
+    const interval = setInterval(
+      loadBlock,
+      5000
+    );
+
     return () => {
       alive = false;
-      clearInterval(id);
+      clearInterval(interval);
     };
   }, []);
 
+  /* Add Arc Mainnet */
+
   const addArcToWallet = async () => {
-    const eth = (window as any).ethereum;
-    if (!eth) return setWalletMsg("No wallet found. Install an EVM wallet first.");
+    const ethereum = (
+      window as any
+    ).ethereum;
+
+    if (!ethereum) {
+      setWalletMsg(
+        "No wallet found. Install an EVM wallet first."
+      );
+      return;
+    }
+
     try {
-      await eth.request({
+      await ethereum.request({
         method: "wallet_addEthereumChain",
-        params: [{ chainId: ARC.chainIdHex, chainName: "Arc Mainnet", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: [ARC.rpc], blockExplorerUrls: [ARC.explorer] }],
+        params: [
+          {
+            chainId: ARC.chainIdHex,
+            chainName: "Arc Mainnet",
+            nativeCurrency: {
+              name: "USDC",
+              symbol: "USDC",
+              decimals: 18,
+            },
+            rpcUrls: [ARC.rpc],
+            blockExplorerUrls: [ARC.explorer],
+          },
+        ],
       });
-      setWalletMsg("Arc Mainnet added to your wallet.");
+
+      setWalletMsg(
+        "Arc Mainnet added to your wallet."
+      );
     } catch {
-      setWalletMsg("Request was cancelled or failed.");
+      setWalletMsg(
+        "Request was cancelled or failed."
+      );
     }
   };
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#020408] text-white">
       <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes spin-rev{to{transform:rotate(-360deg)}}
-        @keyframes dash{from{stroke-dashoffset:0}to{stroke-dashoffset:-1000}}
-        @keyframes drift{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,-3vw,0) scale(1.15)}}
-        @keyframes marquee{to{transform:translateX(-50%)}}
-        .reveal{opacity:0;transform:translateY(32px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0ms)}
-        .reveal.in{opacity:1;transform:none}
-        @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.anim,.blob,.marquee{animation:none!important}}
+        @keyframes orbit {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes orbit-reverse {
+          to {
+            transform: rotate(-360deg);
+          }
+        }
+
+        @keyframes hero-glow {
+          0%, 100% {
+            transform: scale(1);
+            opacity: .7;
+          }
+
+          50% {
+            transform: scale(1.08);
+            opacity: 1;
+          }
+        }
+
+        .reveal {
+          opacity: 0;
+          transform: translateY(24px);
+          transition:
+            opacity .8s cubic-bezier(.2,.7,.2,1),
+            transform .8s cubic-bezier(.2,.7,.2,1);
+          transition-delay: var(--delay, 0ms);
+        }
+
+        .reveal-in {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .reveal {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+
+          .orbit-line {
+            animation: none !important;
+          }
+        }
       `}</style>
 
-      {/* page-wide gradient background */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#020408_0%,#04102b_38%,#030a1c_70%,#020408_100%)]" />
-        <div className="blob absolute -left-[15vw] top-[20vh] h-[45vw] w-[45vw] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.28),transparent)] blur-2xl" style={{ animation: "drift 22s ease-in-out infinite" }} />
-        <div className="blob absolute -right-[10vw] top-[55vh] h-[40vw] w-[40vw] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.18),transparent)] blur-2xl" style={{ animation: "drift 28s ease-in-out infinite reverse" }} />
+      {/* Continuous page background */}
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_12%,rgba(19,91,210,0.10),transparent_30%),linear-gradient(180deg,#020408_0%,#020711_42%,#02050b_100%)]" />
+
+        <div className="absolute left-1/2 top-[38rem] h-[35rem] w-[70rem] -translate-x-1/2 rounded-full bg-[#0757c9]/[0.045] blur-[140px]" />
       </div>
 
       <div className="relative z-10">
         <Header />
 
-        <div className={`min-w-0 transition-[filter] duration-300 ${mobileMenuOpen ? "blur-md" : "blur-0"}`}>
-          {/* ---------------- HERO ---------------- */}
-          <section className="relative overflow-hidden border-b border-[#2f6bff]/15">
-            <OrbitArt />
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#020408_28%,rgba(2,4,8,0.55)_55%,transparent_85%)]" />
-            <div aria-hidden className="pointer-events-none absolute bottom-0 right-0 h-2/3 w-2/3 bg-[radial-gradient(ellipse_at_100%_100%,rgba(37,99,235,0.35),transparent_65%)]" />
+        <div
+          className={`min-w-0 transition-[filter] duration-300 ${
+            mobileMenuOpen
+              ? "blur-md"
+              : "blur-0"
+          }`}
+        >
+          {/* ================= HERO ================= */}
 
-            <div className={`relative pb-24 pt-16 sm:pb-32 sm:pt-24 lg:pt-28 xl:pb-[9vw] xl:pt-[7vw] ${CONTAINER}`}>
-              <Reveal>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#2f4fbf]/60 bg-[#0a1230]/60 px-4 py-2 text-sm text-[#b9c8ff]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-                  Arc Network
-                </div>
-              </Reveal>
-              <Reveal delay={120}>
-                <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-[clamp(4.5rem,6.2vw,9rem)]">
-                  One place. <span className="bg-gradient-to-r from-[#2f8bff] to-[#5fd0ff] bg-clip-text text-transparent">Every move.</span>
-                </h1>
-              </Reveal>
-              <Reveal delay={240}>
-                <p className="mt-5 max-w-xl text-lg text-slate-400 sm:text-xl xl:max-w-[50vw] xl:text-[clamp(1.25rem,1.8vw,2.5rem)]">A simple interface for Arc</p>
-                <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-400 xl:max-w-[40vw] xl:text-[clamp(1rem,1.2vw,1.75rem)]">
-                  Send, swap, and bridge USDC on Arc mainnet. Fees are paid in USDC and blocks settle in under a second.
-                </p>
-              </Reveal>
-              <Reveal delay={360}>
-                <div className="mt-9 flex flex-wrap gap-3">
-                  <Link href="/swap" className={BTN}>Start swapping</Link>
-                  <Link href="/bridge" className="rounded-full border border-white/15 bg-white/5 px-7 py-3 font-medium transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f8bff]">Bridge to Arc</Link>
-                </div>
-                <dl className="mt-16 grid max-w-3xl grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
-                  {[["Latest block", block ? block.toLocaleString() : "…"], ["Chain ID", String(ARC.chainId)], ["Gas token", "USDC"], ["Finality", "< 1 second"]].map(([l, v]) => (
-                    <div key={l}>
-                      <dt className="text-sm text-slate-500">{l}</dt>
-                      <dd className="mt-1 text-xl font-semibold tabular-nums">{v}</dd>
+          <section className="relative overflow-hidden border-b border-white/[0.07]">
+            <OrbitArt />
+
+            {/* Left fade so text stays readable */}
+
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#020408_0%,#020408_30%,rgba(2,4,8,0.72)_52%,rgba(2,4,8,0.18)_78%,transparent_100%)]"
+            />
+
+            {/* Bottom fade */}
+
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#020408] to-transparent"
+            />
+
+            <div
+              className={`relative ${CONTAINER} pb-20 pt-14 sm:pb-24 sm:pt-20 lg:pb-28 lg:pt-24`}
+            >
+              <div className="max-w-6xl">
+                <Reveal>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#3182ff]/45 bg-[#071326]/75 px-4 py-2 text-sm font-medium text-[#b5d0ff] backdrop-blur-xl">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#18d99a] shadow-[0_0_12px_rgba(24,217,154,0.7)]" />
+
+                    <span>Arc Network</span>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={100}>
+                  <h1 className="mt-7 max-w-5xl text-[3.4rem] font-black leading-[0.92] tracking-[-0.06em] sm:text-6xl md:text-7xl lg:text-[5.8rem] xl:text-[6.8rem]">
+                    <span className="text-white">
+                      One place.
+                    </span>{" "}
+                    <span className="bg-gradient-to-r from-[#3195ff] via-[#1783ff] to-[#65c8ff] bg-clip-text text-transparent">
+                      Every move.
+                    </span>
+                  </h1>
+                </Reveal>
+
+                <Reveal delay={180}>
+                  <p className="mt-6 max-w-xl text-lg font-medium leading-8 text-white/55 sm:text-xl">
+                    A simple interface for Arc
+                  </p>
+
+                  <p className="mt-4 max-w-xl text-sm leading-7 text-white/35 sm:text-base">
+                    Send, swap and bridge assets on
+                    Arc mainnet through one clean
+                    interface.
+                  </p>
+                </Reveal>
+
+                <Reveal delay={280}>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link
+                      href="/swap"
+                      className={BUTTON}
+                    >
+                      Start swapping
+                    </Link>
+
+                    <Link
+                      href="/send"
+                      className="rounded-full border border-white/[0.13] bg-white/[0.04] px-7 py-3.5 font-semibold text-white/80 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[#3185ff]/40 hover:bg-white/[0.07] hover:text-white"
+                    >
+                      Send USDC
+                    </Link>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={360}>
+                  <div className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-white/[0.07] pt-6 sm:mt-14">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/25">
+                        Latest block
+                      </p>
+
+                      <p className="mt-1 text-base font-semibold tabular-nums text-white/80">
+                        {block
+                          ? block.toLocaleString()
+                          : "…"}
+                      </p>
                     </div>
-                  ))}
-                </dl>
-              </Reveal>
+
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/25">
+                        Chain ID
+                      </p>
+
+                      <p className="mt-1 text-base font-semibold text-white/80">
+                        {ARC.chainId}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/25">
+                        Gas
+                      </p>
+
+                      <p className="mt-1 text-base font-semibold text-white/80">
+                        USDC
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/25">
+                        Finality
+                      </p>
+
+                      <p className="mt-1 text-base font-semibold text-white/80">
+                        &lt; 1 sec
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
             </div>
           </section>
 
-          {/* ---------------- ACTIONS (bento) ---------------- */}
-          <section className={`py-20 xl:py-[6vw] ${CONTAINER}`}>
+          {/* ================= ACTIONS ================= */}
+
+          <section
+            className={`${CONTAINER} border-b border-white/[0.06] py-16 sm:py-20 lg:py-24`}
+          >
             <Reveal>
-              <h2 className={H2}>Everything you do on Arc</h2>
-              <p className="mt-3 max-w-xl text-slate-400">Pick an action. Connect your wallet when you are ready.</p>
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5dafff]">
+                    Explore
+                  </p>
+
+                  <h2 className={`${H2} mt-2`}>
+                    Everything you need
+                  </h2>
+                </div>
+
+                <p className="max-w-sm text-sm leading-6 text-white/35">
+                  Move and manage assets on Arc
+                  without leaving the interface.
+                </p>
+              </div>
             </Reveal>
 
-            <div className="mt-12 grid gap-4 lg:grid-cols-3">
-              <Reveal className="lg:col-span-2 lg:row-span-2 [&>a]:h-full">
-                <ActionCard href="/swap" title="Swap" text="Swap stablecoins onchain with clear pricing and USDC gas." icon="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" className="min-h-[24rem]">
-                  <div aria-hidden className="mt-8 max-w-md space-y-2 rounded-2xl border border-white/10 bg-[#050b1c]/80 p-4 shadow-[0_0_80px_-20px_rgba(47,139,255,0.6)]">
-                    <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3"><span className="text-sm text-slate-400">You pay</span><span className="font-semibold">USDC</span></div>
-                    <div className="mx-auto -my-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-[#0a1230] text-[#7dc0ff]">↓</div>
-                    <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3"><span className="text-sm text-slate-400">You receive</span><span className="font-semibold">EURC</span></div>
-                    <div className="rounded-xl bg-gradient-to-r from-[#1d4ed8] to-[#2f8bff] py-3 text-center text-sm font-medium">Preview</div>
+            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+              <Reveal className="lg:col-span-2">
+                <ActionCard
+                  href="/swap"
+                  title="Swap"
+                  text="Swap stablecoins onchain with clear pricing and USDC gas."
+                  icon="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3"
+                  className="min-h-[20rem]"
+                >
+                  <div className="mt-7 max-w-md rounded-2xl border border-white/[0.07] bg-[#030814]/80 p-3">
+                    <div className="flex items-center justify-between rounded-xl bg-white/[0.035] px-4 py-3">
+                      <span className="text-xs text-white/35">
+                        You pay
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        USDC
+                      </span>
+                    </div>
+
+                    <div className="mx-auto -my-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] bg-[#071326] text-xs text-[#69b7ff]">
+                      ↓
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl bg-white/[0.035] px-4 py-3">
+                      <span className="text-xs text-white/35">
+                        You receive
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        EURC
+                      </span>
+                    </div>
                   </div>
                 </ActionCard>
               </Reveal>
-              <Reveal delay={120} className="[&>a]:h-full">
-                <ActionCard href="/send" title="Send" text="Send USDC to any address. Gas is paid in USDC too." icon="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+
+              <Reveal delay={100}>
+                <ActionCard
+                  href="/send"
+                  title="Send"
+                  text="Send USDC to any address while paying gas in USDC."
+                  icon="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"
+                  className="h-full min-h-[15rem]"
+                />
               </Reveal>
-              <Reveal delay={240} className="[&>a]:h-full">
-                <ActionCard href="/bridge" title="Bridge" text="Move USDC in and out of Arc from other chains." icon="M3 18c0-6 4-10 9-10s9 4 9 10M3 18h18M8 18v-4M16 18v-4M12 18v-6" />
+
+              <Reveal delay={180}>
+                <ActionCard
+                  href="/bridge"
+                  title="Bridge"
+                  text="Move USDC between Arc and supported networks."
+                  icon="M3 18c0-6 4-10 9-10s9 4 9 10M3 18h18M8 18v-4M16 18v-4M12 18v-6"
+                  className="h-full min-h-[15rem]"
+                />
               </Reveal>
-              <Reveal delay={120} className="lg:col-span-3 [&>a]:h-full">
-                <ActionCard href="/activity" title="Activity" text="Track every transaction from your wallet in one list." icon="M3 12h4l3-8 4 16 3-8h4" />
+
+              <Reveal
+                delay={260}
+                className="lg:col-span-1"
+              >
+                <ActionCard
+                  href="/activity"
+                  title="Activity"
+                  text="Track your wallet transactions in one place."
+                  icon="M3 12h4l3-8 4 16 3-8h4"
+                  className="h-full min-h-[15rem]"
+                />
               </Reveal>
             </div>
           </section>
 
-          {/* ---------------- WHY ARC ---------------- */}
-          <section className={`pb-20 xl:pb-[6vw] ${CONTAINER}`}>
+          {/* ================= WHY ARC ================= */}
+
+          <section
+            className={`${CONTAINER} border-b border-white/[0.06] py-16 sm:py-20 lg:py-24`}
+          >
             <Reveal>
-              <div className="relative overflow-hidden rounded-[2rem] border border-[#2f6bff]/30 bg-gradient-to-br from-[#0a1a4a]/70 via-[#050b1c]/80 to-[#02101f]/80 p-8 sm:p-12">
-                <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.3),transparent)]" />
-                <div className="relative grid gap-12 lg:grid-cols-[1fr_1.5fr]">
-                  <div>
-                    <h2 className={H2}>Why Arc</h2>
-                    <p className="mt-4 max-w-md leading-relaxed text-slate-400">Arc is Circle&apos;s EVM-compatible Layer 1 for onchain finance with stablecoins. Public mainnet launched on 16 September 2026.</p>
-                    <a href={ARC.docs} target="_blank" rel="noreferrer" className="mt-6 inline-block text-[#7dc0ff] underline-offset-4 hover:underline">Read the Arc docs</a>
-                  </div>
-                  <div className="grid gap-8 sm:grid-cols-2">
-                    {FEATURES.map((f, i) => (
-                      <Reveal key={f.title} delay={i * 110}>
-                        <div className="flex gap-4">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2f8bff]/15 text-[#7dc0ff]"><Icon d={f.icon} size={20} /></span>
-                          <div>
-                            <h3 className="font-semibold">{f.title}</h3>
-                            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{f.text}</p>
-                          </div>
-                        </div>
-                      </Reveal>
-                    ))}
-                  </div>
-                </div>
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5dafff]">
+                  The network
+                </p>
+
+                <h2 className={`${H2} mt-2`}>
+                  Built around stablecoins
+                </h2>
+
+                <p className="mt-5 max-w-xl text-sm leading-7 text-white/40 sm:text-base">
+                  Arc is an EVM-compatible Layer 1
+                  designed for fast onchain finance,
+                  stablecoin payments and real-world
+                  applications.
+                </p>
               </div>
             </Reveal>
+
+            <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map((feature, index) => (
+                <Reveal
+                  key={feature.title}
+                  delay={index * 80}
+                >
+                  <div className="border-l border-white/[0.08] pl-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1678ff]/10 text-[#69b7ff]">
+                      <Icon
+                        d={feature.icon}
+                        size={19}
+                      />
+                    </div>
+
+                    <h3 className="mt-5 text-base font-semibold">
+                      {feature.title}
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-6 text-white/35">
+                      {feature.text}
+                    </p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </section>
 
-          {/* ---------------- NETWORK ---------------- */}
-          <section className={`pb-20 xl:pb-[6vw] ${CONTAINER}`}>
-            <div className="grid gap-10 lg:grid-cols-2">
+          {/* ================= NETWORK ================= */}
+
+          <section
+            className={`${CONTAINER} border-b border-white/[0.06] py-16 sm:py-20 lg:py-24`}
+          >
+            <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <Reveal>
-                <h2 className={H2}>Add Arc to your wallet</h2>
-                <p className="mt-3 max-w-md text-slate-400">One click adds the mainnet settings to any EVM wallet.</p>
-                <button onClick={addArcToWallet} className={`mt-6 ${BTN}`}>Add Arc Mainnet</button>
-                <p role="status" className="mt-3 min-h-5 text-sm text-slate-400">{walletMsg}</p>
-                <p className="mt-4 max-w-md text-sm text-slate-500">Need test funds? The <Link href="/faucet" className="text-[#7dc0ff] hover:underline">faucet</Link> dispenses testnet USDC only.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5dafff]">
+                  Mainnet
+                </p>
+
+                <h2 className={`${H2} mt-2`}>
+                  Add Arc to your wallet
+                </h2>
+
+                <p className="mt-4 max-w-md text-sm leading-7 text-white/40 sm:text-base">
+                  Add the Arc Mainnet network
+                  configuration directly to your
+                  EVM wallet.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={addArcToWallet}
+                  className={`mt-7 ${BUTTON}`}
+                >
+                  Add Arc Mainnet
+                </button>
+
+                <p
+                  role="status"
+                  className="mt-3 min-h-5 text-sm text-white/40"
+                >
+                  {walletMsg}
+                </p>
               </Reveal>
-              <Reveal delay={150}>
-                <div className={`overflow-x-auto rounded-3xl ${GLASS}`}>
+
+              <Reveal delay={120}>
+                <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
                   <table className="w-full text-left text-sm">
                     <tbody>
-                      {NETWORK_ROWS.map(([k, v]) => (
-                        <tr key={k} className="border-b border-white/5 last:border-0">
-                          <th scope="row" className="whitespace-nowrap px-6 py-4 font-normal text-slate-500">{k}</th>
-                          <td className="px-6 py-4 font-medium">{v}</td>
-                        </tr>
-                      ))}
+                      {NETWORK_ROWS.map(
+                        ([key, value]) => (
+                          <tr
+                            key={key}
+                            className="border-b border-white/[0.06] last:border-0"
+                          >
+                            <th
+                              scope="row"
+                              className="whitespace-nowrap px-5 py-4 font-normal text-white/30 sm:px-6"
+                            >
+                              {key}
+                            </th>
+
+                            <td className="px-5 py-4 font-medium text-white/75 sm:px-6">
+                              {value}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -339,40 +879,93 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ---------------- USE CASES (marquee) ---------------- */}
-          <section className="overflow-hidden pb-20 xl:pb-[6vw]">
-            <Reveal className={CONTAINER}><h2 className={H2}>What people build on Arc</h2></Reveal>
-            <Reveal delay={150}>
-              <div className="mt-8 flex w-max gap-3 marquee" style={{ animation: "marquee 40s linear infinite" }}>
-                {[...USE_CASES, ...USE_CASES, ...USE_CASES, ...USE_CASES].map((u, i) => (
-                  <span key={i} className="whitespace-nowrap rounded-full border border-[#2f6bff]/30 bg-gradient-to-r from-[#0a1a4a]/60 to-transparent px-6 py-3 text-sm text-slate-200">{u}</span>
-                ))}
-              </div>
-            </Reveal>
-          </section>
+          {/* ================= SIMPLE CTA ================= */}
 
-          {/* ---------------- CTA ---------------- */}
-          <section className={`pb-24 xl:pb-[7vw] ${CONTAINER}`}>
+          <section
+            className={`${CONTAINER} py-16 sm:py-20 lg:py-24`}
+          >
             <Reveal>
-              <div className="relative overflow-hidden rounded-[2rem] border border-[#2f8bff]/40 bg-gradient-to-r from-[#1d4ed8]/40 via-[#0a1a4a]/60 to-[#38bdf8]/20 px-8 py-14 text-center sm:py-20">
-                <h2 className={H2}>Ready to move on Arc?</h2>
-                <p className="mx-auto mt-3 max-w-md text-slate-300">Connect your wallet and make your first transfer.</p>
-                <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  <Link href="/send" className={BTN}>Send USDC</Link>
-                  <Link href="/swap" className="rounded-full border border-white/20 bg-white/5 px-7 py-3 font-medium transition hover:bg-white/10">Swap</Link>
+              <div className="relative overflow-hidden rounded-[1.75rem] border border-[#267cff]/25 bg-gradient-to-r from-[#07142c] via-[#061024] to-[#07142c] px-7 py-12 sm:px-12 sm:py-14">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#1478ff]/15 blur-3xl"
+                />
+
+                <div className="relative flex flex-col justify-between gap-8 sm:flex-row sm:items-center">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5dafff]">
+                      AlabaamaFi
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                      One place. Every move.
+                    </h2>
+
+                    <p className="mt-2 text-sm text-white/35">
+                      Explore Arc through a simple
+                      interface.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/send"
+                      className={BUTTON}
+                    >
+                      Send USDC
+                    </Link>
+
+                    <Link
+                      href="/activity"
+                      className="rounded-full border border-white/[0.12] bg-white/[0.04] px-7 py-3.5 font-semibold text-white/75 transition hover:bg-white/[0.07] hover:text-white"
+                    >
+                      Activity
+                    </Link>
+                  </div>
                 </div>
               </div>
             </Reveal>
           </section>
 
-          {/* ---------------- FOOTER ---------------- */}
-          <footer className="border-t border-white/5">
-            <div className={`flex flex-col gap-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between ${CONTAINER}`}>
-              <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
+          {/* ================= FOOTER ================= */}
+
+          <footer className="border-t border-white/[0.06]">
+            <div
+              className={`${CONTAINER} flex flex-col gap-4 py-7 text-sm text-white/30 sm:flex-row sm:items-center sm:justify-between`}
+            >
+              <p>
+                © {new Date().getFullYear()}{" "}
+                AlabaamaFi. An independent interface
+                for Arc.
+              </p>
+
               <nav className="flex gap-6">
-                <a href={ARC.docs} target="_blank" rel="noreferrer" className="hover:text-white">Docs</a>
-                <a href={ARC.explorer} target="_blank" rel="noreferrer" className="hover:text-white">Explorer</a>
-                <a href={ARC.x} target="_blank" rel="noreferrer" className="hover:text-white">Arc on X</a>
+                <a
+                  href={ARC.docs}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-white"
+                >
+                  Docs
+                </a>
+
+                <a
+                  href={ARC.explorer}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-white"
+                >
+                  Explorer
+                </a>
+
+                <a
+                  href={ARC.x}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-white"
+                >
+                  Arc on X
+                </a>
               </nav>
             </div>
           </footer>
