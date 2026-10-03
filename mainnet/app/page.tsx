@@ -34,13 +34,12 @@ const FEATURES = [
 
 // New icons: arrow-up-right, left-right arrows, bridge arch, history clock
 const ACTIONS = [
-  { href: "/send", title: "Send", text: "Move USDC directly to any wallet.", icon: "M7 17 17 7M8 7h9v9" },
+  { href: "/send", title: "Send", text: "Move USDC directly to any wallet.", icon: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" },
   { href: "/swap", title: "Swap", text: "Exchange supported assets on Arc.", icon: "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4" },
-  { href: "/bridge", title: "Bridge", text: "Move assets between networks.", icon: "M2 19h20M5 19v-5M19 19v-5M5 14c2-4.5 4.5-7 7-7s5 2.5 7 7M12 7v12M8.5 9v10M15.5 9v10" },
+  { href: "/bridge", title: "Bridge", text: "Move assets between networks.", icon: "M3 19a3 3 0 1 0 6 0 3 3 0 1 0-6 0M15 5a3 3 0 1 0 6 0 3 3 0 1 0-6 0M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" },
   { href: "/activity", title: "Activity", text: "Follow your wallet activity onchain.", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
-const USE_CASES = ["Payments", "Stablecoin FX", "eCommerce", "Lending", "Tokenized assets", "Agentic economy", "Prediction markets"];
 
 /* ---------- helpers ---------- */
 function Icon({ d, size = 22 }: { d: string; size?: number }) {
@@ -76,37 +75,33 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
   );
 }
 
-/* ---------- WHOLE PAGE: dark space, gradient, stars + drifting particles (no rings) ---------- */
+/* ---------- WHOLE PAGE: dark space, gradient, stars + drifting particles (scroll with the page, no rings) ---------- */
 function SpaceBackground() {
   const { stars, dust } = useMemo(() => {
     let seed = 23;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const r2 = (n: number) => Math.round(n * 100) / 100;
     return {
-      stars: Array.from({ length: 110 }, (_, id) => ({ id, x: rnd() * 1200, y: rnd() * 800, r: 0.5 + rnd() * 1.4, d: rnd() * 7, t: 3 + rnd() * 5 })),
-      dust: Array.from({ length: 22 }, (_, id) => ({ id, x: rnd() * 1200, y: 300 + rnd() * 500, r: 0.8 + rnd() * 1.6, d: rnd() * 14, t: 14 + rnd() * 14 })),
+      stars: Array.from({ length: 230 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1 + rnd() * 1.8), d: r2(rnd() * 7), t: r2(3 + rnd() * 5) })),
+      dust: Array.from({ length: 44 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1.5 + rnd() * 2), d: r2(rnd() * 14), t: r2(14 + rnd() * 14) })),
     };
   }, []);
 
   return (
-    <>
-      {/* continuous gradient that scrolls with the page */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_22%,#031126_50%,#020918_75%,#010307_100%)]" />
-        <div className="absolute -right-[22vw] top-[2%] h-[60vw] w-[60vw] rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.2),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
-        <div className="absolute -left-[25vw] top-[40%] h-[55vw] w-[55vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
-        <div className="absolute -right-[18vw] top-[72%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.1),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 26s ease-in-out infinite reverse" }} />
-      </div>
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_22%,#031126_50%,#020918_75%,#010307_100%)]" />
+      <div className="absolute -right-[22vw] top-[2%] h-[60vw] w-[60vw] rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.2),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
+      <div className="absolute -left-[25vw] top-[30%] h-[55vw] w-[55vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
+      <div className="absolute -right-[18vw] top-[58%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.1),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 26s ease-in-out infinite reverse" }} />
+      <div className="absolute -left-[20vw] top-[84%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.1),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 28s ease-in-out infinite" }} />
 
-      {/* particles stay in view across the whole page */}
-      <svg aria-hidden className="pointer-events-none fixed inset-0 z-0 h-full w-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-        {stars.map((s) => (
-          <circle key={s.id} cx={s.x} cy={s.y} r={s.r} fill="#a9dfff" style={{ animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
-        ))}
-        {dust.map((p) => (
-          <circle key={p.id} cx={p.x} cy={p.y} r={p.r} fill="#6cc4ff" style={{ animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
-        ))}
-      </svg>
-    </>
+      {stars.map((st) => (
+        <span key={st.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${st.x}%`, top: `${st.y}%`, width: st.size, height: st.size, animation: `twinkle ${st.t}s ease-in-out ${st.d}s infinite` }} />
+      ))}
+      {dust.map((p) => (
+        <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
+      ))}
+    </div>
   );
 }
 
@@ -183,6 +178,105 @@ function ActionCard({ href, title, text, icon }: { href: string; title: string; 
   );
 }
 
+/* ---------- preview mock-ups (sample data, not live) ---------- */
+function Field({ label, side, value, tag }: { label: string; side?: string; value: string; tag?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
+      <div className="flex justify-between text-xs text-slate-500"><span>{label}</span><span>{side}</span></div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <span className="truncate text-xl font-semibold">{value}</span>
+        {tag && <span className="shrink-0 rounded-full bg-white/[0.06] px-4 py-2 text-sm font-medium">{tag}</span>}
+      </div>
+    </div>
+  );
+}
+
+function PreviewCard({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  return (
+    <div className="relative mx-auto w-full max-w-md">
+      <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
+      <div aria-hidden className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16]/75 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl" style={{ animation: "floatCard 7s ease-in-out infinite" }}>
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
+          <div>
+            <p className="text-xs text-slate-500">{subtitle}</p>
+            <p className="mt-1 font-medium">{title}</p>
+          </div>
+          <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs text-slate-400">Preview</span>
+        </div>
+        <div className="mt-5 space-y-2">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const ActionBtn = ({ children }: { children: ReactNode }) => (
+  <div className="mt-2 rounded-2xl bg-gradient-to-r from-[#0d75dc] to-[#3154ee] py-3 text-center text-sm font-semibold">{children}</div>
+);
+const Arrow = () => (
+  <div className="relative z-10 mx-auto -my-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#071025] text-[#55c5ff]">↓</div>
+);
+
+function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
+  if (kind === "send")
+    return (
+      <PreviewCard title="Send USDC" subtitle="Send">
+        <Field label="Recipient" value="0x7a3c…f91d" />
+        <Field label="Amount" side="Balance" value="25" tag="USDC" />
+        <ActionBtn>Send USDC</ActionBtn>
+        <p className="px-1 pt-2 text-xs text-slate-500">Network fee paid in USDC</p>
+      </PreviewCard>
+    );
+  if (kind === "swap")
+    return (
+      <PreviewCard title="Exchange assets" subtitle="Swap">
+        <Field label="You pay" side="Balance" value="100" tag="USDC" />
+        <Arrow />
+        <Field label="You receive" side="Estimated" value="99.8" tag="EURC" />
+        <ActionBtn>Preview swap</ActionBtn>
+      </PreviewCard>
+    );
+  if (kind === "bridge")
+    return (
+      <PreviewCard title="Move to Arc" subtitle="Bridge">
+        <Field label="From" value="Ethereum" tag="Network" />
+        <Arrow />
+        <Field label="To" value="Arc Mainnet" tag="Network" />
+        <Field label="Amount" value="100" tag="USDC" />
+        <ActionBtn>Bridge to Arc</ActionBtn>
+      </PreviewCard>
+    );
+  return (
+    <PreviewCard title="Recent moves" subtitle="Activity">
+      {[
+        ["Sent", "25 USDC", "2 min ago"],
+        ["Swapped", "100 USDC → EURC", "1 hr ago"],
+        ["Bridged", "100 USDC to Arc", "Yesterday"],
+      ].map(([a, b, c]) => (
+        <div key={a} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.035] px-4 py-3.5">
+          <div>
+            <p className="text-sm font-medium">{a}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{b}</p>
+          </div>
+          <span className="text-xs text-slate-500">{c}</span>
+        </div>
+      ))}
+    </PreviewCard>
+  );
+}
+
+const SHOWCASE: { kind: "send" | "swap" | "bridge" | "activity"; href: string; label: string; title: string; text: string }[] = [
+  { kind: "send", href: "/send", label: "Send", title: "Send USDC in seconds.", text: "Paste an address, enter an amount, and send. Network fees are paid in USDC, so there is no second token to hold." },
+  { kind: "swap", href: "/swap", label: "Swap", title: "Swap with clear pricing.", text: "Exchange supported assets on Arc and review every amount before you confirm." },
+  { kind: "bridge", href: "/bridge", label: "Bridge", title: "Bring assets to Arc.", text: "Move assets between networks and Arc without leaving AlabaamaFi." },
+  { kind: "activity", href: "/activity", label: "Activity", title: "Every move, in one list.", text: "Follow your sends, swaps, and bridges from your connected wallet." },
+];
+
+const STEPS = [
+  { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
+  { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
+  { n: "03", title: "Make your move", text: "Send, swap, bridge, and track everything in one place." },
+];
+
 /* ---------- page ---------- */
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -221,7 +315,6 @@ export default function Home() {
         @keyframes ripple{0%{transform:scale(.25);opacity:.55}100%{transform:scale(1.9);opacity:0}}
         @keyframes glowPulse{0%,100%{opacity:.65}50%{opacity:1}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-        @keyframes marquee{to{transform:translateX(-50%)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-visible{opacity:1;transform:none}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}}
@@ -273,50 +366,38 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ---------------- SWAP PREVIEW ---------------- */}
-          <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
-            <Reveal>
-              <div className="grid items-center gap-14 lg:grid-cols-[1fr_0.9fr]">
-                <div>
-                  <p className={EYEBROW}>Onchain, simplified</p>
-                  <h2 className="mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-[-0.035em] sm:text-5xl lg:text-6xl">
-                    Your assets.<br />Your moves.<br />
-                    <span className="text-slate-500">One interface.</span>
-                  </h2>
-                  <p className="mt-6 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">AlabaamaFi brings the most common Arc actions into one clean experience without unnecessary complexity.</p>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link href="/swap" className={BUTTON}>Explore Swap</Link>
-                    <Link href="/activity" className={SECONDARY_BUTTON}>View Activity</Link>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
-                  <div aria-hidden className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16]/75 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl" style={{ animation: "floatCard 7s ease-in-out infinite" }}>
-                    <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
-                      <div>
-                        <p className="text-xs text-slate-500">Swap</p>
-                        <p className="mt-1 font-medium">Exchange assets</p>
-                      </div>
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.05] text-slate-400">↕</span>
-                    </div>
-                    <div className="mt-5 space-y-2">
-                      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
-                        <div className="flex justify-between text-xs text-slate-500"><span>You pay</span><span>Balance</span></div>
-                        <div className="mt-3 flex items-center justify-between"><span className="text-2xl font-semibold">100</span><span className="rounded-full bg-white/[0.06] px-4 py-2 text-sm font-medium">USDC</span></div>
-                      </div>
-                      <div className="relative z-10 mx-auto -my-5 flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-[#071025] text-[#55c5ff] shadow-lg">↓</div>
-                      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
-                        <div className="flex justify-between text-xs text-slate-500"><span>You receive</span><span>Estimated</span></div>
-                        <div className="mt-3 flex items-center justify-between"><span className="text-2xl font-semibold">99.8</span><span className="rounded-full bg-[#0b4c99]/30 px-4 py-2 text-sm font-medium text-[#75d4ff]">EURC</span></div>
-                      </div>
-                    </div>
-                    <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#0d75dc] to-[#3154ee] py-3 text-center text-sm font-semibold">Preview swap</div>
-                    <div className="mt-4 flex justify-between px-1 text-xs text-slate-500"><span>Network fee</span><span className="text-slate-300">Paid in USDC</span></div>
-                  </div>
-                </div>
+          {/* ---------------- SHOWCASE: one block per AlabaamaFi page ---------------- */}
+          <section className={`pb-10 lg:pb-16 ${CONTAINER}`}>
+            {SHOWCASE.map((item, i) => (
+              <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
+                <Reveal className={i % 2 ? "lg:order-2" : ""}>
+                  <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
+                  <h2 className={H2}>{item.title}</h2>
+                  <p className="mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg">{item.text}</p>
+                  <Link href={item.href} className={`${SECONDARY_BUTTON} mt-8`}>Open {item.label} →</Link>
+                </Reveal>
+                <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
+                  <Preview kind={item.kind} />
+                </Reveal>
               </div>
+            ))}
+          </section>
+
+          {/* ---------------- HOW IT WORKS ---------------- */}
+          <section className={`pb-28 pt-10 lg:pb-40 ${CONTAINER}`}>
+            <Reveal>
+              <p className={EYEBROW}>Getting started</p>
+              <h2 className={H2}>Three steps to your first move.</h2>
             </Reveal>
+            <div className="mt-12 grid gap-10 md:grid-cols-3">
+              {STEPS.map((st, i) => (
+                <Reveal key={st.n} delay={i * 100}>
+                  <span className="text-xs tracking-[0.2em] text-[#2588ff]">{st.n}</span>
+                  <h3 className="mt-3 text-xl font-semibold">{st.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{st.text}</p>
+                </Reveal>
+              ))}
+            </div>
           </section>
 
           {/* ---------------- WHY ARC ---------------- */}
@@ -340,7 +421,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ---------------- NETWORK ---------------- */}
+          {/* ---------------- GET ON ARC ---------------- */}
           <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
             <Reveal>
               <div className="grid gap-14 lg:grid-cols-2">
@@ -372,21 +453,6 @@ export default function Home() {
                 </div>
               </div>
             </Reveal>
-          </section>
-
-          {/* ---------------- USE CASES ---------------- */}
-          <section className="overflow-hidden pb-28 lg:pb-40">
-            <Reveal className={CONTAINER}>
-              <p className={EYEBROW}>Built for movement</p>
-              <h2 className={H2}>What Arc enables.</h2>
-            </Reveal>
-            <div className="mt-10 overflow-hidden">
-              <div className="flex w-max gap-3" style={{ animation: "marquee 34s linear infinite" }}>
-                {[...USE_CASES, ...USE_CASES, ...USE_CASES, ...USE_CASES].map((item, i) => (
-                  <span key={i} className="rounded-full border border-white/[0.07] bg-white/[0.025] px-6 py-3 text-sm text-slate-300">{item}</span>
-                ))}
-              </div>
-            </div>
           </section>
 
           {/* ---------------- CTA ---------------- */}
