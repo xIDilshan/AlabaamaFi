@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import Header from "@/components/Header";
+
+// Brand font for the whole home page. Swap this one line if your Header uses a different font.
+const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
 const ARC = {
@@ -277,6 +281,12 @@ const SHOWCASE: { kind: "send" | "swap" | "bridge" | "activity"; href: string; l
   { kind: "activity", href: "/activity", label: "Activity", title: "Every move, in one list.", text: "Follow your sends, swaps, and bridges from your connected wallet." },
 ];
 
+const PERKS = [
+  { title: "Fees paid in USDC", text: "No second token to hold for gas.", icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+  { title: "Settles in under a second", text: "Fast, deterministic finality.", icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z" },
+  { title: "Bring your own wallet", text: "Works with any EVM wallet.", icon: "M20 7H5a2 2 0 0 1 0-4h13v4ZM3 5v14a2 2 0 0 0 2 2h15V7M16 14h.01" },
+];
+
 const STEPS = [
   { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
   { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
@@ -309,7 +319,7 @@ export default function Home() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30">
+    <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
       <style>{`
         @keyframes backgroundFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-4vw,2vw,0) scale(1.08)}}
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
@@ -336,11 +346,11 @@ export default function Home() {
           <section className="relative min-h-[560px] overflow-hidden sm:min-h-[620px] lg:min-h-[720px]">
             <HeroOrbits />
             <div className={`relative flex min-h-[560px] items-center sm:min-h-[620px] lg:min-h-[720px] ${CONTAINER}`}>
-              <div className="relative z-10 w-full max-w-[950px] py-20 sm:py-24 lg:py-28">
+              <div className="relative z-10 w-full max-w-[950px] py-20 sm:py-24 lg:py-28 xl:max-w-none">
                 <Reveal>
-                  <h1 className="text-[2.75rem] font-semibold leading-[1] sm:text-[3.5rem] tracking-[-0.045em] md:text-7xl lg:text-[5.8rem]">
-                    One place.
-                    <br />
+                  <h1 className="text-[2.75rem] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[3.5rem] md:text-7xl lg:text-[5.8rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.6vw,10rem)]">
+                    One place.{" "}
+                    <br className="xl:hidden" />
                     <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Every move.</span>
                   </h1>
                 </Reveal>
@@ -360,11 +370,26 @@ export default function Home() {
 
           {/* ---------------- ACTIONS ---------------- */}
           <section className={`pb-28 pt-12 lg:pb-36 ${CONTAINER}`}>
-            <Reveal>
-              <p className={EYEBROW}>Everything in one place</p>
-              <h2 className={H2}>Move through Arc.</h2>
-              <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
-            </Reveal>
+            <div className="grid items-end gap-10 lg:grid-cols-[1fr_minmax(0,28rem)]">
+              <Reveal>
+                <p className={EYEBROW}>Everything in one place</p>
+                <h2 className={H2}>Move through Arc.</h2>
+                <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
+              </Reveal>
+              <Reveal delay={120}>
+                <ul className="rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-2">
+                  {PERKS.map((p) => (
+                    <li key={p.title} className="flex items-center gap-4 rounded-2xl px-4 py-3.5">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1978f5]/15 text-[#62c8ff]"><Icon d={p.icon} size={20} /></span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold">{p.title}</span>
+                        <span className="block text-xs leading-5 text-slate-500">{p.text}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ACTIONS.map((a, i) => (
                 <Reveal key={a.title} delay={i * 90} className="h-full [&>a]:h-full"><ActionCard {...a} /></Reveal>
@@ -389,19 +414,22 @@ export default function Home() {
           </section>
 
           {/* ---------------- HOW IT WORKS ---------------- */}
-          <section className={`pb-28 pt-10 lg:pb-40 ${CONTAINER}`}>
-            <Reveal>
-              <p className={EYEBROW}>Getting started</p>
-              <h2 className={H2}>Three steps to your first move.</h2>
-            </Reveal>
-            <div className="mt-12 grid gap-10 md:grid-cols-3">
-              {STEPS.map((st, i) => (
-                <Reveal key={st.n} delay={i * 100}>
-                  <span className="text-xs tracking-[0.2em] text-[#2588ff]">{st.n}</span>
-                  <h3 className="mt-3 text-xl font-semibold">{st.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{st.text}</p>
-                </Reveal>
-              ))}
+          <section className="relative mb-28 lg:mb-40">
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[#010205]/85 to-transparent" />
+            <div className={`relative py-20 text-center lg:py-28 ${CONTAINER}`}>
+              <Reveal>
+                <p className={EYEBROW}>Getting started</p>
+                <h2 className={`${H2} mx-auto max-w-3xl`}>Three steps to your first move.</h2>
+              </Reveal>
+              <div className="mx-auto mt-14 grid max-w-5xl gap-10 md:grid-cols-3">
+                {STEPS.map((st, i) => (
+                  <Reveal key={st.n} delay={i * 100}>
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#2588ff]/30 bg-[#0d4fc5]/10 text-xs tracking-[0.1em] text-[#62c8ff]">{st.n}</span>
+                    <h3 className="mt-5 text-xl font-semibold">{st.title}</h3>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">{st.text}</p>
+                  </Reveal>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -426,14 +454,14 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ---------------- GET ON ARC ---------------- */}
+          {/* ---------------- WALLET SETUP ---------------- */}
           <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
             <Reveal>
               <div className="grid gap-14 lg:grid-cols-2">
                 <div>
-                  <p className={EYEBROW}>Connect</p>
-                  <h2 className={H2}>Get on Arc.</h2>
-                  <p className="mt-5 max-w-md leading-7 text-slate-400">Add Arc Mainnet directly to your EVM wallet and start exploring.</p>
+                  <p className={EYEBROW}>Wallet setup</p>
+                  <h2 className={H2}>Add Arc to your wallet.</h2>
+                  <p className="mt-5 max-w-md leading-7 text-slate-400">Add Arc Mainnet to any EVM wallet in one click, or browse the network in the explorer.</p>
                   <div className="mt-8 flex flex-wrap gap-3">
                     <button onClick={addArcToWallet} className={BUTTON}>Add Arc Mainnet</button>
                     <a href={ARC.explorer} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>Explorer</a>
@@ -483,7 +511,7 @@ export default function Home() {
           {/* ---------------- FOOTER ---------------- */}
           <footer>
             <div className={`flex flex-col gap-5 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between ${CONTAINER}`}>
-              <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
+              <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
               <nav className="flex flex-wrap gap-6">
                 <a href={ARC.docs} target="_blank" rel="noreferrer" className="transition hover:text-white">Docs</a>
                 <a href={ARC.explorer} target="_blank" rel="noreferrer" className="transition hover:text-white">Explorer</a>
