@@ -14,7 +14,8 @@ const ARC = {
   x: "https://x.com/arc",
 };
 
-const CONTAINER = "w-full px-5 sm:px-8 lg:px-12 xl:px-[5vw]";
+// Same edge padding at every zoom level, so content lines up with the header and never drifts right when zoomed out.
+const CONTAINER = "w-full px-5 sm:px-8 lg:px-10";
 const EYEBROW = "text-sm font-medium uppercase tracking-[0.22em] text-[#4abaff]";
 const H2 = "mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl";
 
@@ -36,7 +37,7 @@ const FEATURES = [
 const ACTIONS = [
   { href: "/send", title: "Send", text: "Move USDC directly to any wallet.", icon: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" },
   { href: "/swap", title: "Swap", text: "Exchange supported assets on Arc.", icon: "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4" },
-  { href: "/bridge", title: "Bridge", text: "Move assets between networks.", icon: "M3 19a3 3 0 1 0 6 0 3 3 0 1 0-6 0M15 5a3 3 0 1 0 6 0 3 3 0 1 0-6 0M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" },
+  { href: "/bridge", title: "Bridge", text: "Move assets between networks.", icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" },
   { href: "/activity", title: "Activity", text: "Follow your wallet activity onchain.", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
@@ -164,16 +165,19 @@ function HeroOrbits() {
 
 function ActionCard({ href, title, text, icon }: { href: string; title: string; text: string; icon: string }) {
   return (
-    <Link href={href} className="group relative block overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7 transition duration-500 hover:-translate-y-1 hover:border-[#2588ff]/40 hover:bg-[#0a1730]/60 hover:shadow-[0_25px_80px_rgba(16,93,255,0.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#3195ff]/20 bg-[#0d4fc5]/10 text-[#62c8ff] transition duration-500 group-hover:scale-110 group-hover:bg-[#1265e5]/20">
-        <Icon d={icon} />
+    <Link
+      href={href}
+      className="group relative flex h-full min-h-[12rem] flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-6 transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-7"
+    >
+      <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 text-[#2588ff]/[0.07] transition duration-500 group-hover:scale-110 group-hover:text-[#2588ff]/[0.14]">
+        <Icon d={icon} size={160} />
       </div>
-      <h3 className="mt-7 text-2xl font-semibold tracking-tight">{title}</h3>
-      <p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">{text}</p>
-      <div className="mt-8 flex items-center gap-2 text-sm font-medium text-[#65caff]">
-        Open <span className="transition duration-300 group-hover:translate-x-1">→</span>
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white shadow-[0_10px_30px_rgba(30,120,255,0.35)] transition duration-500 group-hover:-rotate-3 group-hover:scale-105">
+        <Icon d={icon} size={24} />
       </div>
-      <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-[#1675ff]/10 blur-3xl transition duration-500 group-hover:bg-[#1675ff]/20" />
+      <h3 className="relative mt-auto pt-10 text-2xl font-semibold tracking-tight">{title}</h3>
+      <p className="relative mt-2 text-sm leading-6 text-slate-400">{text}</p>
     </Link>
   );
 }
@@ -213,7 +217,9 @@ const ActionBtn = ({ children }: { children: ReactNode }) => (
   <div className="mt-2 rounded-2xl bg-gradient-to-r from-[#0d75dc] to-[#3154ee] py-3 text-center text-sm font-semibold">{children}</div>
 );
 const Arrow = () => (
-  <div className="relative z-10 mx-auto -my-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#071025] text-[#55c5ff]">↓</div>
+  <div className="relative z-10 mx-auto -my-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#071025] text-[#55c5ff]">
+    <Icon d="M12 5v14m0 0-6-6m6 6 6-6" size={16} />
+  </div>
 );
 
 function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
@@ -249,7 +255,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
     <PreviewCard title="Recent moves" subtitle="Activity">
       {[
         ["Sent", "25 USDC", "2 min ago"],
-        ["Swapped", "100 USDC → EURC", "1 hr ago"],
+        ["Swapped", "100 USDC to EURC", "1 hr ago"],
         ["Bridged", "100 USDC to Arc", "Yesterday"],
       ].map(([a, b, c]) => (
         <div key={a} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.035] px-4 py-3.5">
@@ -327,12 +333,12 @@ export default function Home() {
 
         <div className={`transition-[filter] duration-500 ${mobileMenuOpen ? "blur-md" : "blur-0"}`}>
           {/* ---------------- HERO (rings live here only) ---------------- */}
-          <section className="relative min-h-[620px] overflow-hidden lg:min-h-[720px]">
+          <section className="relative min-h-[560px] overflow-hidden sm:min-h-[620px] lg:min-h-[720px]">
             <HeroOrbits />
-            <div className={`relative flex min-h-[620px] items-center lg:min-h-[720px] ${CONTAINER}`}>
-              <div className="relative z-10 w-full max-w-[950px] py-24 lg:py-28">
+            <div className={`relative flex min-h-[560px] items-center sm:min-h-[620px] lg:min-h-[720px] ${CONTAINER}`}>
+              <div className="relative z-10 w-full max-w-[950px] py-20 sm:py-24 lg:py-28">
                 <Reveal>
-                  <h1 className="text-[3.5rem] font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[5.8rem] xl:text-[clamp(5rem,6.4vw,8.5rem)]">
+                  <h1 className="text-[2.75rem] font-semibold leading-[1] sm:text-[3.5rem] tracking-[-0.045em] md:text-7xl lg:text-[5.8rem]">
                     One place.
                     <br />
                     <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Every move.</span>
@@ -361,7 +367,7 @@ export default function Home() {
             </Reveal>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ACTIONS.map((a, i) => (
-                <Reveal key={a.title} delay={i * 90}><ActionCard {...a} /></Reveal>
+                <Reveal key={a.title} delay={i * 90} className="h-full [&>a]:h-full"><ActionCard {...a} /></Reveal>
               ))}
             </div>
           </section>
@@ -374,7 +380,6 @@ export default function Home() {
                   <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
                   <h2 className={H2}>{item.title}</h2>
                   <p className="mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg">{item.text}</p>
-                  <Link href={item.href} className={`${SECONDARY_BUTTON} mt-8`}>Open {item.label} →</Link>
                 </Reveal>
                 <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
                   <Preview kind={item.kind} />
@@ -407,7 +412,7 @@ export default function Home() {
                 <p className={EYEBROW}>The network</p>
                 <h2 className={H2}>Why Arc?</h2>
                 <p className="mt-5 max-w-md leading-7 text-slate-400">Arc is a USDC-native, EVM-compatible Layer 1 designed around modern onchain finance and payments.</p>
-                <a href={ARC.docs} target="_blank" rel="noreferrer" className="mt-7 inline-flex items-center gap-2 text-sm font-medium text-[#65caff] transition hover:text-white">Read Arc documentation <span>↗</span></a>
+                <a href={ARC.docs} target="_blank" rel="noreferrer" className={`${SECONDARY_BUTTON} mt-8`}>Read Arc documentation</a>
               </Reveal>
               <div className="grid gap-x-10 gap-y-12 sm:grid-cols-2">
                 {FEATURES.map((f, i) => (
@@ -429,7 +434,10 @@ export default function Home() {
                   <p className={EYEBROW}>Connect</p>
                   <h2 className={H2}>Get on Arc.</h2>
                   <p className="mt-5 max-w-md leading-7 text-slate-400">Add Arc Mainnet directly to your EVM wallet and start exploring.</p>
-                  <button onClick={addArcToWallet} className={`${BUTTON} mt-8`}>Add Arc Mainnet</button>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <button onClick={addArcToWallet} className={BUTTON}>Add Arc Mainnet</button>
+                    <a href={ARC.explorer} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>Explorer</a>
+                  </div>
                   <p role="status" className="mt-4 min-h-5 text-sm text-slate-500">{walletMsg}</p>
                 </div>
                 <div>
@@ -440,15 +448,11 @@ export default function Home() {
                       ["Gas token", "USDC"],
                       ["Finality", "< 1 second"],
                     ].map(([k, v], i) => (
-                      <div key={k} className={`p-5 sm:p-7 ${i % 2 === 0 ? "border-r border-white/[0.07]" : ""} ${i < 2 ? "border-b border-white/[0.07]" : ""}`}>
+                      <div key={k} className={`min-w-0 break-words p-4 sm:p-7 ${i % 2 === 0 ? "border-r border-white/[0.07]" : ""} ${i < 2 ? "border-b border-white/[0.07]" : ""}`}>
                         <p className="text-xs uppercase tracking-[0.16em] text-slate-600">{k}</p>
                         <p className="mt-2 font-medium tabular-nums">{v}</p>
                       </div>
                     ))}
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-5 text-sm">
-                    <a href={ARC.explorer} target="_blank" rel="noreferrer" className="text-slate-500 transition hover:text-[#65caff]">Explorer ↗</a>
-                    <a href={ARC.docs} target="_blank" rel="noreferrer" className="text-slate-500 transition hover:text-[#65caff]">RPC Docs ↗</a>
                   </div>
                 </div>
               </div>
@@ -462,7 +466,7 @@ export default function Home() {
                 <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1675ff]/10 blur-3xl" />
                 <div className="relative">
                   <p className={EYEBROW}>AlabaamaFi</p>
-                  <h2 className="mx-auto mt-5 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl lg:text-7xl">
+                  <h2 className="mx-auto mt-5 max-w-4xl text-[2.25rem] font-semibold leading-tight tracking-[-0.04em] sm:text-5xl lg:text-7xl">
                     Make your next move
                     <span className="bg-gradient-to-r from-[#18bfff] to-[#4262ff] bg-clip-text text-transparent"> on Arc.</span>
                   </h2>
