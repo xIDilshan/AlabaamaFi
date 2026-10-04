@@ -281,12 +281,6 @@ const SHOWCASE: { kind: "send" | "swap" | "bridge" | "activity"; href: string; l
   { kind: "activity", href: "/activity", label: "Activity", title: "Every move, in one list.", text: "Follow your sends, swaps, and bridges from your connected wallet." },
 ];
 
-const PERKS = [
-  { title: "USDC gas", text: "No second token to hold for gas.", icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
-  { title: "Sub-second finality", text: "Fast, deterministic finality.", icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z" },
-  { title: "Any EVM wallet", text: "Works with any EVM wallet.", icon: "M20 7H5a2 2 0 0 1 0-4h13v4ZM3 5v14a2 2 0 0 0 2 2h15V7M16 14h.01" },
-];
-
 const STEPS = [
   { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
   { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
@@ -330,6 +324,7 @@ export default function Home() {
         @keyframes dashMove{to{stroke-dashoffset:-1000}}
         @keyframes ripple{0%{transform:scale(.25);opacity:.55}100%{transform:scale(1.9);opacity:0}}
         @keyframes glowPulse{0%,100%{opacity:.65}50%{opacity:1}}
+        @keyframes lineSweep{0%{transform:translateX(-100%);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(400%);opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-visible{opacity:1;transform:none}
@@ -370,21 +365,23 @@ export default function Home() {
 
           {/* ---------------- ACTIONS ---------------- */}
           <section className={`pb-28 pt-12 lg:pb-36 ${CONTAINER}`}>
-            <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
-              <Reveal>
+            <div className="flex items-end gap-10">
+              <Reveal className="shrink-0">
                 <p className={EYEBROW}>Everything in one place</p>
                 <h2 className={H2}>Move through Arc.</h2>
                 <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
               </Reveal>
-              <Reveal delay={120}>
-                <ul className="flex flex-wrap gap-2 lg:justify-end">
-                  {PERKS.map((p) => (
-                    <li key={p.title} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2 pl-3 pr-4 text-xs font-medium text-slate-300">
-                      <span className="text-[#62c8ff]"><Icon d={p.icon} size={14} /></span>
-                      {p.title}
-                    </li>
-                  ))}
-                </ul>
+
+              {/* glowing line, desktop only */}
+              <Reveal delay={120} className="hidden flex-1 lg:block">
+                <div aria-hidden className="relative mb-2 h-6 overflow-hidden">
+                  <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-[#2588ff]/70 via-[#2588ff]/25 to-transparent" />
+                  <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 bg-gradient-to-r from-[#2588ff]/40 via-[#2588ff]/10 to-transparent blur-[3px]" />
+                  <span
+                    className="absolute left-0 top-1/2 h-px w-1/4 bg-gradient-to-r from-transparent via-[#b8f0ff] to-transparent shadow-[0_0_14px_3px_rgba(90,200,255,0.65)]"
+                    style={{ animation: "lineSweep 4.5s ease-in-out infinite" }}
+                  />
+                </div>
               </Reveal>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
