@@ -108,6 +108,45 @@ const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: 
   </button>
 );
 
+/* ---------- logos ----------
+   To use the official artwork: put the files in mainnet/public/ and set the paths below,
+   e.g. ARC_LOGO_SRC = "/arc-logo.svg". Leave them empty to use the built-in drawings. */
+const ARC_LOGO_SRC = "" as string;
+const USDC_LOGO_SRC = "" as string;
+
+function UsdcLogo({ size = 24 }: { size?: number }) {
+  if (USDC_LOGO_SRC)
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={USDC_LOGO_SRC} alt="USDC" width={size} height={size} className="shrink-0 rounded-full" />;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" role="img" aria-label="USDC" className="shrink-0">
+      <circle cx="12" cy="12" r="12" fill="#2775CA" />
+      <path d="M5.64 5.64A9 9 0 0 0 5.64 18.36M18.36 5.64A9 9 0 0 1 18.36 18.36" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M14.4 9.4c0-1-1-1.7-2.4-1.7s-2.4.7-2.4 1.8c0 2.4 4.9 1.1 4.9 3.6 0 1.1-1.1 1.9-2.5 1.9s-2.5-.8-2.5-1.9M12 6.3v1.4M12 16.3v1.4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ArcLogo({ size = 24 }: { size?: number }) {
+  if (ARC_LOGO_SRC)
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={ARC_LOGO_SRC} alt="Arc" width={size} height={size} className="shrink-0 rounded-full" />;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" role="img" aria-label="Arc" className="shrink-0">
+      <defs>
+        <linearGradient id="arcLogoBg" x1="3" y1="3" x2="21" y2="21">
+          <stop stopColor="#12b9ff" />
+          <stop offset="1" stopColor="#273ee8" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="12" fill="url(#arcLogoBg)" />
+      <path d="M5.5 16.5a7 7 0 0 1 13 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <path d="M8.6 17a3.7 3.7 0 0 1 6.8 0" stroke="#fff" strokeOpacity=".6" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="8.2" r="1.3" fill="#fff" />
+    </svg>
+  );
+}
+
 const Spinner = () => <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />;
 
 /* ---------- page ---------- */
@@ -350,6 +389,10 @@ export default function SendPage() {
           <section className={`pb-24 pt-10 sm:pt-14 lg:pb-32 lg:pt-16 ${CONTAINER}`}>
             {/* title */}
             <div className="fade-up mx-auto max-w-2xl text-center">
+              <div className="mb-5 flex justify-center -space-x-3" aria-hidden>
+                <span className="rounded-full ring-4 ring-[#020a1c]"><ArcLogo size={48} /></span>
+                <span className="rounded-full ring-4 ring-[#020a1c]"><UsdcLogo size={48} /></span>
+              </div>
               <p className={EYEBROW}>Send</p>
               <h1 className="mt-4 text-[2.5rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
                 Send <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">USDC.</span>
@@ -366,8 +409,9 @@ export default function SendPage() {
                   <div>
                     <p className="text-xs text-slate-500">Network</p>
                     <p className="mt-1 flex items-center gap-2 text-sm font-medium">
-                      <span className={`h-2 w-2 rounded-full ${chainOk ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-slate-600"}`} />
+                      <ArcLogo size={20} />
                       Arc Mainnet
+                      <span className={`h-2 w-2 rounded-full ${chainOk ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-slate-600"}`} />
                     </p>
                   </div>
                   <div className="text-right">
@@ -382,7 +426,9 @@ export default function SendPage() {
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
                       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
                     </div>
-                    <h2 className="mt-5 text-2xl font-semibold tracking-tight">Sent {sentSummary.amount} USDC</h2>
+                    <h2 className="mt-5 flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
+                      Sent {sentSummary.amount} <UsdcLogo size={26} /> USDC
+                    </h2>
                     <p className="mt-2 text-sm text-slate-400">To {shorten(sentSummary.to, 8, 6)}</p>
                     <p className="mt-1 text-xs text-slate-600">Final on Arc · {shorten(txHash, 10, 8)}</p>
                     <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -430,13 +476,17 @@ export default function SendPage() {
                             aria-label="Amount in USDC"
                             className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
                           />
-                          <span className="shrink-0 rounded-full bg-white/[0.07] px-4 py-2 text-sm font-semibold">USDC</span>
+                          <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
                         </div>
                       </Field>
                     </div>
 
                     {/* summary */}
                     <dl className="mt-5 space-y-2 px-1 text-sm">
+                      <div className="flex items-center justify-between">
+                        <dt className="text-slate-500">Asset</dt>
+                        <dd className="flex items-center gap-2 text-slate-300"><UsdcLogo size={16} />USDC on Arc</dd>
+                      </div>
                       <div className="flex justify-between">
                         <dt className="text-slate-500">Network fee</dt>
                         <dd className="text-slate-300">{fee !== null ? `≈ ${formatUnits6(fee, 3)} USDC` : "Paid in USDC"}</dd>
