@@ -282,9 +282,9 @@ const SHOWCASE: { kind: "send" | "swap" | "bridge" | "activity"; href: string; l
 ];
 
 const PERKS = [
-  { title: "Fees paid in USDC", text: "No second token to hold for gas.", icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
-  { title: "Settles in under a second", text: "Fast, deterministic finality.", icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z" },
-  { title: "Bring your own wallet", text: "Works with any EVM wallet.", icon: "M20 7H5a2 2 0 0 1 0-4h13v4ZM3 5v14a2 2 0 0 0 2 2h15V7M16 14h.01" },
+  { title: "USDC gas", text: "No second token to hold for gas.", icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+  { title: "Sub-second finality", text: "Fast, deterministic finality.", icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z" },
+  { title: "Any EVM wallet", text: "Works with any EVM wallet.", icon: "M20 7H5a2 2 0 0 1 0-4h13v4ZM3 5v14a2 2 0 0 0 2 2h15V7M16 14h.01" },
 ];
 
 const STEPS = [
@@ -343,10 +343,10 @@ export default function Home() {
 
         <div className={`transition-[filter] duration-500 ${mobileMenuOpen ? "blur-md" : "blur-0"}`}>
           {/* ---------------- HERO (rings live here only) ---------------- */}
-          <section className="relative min-h-[560px] overflow-hidden sm:min-h-[620px] lg:min-h-[720px]">
+          <section className="relative min-h-[440px] overflow-hidden sm:min-h-[480px] lg:min-h-[540px]">
             <HeroOrbits />
-            <div className={`relative flex min-h-[560px] items-center sm:min-h-[620px] lg:min-h-[720px] ${CONTAINER}`}>
-              <div className="relative z-10 w-full max-w-[950px] py-20 sm:py-24 lg:py-28 xl:max-w-none">
+            <div className={`relative flex min-h-[440px] items-center sm:min-h-[480px] lg:min-h-[540px] ${CONTAINER}`}>
+              <div className="relative z-10 w-full max-w-[950px] py-10 sm:py-12 lg:py-14 xl:max-w-none">
                 <Reveal>
                   <h1 className="text-[2.75rem] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[3.5rem] md:text-7xl lg:text-[5.8rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.6vw,10rem)]">
                     One place.{" "}
@@ -370,21 +370,18 @@ export default function Home() {
 
           {/* ---------------- ACTIONS ---------------- */}
           <section className={`pb-28 pt-12 lg:pb-36 ${CONTAINER}`}>
-            <div className="grid items-end gap-10 lg:grid-cols-[1fr_minmax(0,28rem)]">
+            <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
               <Reveal>
                 <p className={EYEBROW}>Everything in one place</p>
                 <h2 className={H2}>Move through Arc.</h2>
                 <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
               </Reveal>
               <Reveal delay={120}>
-                <ul className="rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-2">
+                <ul className="flex flex-wrap gap-2 lg:justify-end">
                   {PERKS.map((p) => (
-                    <li key={p.title} className="flex items-center gap-4 rounded-2xl px-4 py-3.5">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1978f5]/15 text-[#62c8ff]"><Icon d={p.icon} size={20} /></span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{p.title}</span>
-                        <span className="block text-xs leading-5 text-slate-500">{p.text}</span>
-                      </span>
+                    <li key={p.title} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2 pl-3 pr-4 text-xs font-medium text-slate-300">
+                      <span className="text-[#62c8ff]"><Icon d={p.icon} size={14} /></span>
+                      {p.title}
                     </li>
                   ))}
                 </ul>
@@ -494,7 +491,7 @@ export default function Home() {
                 <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1675ff]/10 blur-3xl" />
                 <div className="relative">
                   <p className={EYEBROW}>AlabaamaFi</p>
-                  <h2 className="mx-auto mt-5 max-w-4xl text-[2.25rem] font-semibold leading-tight tracking-[-0.04em] sm:text-5xl lg:text-7xl">
+                  <h2 className="mx-auto mt-5 text-[2.25rem] font-semibold leading-tight tracking-[-0.04em] md:whitespace-nowrap md:text-[clamp(2.25rem,5vw,6.5rem)]">
                     Make your next move
                     <span className="bg-gradient-to-r from-[#18bfff] to-[#4262ff] bg-clip-text text-transparent"> on Arc.</span>
                   </h2>
@@ -511,7 +508,7 @@ export default function Home() {
           {/* ---------------- FOOTER ---------------- */}
           <footer>
             <div className={`flex flex-col gap-5 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between ${CONTAINER}`}>
-              <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+              <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
               <nav className="flex flex-wrap gap-6">
                 <a href={ARC.docs} target="_blank" rel="noreferrer" className="transition hover:text-white">Docs</a>
                 <a href={ARC.explorer} target="_blank" rel="noreferrer" className="transition hover:text-white">Explorer</a>
