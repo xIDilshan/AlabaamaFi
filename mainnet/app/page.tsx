@@ -324,7 +324,6 @@ export default function Home() {
         @keyframes dashMove{to{stroke-dashoffset:-1000}}
         @keyframes ripple{0%{transform:scale(.25);opacity:.55}100%{transform:scale(1.9);opacity:0}}
         @keyframes glowPulse{0%,100%{opacity:.65}50%{opacity:1}}
-        @keyframes lineSweep{0%{transform:translateX(-100%);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(400%);opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-visible{opacity:1;transform:none}
@@ -365,24 +364,13 @@ export default function Home() {
 
           {/* ---------------- ACTIONS ---------------- */}
           <section className={`pb-28 pt-12 lg:pb-36 ${CONTAINER}`}>
-            <div className="flex items-end gap-10">
-              <Reveal className="shrink-0">
+            <div>
+              <Reveal>
                 <p className={EYEBROW}>Everything in one place</p>
                 <h2 className={H2}>Move through Arc.</h2>
                 <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
               </Reveal>
 
-              {/* glowing line, desktop only */}
-              <Reveal delay={120} className="hidden flex-1 lg:block">
-                <div aria-hidden className="relative mb-2 h-6 overflow-hidden">
-                  <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-[#2588ff]/70 via-[#2588ff]/25 to-transparent" />
-                  <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 bg-gradient-to-r from-[#2588ff]/40 via-[#2588ff]/10 to-transparent blur-[3px]" />
-                  <span
-                    className="absolute left-0 top-1/2 h-px w-1/4 bg-gradient-to-r from-transparent via-[#b8f0ff] to-transparent shadow-[0_0_14px_3px_rgba(90,200,255,0.65)]"
-                    style={{ animation: "lineSweep 4.5s ease-in-out infinite" }}
-                  />
-                </div>
-              </Reveal>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ACTIONS.map((a, i) => (
