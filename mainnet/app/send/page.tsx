@@ -21,7 +21,6 @@ const USDC = "0x3600000000000000000000000000000000000000";
 const DECIMALS = 6;
 
 const CONTAINER = "w-full px-5 sm:px-8 lg:px-10";
-const EYEBROW = "text-sm font-medium uppercase tracking-[0.22em] text-[#4abaff]";
 
 const BUTTON =
   "inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-7 py-4 font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_15px_50px_rgba(30,120,255,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:brightness-100";
@@ -93,7 +92,7 @@ function SpaceBackground() {
 function Field({ label, right, children, invalid }: { label: string; right?: ReactNode; children: ReactNode; invalid?: boolean }) {
   return (
     <div className={`rounded-2xl border bg-white/[0.035] p-4 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] ${invalid ? "border-red-400/40" : "border-white/[0.07]"}`}>
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
         <span>{label}</span>
         {right}
       </div>
@@ -109,15 +108,15 @@ const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: 
 );
 
 /* ---------- logos ----------
-   To use the official artwork: put the files in mainnet/public/ and set the paths below,
-   e.g. ARC_LOGO_SRC = "/arc-logo.svg". Leave them empty to use the built-in drawings. */
-const ARC_LOGO_SRC = "" as string;
-const USDC_LOGO_SRC = "" as string;
+   Put usdc-logo.webp and arc-logo.png in mainnet/public/. If a file is missing, a built-in drawing is shown instead. */
+const ARC_LOGO_SRC = "/arc-logo.png" as string;
+const USDC_LOGO_SRC = "/usdc-logo.webp" as string;
 
 function UsdcLogo({ size = 24 }: { size?: number }) {
-  if (USDC_LOGO_SRC)
+  const [failed, setFailed] = useState(false);
+  if (USDC_LOGO_SRC && !failed)
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={USDC_LOGO_SRC} alt="USDC" width={size} height={size} className="shrink-0 rounded-full" />;
+    return <img src={USDC_LOGO_SRC} alt="USDC" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" />;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" role="img" aria-label="USDC" className="shrink-0">
       <circle cx="12" cy="12" r="12" fill="#2775CA" />
@@ -128,9 +127,10 @@ function UsdcLogo({ size = 24 }: { size?: number }) {
 }
 
 function ArcLogo({ size = 24 }: { size?: number }) {
-  if (ARC_LOGO_SRC)
+  const [failed, setFailed] = useState(false);
+  if (ARC_LOGO_SRC && !failed)
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={ARC_LOGO_SRC} alt="Arc" width={size} height={size} className="shrink-0 rounded-full" />;
+    return <img src={ARC_LOGO_SRC} alt="Arc" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" />;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" role="img" aria-label="Arc" className="shrink-0">
       <defs>
@@ -155,7 +155,6 @@ type Phase = "idle" | "signing" | "pending" | "done" | "failed";
 export default function SendPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [hasWallet, setHasWallet] = useState(true);
   const [account, setAccount] = useState<string | null>(null);
   const [chainOk, setChainOk] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
@@ -179,10 +178,7 @@ export default function SendPage() {
   /* wallet state */
   useEffect(() => {
     const eth = getEth();
-    if (!eth) {
-      setHasWallet(false);
-      return;
-    }
+    if (!eth) return;
     const checkChain = (id: unknown) => setChainOk(typeof id === "string" && id.toLowerCase() === ARC.chainIdHex);
     const onAccounts = (accts: unknown) => setAccount((accts as string[] | undefined)?.[0] ?? null);
 
@@ -265,7 +261,10 @@ export default function SendPage() {
   /* actions */
   const connect = async () => {
     const eth = getEth();
-    if (!eth) return;
+    if (!eth) {
+      setMessage("No EVM wallet found. Install a wallet such as MetaMask, then reload this page.");
+      return;
+    }
     try {
       const a = (await eth.request({ method: "eth_requestAccounts" })) as string[];
       setAccount(a?.[0] ?? null);
@@ -357,8 +356,7 @@ export default function SendPage() {
 
   /* main button */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
-  if (!hasWallet) action = { label: "No EVM wallet detected", onClick: () => {}, disabled: true };
-  else if (!account) action = { label: "Connect wallet", onClick: connect, disabled: false };
+  if (!account) action = { label: "Connect wallet", onClick: connect, disabled: false };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
   else if (phase === "signing")
     action = { label: <span className="flex items-center gap-3"><Spinner />Confirm in your wallet</span>, onClick: () => {}, disabled: true };
@@ -389,15 +387,10 @@ export default function SendPage() {
           <section className={`pb-24 pt-10 sm:pt-14 lg:pb-32 lg:pt-16 ${CONTAINER}`}>
             {/* title */}
             <div className="fade-up mx-auto max-w-2xl text-center">
-              <div className="mb-5 flex justify-center -space-x-3" aria-hidden>
-                <span className="rounded-full ring-4 ring-[#020a1c]"><ArcLogo size={48} /></span>
-                <span className="rounded-full ring-4 ring-[#020a1c]"><UsdcLogo size={48} /></span>
-              </div>
-              <p className={EYEBROW}>Send</p>
-              <h1 className="mt-4 text-[2.5rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
-                Send <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">USDC.</span>
+              <h1 className="text-[2.5rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
+                Send <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">USDC</span>
               </h1>
-              <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-400 sm:text-lg">Move USDC to any wallet on Arc. Network fees are paid in USDC too.</p>
+              <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-400 sm:text-lg">Move USDC to any wallet on Arc.</p>
             </div>
 
             {/* card */}
@@ -415,8 +408,11 @@ export default function SendPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-500">Wallet</p>
-                    <p className="mt-1 text-sm font-medium tabular-nums">{account ? shorten(account) : "Not connected"}</p>
+                    <p className="text-xs text-slate-500">Balance</p>
+                    <p className="mt-1 flex items-center justify-end gap-2 text-sm font-semibold tabular-nums">
+                      <UsdcLogo size={18} />
+                      {ready && balance !== null ? `${formatUnits6(balance)} USDC` : "—"}
+                    </p>
                   </div>
                 </div>
 
@@ -449,18 +445,13 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          className="w-full bg-transparent text-base font-medium text-white outline-none placeholder:text-slate-600 disabled:opacity-60"
+                          className="w-full bg-transparent text-lg font-semibold tracking-tight text-white outline-none placeholder:font-medium placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
 
                       <Field
                         label="Amount"
-                        right={
-                          <span className="flex items-center gap-2">
-                            {ready && balance !== null && <span>Balance {formatUnits6(balance)}</span>}
-                            {ready && balance !== null && <Pill onClick={setMax} disabled={busy}>Max</Pill>}
-                          </span>
-                        }
+                        right={ready && balance !== null ? <Pill onClick={setMax} disabled={busy}>Max</Pill> : undefined}
                       >
                         <div className="flex items-center gap-3">
                           <input
@@ -474,28 +465,13 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
+                            className="min-w-0 flex-1 bg-transparent text-4xl font-bold tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60 sm:text-5xl"
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
                         </div>
                       </Field>
                     </div>
 
-                    {/* summary */}
-                    <dl className="mt-5 space-y-2 px-1 text-sm">
-                      <div className="flex items-center justify-between">
-                        <dt className="text-slate-500">Asset</dt>
-                        <dd className="flex items-center gap-2 text-slate-300"><UsdcLogo size={16} />USDC on Arc</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-slate-500">Network fee</dt>
-                        <dd className="text-slate-300">{fee !== null ? `≈ ${formatUnits6(fee, 3)} USDC` : "Paid in USDC"}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-slate-500">Finality</dt>
-                        <dd className="text-slate-300">Under 1 second</dd>
-                      </div>
-                    </dl>
 
                     <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-6`}>
                       {action.label}
