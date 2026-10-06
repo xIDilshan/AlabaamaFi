@@ -7,8 +7,8 @@ import Header from "@/components/Header";
 // Same brand font as the home page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
-// Font for the wallet address and the amount typed in the card.
-const manrope = Manrope({ subsets: ["latin"], weight: ["600"], display: "swap" });
+// Font for the wallet address (700) and the amount (600) typed in the card.
+const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
 const ARC = {
@@ -418,7 +418,7 @@ export default function SendPage() {
   else action = { label: "Send USDC", onClick: send, disabled: !!problem || chainOk === null };
 
   const ready = !!account && chainOk === true;
-  const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.625rem)" : amount.length > 6 ? "clamp(1.5rem, 6vw, 2rem)" : "clamp(1.75rem, 7.5vw, 2.5rem)";
+  const amountFont = amount.length > 9 ? "clamp(1.125rem, 4.5vw, 1.25rem)" : amount.length > 6 ? "clamp(1.25rem, 5.2vw, 1.5rem)" : "clamp(1.375rem, 6vw, 1.875rem)";
 
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
@@ -515,7 +515,7 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          style={{ fontSize: "1rem", fontWeight: 600, fontFamily: manrope.style.fontFamily }}
+                          style={{ fontSize: "1rem", fontWeight: 700, fontFamily: manrope.style.fontFamily }}
                           className="w-full bg-transparent tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
