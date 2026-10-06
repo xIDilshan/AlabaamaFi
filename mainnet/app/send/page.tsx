@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import Header from "@/components/Header";
 
 // Same brand font as the home page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
+
+// Font for the numbers typed in the amount box. Swap Space_Grotesk for another Google font if you like (e.g. Sora, JetBrains_Mono).
+const numberFont = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
 const ARC = {
@@ -406,7 +409,7 @@ export default function SendPage() {
   else action = { label: "Send USDC", onClick: send, disabled: !!problem || chainOk === null };
 
   const ready = !!account && chainOk === true;
-  const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.75rem)" : amount.length > 6 ? "clamp(1.5rem, 6.5vw, 2.25rem)" : "clamp(1.875rem, 8vw, 2.75rem)";
+  const amountFont = amount.length > 9 ? "clamp(1.125rem, 4.5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.25rem, 5.5vw, 1.75rem)" : "clamp(1.5rem, 7vw, 2.25rem)";
 
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
@@ -444,27 +447,29 @@ export default function SendPage() {
             {/* card */}
             <div className="fade-up relative mx-auto mt-10 w-full max-w-lg" style={{ "--delay": "150ms" } as CSSProperties}>
               <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(22,115,255,0.10),rgba(22,115,255,0.03)),#050a16] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-7">
-                {/* top bar */}
-                <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
-                  <div>
-                    <p className="text-xs text-slate-500">Network</p>
-                    <p className="mt-1 flex items-center gap-2 text-sm font-medium">
-                      <ArcLogo size={20} />
-                      Arc Mainnet
-                    </p>
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16] bg-[linear-gradient(180deg,#07152d_0%,#060d1d_100%)] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-7">
+                {/* top bar (hidden on the success screen) */}
+                {phase !== "done" && (
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
+                    <div>
+                      <p className="text-xs text-slate-500">Network</p>
+                      <p className="mt-1 flex items-center gap-2 text-sm font-medium">
+                        <ArcLogo size={20} />
+                        Arc Mainnet
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Balance</p>
+                      <p className="mt-1 text-sm font-semibold tabular-nums">
+                        {ready && balance !== null ? `${formatUnits6(balance)} USDC` : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500">Balance</p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums">
-                      {ready && balance !== null ? `${formatUnits6(balance)} USDC` : "—"}
-                    </p>
-                  </div>
-                </div>
+                )}
 
                 {phase === "done" ? (
                   /* success */
-                  <div className="py-8 text-center">
+                  <div className="py-4 text-center sm:py-6">
                     <SendSuccessAnimation />
                     <div className="fade-up" style={{ "--delay": "2000ms" } as CSSProperties}>
                     <h2 className="mt-2 flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
@@ -491,7 +496,7 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          style={{ fontSize: "1.125rem", fontWeight: 700 }}
+                          style={{ fontSize: "1rem", fontWeight: 700 }}
                           className="w-full bg-transparent tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
@@ -512,7 +517,7 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            style={{ fontSize: amountFont, fontWeight: 800, lineHeight: 1.1 }}
+                            style={{ fontSize: amountFont, fontWeight: 700, lineHeight: 1.1, fontFamily: numberFont.style.fontFamily }}
                             className="min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
