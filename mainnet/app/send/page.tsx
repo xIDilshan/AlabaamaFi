@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import Header from "@/components/Header";
 
 // Same brand font as the home page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
+
+// Font for the wallet address and the amount typed in the card.
+const manrope = Manrope({ subsets: ["latin"], weight: ["600"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
 const ARC = {
@@ -158,26 +161,30 @@ function ArcLogo({ size = 24 }: { size?: number }) {
   );
 }
 
-/* Plays once on success: the Send icon draws in as glowing lines, flies away smoothly, then a green glowing check mark appears. */
+/* Plays once on success: the Send icon starts at the center of the card, draws in as glowing lines, flies away smoothly,
+   then a green glowing check mark appears at the top. (Needs a "relative" parent that covers the whole success area.) */
 function SendSuccessAnimation() {
   return (
-    <div className="relative mx-auto h-32 w-32" aria-hidden>
-      {/* fly away (one smooth move; fade runs separately so the motion never stutters) */}
-      <div className="absolute inset-0" style={{ willChange: "transform, opacity", animation: "planeAwayMove .8s cubic-bezier(.5,0,.9,.5) 1.1s forwards, planeAwayFade .8s linear 1.1s forwards" }}>
-        <div className="flex h-full w-full items-center justify-center" style={{ opacity: 0, animation: "planeIn .5s ease-out forwards" }}>
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9fe9ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 4px #39c4ff) drop-shadow(0 0 12px #1978f5)" }}>
-            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" pathLength={100} strokeDasharray="100" strokeDashoffset="100" style={{ animation: "planeDraw .8s ease-out forwards" }} />
-          </svg>
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="h-32 w-32" style={{ willChange: "transform, opacity", animation: "planeAwayMove .8s cubic-bezier(.5,0,.9,.5) 1.1s forwards, planeAwayFade .8s linear 1.1s forwards" }}>
+          <div className="flex h-full w-full items-center justify-center" style={{ opacity: 0, animation: "planeIn .5s ease-out forwards" }}>
+            <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#9fe9ff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 4px #39c4ff) drop-shadow(0 0 12px #1978f5)" }}>
+              <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" pathLength={100} strokeDasharray="100" strokeDashoffset="100" style={{ animation: "planeDraw .8s ease-out forwards" }} />
+            </svg>
+          </div>
         </div>
       </div>
 
       {/* green glowing check mark only */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, willChange: "transform, opacity", animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) 1.85s forwards" }}>
-        <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
-          <path d="m4.5 12.5 5 5L19.5 6.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out 2.05s forwards" }} />
-        </svg>
+      <div aria-hidden className="relative mx-auto h-32 w-32">
+        <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, willChange: "transform, opacity", animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) 1.85s forwards" }}>
+          <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
+            <path d="m4.5 12.5 5 5L19.5 6.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out 2.05s forwards" }} />
+          </svg>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -471,11 +478,11 @@ export default function SendPage() {
 
                 {phase === "done" ? (
                   /* success */
-                  <div className="py-4 text-center sm:py-6">
+                  <div className="relative py-4 text-center sm:py-6">
                     <SendSuccessAnimation />
                     <div className="fade-up" style={{ "--delay": "2000ms" } as CSSProperties}>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">Successfully sent</h2>
-                    <dl className="mt-6 space-y-3.5 text-left text-[15px]">
+                    <dl className="mt-9 space-y-3.5 text-left text-[15px]">
                       <div className="flex items-center justify-between gap-4">
                         <dt className="text-slate-400">Sent</dt>
                         <dd className="font-semibold tabular-nums">{sentSummary.amount} USDC</dd>
@@ -489,7 +496,7 @@ export default function SendPage() {
                         <dd className="font-semibold tabular-nums">{sentSummary.fee ? `${sentSummary.fee} USDC` : "—"}</dd>
                       </div>
                     </dl>
-                    <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-11 grid gap-3 sm:grid-cols-2">
                       <a href={`${ARC.explorer}/tx/${txHash}`} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>View on explorer</a>
                       <button onClick={reset} className={BUTTON}>Send another</button>
                     </div>
@@ -508,7 +515,7 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          style={{ fontSize: "1rem", fontWeight: 700 }}
+                          style={{ fontSize: "1rem", fontWeight: 600, fontFamily: manrope.style.fontFamily }}
                           className="w-full bg-transparent tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
@@ -529,7 +536,7 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            style={{ fontSize: amountFont, fontWeight: 800, lineHeight: 1.1, fontFamily: brandFont.style.fontFamily }}
+                            style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}
                             className="min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
