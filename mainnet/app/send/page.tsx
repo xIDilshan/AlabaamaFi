@@ -25,9 +25,6 @@ const CONTAINER = "w-full px-5 sm:px-8 lg:px-10";
 const BUTTON =
   "inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-7 py-4 font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_15px_50px_rgba(30,120,255,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:brightness-100";
 
-const MUTED_BUTTON =
-  "pointer-events-none inline-flex w-full cursor-default select-none items-center justify-center rounded-full bg-white/[0.05] px-7 py-4 font-semibold text-slate-500";
-
 const SECONDARY_BUTTON =
   "inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff]";
 
@@ -161,23 +158,26 @@ function ArcLogo({ size = 24 }: { size?: number }) {
   );
 }
 
-/* Plays once on success: the Send icon draws in as glowing lines, flies away smoothly, then a green glowing check mark appears. */
+/* Plays once on success: the Send icon draws in as glowing lines, flies away, then a green glowing check mark appears. */
 function SendSuccessAnimation() {
   return (
     <div className="relative mx-auto h-32 w-32" aria-hidden>
-      {/* fly away (one smooth move; fade runs separately so the motion never stutters) */}
-      <div className="absolute inset-0" style={{ willChange: "transform, opacity", animation: "planeAwayMove .8s cubic-bezier(.5,0,.9,.5) 1.1s forwards, planeAwayFade .8s linear 1.1s forwards" }}>
-        <div className="flex h-full w-full items-center justify-center" style={{ opacity: 0, animation: "planeIn .5s ease-out forwards" }}>
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9fe9ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 4px #39c4ff) drop-shadow(0 0 12px #1978f5)" }}>
-            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" pathLength={100} strokeDasharray="100" strokeDashoffset="100" style={{ animation: "planeDraw .8s ease-out forwards" }} />
-          </svg>
-        </div>
+      {/* flight trail (runs along the up-right direction) */}
+      <div className="absolute left-1/2 top-1/2 h-0 w-0" style={{ transform: "rotate(-45deg)" }}>
+        <span className="absolute right-0 -top-px block h-[2px] w-32 bg-gradient-to-r from-transparent via-[#7ddcff] to-[#d5f6ff] shadow-[0_0_12px_2px_rgba(90,200,255,0.8)]" style={{ transformOrigin: "right center", opacity: 0, animation: "planeTrail 2.1s cubic-bezier(.4,0,.2,1) forwards" }} />
       </div>
 
-      {/* green glowing check mark only */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, willChange: "transform, opacity", animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) 1.85s forwards" }}>
-        <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
-          <path d="m4.5 12.5 5 5L19.5 6.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out 2.05s forwards" }} />
+      {/* Send icon: just glowing lines, no box */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, animation: "planeFly 2.1s cubic-bezier(.4,0,.2,1) forwards" }}>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9fe9ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 4px #39c4ff) drop-shadow(0 0 12px #1978f5)" }}>
+          <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" pathLength={100} strokeDasharray="100" strokeDashoffset="100" style={{ animation: "planeDraw .8s ease-out forwards" }} />
+        </svg>
+      </div>
+
+      {/* green filled glowing check */}
+      <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-300 to-emerald-500 text-white shadow-[0_0_30px_rgba(52,211,153,0.75),0_0_80px_rgba(52,211,153,0.4)]" style={{ opacity: 0, animation: "checkPop .6s cubic-bezier(.2,1.4,.3,1) 1.75s forwards" }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out 2s forwards" }} />
         </svg>
       </div>
     </div>
@@ -192,9 +192,7 @@ type Phase = "idle" | "signing" | "pending" | "done" | "failed";
 export default function SendPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [rawAccount, setRawAccount] = useState<string | null>(null);
-  const [headerOff, setHeaderOff] = useState(false); // true when the header says "disconnected"
-  const account = headerOff ? null : rawAccount;
+  const [account, setAccount] = useState<string | null>(null);
   const [chainOk, setChainOk] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
 
@@ -214,31 +212,12 @@ export default function SendPage() {
     return () => window.removeEventListener("mobile-menu-state", onMenu);
   }, []);
 
-  /* follows the header: it announces connect / disconnect with a "wallet-state" event.
-     detail = wallet address when connected, null when disconnected. (If the header never sends it, the page just reads the wallet directly.) */
-  useEffect(() => {
-    const w = window as unknown as { __walletAddress?: string | null };
-    if (w.__walletAddress === null) setHeaderOff(true);
-    const onState = (e: Event) => {
-      const addr = (e as CustomEvent<string | null>).detail;
-      if (addr) {
-        setHeaderOff(false);
-        setRawAccount(addr);
-        getEth()?.request({ method: "eth_chainId" }).then((id) => setChainOk(typeof id === "string" && id.toLowerCase() === ARC.chainIdHex)).catch(() => {});
-      } else {
-        setHeaderOff(true);
-      }
-    };
-    window.addEventListener("wallet-state", onState);
-    return () => window.removeEventListener("wallet-state", onState);
-  }, []);
-
   /* wallet state */
   useEffect(() => {
     const eth = getEth();
     if (!eth) return;
     const checkChain = (id: unknown) => setChainOk(typeof id === "string" && id.toLowerCase() === ARC.chainIdHex);
-    const onAccounts = (accts: unknown) => setRawAccount((accts as string[] | undefined)?.[0] ?? null);
+    const onAccounts = (accts: unknown) => setAccount((accts as string[] | undefined)?.[0] ?? null);
 
     eth.request({ method: "eth_accounts" }).then(onAccounts).catch(() => {});
     eth.request({ method: "eth_chainId" }).then(checkChain).catch(() => {});
@@ -308,15 +287,30 @@ export default function SendPage() {
     if (!toValid) return { text: "Enter a valid address", hard: true };
     if (/^0x0{40}$/i.test(to)) return { text: "Arc doesn't allow transfers to the zero address", hard: true };
     if (to.toLowerCase() === USDC) return { text: "Don't send USDC to the token contract", hard: true };
-    if (!amount) return { text: "Enter an amount", hard: false };
+    if (!amount) return { text: "Enter an amount above 0", hard: false };
     if (units === null) return { text: `Use up to ${DECIMALS} decimal places`, hard: true };
-    if (units <= ZERO) return { text: "Enter an amount", hard: false };
+    if (units <= ZERO) return { text: "Enter an amount above 0", hard: false };
     if (balance !== null && units > balance) return { text: "Insufficient balance", hard: true };
     if (balance !== null && fee !== null && units + fee > balance) return { text: "Not enough left to cover the network fee", hard: true };
     return null;
   }, [to, toValid, amount, units, balance, fee]);
 
   /* actions */
+  const connect = async () => {
+    const eth = getEth();
+    if (!eth) {
+      setMessage("No EVM wallet found. Install a wallet such as MetaMask, then reload this page.");
+      return;
+    }
+    try {
+      const a = (await eth.request({ method: "eth_requestAccounts" })) as string[];
+      setAccount(a?.[0] ?? null);
+      setChainOk(((await eth.request({ method: "eth_chainId" })) as string).toLowerCase() === ARC.chainIdHex);
+    } catch {
+      setMessage("Wallet connection was cancelled.");
+    }
+  };
+
   const switchToArc = async () => {
     const eth = getEth();
     if (!eth) return;
@@ -399,8 +393,8 @@ export default function SendPage() {
   };
 
   /* main button */
-  let action: { label: ReactNode; onClick: () => void; disabled: boolean; muted?: boolean };
-  if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true, muted: true };
+  let action: { label: ReactNode; onClick: () => void; disabled: boolean };
+  if (!account) action = { label: "Connect wallet", onClick: connect, disabled: false };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
   else if (phase === "signing")
     action = { label: <span className="flex items-center gap-3"><Spinner />Confirm in your wallet</span>, onClick: () => {}, disabled: true };
@@ -409,7 +403,7 @@ export default function SendPage() {
   else action = { label: "Send USDC", onClick: send, disabled: !!problem || chainOk === null };
 
   const ready = !!account && chainOk === true;
-  const amountFont = amount.length > 9 ? "clamp(1.5rem, 6vw, 2.25rem)" : amount.length > 6 ? "clamp(1.875rem, 7.5vw, 3rem)" : "clamp(2.25rem, 9vw, 3.75rem)";
+  const amountSize = amount.length > 9 ? "text-2xl sm:text-4xl" : amount.length > 6 ? "text-3xl sm:text-5xl" : "text-4xl sm:text-6xl";
 
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
@@ -418,15 +412,14 @@ export default function SendPage() {
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
         @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
-        @keyframes planeIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
-        @keyframes planeAwayMove{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(140px,-140px,0) scale(.55)}}
-        @keyframes planeAwayFade{0%,55%{opacity:1}100%{opacity:0}}
+        @keyframes planeFly{0%{opacity:0;transform:scale(.7)}15%{opacity:1;transform:scale(1)}42%{opacity:1;transform:translate(0,-4px) scale(1.05)}72%{opacity:1;transform:translate(70px,-70px) scale(.85)}100%{opacity:0;transform:translate(130px,-130px) scale(.4)}}
         @keyframes planeDraw{to{stroke-dashoffset:0}}
+        @keyframes planeTrail{0%,40%{opacity:0;transform:translateX(0) scaleX(.2)}55%{opacity:1;transform:translateX(10px) scaleX(1)}78%{opacity:1;transform:translateX(88px) scaleX(1)}100%{opacity:0;transform:translateX(150px) scaleX(.3)}}
         @keyframes checkPop{0%{opacity:0;transform:scale(.3)}100%{opacity:1;transform:scale(1)}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
-        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
+        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
 
       <SpaceBackground />
@@ -447,7 +440,7 @@ export default function SendPage() {
             {/* card */}
             <div className="fade-up relative mx-auto mt-10 w-full max-w-lg" style={{ "--delay": "150ms" } as CSSProperties}>
               <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-7">
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16]/80 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-7">
                 {/* top bar */}
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
                   <div>
@@ -469,9 +462,9 @@ export default function SendPage() {
                   /* success */
                   <div className="py-8 text-center">
                     <SendSuccessAnimation />
-                    <div className="fade-up" style={{ "--delay": "2000ms" } as CSSProperties}>
+                    <div className="fade-up" style={{ "--delay": "1600ms" } as CSSProperties}>
                     <h2 className="mt-2 flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
-                      Sent {sentSummary.amount} USDC
+                      Sent {sentSummary.amount} <UsdcLogo size={26} /> USDC
                     </h2>
                     <p className="mt-2 text-sm text-slate-400">To {shorten(sentSummary.to, 8, 6)}</p>
                     <p className="mt-1 text-xs text-slate-500">Tx hash · {shorten(txHash, 10, 8)}</p>
@@ -494,8 +487,7 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          style={{ fontSize: "1.25rem", fontWeight: 700 }}
-                          className="w-full bg-transparent tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
+                          className="w-full bg-transparent text-xl font-bold tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
 
@@ -515,8 +507,7 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            style={{ fontSize: amountFont, fontWeight: 800, lineHeight: 1.1 }}
-                            className="min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
+                            className={`min-w-0 flex-1 bg-transparent font-extrabold tabular-nums tracking-tight text-white outline-none placeholder:font-bold placeholder:text-slate-700 disabled:opacity-60 ${amountSize}`}
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
                         </div>
@@ -524,7 +515,7 @@ export default function SendPage() {
                     </div>
 
 
-                    <button onClick={action.onClick} disabled={action.disabled} tabIndex={action.muted ? -1 : 0} className={`${action.muted ? MUTED_BUTTON : BUTTON} mt-6`}>
+                    <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-6`}>
                       {action.label}
                     </button>
 
