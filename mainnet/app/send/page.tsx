@@ -95,7 +95,7 @@ function SpaceBackground() {
 function Field({ label, right, children, invalid }: { label: string; right?: ReactNode; children: ReactNode; invalid?: boolean }) {
   return (
     <div className={`rounded-2xl border bg-white/[0.035] p-4 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] ${invalid ? "border-red-400/40" : "border-white/[0.07]"}`}>
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-[13px] font-medium text-slate-400">
         <span>{label}</span>
         {right}
       </div>
@@ -158,44 +158,26 @@ function ArcLogo({ size = 24 }: { size?: number }) {
   );
 }
 
-/* Plays once on success: glowing rings spin, the Send icon appears, flies away, then the check mark draws in. */
+/* Plays once on success: the Send icon draws in as glowing lines, flies away, then a green glowing check mark appears. */
 function SendSuccessAnimation() {
   return (
     <div className="relative mx-auto h-32 w-32" aria-hidden>
-      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 128 128" fill="none" style={{ filter: "drop-shadow(0 0 8px rgba(57,196,255,0.7))" }}>
-        <defs>
-          <linearGradient id="sendRing" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#12b9ff" />
-            <stop offset="1" stopColor="#7d6bff" />
-          </linearGradient>
-        </defs>
-        <circle cx="64" cy="64" r="48" stroke="url(#sendRing)" strokeOpacity=".28" />
-        <circle cx="64" cy="64" r="58" stroke="url(#sendRing)" strokeOpacity=".16" />
-        <g style={{ transformOrigin: "64px 64px", animation: "spinCW 2.4s linear infinite" }}>
-          <circle cx="64" cy="64" r="48" stroke="#8fe6ff" strokeWidth="2.5" strokeLinecap="round" pathLength={1000} strokeDasharray="260 740" />
-        </g>
-        <g style={{ transformOrigin: "64px 64px", animation: "spinCCW 3.6s linear infinite" }}>
-          <circle cx="64" cy="64" r="58" stroke="#4aa8ff" strokeWidth="1.8" strokeLinecap="round" pathLength={1000} strokeDasharray="180 820" />
-        </g>
-      </svg>
-
       {/* flight trail (runs along the up-right direction) */}
       <div className="absolute left-1/2 top-1/2 h-0 w-0" style={{ transform: "rotate(-45deg)" }}>
-        <span className="absolute right-0 -top-px block h-[2px] w-28 bg-gradient-to-r from-transparent via-[#7ddcff] to-[#d5f6ff] shadow-[0_0_12px_2px_rgba(90,200,255,0.8)]" style={{ transformOrigin: "right center", opacity: 0, animation: "planeTrail 2.3s cubic-bezier(.4,0,.2,1) forwards" }} />
+        <span className="absolute right-0 -top-px block h-[2px] w-32 bg-gradient-to-r from-transparent via-[#7ddcff] to-[#d5f6ff] shadow-[0_0_12px_2px_rgba(90,200,255,0.8)]" style={{ transformOrigin: "right center", opacity: 0, animation: "planeTrail 2.1s cubic-bezier(.4,0,.2,1) forwards" }} />
       </div>
 
-      {/* the Send icon, same tile as the home page cards */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, animation: "planeFly 2.3s cubic-bezier(.4,0,.2,1) forwards" }}>
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white shadow-[0_0_30px_rgba(40,160,255,0.7)]">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>
-        </div>
+      {/* Send icon: just glowing lines, no box */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, animation: "planeFly 2.1s cubic-bezier(.4,0,.2,1) forwards" }}>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9fe9ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 4px #39c4ff) drop-shadow(0 0 12px #1978f5)" }}>
+          <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" pathLength={100} strokeDasharray="100" strokeDashoffset="100" style={{ animation: "planeDraw .8s ease-out forwards" }} />
+        </svg>
       </div>
 
-      {/* check mark */}
-      <span className="absolute inset-0 m-auto h-16 w-16 rounded-full border border-emerald-300/60" style={{ opacity: 0, animation: "checkRipple 1.1s ease-out 1.75s forwards" }} />
-      <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.4)] ring-1 ring-emerald-400/50" style={{ opacity: 0, animation: "checkPop .6s cubic-bezier(.2,1.4,.3,1) 1.75s forwards" }}>
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m5 12 5 5 9-10" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .5s ease-out 2.05s forwards" }} />
+      {/* green filled glowing check */}
+      <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-300 to-emerald-500 text-white shadow-[0_0_30px_rgba(52,211,153,0.75),0_0_80px_rgba(52,211,153,0.4)]" style={{ opacity: 0, animation: "checkPop .6s cubic-bezier(.2,1.4,.3,1) 1.75s forwards" }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out 2s forwards" }} />
         </svg>
       </div>
     </div>
@@ -302,7 +284,7 @@ export default function SendPage() {
   /* validation */
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (!to) return { text: "Enter a recipient address", hard: false };
-    if (!toValid) return { text: "That doesn't look like a valid address", hard: true };
+    if (!toValid) return { text: "Enter a valid address", hard: true };
     if (/^0x0{40}$/i.test(to)) return { text: "Arc doesn't allow transfers to the zero address", hard: true };
     if (to.toLowerCase() === USDC) return { text: "Don't send USDC to the token contract", hard: true };
     if (!amount) return { text: "Enter an amount above 0", hard: false };
@@ -404,7 +386,8 @@ export default function SendPage() {
       setPhase("failed");
     } catch (e) {
       const err = e as { code?: number; message?: string };
-      setMessage(err.code === 4001 ? "You cancelled the transaction in your wallet." : err.message?.slice(0, 160) || "The transaction could not be sent.");
+      const rejected = err.code === 4001 || /reject|denied|cancel/i.test(err.message ?? "");
+      setMessage(rejected ? "User rejected the transaction" : err.message?.slice(0, 160) || "The transaction could not be sent.");
       setPhase("failed");
     }
   };
@@ -420,6 +403,7 @@ export default function SendPage() {
   else action = { label: "Send USDC", onClick: send, disabled: !!problem || chainOk === null };
 
   const ready = !!account && chainOk === true;
+  const amountSize = amount.length > 9 ? "text-2xl sm:text-4xl" : amount.length > 6 ? "text-3xl sm:text-5xl" : "text-4xl sm:text-6xl";
 
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
@@ -428,13 +412,11 @@ export default function SendPage() {
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
         @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
-        @keyframes spinCW{to{transform:rotate(360deg)}}
-        @keyframes spinCCW{to{transform:rotate(-360deg)}}
-        @keyframes planeFly{0%{opacity:0;transform:translate(-10px,16px) scale(.4)}22%{opacity:1;transform:translate(0,0) scale(1)}45%{opacity:1;transform:translate(0,-5px) scale(1.08)}75%{opacity:1;transform:translate(62px,-62px) scale(.8)}100%{opacity:0;transform:translate(120px,-120px) scale(.3)}}
+        @keyframes planeFly{0%{opacity:0;transform:scale(.7)}15%{opacity:1;transform:scale(1)}42%{opacity:1;transform:translate(0,-4px) scale(1.05)}72%{opacity:1;transform:translate(70px,-70px) scale(.85)}100%{opacity:0;transform:translate(130px,-130px) scale(.4)}}
+        @keyframes planeDraw{to{stroke-dashoffset:0}}
         @keyframes planeTrail{0%,40%{opacity:0;transform:translateX(0) scaleX(.2)}55%{opacity:1;transform:translateX(10px) scaleX(1)}78%{opacity:1;transform:translateX(88px) scaleX(1)}100%{opacity:0;transform:translateX(150px) scaleX(.3)}}
         @keyframes checkPop{0%{opacity:0;transform:scale(.3)}100%{opacity:1;transform:scale(1)}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
-        @keyframes checkRipple{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
@@ -505,7 +487,7 @@ export default function SendPage() {
                           autoComplete="off"
                           autoCapitalize="off"
                           aria-label="Recipient address"
-                          className="w-full bg-transparent text-lg font-semibold tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
+                          className="w-full bg-transparent text-xl font-bold tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                         />
                       </Field>
 
@@ -525,7 +507,7 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            className="min-w-0 flex-1 bg-transparent text-4xl font-bold tabular-nums tracking-tight text-white outline-none placeholder:font-semibold placeholder:text-slate-700 disabled:opacity-60 sm:text-5xl"
+                            className={`min-w-0 flex-1 bg-transparent font-extrabold tabular-nums tracking-tight text-white outline-none placeholder:font-bold placeholder:text-slate-700 disabled:opacity-60 ${amountSize}`}
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
                         </div>
@@ -541,11 +523,9 @@ export default function SendPage() {
                     <div className="mt-3 min-h-5 text-center text-sm" role="status">
                       {phase === "failed" && message ? (
                         <span className="text-red-300">{message}</span>
-                      ) : phase === "pending" ? (
-                        <a href={`${ARC.explorer}/tx/${txHash}`} target="_blank" rel="noreferrer" className="text-[#65caff] hover:text-white">View on explorer</a>
-                      ) : ready && problem && (to || amount) ? (
+                      ) : !busy && ready && problem && (to || amount) ? (
                         <span className={problem.hard ? "text-red-300" : "text-slate-500"}>{problem.text}</span>
-                      ) : message ? (
+                      ) : !busy && message ? (
                         <span className="text-slate-400">{message}</span>
                       ) : null}
                     </div>
