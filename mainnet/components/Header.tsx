@@ -39,11 +39,6 @@ export default function Header({
   } = useAccount();
 
   const { disconnect } = useDisconnect();
-
-  useEffect(() => {
-  (window as unknown as { __walletAddress?: string | null }).__walletAddress = address ?? null;
-  window.dispatchEvent(new CustomEvent("wallet-state", { detail: address ?? null }));
-}, [address]);
   
   const [showWallets, setShowWallets] =
     React.useState(false);
