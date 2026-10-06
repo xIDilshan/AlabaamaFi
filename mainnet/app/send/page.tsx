@@ -1,14 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 
 // Same brand font as the home page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
-
-// Thin, narrow font for the numbers typed in the amount box. Change the weight in the amount input below (200 = thinner, 400 = regular).
-const numberFont = Inter_Tight({ subsets: ["latin"], weight: ["200", "300", "400"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
 const ARC = {
@@ -205,7 +202,7 @@ export default function SendPage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [txHash, setTxHash] = useState("");
   const [message, setMessage] = useState("");
-  const [sentSummary, setSentSummary] = useState({ amount: "", to: "" });
+  const [sentSummary, setSentSummary] = useState({ amount: "", to: "", fee: "" });
 
   /* header mobile menu blur */
   useEffect(() => {
@@ -370,14 +367,19 @@ export default function SendPage() {
       const data = "0xa9059cbb" + pad32(to) + units.toString(16).padStart(64, "0");
       const hash = (await eth.request({ method: "eth_sendTransaction", params: [{ from: account, to: USDC, data }] })) as string;
       setTxHash(hash);
-      setSentSummary({ amount: formatUnits6(units), to });
+      setSentSummary({ amount: formatUnits6(units), to, fee: fee !== null ? formatUnits6(fee, 3) : "" });
       setPhase("pending");
 
       // Arc has deterministic finality: one receipt = final, no confirmation counting.
       for (let i = 0; i < 120; i++) {
-        const receipt = (await eth.request({ method: "eth_getTransactionReceipt", params: [hash] })) as { status?: string } | null;
+        const receipt = (await eth.request({ method: "eth_getTransactionReceipt", params: [hash] })) as { status?: string; gasUsed?: string; effectiveGasPrice?: string } | null;
         if (receipt) {
           if (receipt.status === "0x1") {
+            // real fee paid = gas used x gas price (18-decimal native USDC), shown in USDC
+            if (receipt.gasUsed && receipt.effectiveGasPrice) {
+              const wei = BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice);
+              setSentSummary((prev) => ({ ...prev, fee: formatUnits6((wei + E12 - BigInt(1)) / E12, 3) }));
+            }
             setPhase("done");
             loadBalance();
           } else {
@@ -472,11 +474,21 @@ export default function SendPage() {
                   <div className="py-4 text-center sm:py-6">
                     <SendSuccessAnimation />
                     <div className="fade-up" style={{ "--delay": "2000ms" } as CSSProperties}>
-                    <h2 className="mt-2 flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
-                      Sent {sentSummary.amount} USDC
-                    </h2>
-                    <p className="mt-2 text-sm text-slate-400">To {shorten(sentSummary.to, 8, 6)}</p>
-                    <p className="mt-1 text-xs text-slate-500">Tx hash · {shorten(txHash, 10, 8)}</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight">Successfully sent</h2>
+                    <dl className="mt-6 space-y-3.5 text-left text-[15px]">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-slate-400">Sent</dt>
+                        <dd className="font-semibold tabular-nums">{sentSummary.amount} USDC</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-slate-400">To</dt>
+                        <dd className="font-semibold tabular-nums">{shorten(sentSummary.to, 6, 4)}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-slate-400">Fee</dt>
+                        <dd className="font-semibold tabular-nums">{sentSummary.fee ? `${sentSummary.fee} USDC` : "—"}</dd>
+                      </div>
+                    </dl>
                     <div className="mt-8 grid gap-3 sm:grid-cols-2">
                       <a href={`${ARC.explorer}/tx/${txHash}`} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>View on explorer</a>
                       <button onClick={reset} className={BUTTON}>Send another</button>
@@ -517,7 +529,7 @@ export default function SendPage() {
                             placeholder="0.00"
                             autoComplete="off"
                             aria-label="Amount in USDC"
-                            style={{ fontSize: amountFont, fontWeight: 300, lineHeight: 1.1, fontFamily: numberFont.style.fontFamily }}
+                            style={{ fontSize: amountFont, fontWeight: 800, lineHeight: 1.1, fontFamily: brandFont.style.fontFamily }}
                             className="min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
                           />
                           <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><UsdcLogo size={22} />USDC</span>
