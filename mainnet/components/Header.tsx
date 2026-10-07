@@ -164,7 +164,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleMenuToggle}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center text-2xl font-bold transition-all duration-200 ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center text-[28px] font-bold transition-all duration-200 ${
                 mobileMenuOpen ? "text-[#39c4ff]" : "text-white/70 hover:text-white"
               }`}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -206,26 +206,20 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {/* MOBILE BACKDROP */}
 
           <div
-            className={`fixed inset-x-0 bottom-0 top-[69px] z-40 bg-black/60 transition-all duration-300 sm:top-[75px] ${
+            className={`fixed inset-x-0 bottom-0 top-[69px] z-40 bg-transparent transition-all duration-300 sm:top-[75px] ${
               mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
             }`}
             onClick={closeMobileMenu}
             aria-hidden="true"
           />
 
-          {/* MOBILE MENU: same space-blue look as the website */}
+          {/* MOBILE MENU: see-through, so the page's space background shows (same as when the menu is closed) */}
 
           <div
-            className={`absolute left-0 right-0 top-full z-[60] overflow-hidden border-b border-white/[0.08] bg-[linear-gradient(180deg,#041029_0%,#020817_55%,#010205_100%)] shadow-[0_25px_60px_rgba(0,0,0,0.65)] transition-all duration-300 ease-out ${
+            className={`absolute left-0 right-0 top-full z-[60] overflow-hidden bg-[#010205]/25 backdrop-blur-2xl transition-all duration-300 ease-out ${
               mobileMenuOpen ? "visible max-h-[640px] translate-y-0 opacity-100" : "invisible max-h-0 -translate-y-2 opacity-0"
             }`}
           >
-            {/* soft blue glow, like the hero */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.28),transparent_68%)]"
-            />
-
             <div className="relative px-3 pb-5 pt-3 sm:px-5">
               <nav className="grid gap-1">
                 {navItems.map((item) => {
@@ -236,7 +230,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       key={item.href}
                       href={item.href}
                       onClick={closeMobileMenu}
-                      className="group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 hover:bg-white/[0.04]"
+                      className={`group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 ${
+                        active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
+                      }`}
                     >
                       <span
                         className={`flex h-9 w-9 shrink-0 items-center justify-center transition-all duration-200 ${
