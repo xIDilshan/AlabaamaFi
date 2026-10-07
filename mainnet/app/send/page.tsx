@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { Inter, Manrope } from "next/font/google";
+import { useAccount } from "wagmi";
 import Header from "@/components/Header";
 
 // Same brand font as the home page.
@@ -58,13 +59,12 @@ const pad32 = (hex: string) => hex.replace(/^0x/, "").toLowerCase().padStart(64,
 const shorten = (s: string, a = 6, b = 4) => (s.length > a + b + 2 ? `${s.slice(0, a)}…${s.slice(-b)}` : s);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/* ---------- wallet (any injected EVM wallet, EIP-1193) ---------- */
+/* ---------- wallet provider type (EIP-1193) ---------- */
 type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, handler: (arg: unknown) => void) => void;
   removeListener?: (event: string, handler: (arg: unknown) => void) => void;
 };
-const getEth = (): Eip1193 | undefined => (typeof window === "undefined" ? undefined : (window as unknown as { ethereum?: Eip1193 }).ethereum);
 
 /* ---------- small UI pieces ---------- */
 function SpaceBackground() {
@@ -196,9 +196,10 @@ type Phase = "idle" | "signing" | "pending" | "done" | "failed";
 export default function SendPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [rawAccount, setRawAccount] = useState<string | null>(null);
-  const [headerOff, setHeaderOff] = useState(false); // true when the header says "disconnected"
-  const account = headerOff ? null : rawAccount;
+  // Same wallet state as the header (wagmi): connect / disconnect / account change in the header updates this page instantly.
+  const { address, isConnected, connector } = useAccount();
+  const account = isConnected && address ? address : null;
+  const [provider, setProvider] = useState<Eip1193 | undefined>(undefined);
   const [chainOk, setChainOk] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
 
@@ -218,45 +219,29 @@ export default function SendPage() {
     return () => window.removeEventListener("mobile-menu-state", onMenu);
   }, []);
 
-  /* follows the header: it announces connect / disconnect with a "wallet-state" event.
-     detail = wallet address when connected, null when disconnected. (If the header never sends it, the page just reads the wallet directly.) */
+  /* the connected wallet's own provider (MetaMask, Rabby, OKX, Brave, WalletConnect...) */
   useEffect(() => {
-    const w = window as unknown as { __walletAddress?: string | null };
-    if (w.__walletAddress === null) setHeaderOff(true);
-    const onState = (e: Event) => {
-      const addr = (e as CustomEvent<string | null>).detail;
-      if (addr) {
-        setHeaderOff(false);
-        setRawAccount(addr);
-        getEth()?.request({ method: "eth_chainId" }).then((id) => setChainOk(typeof id === "string" && id.toLowerCase() === ARC.chainIdHex)).catch(() => {});
-      } else {
-        setHeaderOff(true);
-      }
-    };
-    window.addEventListener("wallet-state", onState);
-    return () => window.removeEventListener("wallet-state", onState);
-  }, []);
+    let live = true;
+    setProvider(undefined);
+    setChainOk(null);
+    if (!connector) return;
+    connector.getProvider().then((p) => { if (live) setProvider(p as Eip1193); }).catch(() => {});
+    return () => { live = false; };
+  }, [connector]);
 
-  /* wallet state */
+  /* which network the wallet is on */
   useEffect(() => {
-    const eth = getEth();
-    if (!eth) return;
-    const checkChain = (id: unknown) => setChainOk(typeof id === "string" && id.toLowerCase() === ARC.chainIdHex);
-    const onAccounts = (accts: unknown) => setRawAccount((accts as string[] | undefined)?.[0] ?? null);
-
-    eth.request({ method: "eth_accounts" }).then(onAccounts).catch(() => {});
-    eth.request({ method: "eth_chainId" }).then(checkChain).catch(() => {});
-    eth.on?.("accountsChanged", onAccounts);
-    eth.on?.("chainChanged", checkChain);
-    return () => {
-      eth.removeListener?.("accountsChanged", onAccounts);
-      eth.removeListener?.("chainChanged", checkChain);
-    };
-  }, []);
+    if (!provider) return;
+    const checkChain = (id: unknown) =>
+      setChainOk(typeof id === "string" ? id.toLowerCase() === ARC.chainIdHex : typeof id === "number" ? id === ARC.chainId : null);
+    provider.request({ method: "eth_chainId" }).then(checkChain).catch(() => {});
+    provider.on?.("chainChanged", checkChain);
+    return () => provider.removeListener?.("chainChanged", checkChain);
+  }, [provider]);
 
   /* USDC balance (ERC-20 face, 6 decimals) */
   const loadBalance = useCallback(async () => {
-    const eth = getEth();
+    const eth = provider;
     if (!eth || !account || !chainOk) return setBalance(null);
     try {
       const res = (await eth.request({
@@ -267,7 +252,7 @@ export default function SendPage() {
     } catch {
       setBalance(null);
     }
-  }, [account, chainOk]);
+  }, [account, chainOk, provider]);
 
   useEffect(() => {
     loadBalance();
@@ -282,7 +267,7 @@ export default function SendPage() {
   /* network fee estimate (gas is paid in USDC) */
   useEffect(() => {
     setFee(null);
-    const eth = getEth();
+    const eth = provider;
     if (!eth || !account || !chainOk || !toValid || !units || units <= ZERO) return;
     let live = true;
     const t = setTimeout(async () => {
@@ -304,7 +289,7 @@ export default function SendPage() {
       live = false;
       clearTimeout(t);
     };
-  }, [account, chainOk, to, toValid, units]);
+  }, [account, chainOk, provider, to, toValid, units]);
 
   /* validation */
   const problem = useMemo((): { text: string; hard: boolean } | null => {
@@ -322,7 +307,7 @@ export default function SendPage() {
 
   /* actions */
   const switchToArc = async () => {
-    const eth = getEth();
+    const eth = provider;
     if (!eth) return;
     try {
       await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: ARC.chainIdHex }] });
@@ -366,7 +351,7 @@ export default function SendPage() {
   };
 
   const send = async () => {
-    const eth = getEth();
+    const eth = provider;
     if (!eth || !account || problem || !units) return;
     setPhase("signing");
     setMessage("");
