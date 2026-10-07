@@ -155,7 +155,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   return (
     <>
       {/* Plain full-width bar (no card). It sits on the page background with a thin line underneath. */}
-      <header className="relative z-50 border-b border-white/[0.07] bg-[#05080e]/40 backdrop-blur-xl">
+      <header className="relative z-50 border-b border-white/[0.07]">
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
@@ -164,10 +164,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleMenuToggle}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg font-bold transition-all duration-200 ${
-                mobileMenuOpen
-                  ? "border-[#159fff]/40 bg-[#159fff]/10 text-white"
-                  : "border-white/[0.08] bg-white/[0.035] text-white/65 hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center text-2xl font-bold transition-all duration-200 ${
+                mobileMenuOpen ? "text-[#39c4ff]" : "text-white/70 hover:text-white"
               }`}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
