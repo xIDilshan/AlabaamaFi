@@ -159,7 +159,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
-          <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
+          <div className={`relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 transition-colors duration-200 sm:min-h-[74px] sm:px-6 ${mobileMenuOpen ? "bg-[#05080e]" : ""}`}>
             {/* LEFT */}
 
             <button
@@ -208,7 +208,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {/* MOBILE BACKDROP */}
 
           <div
-            className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-[2px] transition-all duration-300 ${
+            className={`fixed inset-x-0 bottom-0 top-[69px] z-40 bg-black/60 transition-all duration-300 sm:top-[75px] ${
               mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
             }`}
             onClick={closeMobileMenu}
@@ -238,20 +238,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       key={item.href}
                       href={item.href}
                       onClick={closeMobileMenu}
-                      className={`group flex items-center gap-4 rounded-2xl px-3 py-3 transition-all duration-200 ${
-                        active
-                          ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent"
-                          : "hover:bg-white/[0.04]"
-                      }`}
+                      className="group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 hover:bg-white/[0.04]"
                     >
                       <span
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-                          active
-                            ? "bg-gradient-to-br from-[#13b8ff] via-[#1688f5] to-[#263be8] text-white shadow-[0_8px_24px_rgba(19,145,255,0.35)]"
-                            : "border border-white/[0.06] bg-white/[0.04] text-[#62c8ff] group-hover:bg-white/[0.07]"
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center transition-all duration-200 ${
+                          active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
                         }`}
+                        style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d={item.icon} />
                         </svg>
                       </span>
@@ -259,10 +254,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       <span className={`text-base font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
                         {item.label}
                       </span>
-
-                      {active && (
-                        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#159fff] shadow-[0_0_10px_rgba(21,159,255,0.8)]" />
-                      )}
                     </Link>
                   );
                 })}
