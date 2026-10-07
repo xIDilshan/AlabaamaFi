@@ -154,12 +154,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      {/* Plain full-width bar (no card). It sits on the page background with a thin line underneath. */}
-      <header className="relative z-50 border-b border-white/[0.07]">
+      {/* No background, no border: only the logo, site name, sections and the wallet button show. */}
+      <header className="relative z-50">
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
-          <div className={`relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 transition-colors duration-200 sm:min-h-[74px] sm:px-6 ${mobileMenuOpen ? "bg-[#05080e]" : ""}`}>
+          <div className="relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
             {/* LEFT */}
 
             <button
