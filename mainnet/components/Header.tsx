@@ -164,15 +164,23 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleMenuToggle}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center text-[28px] font-bold transition-all duration-200 ${
-                mobileMenuOpen ? "text-[#39c4ff]" : "text-white/70 hover:text-white"
+              className={`flex h-12 w-12 shrink-0 items-center justify-center transition-colors duration-200 ${
+                mobileMenuOpen ? "text-[#39c4ff]" : "text-white/80 hover:text-white"
               }`}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
-              <span className={`transition-transform duration-200 ${mobileMenuOpen ? "rotate-90" : "rotate-0"}`}>
-                ☰
-              </span>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path
+                  d="M4 7h16"
+                  style={{ transformBox: "fill-box", transformOrigin: "center", transition: "transform .3s ease", transform: mobileMenuOpen ? "translateY(5px) rotate(45deg)" : "none" }}
+                />
+                <path d="M4 12h16" style={{ transition: "opacity .2s ease", opacity: mobileMenuOpen ? 0 : 1 }} />
+                <path
+                  d="M4 17h16"
+                  style={{ transformBox: "fill-box", transformOrigin: "center", transition: "transform .3s ease", transform: mobileMenuOpen ? "translateY(-5px) rotate(-45deg)" : "none" }}
+                />
+              </svg>
             </button>
 
             {/* CENTER LOGO */}
@@ -213,42 +221,59 @@ export default function Header({ onMenuClick }: HeaderProps) {
             aria-hidden="true"
           />
 
-          {/* MOBILE MENU: see-through, so the page's space background shows (same as when the menu is closed) */}
+          {/* MOBILE MENU: big type, numbered rows, see-through so the page's space background shows */}
 
           <div
             className={`absolute left-0 right-0 top-full z-[60] overflow-hidden bg-[#010205]/25 backdrop-blur-2xl transition-all duration-300 ease-out ${
-              mobileMenuOpen ? "visible max-h-[640px] translate-y-0 opacity-100" : "invisible max-h-0 -translate-y-2 opacity-0"
+              mobileMenuOpen ? "visible max-h-[700px] translate-y-0 opacity-100" : "invisible max-h-0 -translate-y-2 opacity-0"
             }`}
           >
-            <div className="relative px-3 pb-5 pt-3 sm:px-5">
-              <nav className="grid gap-1">
-                {navItems.map((item) => {
+            <div className="relative px-4 pb-8 pt-5 sm:px-6">
+              <p className="px-3 text-xs font-medium uppercase tracking-[0.22em] text-[#4abaff]">Menu</p>
+
+              <nav className="mt-3 grid gap-1">
+                {navItems.map((item, index) => {
                   const active = isActive(item.href);
 
                   return (
-                    <Link
+                    <div
                       key={item.href}
-                      href={item.href}
-                      onClick={closeMobileMenu}
-                      className={`group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 ${
-                        active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
-                      }`}
+                      className={`transition-all duration-500 ${mobileMenuOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
+                      style={{ transitionDelay: mobileMenuOpen ? `${90 + index * 55}ms` : "0ms" }}
                     >
-                      <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center transition-all duration-200 ${
-                          active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
+                      <Link
+                        href={item.href}
+                        onClick={closeMobileMenu}
+                        className={`group flex items-center gap-5 rounded-2xl px-3 py-4 transition-colors duration-200 ${
+                          active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
                         }`}
-                        style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
                       >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d={item.icon} />
-                        </svg>
-                      </span>
+                        <span
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors duration-200 ${
+                            active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
+                          }`}
+                          style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
+                        >
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d={item.icon} />
+                          </svg>
+                        </span>
 
-                      <span className={`text-base font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
-                        {item.label}
-                      </span>
-                    </Link>
+                        <span
+                          className={`text-[26px] font-bold leading-none tracking-[-0.03em] ${
+                            active
+                              ? "bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent"
+                              : "text-white/75 group-hover:text-white"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+
+                        <span className={`ml-auto text-xs tracking-[0.2em] ${active ? "text-[#4abaff]" : "text-white/25"}`}>
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </Link>
+                    </div>
                   );
                 })}
               </nav>
