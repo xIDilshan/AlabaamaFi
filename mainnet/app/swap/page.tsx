@@ -20,10 +20,7 @@ const ARC = {
 };
 
 // Name of Arc mainnet inside Circle's App Kit.
-const KIT_CHAIN = "Arc";
 const SLIPPAGE_BPS = 100; // 1%
-// Optional. Without a key the swap service shares one rate limit between everyone.
-const CIRCLE_API_KEY = process.env.NEXT_PUBLIC_CIRCLE_API_KEY;
 
 /* Arc only swaps USDC <-> EURC here. Both have a 6-decimal ERC-20 interface. */
 type Sym = "USDC" | "EURC";
