@@ -21,6 +21,25 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
+// Black space look for the mobile menu: tiny stars + soft blue glows on near-black.
+const SPACE_MENU_BG = [
+  "radial-gradient(1.5px 1.5px at 8% 22%, rgba(169,223,255,.9), transparent)",
+  "radial-gradient(1px 1px at 17% 64%, rgba(169,223,255,.7), transparent)",
+  "radial-gradient(1.5px 1.5px at 26% 12%, rgba(169,223,255,.8), transparent)",
+  "radial-gradient(1px 1px at 34% 48%, rgba(169,223,255,.6), transparent)",
+  "radial-gradient(1.5px 1.5px at 43% 80%, rgba(169,223,255,.8), transparent)",
+  "radial-gradient(1px 1px at 52% 30%, rgba(169,223,255,.7), transparent)",
+  "radial-gradient(1.5px 1.5px at 61% 70%, rgba(169,223,255,.9), transparent)",
+  "radial-gradient(1px 1px at 69% 16%, rgba(169,223,255,.6), transparent)",
+  "radial-gradient(1.5px 1.5px at 77% 54%, rgba(169,223,255,.8), transparent)",
+  "radial-gradient(1px 1px at 84% 86%, rgba(169,223,255,.7), transparent)",
+  "radial-gradient(1.5px 1.5px at 91% 38%, rgba(169,223,255,.9), transparent)",
+  "radial-gradient(1px 1px at 96% 72%, rgba(169,223,255,.6), transparent)",
+  "radial-gradient(circle at 92% 0%, rgba(22,115,255,.30), transparent 55%)",
+  "radial-gradient(circle at 0% 100%, rgba(20,90,255,.16), transparent 55%)",
+  "linear-gradient(180deg, #020a1c 0%, #010205 100%)",
+].join(",");
+
 const connectButton =
   "bg-gradient-to-r from-[#13b8ff] via-[#1688f5] to-[#263be8] text-white shadow-[0_8px_30px_rgba(19,145,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_12px_38px_rgba(19,145,255,0.32)] active:translate-y-0";
 
@@ -243,8 +262,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {/* MOBILE MENU: slides down from the top and covers the header */}
 
           <div
-            className="fixed left-0 right-0 top-0 z-[80] rounded-b-[32px] border-x border-b border-white/[0.08] bg-[linear-gradient(180deg,#081326_0%,#05080e_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+            className="fixed left-0 right-0 top-0 z-[80] overflow-hidden rounded-b-[32px] border-x border-b border-white/[0.08] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
             style={{
+              backgroundImage: SPACE_MENU_BG,
               transform: mobileMenuOpen ? `translateY(${dragY}px)` : "translateY(-105%)",
               visibility: mobileMenuOpen ? "visible" : "hidden",
               transition: dragging
@@ -254,34 +274,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 : "transform .4s cubic-bezier(.32,.72,0,1), visibility 0s linear .4s",
             }}
           >
-            {/* top row: menu icon on one corner, logo + name on the other */}
+            {/* top row: logo + name on one corner, connect button on the other */}
             <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
-              <button
-                onClick={closeMobileMenu}
-                className="flex h-12 w-12 shrink-0 items-center justify-center text-[#39c4ff]"
-                aria-label="Close menu"
-              >
-                <svg
-                  width="36"
-                  height="36"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                  className={`transition-transform duration-300 ${mobileMenuOpen ? "rotate-90" : "rotate-0"}`}
-                >
-                  <path d="M4 7h16M4 12h16M4 17h16" />
-                </svg>
-              </button>
-
               <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
                 <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-7 w-7 shrink-0 object-contain" />
                 <h1 className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
                   Alabaama<span className="text-[#159fff]">Fi</span>
                 </h1>
               </Link>
+
+              <button
+                onClick={() => {
+                  closeMobileMenu();
+                  handleWalletClick();
+                }}
+                className={`${manrope.className} flex h-10 max-w-[108px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-normal sm:max-w-none sm:px-4 sm:text-sm ${connectButton}`}
+              >
+                <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
+
+                {isConnected && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
+                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
             </div>
 
             {/* sections */}
