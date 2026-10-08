@@ -21,23 +21,21 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
-// Black space look for the mobile menu: tiny stars + soft blue glows on near-black.
+// Black space look for the mobile menu: near-black with tiny white stars, no blue.
 const SPACE_MENU_BG = [
-  "radial-gradient(1.5px 1.5px at 8% 22%, rgba(169,223,255,.9), transparent)",
-  "radial-gradient(1px 1px at 17% 64%, rgba(169,223,255,.7), transparent)",
-  "radial-gradient(1.5px 1.5px at 26% 12%, rgba(169,223,255,.8), transparent)",
-  "radial-gradient(1px 1px at 34% 48%, rgba(169,223,255,.6), transparent)",
-  "radial-gradient(1.5px 1.5px at 43% 80%, rgba(169,223,255,.8), transparent)",
-  "radial-gradient(1px 1px at 52% 30%, rgba(169,223,255,.7), transparent)",
-  "radial-gradient(1.5px 1.5px at 61% 70%, rgba(169,223,255,.9), transparent)",
-  "radial-gradient(1px 1px at 69% 16%, rgba(169,223,255,.6), transparent)",
-  "radial-gradient(1.5px 1.5px at 77% 54%, rgba(169,223,255,.8), transparent)",
-  "radial-gradient(1px 1px at 84% 86%, rgba(169,223,255,.7), transparent)",
-  "radial-gradient(1.5px 1.5px at 91% 38%, rgba(169,223,255,.9), transparent)",
-  "radial-gradient(1px 1px at 96% 72%, rgba(169,223,255,.6), transparent)",
-  "radial-gradient(circle at 92% 0%, rgba(22,115,255,.30), transparent 55%)",
-  "radial-gradient(circle at 0% 100%, rgba(20,90,255,.16), transparent 55%)",
-  "linear-gradient(180deg, #020a1c 0%, #010205 100%)",
+  "radial-gradient(1.5px 1.5px at 8% 22%, rgba(255,255,255,.85), transparent)",
+  "radial-gradient(1px 1px at 17% 64%, rgba(255,255,255,.6), transparent)",
+  "radial-gradient(1.5px 1.5px at 26% 12%, rgba(255,255,255,.75), transparent)",
+  "radial-gradient(1px 1px at 34% 48%, rgba(255,255,255,.55), transparent)",
+  "radial-gradient(1.5px 1.5px at 43% 80%, rgba(255,255,255,.75), transparent)",
+  "radial-gradient(1px 1px at 52% 30%, rgba(255,255,255,.6), transparent)",
+  "radial-gradient(1.5px 1.5px at 61% 70%, rgba(255,255,255,.85), transparent)",
+  "radial-gradient(1px 1px at 69% 16%, rgba(255,255,255,.55), transparent)",
+  "radial-gradient(1.5px 1.5px at 77% 54%, rgba(255,255,255,.75), transparent)",
+  "radial-gradient(1px 1px at 84% 86%, rgba(255,255,255,.6), transparent)",
+  "radial-gradient(1.5px 1.5px at 91% 38%, rgba(255,255,255,.85), transparent)",
+  "radial-gradient(1px 1px at 96% 72%, rgba(255,255,255,.55), transparent)",
+  "linear-gradient(180deg, #06070a 0%, #000000 100%)",
 ].join(",");
 
 const connectButton =
@@ -200,9 +198,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleMenuToggle}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center transition-colors duration-200 ${
-                mobileMenuOpen ? "text-[#39c4ff]" : "text-white/80 hover:text-white"
-              }`}
+              className="flex h-12 w-12 shrink-0 items-center justify-center text-white/80 hover:text-white"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
@@ -215,7 +211,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 aria-hidden="true"
-                className={`transition-transform duration-300 ${mobileMenuOpen ? "rotate-90" : "rotate-0"}`}
               >
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
