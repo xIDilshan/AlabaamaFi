@@ -93,8 +93,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         setMobileMenuOpen(false);
         setShowWalletMenu(false);
         setCopied(false);
-
-        window.dispatchEvent(new CustomEvent("mobile-menu-state", { detail: false }));
       }
     };
 
@@ -134,18 +132,37 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   const handleMenuToggle = () => {
-    setMobileMenuOpen((current) => {
-      const next = !current;
-      window.dispatchEvent(new CustomEvent("mobile-menu-state", { detail: next }));
-      return next;
-    });
-
+    setMobileMenuOpen((current) => !current);
     onMenuClick?.();
   };
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
-    window.dispatchEvent(new CustomEvent("mobile-menu-state", { detail: false }));
+  };
+
+  /* swipe the little pill up (or tap it) to close the menu */
+  const [dragY, setDragY] = React.useState(0);
+  const [dragging, setDragging] = React.useState(false);
+  const dragStart = React.useRef<number | null>(null);
+
+  const onHandleDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragStart.current = e.clientY;
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onHandleMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStart.current === null) return;
+    setDragY(Math.min(0, e.clientY - dragStart.current));
+  };
+
+  const onHandleUp = () => {
+    if (dragStart.current === null) return;
+    const moved = dragY;
+    dragStart.current = null;
+    setDragging(false);
+    setDragY(0);
+    if (moved < -60 || Math.abs(moved) < 6) closeMobileMenu(); // swiped up enough, or just tapped
   };
 
   const isActive = (href: string) => {
@@ -170,16 +187,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path
-                  d="M4 7h16"
-                  style={{ transformBox: "fill-box", transformOrigin: "center", transition: "transform .3s ease", transform: mobileMenuOpen ? "translateY(5px) rotate(45deg)" : "none" }}
-                />
-                <path d="M4 12h16" style={{ transition: "opacity .2s ease", opacity: mobileMenuOpen ? 0 : 1 }} />
-                <path
-                  d="M4 17h16"
-                  style={{ transformBox: "fill-box", transformOrigin: "center", transition: "transform .3s ease", transform: mobileMenuOpen ? "translateY(-5px) rotate(-45deg)" : "none" }}
-                />
+              <svg
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+                className={`transition-transform duration-300 ${mobileMenuOpen ? "rotate-90" : "rotate-0"}`}
+              >
+                <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             </button>
 
@@ -211,72 +230,104 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </button>
           </div>
 
-          {/* MOBILE BACKDROP */}
+          {/* DIM OVERLAY: only darkens the page, no blur */}
 
           <div
-            className={`fixed inset-x-0 bottom-0 top-[69px] z-40 bg-transparent transition-all duration-300 sm:top-[75px] ${
+            className={`fixed inset-0 z-[70] bg-black/65 transition-opacity duration-300 ${
               mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
             }`}
             onClick={closeMobileMenu}
             aria-hidden="true"
           />
 
-          {/* MOBILE MENU: big type, numbered rows, see-through so the page's space background shows */}
+          {/* MOBILE MENU: slides down from the top and covers the header */}
 
           <div
-            className={`absolute left-0 right-0 top-full z-[60] overflow-hidden bg-[#010205]/25 backdrop-blur-2xl transition-all duration-300 ease-out ${
-              mobileMenuOpen ? "visible max-h-[700px] translate-y-0 opacity-100" : "invisible max-h-0 -translate-y-2 opacity-0"
-            }`}
+            className="fixed left-0 right-0 top-0 z-[80] rounded-b-[32px] border-x border-b border-white/[0.08] bg-[linear-gradient(180deg,#081326_0%,#05080e_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+            style={{
+              transform: mobileMenuOpen ? `translateY(${dragY}px)` : "translateY(-105%)",
+              visibility: mobileMenuOpen ? "visible" : "hidden",
+              transition: dragging
+                ? "none"
+                : mobileMenuOpen
+                ? "transform .45s cubic-bezier(.32,.72,0,1), visibility 0s"
+                : "transform .4s cubic-bezier(.32,.72,0,1), visibility 0s linear .4s",
+            }}
           >
-            <div className="relative px-4 pb-8 pt-5 sm:px-6">
-              <p className="px-3 text-xs font-medium uppercase tracking-[0.22em] text-[#4abaff]">Menu</p>
+            {/* top row: menu icon on one corner, logo + name on the other */}
+            <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
+              <button
+                onClick={closeMobileMenu}
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-[#39c4ff]"
+                aria-label="Close menu"
+              >
+                <svg
+                  width="36"
+                  height="36"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                  className={`transition-transform duration-300 ${mobileMenuOpen ? "rotate-90" : "rotate-0"}`}
+                >
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              </button>
 
-              <nav className="mt-3 grid gap-1">
-                {navItems.map((item, index) => {
-                  const active = isActive(item.href);
+              <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
+                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-7 w-7 shrink-0 object-contain" />
+                <h1 className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
+                  Alabaama<span className="text-[#159fff]">Fi</span>
+                </h1>
+              </Link>
+            </div>
 
-                  return (
-                    <div
-                      key={item.href}
-                      className={`transition-all duration-500 ${mobileMenuOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
-                      style={{ transitionDelay: mobileMenuOpen ? `${90 + index * 55}ms` : "0ms" }}
+            {/* sections */}
+            <nav className="grid gap-1 px-3 pb-2 pt-1 sm:px-5">
+              {navItems.map((item) => {
+                const active = isActive(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className={`group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 ${
+                      active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors duration-200 ${
+                        active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
+                      }`}
+                      style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
                     >
-                      <Link
-                        href={item.href}
-                        onClick={closeMobileMenu}
-                        className={`group flex items-center gap-5 rounded-2xl px-3 py-4 transition-colors duration-200 ${
-                          active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors duration-200 ${
-                            active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
-                          }`}
-                          style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
-                        >
-                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d={item.icon} />
-                          </svg>
-                        </span>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d={item.icon} />
+                      </svg>
+                    </span>
 
-                        <span
-                          className={`text-[26px] font-bold leading-none tracking-[-0.03em] ${
-                            active
-                              ? "bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent"
-                              : "text-white/75 group-hover:text-white"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
+                    <span className={`text-base font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
 
-                        <span className={`ml-auto text-xs tracking-[0.2em] ${active ? "text-[#4abaff]" : "text-white/25"}`}>
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                      </Link>
-                    </div>
-                  );
-                })}
-              </nav>
+            {/* little pill: swipe up (or tap) to close */}
+            <div
+              className="flex cursor-grab touch-none select-none justify-center pb-4 pt-3 active:cursor-grabbing"
+              onPointerDown={onHandleDown}
+              onPointerMove={onHandleMove}
+              onPointerUp={onHandleUp}
+              onPointerCancel={onHandleUp}
+              role="button"
+              aria-label="Swipe up to close the menu"
+            >
+              <span className="h-1.5 w-12 rounded-full bg-white/25" />
             </div>
           </div>
         </div>
