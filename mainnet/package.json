@@ -9,10 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@circle-fin/adapter-viem-v2": "^1.18.0",
+    "@circle-fin/adapter-viem-v2": "^1.19.0",
     "@circle-fin/app-kit": "^1.14.0",
     "@circle-fin/bridge-kit": "^1.15.1",
-    "@circle-fin/swap-kit": "^1.6.1",
+    "@circle-fin/swap-kit": "^1.7.1",
     "@coinbase/wallet-sdk": "^4.3.7",
     "@lifi/sdk": "^4.7.0",
     "@tanstack/react-query": "latest",
@@ -22,7 +22,7 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "viem": "latest",
+    "viem": "^2.57.4",
     "wagmi": "latest"
   },
   "devDependencies": {
