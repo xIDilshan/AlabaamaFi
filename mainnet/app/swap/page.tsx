@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
+import { createSwapKitContext, estimate, swap } from "@circle-fin/swap-kit";
+import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
 
 // Same fonts as the Send page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
