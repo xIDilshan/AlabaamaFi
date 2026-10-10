@@ -47,7 +47,7 @@ const TOKENS: Record<TokenSymbol, Token> = {
     name: "USD Coin",
     address: "0x3600000000000000000000000000000000000000",
     decimals: 6,
-    logo: "/tokens/usdc.png",
+    logo: "/tokens/usdc-logo.webp",
   },
 
   EURC: {
@@ -55,7 +55,7 @@ const TOKENS: Record<TokenSymbol, Token> = {
     name: "Euro Coin",
     address: "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
     decimals: 6,
-    logo: "/tokens/eurc.png",
+    logo: "/tokens/eurc-logo.png",
   },
 
   cirBTC: {
@@ -63,7 +63,7 @@ const TOKENS: Record<TokenSymbol, Token> = {
     name: "Circle Wrapped Bitcoin",
     address: "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
     decimals: 8,
-    logo: "/tokens/cirbtc.jpeg",
+    logo: "/tokens/cirbtc-logo.jpeg",
   },
 };
 
