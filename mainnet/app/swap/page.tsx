@@ -182,20 +182,18 @@ function SpaceBackground() {
 }
 
 const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: ReactNode; disabled?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-2 py-[3px] text-[11px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-3 sm:py-1 sm:text-xs">
+  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-1.5 py-[2px] text-[10px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-2.5 sm:py-[3px] sm:text-[11px]">
     {children}
   </button>
 );
 
-/** Two arrows sliding past each other, left and right (used while swapping). */
+const Spinner = () => <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />;
+
+/** The swap icon (two arrows) drawing itself: the top arrow is drawn right to left, then the bottom one left to right. Repeats. */
 const SwapArrows = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ overflow: "visible" }}>
-    <g style={{ animation: "arrowLeft 1.1s ease-in-out infinite" }}>
-      <path d="M20 7H5M9 3 5 7l4 4" />
-    </g>
-    <g style={{ animation: "arrowRight 1.1s ease-in-out infinite" }}>
-      <path d="M4 17h15M15 13l4 4-4 4" />
-    </g>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 7H5M9 3 5 7l4 4" pathLength={1} strokeDasharray="1" style={{ animation: "arrowDraw 1.6s ease-in-out infinite" }} />
+    <path d="M4 17h15M15 13l4 4-4 4" pathLength={1} strokeDasharray="1" style={{ animation: "arrowDraw 1.6s ease-in-out .25s infinite" }} />
   </svg>
 );
 
@@ -305,9 +303,9 @@ const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void
     onClick={onClick}
     disabled={disabled}
     aria-label={`Choose token, now ${sym}`}
-    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-[15px] font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3 sm:text-base"
+    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[17px]"
   >
-    <span className="block h-8 w-8 shrink-0 sm:h-9 sm:w-9"><Logo name={sym} fluid /></span>
+    <span className="block h-9 w-9 shrink-0 sm:h-10 sm:w-10"><Logo name={sym} fluid /></span>
     {sym}
     <span className="text-slate-400"><Chevron /></span>
   </button>
@@ -329,7 +327,8 @@ const ChangeBadge = ({ value }: { value: number }) => {
   );
 };
 
-/* mobile only: thin card under "You receive": logo, price, change, market cap and 24h volume. Tap it to open the token chart. */
+/* mobile only: thin card under "You receive". Logo, price, change, MC and Vol sit on one line next to the logo;
+   they only wrap onto a second line when there is not enough room (for example a long cirBTC price). Tap it to open the token chart. */
 function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow | null | undefined; failed: boolean; onOpen: () => void }) {
   return (
     <button
@@ -340,15 +339,11 @@ function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow 
     >
       <span className="block h-8 w-8 shrink-0"><Logo name={sym} fluid /></span>
       {row ? (
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="text-sm font-semibold tabular-nums">{fmtPrice(row.price)}</span>
-            {row.change24h !== null && <ChangeBadge value={row.change24h} />}
-          </span>
-          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-slate-500">
-            <span>MCap <span className="font-semibold text-slate-300">{fmtCompact(row.marketCap)}</span></span>
-            <span>24h Vol <span className="font-semibold text-slate-300">{fmtCompact(row.volume24h)}</span></span>
-          </span>
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 tabular-nums">
+          <span className="whitespace-nowrap text-sm font-semibold">{fmtPrice(row.price)}</span>
+          {row.change24h !== null && <ChangeBadge value={row.change24h} />}
+          <span className="whitespace-nowrap text-[11px] text-slate-500">MC <span className="font-semibold text-slate-300">{fmtCompact(row.marketCap)}</span></span>
+          <span className="whitespace-nowrap text-[11px] text-slate-500">Vol <span className="font-semibold text-slate-300">{fmtCompact(row.volume24h)}</span></span>
         </span>
       ) : (
         <span className="flex-1 text-xs text-slate-500">{failed ? "Market data unavailable" : "Loading price…"}</span>
@@ -483,54 +478,45 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
 
   return (
     <div className={compact ? "" : "rounded-[2rem] border border-white/[0.08] bg-[#050a16]/80 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-6"}>
-      {compact ? (
-        <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-xs tabular-nums text-slate-400">
-            {hover !== null && shownPrice ? `${fmtPrice(shownPrice)} · ${shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}` : "Touch the chart to see prices"}
-          </p>
-          {kindToggle}
+      <div className={`flex flex-wrap items-center gap-3 ${compact ? "justify-end" : "justify-between"}`}>
+        {!compact && (
+          <div className="flex gap-1.5">
+            {SYMS.map((s) => (
+              <button key={s} onClick={() => setSym?.(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
+                <span className="block h-5 w-5"><Logo name={s} fluid /></span>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+        {kindToggle}
+      </div>
+
+      <div className="mt-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-2xl font-bold tabular-nums">{shownPrice ? fmtPrice(shownPrice) : "—"}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</p>
         </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-1.5">
-              {SYMS.map((s) => (
-                <button key={s} onClick={() => setSym?.(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
-                  <span className="block h-5 w-5"><Logo name={s} fluid /></span>
-                  {s}
-                </button>
-              ))}
-            </div>
-            {kindToggle}
-          </div>
+        {status === "ok" && n > 1 && (
+          <span className={`inline-flex items-center gap-1 text-sm font-semibold tabular-nums ${up ? "text-emerald-300" : "text-red-300"}`}>
+            <Arrow up={up} />
+            {fmtPct(change)} <span className="font-normal text-slate-500">{range}</span>
+          </span>
+        )}
+      </div>
 
-          <div className="mt-4 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-2xl font-bold tabular-nums">{shownPrice ? fmtPrice(shownPrice) : "—"}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</p>
-            </div>
-            {status === "ok" && n > 1 && (
-              <span className={`inline-flex items-center gap-1 text-sm font-semibold tabular-nums ${up ? "text-emerald-300" : "text-red-300"}`}>
-                <Arrow up={up} />
-                {fmtPct(change)} <span className="font-normal text-slate-500">{range}</span>
-              </span>
-            )}
-          </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
+          <p className="text-xs text-slate-500">Market cap</p>
+          <p className="font-semibold tabular-nums">{fmtCompact(m?.marketCap ?? null)}</p>
+        </div>
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
+          <p className="text-xs text-slate-500">24h volume</p>
+          <p className="font-semibold tabular-nums">{fmtCompact(m?.volume24h ?? null)}</p>
+        </div>
+      </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-              <p className="text-xs text-slate-500">Market cap</p>
-              <p className="font-semibold tabular-nums">{fmtCompact(m?.marketCap ?? null)}</p>
-            </div>
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-              <p className="text-xs text-slate-500">24h volume</p>
-              <p className="font-semibold tabular-nums">{fmtCompact(m?.volume24h ?? null)}</p>
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="relative mt-4" style={{ height: compact ? 200 : 260 }}>
+      <div className="relative mt-4" style={{ height: compact ? 220 : 260 }}>
         {status === "ok" && n > 1 ? (
           <svg
             viewBox={`0 0 ${W} ${H}`}
@@ -586,20 +572,20 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
   );
 }
 
-/* pill above the swap card: two arrows sliding left and right while swapping, check mark when done */
+/* pill above the swap card: plain dark card. Only the icon is colored: the swap icon drawing itself while swapping, a green check mark when done. */
 function StatusPill({ state, url }: { state: "swapping" | "done"; url: string }) {
-  const base = "inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[15px] font-semibold shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:text-base";
+  const base = "inline-flex min-w-[230px] items-center justify-center gap-3 rounded-full border border-white/[0.1] bg-[#0a0f1a]/95 px-8 py-3 text-[15px] font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:min-w-[270px] sm:text-base";
   const anim = { animation: "pillIn .45s cubic-bezier(.2,1.2,.3,1) both" };
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-1.5 flex justify-center" role="status">
       {state === "swapping" ? (
-        <div key="swapping" className={`${base} border-[#2f8bff]/40 bg-[#081a36]/95 text-[#9fe9ff]`} style={anim}>
-          <span className="text-[#39c4ff]"><SwapArrows size={22} /></span>
+        <div key="swapping" className={base} style={anim}>
+          <span className="text-[#39c4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.8))" }}><SwapArrows size={22} /></span>
           Swapping
         </div>
       ) : (
-        <a key="done" href={url} target="_blank" rel="noreferrer" aria-label="Successfully swapped. View the transaction on the explorer" className={`${base} pointer-events-auto border-emerald-400/40 bg-[#062a1f]/95 text-emerald-300`} style={anim}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
+        <a key="done" href={url} target="_blank" rel="noreferrer" aria-label="Successfully swapped. View the transaction on the explorer" className={`${base} pointer-events-auto`} style={anim}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
             <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .15s forwards" }} />
           </svg>
           Successfully swapped
@@ -1058,7 +1044,7 @@ export default function SwapPage() {
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
   if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
-  else if (busy) action = { label: <span className="flex items-center gap-3"><SwapArrows size={18} />Swapping</span>, onClick: () => {}, disabled: true };
+  else if (busy) action = { label: <span className="flex items-center gap-3"><Spinner />Swapping</span>, onClick: () => {}, disabled: true };
   else action = { label: "Swap", onClick: swap, disabled: !!problem || !quote || quoting || chainOk === null };
 
   const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.375rem, 5.6vw, 1.625rem)" : "clamp(1.5rem, 6.5vw, 1.875rem)";
@@ -1073,8 +1059,7 @@ export default function SwapPage() {
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
         @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
-        @keyframes arrowLeft{0%{transform:translateX(7px);opacity:0}25%{opacity:1}75%{opacity:1}100%{transform:translateX(-7px);opacity:0}}
-        @keyframes arrowRight{0%{transform:translateX(-7px);opacity:0}25%{opacity:1}75%{opacity:1}100%{transform:translateX(7px);opacity:0}}
+        @keyframes arrowDraw{0%{stroke-dashoffset:1}45%{stroke-dashoffset:0}80%{stroke-dashoffset:0}100%{stroke-dashoffset:-1}}
         @keyframes pillIn{from{opacity:0;transform:translateY(-8px) scale(.9)}to{opacity:1;transform:none}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
@@ -1091,7 +1076,7 @@ export default function SwapPage() {
         <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
           {/* title */}
           <div className="fade-up mx-auto max-w-2xl text-center">
-            <h1 className="text-[2.25rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
+            <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
               Swap <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Tokens</span>
             </h1>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Swap USDC, EURC and cirBTC on Arc.</p>
