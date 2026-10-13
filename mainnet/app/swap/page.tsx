@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
@@ -45,8 +45,7 @@ const FEE_FLOOR = BigInt("20000000000"); // Arc minimum gas price (20 gwei)
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
 
 // Desktop layout (chart, side-by-side) starts at 900px so "desktop site" mode on a phone already gets it.
-// The page content is shown at 90% size, like browser zoom 90%. Set to 1 for full size.
-const PAGE_ZOOM = 0.9;
+// Phones always show the page at 100%. Desktop-size screens show it at 90% (the [zoom:0.9] class on the <section> below).
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -183,12 +182,22 @@ function SpaceBackground() {
 }
 
 const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: ReactNode; disabled?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-2.5 py-1 text-xs font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-3">
+  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-2 py-[3px] text-[11px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-3 sm:py-1 sm:text-xs">
     {children}
   </button>
 );
 
-const Spinner = () => <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />;
+/** Two arrows sliding past each other, left and right (used while swapping). */
+const SwapArrows = ({ size = 22 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ overflow: "visible" }}>
+    <g style={{ animation: "arrowLeft 1.1s ease-in-out infinite" }}>
+      <path d="M20 7H5M9 3 5 7l4 4" />
+    </g>
+    <g style={{ animation: "arrowRight 1.1s ease-in-out infinite" }}>
+      <path d="M4 17h15M15 13l4 4-4 4" />
+    </g>
+  </svg>
+);
 
 /** Chevron pointing down / left / right. */
 const Chevron = ({ dir = "down", size = 14 }: { dir?: "down" | "left" | "right"; size?: number }) => (
@@ -296,9 +305,9 @@ const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void
     onClick={onClick}
     disabled={disabled}
     aria-label={`Choose token, now ${sym}`}
-    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-sm font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3 sm:text-base"
+    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-[15px] font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3 sm:text-base"
   >
-    <span className="block h-7 w-7 shrink-0 sm:h-9 sm:w-9"><Logo name={sym} fluid /></span>
+    <span className="block h-8 w-8 shrink-0 sm:h-9 sm:w-9"><Logo name={sym} fluid /></span>
     {sym}
     <span className="text-slate-400"><Chevron /></span>
   </button>
@@ -320,85 +329,87 @@ const ChangeBadge = ({ value }: { value: number }) => {
   );
 };
 
-/* mobile only: thin card under "You receive". Tap it to open the full market view. */
+/* mobile only: thin card under "You receive": logo, price, change, market cap and 24h volume. Tap it to open the token chart. */
 function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow | null | undefined; failed: boolean; onOpen: () => void }) {
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label="Show market details"
+      aria-label="Show token chart"
       className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-left transition hover:bg-white/[0.045] min-[900px]:hidden"
     >
-      <span className="block h-7 w-7 shrink-0"><Logo name={sym} fluid /></span>
+      <span className="block h-8 w-8 shrink-0"><Logo name={sym} fluid /></span>
       {row ? (
-        <>
-          <span className="text-sm font-semibold tabular-nums">{fmtPrice(row.price)}</span>
-          {row.change24h !== null && <ChangeBadge value={row.change24h} />}
-        </>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="text-sm font-semibold tabular-nums">{fmtPrice(row.price)}</span>
+            {row.change24h !== null && <ChangeBadge value={row.change24h} />}
+          </span>
+          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-slate-500">
+            <span>MCap <span className="font-semibold text-slate-300">{fmtCompact(row.marketCap)}</span></span>
+            <span>24h Vol <span className="font-semibold text-slate-300">{fmtCompact(row.volume24h)}</span></span>
+          </span>
+        </span>
       ) : (
-        <span className="text-xs text-slate-500">{failed ? "Market data unavailable" : "Loading price…"}</span>
+        <span className="flex-1 text-xs text-slate-500">{failed ? "Market data unavailable" : "Loading price…"}</span>
       )}
-      <span className="ml-auto text-slate-400"><Chevron dir="right" size={18} /></span>
+      <span className="shrink-0 text-slate-400"><Chevron dir="right" size={18} /></span>
     </button>
   );
 }
 
-/* mobile only: opens in front of the swap card, with a back arrow on the left */
-function MarketDetail({ sym, row, onBack }: { sym: Sym; row: MarketRow | null | undefined; onBack: () => void }) {
+/* mobile only: opens in front of the swap card with the token's chart. Left arrow goes back. */
+function MarketDetail({ sym, market, onBack }: { sym: Sym; market: Market; onBack: () => void }) {
   return (
-    <div className="absolute inset-0 z-20 rounded-[2rem] bg-[#070d1a] p-4 sm:p-5 min-[900px]:hidden">
+    <div className="absolute inset-0 z-20 overflow-y-auto rounded-[1.75rem] bg-[#070d1a] p-4 sm:rounded-[2rem] sm:p-5 min-[900px]:hidden">
       <div className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back to swap" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.07] hover:text-white">
           <Chevron dir="left" size={20} />
         </button>
         <span className="block h-8 w-8 shrink-0"><Logo name={sym} fluid /></span>
-        {row ? (
-          <>
-            <span className="text-lg font-bold tabular-nums">{fmtPrice(row.price)}</span>
-            {row.change24h !== null && <ChangeBadge value={row.change24h} />}
-          </>
-        ) : (
-          <span className="text-sm text-slate-500">Market data unavailable</span>
-        )}
+        <div className="leading-tight">
+          <p className="text-base font-bold">{sym}</p>
+          <p className="text-xs text-slate-500">{TOKENS[sym].name}</p>
+        </div>
       </div>
-
-      {row && (
-        <dl className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-            <dt className="text-xs text-slate-500">Market cap</dt>
-            <dd className="mt-1 text-base font-semibold tabular-nums">{fmtCompact(row.marketCap)}</dd>
-          </div>
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-            <dt className="text-xs text-slate-500">24h volume</dt>
-            <dd className="mt-1 text-base font-semibold tabular-nums">{fmtCompact(row.volume24h)}</dd>
-          </div>
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-            <dt className="text-xs text-slate-500">Price</dt>
-            <dd className="mt-1 text-base font-semibold tabular-nums">{fmtPrice(row.price)}</dd>
-          </div>
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-            <dt className="text-xs text-slate-500">Change</dt>
-            <dd className="mt-1 text-base font-semibold tabular-nums">{row.change24h === null ? "—" : `${row.change24h >= 0 ? "+" : "-"}${fmtPct(row.change24h)}`}</dd>
-          </div>
-        </dl>
-      )}
-      {row?.note && <p className="mt-3 text-xs text-slate-500">{row.note}</p>}
+      <div className="mt-4">
+        <ChartPanel sym={sym} market={market} compact />
+      </div>
     </div>
   );
 }
 
-/* desktop only: price chart on the left of the swap card */
-const RANGES: { d: 1 | 7 | 30 | 90 | 365; label: string }[] = [
-  { d: 1, label: "1D" },
-  { d: 7, label: "7D" },
-  { d: 30, label: "1M" },
-  { d: 90, label: "3M" },
-  { d: 365, label: "1Y" },
-];
+/* price chart: on the left of the swap card (desktop) and inside the mobile token view */
+const RANGES = ["1H", "4H", "1D", "7D", "1M", "3M", "1Y"] as const;
+type Range = (typeof RANGES)[number];
 type Candle = [number, number, number, number, number]; // time, open, high, low, close
 
-function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => void; market: Market }) {
-  const [days, setDays] = useState<1 | 7 | 30 | 90 | 365>(1);
+/** Candles from a price line: each candle goes from the previous price to this one. */
+function pointsToCandles(pts: [number, number][]): Candle[] {
+  const out: Candle[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const o = pts[i - 1][1];
+    const c = pts[i][1];
+    out.push([pts[i][0], o, Math.max(o, c), Math.min(o, c), c]);
+  }
+  return out;
+}
+
+const LineIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 17l6-6 4 4 8-8M17 7h4v4" />
+  </svg>
+);
+const CandleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 3v3M8 14v4M16 6v3M16 17v4" />
+    <rect x="6" y="6" width="4" height="8" rx="1" />
+    <rect x="14" y="9" width="4" height="8" rx="1" />
+  </svg>
+);
+
+function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym?: (s: Sym) => void; market: Market; compact?: boolean }) {
+  const [range, setRange] = useState<Range>("1D");
   const [kind, setKind] = useState<"line" | "candle">("line");
   const [data, setData] = useState<{ points?: [number, number][]; candles?: Candle[]; note?: string } | null>(null);
   const [status, setStatus] = useState<"loading" | "error" | "ok">("loading");
@@ -408,7 +419,7 @@ function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => voi
     let live = true;
     setStatus("loading");
     setHover(null);
-    fetch(`/api/market?type=chart&kind=${kind}&token=${sym}&days=${days}`)
+    fetch(`/api/market?type=chart&kind=${kind}&token=${sym}&range=${range}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("chart"))))
       .then((j) => {
         if (!live) return;
@@ -419,10 +430,11 @@ function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => voi
     return () => {
       live = false;
     };
-  }, [sym, days, kind]);
+  }, [sym, range, kind]);
 
-  const candles = kind === "candle" ? data?.candles ?? [] : [];
-  const pts = kind === "line" ? data?.points ?? [] : [];
+  // works with either answer shape, so a price line can always be drawn as candles and the other way round
+  const pts: [number, number][] = kind === "line" ? data?.points ?? (data?.candles ? data.candles.map((c) => [c[0], c[4]] as [number, number]) : []) : [];
+  const candles: Candle[] = kind === "candle" ? data?.candles ?? (data?.points ? pointsToCandles(data.points) : []) : [];
   const n = kind === "candle" ? candles.length : pts.length;
   const W = 600;
   const H = 260;
@@ -447,62 +459,88 @@ function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => voi
   const line = pts.map((p, i) => `${i ? "L" : "M"}${xOf(i).toFixed(1)} ${yOf(p[1]).toFixed(1)}`).join(" ");
   const m = market[sym];
 
+  const move = (e: ReactPointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const frac = (e.clientX - r.left) / r.width;
+    setHover(Math.max(0, Math.min(n - 1, kind === "candle" ? Math.floor(frac * n) : Math.round(frac * (n - 1)))));
+  };
+
+  const kindToggle = (
+    <div className="flex gap-1 rounded-full bg-white/[0.05] p-1">
+      {(["line", "candle"] as const).map((k) => (
+        <button
+          key={k}
+          onClick={() => setKind(k)}
+          aria-label={k === "line" ? "Line chart" : "Candle chart"}
+          title={k === "line" ? "Line chart" : "Candle chart"}
+          className={`flex h-8 w-9 items-center justify-center rounded-full transition ${k === kind ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "text-slate-400 hover:text-white"}`}
+        >
+          {k === "line" ? <LineIcon /> : <CandleIcon />}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="rounded-[2rem] border border-white/[0.08] bg-[#050a16]/80 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1.5">
-          {SYMS.map((s) => (
-            <button key={s} onClick={() => setSym(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
-              <span className="block h-5 w-5"><Logo name={s} fluid /></span>
-              {s}
-            </button>
-          ))}
+    <div className={compact ? "" : "rounded-[2rem] border border-white/[0.08] bg-[#050a16]/80 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-6"}>
+      {compact ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-xs tabular-nums text-slate-400">
+            {hover !== null && shownPrice ? `${fmtPrice(shownPrice)} · ${shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}` : "Touch the chart to see prices"}
+          </p>
+          {kindToggle}
         </div>
-        <div className="flex gap-1 rounded-full bg-white/[0.05] p-1">
-          {(["line", "candle"] as const).map((k) => (
-            <button key={k} onClick={() => setKind(k)} className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition ${k === kind ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "text-slate-400 hover:text-white"}`}>
-              {k === "line" ? "Line" : "Candles"}
-            </button>
-          ))}
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-1.5">
+              {SYMS.map((s) => (
+                <button key={s} onClick={() => setSym?.(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
+                  <span className="block h-5 w-5"><Logo name={s} fluid /></span>
+                  {s}
+                </button>
+              ))}
+            </div>
+            {kindToggle}
+          </div>
 
-      <div className="mt-4 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-2xl font-bold tabular-nums">{shownPrice ? fmtPrice(shownPrice) : "—"}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</p>
-        </div>
-        {status === "ok" && n > 1 && (
-          <span className={`inline-flex items-center gap-1 text-sm font-semibold tabular-nums ${up ? "text-emerald-300" : "text-red-300"}`}>
-            <Arrow up={up} />
-            {fmtPct(change)} <span className="font-normal text-slate-500">{RANGES.find((r) => r.d === days)?.label}</span>
-          </span>
-        )}
-      </div>
+          <div className="mt-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-2xl font-bold tabular-nums">{shownPrice ? fmtPrice(shownPrice) : "—"}</p>
+              <p className="mt-0.5 text-xs text-slate-500">{shownTime ? new Date(shownTime).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</p>
+            </div>
+            {status === "ok" && n > 1 && (
+              <span className={`inline-flex items-center gap-1 text-sm font-semibold tabular-nums ${up ? "text-emerald-300" : "text-red-300"}`}>
+                <Arrow up={up} />
+                {fmtPct(change)} <span className="font-normal text-slate-500">{range}</span>
+              </span>
+            )}
+          </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-          <p className="text-xs text-slate-500">Market cap</p>
-          <p className="font-semibold tabular-nums">{fmtCompact(m?.marketCap ?? null)}</p>
-        </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-          <p className="text-xs text-slate-500">24h volume</p>
-          <p className="font-semibold tabular-nums">{fmtCompact(m?.volume24h ?? null)}</p>
-        </div>
-      </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
+              <p className="text-xs text-slate-500">Market cap</p>
+              <p className="font-semibold tabular-nums">{fmtCompact(m?.marketCap ?? null)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
+              <p className="text-xs text-slate-500">24h volume</p>
+              <p className="font-semibold tabular-nums">{fmtCompact(m?.volume24h ?? null)}</p>
+            </div>
+          </div>
+        </>
+      )}
 
-      <div className="relative mt-4 h-[260px]">
+      <div className="relative mt-4" style={{ height: compact ? 200 : 260 }}>
         {status === "ok" && n > 1 ? (
           <svg
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="none"
             className="h-full w-full"
-            onMouseMove={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              const frac = (e.clientX - r.left) / r.width;
-              setHover(Math.max(0, Math.min(n - 1, kind === "candle" ? Math.floor(frac * n) : Math.round(frac * (n - 1)))));
-            }}
-            onMouseLeave={() => setHover(null)}
+            style={{ touchAction: "pan-y" }}
+            onPointerMove={move}
+            onPointerDown={move}
+            onPointerLeave={() => setHover(null)}
+            onPointerCancel={() => setHover(null)}
           >
             <defs>
               <linearGradient id="swapChartFill" x1="0" y1="0" x2="0" y2="1">
@@ -536,10 +574,10 @@ function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => voi
         )}
       </div>
 
-      <div className="mt-3 flex gap-1">
+      <div className="mt-3 flex gap-1 overflow-x-auto">
         {RANGES.map((r) => (
-          <button key={r.d} onClick={() => setDays(r.d)} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${r.d === days ? "bg-[#1978f5]/25 text-[#8fd4ff]" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
-            {r.label}
+          <button key={r} onClick={() => setRange(r)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${r === range ? "bg-[#1978f5]/25 text-[#8fd4ff]" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
+            {r}
           </button>
         ))}
       </div>
@@ -548,20 +586,20 @@ function ChartPanel({ sym, setSym, market }: { sym: Sym; setSym: (s: Sym) => voi
   );
 }
 
-/* pill at the head of the swap card: spinning swap icon while swapping, check mark when done */
+/* pill above the swap card: two arrows sliding left and right while swapping, check mark when done */
 function StatusPill({ state, url }: { state: "swapping" | "done"; url: string }) {
-  const base = "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl";
+  const base = "inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[15px] font-semibold shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:text-base";
   const anim = { animation: "pillIn .45s cubic-bezier(.2,1.2,.3,1) both" };
   return (
-    <div className="pointer-events-none absolute inset-x-0 -top-5 z-30 flex justify-center" role="status">
+    <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-1.5 flex justify-center" role="status">
       {state === "swapping" ? (
         <div key="swapping" className={`${base} border-[#2f8bff]/40 bg-[#081a36]/95 text-[#9fe9ff]`} style={anim}>
-          <span className="animate-spin text-[#39c4ff]"><Svg d={ICON_SWAP} size={18} /></span>
+          <span className="text-[#39c4ff]"><SwapArrows size={22} /></span>
           Swapping
         </div>
       ) : (
         <a key="done" href={url} target="_blank" rel="noreferrer" aria-label="Successfully swapped. View the transaction on the explorer" className={`${base} pointer-events-auto border-emerald-400/40 bg-[#062a1f]/95 text-emerald-300`} style={anim}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
             <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .15s forwards" }} />
           </svg>
           Successfully swapped
@@ -1020,10 +1058,10 @@ export default function SwapPage() {
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
   if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
-  else if (busy) action = { label: <span className="flex items-center gap-3"><Spinner />Swapping</span>, onClick: () => {}, disabled: true };
+  else if (busy) action = { label: <span className="flex items-center gap-3"><SwapArrows size={18} />Swapping</span>, onClick: () => {}, disabled: true };
   else action = { label: "Swap", onClick: swap, disabled: !!problem || !quote || quoting || chainOk === null };
 
-  const amountFont = amount.length > 9 ? "clamp(1.125rem, 4.5vw, 1.25rem)" : amount.length > 6 ? "clamp(1.25rem, 5vw, 1.5rem)" : "clamp(1.375rem, 5.5vw, 1.75rem)";
+  const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.375rem, 5.6vw, 1.625rem)" : "clamp(1.5rem, 6.5vw, 1.875rem)";
   const rate = quote && payNum > 0 ? Number(quote.out) / payNum : null;
   const balText = (s: Sym) => (ready && balances[s] !== null ? `Balance ${formatUnits(balances[s] as bigint, TOKENS[s].decimals)}` : "Balance —");
   const slipLabel = `${slippageBps / 100}%${slip.mode === "auto" || !customValid ? " (Auto)" : ""}`;
@@ -1035,6 +1073,8 @@ export default function SwapPage() {
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
         @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
+        @keyframes arrowLeft{0%{transform:translateX(7px);opacity:0}25%{opacity:1}75%{opacity:1}100%{transform:translateX(-7px);opacity:0}}
+        @keyframes arrowRight{0%{transform:translateX(-7px);opacity:0}25%{opacity:1}75%{opacity:1}100%{transform:translateX(7px);opacity:0}}
         @keyframes pillIn{from{opacity:0;transform:translateY(-8px) scale(.9)}to{opacity:1;transform:none}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
@@ -1047,18 +1087,18 @@ export default function SwapPage() {
       <div className="relative z-10">
         <Header />
 
-        {/* page content is shown at PAGE_ZOOM (90%) so it looks like browser zoom 90% */}
-        <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 ${CONTAINER}`} style={{ zoom: PAGE_ZOOM } as CSSProperties}>
+        {/* phones: normal size. Screens 900px+ wide: content at 90%, so 100% browser zoom looks like 90% did. Delete min-[900px]:[zoom:0.9] to turn this off. */}
+        <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
           {/* title */}
           <div className="fade-up mx-auto max-w-2xl text-center">
-            <h1 className="text-[2rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
+            <h1 className="text-[2.25rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
               Swap <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Tokens</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Swap USDC, EURC and cirBTC on Arc.</p>
+            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Swap USDC, EURC and cirBTC on Arc.</p>
           </div>
 
           {/* chart on the left (desktop only) + swap card */}
-          <div className={`mx-auto mt-8 flex w-full items-start justify-center gap-6 sm:mt-10 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
+          <div className={`mx-auto mt-12 flex w-full items-start justify-center gap-6 sm:mt-14 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
             {showChart && (
               <div className="hidden min-w-0 flex-1 min-[900px]:block">
                 <ChartPanel sym={chartSym} setSym={setChartSym} market={market} />
@@ -1215,7 +1255,7 @@ export default function SwapPage() {
                 )}
 
                 {/* mobile market view, in front of the card */}
-                {marketOpen && <MarketDetail sym={to} row={market[to]} onBack={() => setMarketOpen(false)} />}
+                {marketOpen && <MarketDetail sym={to} market={market} onBack={() => setMarketOpen(false)} />}
               </div>
             </div>
           </div>
@@ -1270,7 +1310,7 @@ export default function SwapPage() {
           <div className="mt-3">
             <div className="flex flex-wrap gap-2">
               {SLIP_PRESETS.map((p) => (
-                <button key={p} onClick={() => saveSlip({ ...slip, custom: p })} className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
+                <button key={p} onClick={() => saveSlip({ ...slip, custom: p })} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
                   {p}%
                 </button>
               ))}
@@ -1285,7 +1325,7 @@ export default function SwapPage() {
                 inputMode="decimal"
                 placeholder="Custom"
                 aria-label="Custom slippage in percent"
-                style={{ fontFamily: manrope.style.fontFamily, fontWeight: 600, fontSize: "1.125rem" }}
+                style={{ fontFamily: manrope.style.fontFamily, fontWeight: 700, fontSize: "1.125rem" }}
                 className="min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600"
               />
               <span className="text-slate-400">%</span>
