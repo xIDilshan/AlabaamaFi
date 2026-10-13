@@ -38,7 +38,6 @@ const TOKENS: Record<Sym, { name: string; address: string; decimals: number }> =
 };
 
 /* ---------- safety limits ---------- */
-const GAS_BUFFER = BigInt(50000); // keep ~0.05 USDC for gas when swapping USDC
 const PRICE_DRIFT = 0.005; // if the fresh price is >0.5% worse than the one shown, stop and ask again
 const SWAP_GAS_ESTIMATE = 300000; // typical gas for a swap, used only for the "Network fee" estimate
 const FEE_FLOOR = BigInt("20000000000"); // Arc minimum gas price (20 gwei)
@@ -182,18 +181,23 @@ function SpaceBackground() {
 }
 
 const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: ReactNode; disabled?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-1.5 py-[2px] text-[10px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-2.5 sm:py-[3px] sm:text-[11px]">
+  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-1.5 py-[2px] text-[9px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-2.5 sm:py-[3px] sm:text-[11px]">
     {children}
   </button>
 );
 
 const Spinner = () => <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />;
 
-/** The swap icon (two arrows) drawing itself: the top arrow is drawn right to left, then the bottom one left to right. Repeats. */
+/** The swap icon assembling itself: the top arrow slides in from the right, the bottom one from the left,
+    until the two sit one above the other. Then it repeats. */
 const SwapArrows = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M20 7H5M9 3 5 7l4 4" pathLength={1} strokeDasharray="1" style={{ animation: "arrowDraw 1.6s ease-in-out infinite" }} />
-    <path d="M4 17h15M15 13l4 4-4 4" pathLength={1} strokeDasharray="1" style={{ animation: "arrowDraw 1.6s ease-in-out .25s infinite" }} />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ overflow: "visible" }}>
+    <g style={{ animation: "arrowSlideA 1.5s ease-out infinite" }}>
+      <path d="M20 7H5M9 3 5 7l4 4" />
+    </g>
+    <g style={{ animation: "arrowSlideB 1.5s ease-out infinite" }}>
+      <path d="M4 17h15M15 13l4 4-4 4" />
+    </g>
   </svg>
 );
 
@@ -327,9 +331,15 @@ const ChangeBadge = ({ value }: { value: number }) => {
   );
 };
 
-/* mobile only: thin card under "You receive". Logo, price, change, MC and Vol sit on one line next to the logo;
-   they only wrap onto a second line when there is not enough room (for example a long cirBTC price). Tap it to open the token chart. */
+/* mobile only: thin card under "You receive". Logo, price, change, MCap and 24h Vol are lined up with the logo;
+   MCap and 24h Vol have their label above the value. They only wrap onto a second line when there is not enough room. Tap to open the token chart. */
 function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow | null | undefined; failed: boolean; onOpen: () => void }) {
+  const stat = (label: string, value: number | null) => (
+    <span className="flex flex-col leading-tight">
+      <span className="text-[10px] text-slate-500">{label}</span>
+      <span className="whitespace-nowrap text-[11px] font-semibold text-slate-300">{fmtCompact(value)}</span>
+    </span>
+  );
   return (
     <button
       type="button"
@@ -339,11 +349,11 @@ function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow 
     >
       <span className="block h-8 w-8 shrink-0"><Logo name={sym} fluid /></span>
       {row ? (
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 tabular-nums">
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 tabular-nums">
           <span className="whitespace-nowrap text-sm font-semibold">{fmtPrice(row.price)}</span>
           {row.change24h !== null && <ChangeBadge value={row.change24h} />}
-          <span className="whitespace-nowrap text-[11px] text-slate-500">MC <span className="font-semibold text-slate-300">{fmtCompact(row.marketCap)}</span></span>
-          <span className="whitespace-nowrap text-[11px] text-slate-500">Vol <span className="font-semibold text-slate-300">{fmtCompact(row.volume24h)}</span></span>
+          {stat("MCap", row.marketCap)}
+          {stat("24h Vol", row.volume24h)}
         </span>
       ) : (
         <span className="flex-1 text-xs text-slate-500">{failed ? "Market data unavailable" : "Loading price…"}</span>
@@ -572,25 +582,37 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
   );
 }
 
-/* pill above the swap card: plain dark card. Only the icon is colored: the swap icon drawing itself while swapping, a green check mark when done. */
-function StatusPill({ state, url }: { state: "swapping" | "done"; url: string }) {
-  const base = "inline-flex min-w-[230px] items-center justify-center gap-3 rounded-full border border-white/[0.1] bg-[#0a0f1a]/95 px-8 py-3 text-[15px] font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:min-w-[270px] sm:text-base";
-  const anim = { animation: "pillIn .45s cubic-bezier(.2,1.2,.3,1) both" };
+/* Pill above the swap card. It appears when you confirm in your wallet:
+   a round badge with the swap icon -> unfolds to show "Swapping" -> folds back -> check mark -> unfolds to show "Successfully swapped".
+   Plain dark card; only the icon is colored. */
+function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: string }) {
+  const isDone = stage === "done-circle" || stage === "done-open";
+  const open = stage === "swap-open" || stage === "done-open";
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-1.5 flex justify-center" role="status">
-      {state === "swapping" ? (
-        <div key="swapping" className={base} style={anim}>
-          <span className="text-[#39c4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.8))" }}><SwapArrows size={22} /></span>
-          Swapping
-        </div>
-      ) : (
-        <a key="done" href={url} target="_blank" rel="noreferrer" aria-label="Successfully swapped. View the transaction on the explorer" className={`${base} pointer-events-auto`} style={anim}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
-            <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .15s forwards" }} />
-          </svg>
-          Successfully swapped
-        </a>
-      )}
+    <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-1 flex justify-center" role="status" aria-live="polite">
+      <a
+        href={isDone ? url : undefined}
+        target={isDone ? "_blank" : undefined}
+        rel={isDone ? "noreferrer" : undefined}
+        aria-label={isDone ? "Successfully swapped. View the transaction on the explorer" : "Swapping"}
+        className={`inline-flex h-12 items-center overflow-hidden rounded-full border border-white/[0.1] bg-[#0a0f1a]/95 text-[15px] font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:h-14 sm:text-base ${isDone ? "pointer-events-auto" : ""}`}
+        style={{ animation: "pillIn .45s cubic-bezier(.2,1.2,.3,1) both" }}
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
+          {isDone ? (
+            <svg key="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
+              <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .1s forwards" }} />
+            </svg>
+          ) : (
+            <span key="swap" className="text-[#39c4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.8))" }}>
+              <SwapArrows size={24} />
+            </span>
+          )}
+        </span>
+        <span className="block overflow-hidden whitespace-nowrap" style={{ width: open ? "12.5rem" : 0, opacity: open ? 1 : 0, transition: "width .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}>
+          <span className="block pr-4">{isDone ? "Successfully swapped" : "Swapping"}</span>
+        </span>
+      </a>
     </div>
   );
 }
@@ -621,6 +643,7 @@ function explain(e: unknown, fallback: string): string {
 /* ---------- page ---------- */
 type Phase = "idle" | "swapping" | "failed";
 type ModalKind = null | "from" | "to" | "settings" | "history";
+type PillStage = null | "swap-circle" | "swap-open" | "swap-fold" | "done-circle" | "done-open";
 
 export default function SwapPage() {
   // Same wallet state as the header (wagmi).
@@ -643,7 +666,7 @@ export default function SwapPage() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState("");
-  const [pill, setPill] = useState<null | "swapping" | "done">(null);
+  const [pill, setPill] = useState<PillStage>(null);
   const [pillUrl, setPillUrl] = useState("");
 
   const [modal, setModal] = useState<ModalKind>(null);
@@ -658,6 +681,41 @@ export default function SwapPage() {
   const kitRef = useRef<KitLike | null>(null);
   const adapterRef = useRef<unknown>(null);
   const swapLock = useRef(false);
+
+  /* the pill: circle -> unfolds to "Swapping" -> folds -> check mark circle -> unfolds to "Successfully swapped" */
+  const pillRef = useRef<PillStage>(null);
+  const pillTimers = useRef<number[]>([]);
+  const confirmRef = useRef<(() => void) | null>(null);
+  const setStage = (st: PillStage) => {
+    pillRef.current = st;
+    setPill(st);
+  };
+  const clearPillTimers = () => {
+    pillTimers.current.forEach((t) => window.clearTimeout(t));
+    pillTimers.current = [];
+  };
+  const later = (fn: () => void, ms: number) => {
+    pillTimers.current.push(window.setTimeout(fn, ms));
+  };
+  const hidePill = () => {
+    clearPillTimers();
+    setStage(null);
+  };
+  const showSwapping = () => {
+    clearPillTimers();
+    setStage("swap-circle");
+    later(() => setStage("swap-open"), 450);
+  };
+  const showDone = () => {
+    clearPillTimers();
+    const wasShown = pillRef.current === "swap-circle" || pillRef.current === "swap-open";
+    if (wasShown) setStage("swap-fold");
+    const t1 = wasShown ? 500 : 0;
+    later(() => setStage("done-circle"), t1);
+    later(() => setStage("done-open"), t1 + 550);
+    later(() => setStage(null), t1 + 550 + 9000);
+  };
+  useEffect(() => () => pillTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
   /* settings are remembered on this device */
   useEffect(() => {
@@ -693,12 +751,6 @@ export default function SwapPage() {
     }
   }, [historyKey]);
 
-  /* "Successfully swapped" pill disappears after a few seconds */
-  useEffect(() => {
-    if (pill !== "done") return;
-    const t = setTimeout(() => setPill(null), 9000);
-    return () => clearTimeout(t);
-  }, [pill]);
 
   /* market prices, refreshed every minute */
   useEffect(() => {
@@ -764,6 +816,17 @@ export default function SwapPage() {
       const kit = await getKit();
       const supportedChains = ((await kit.getSupportedChains()) as { type: string }[]).filter((c) => c.type === "evm");
       const walletTransport = () => custom(provider as never);
+      // The wallet client reports when you confirm something in your wallet, so the pill can appear at that moment.
+      const raw = provider as Eip1193;
+      const watched = {
+        request: async (args: { method: string; params?: unknown[] }) => {
+          const result = await raw.request(args);
+          if (args.method === "eth_sendTransaction" || args.method.startsWith("eth_signTypedData")) confirmRef.current?.();
+          return result;
+        },
+        on: raw.on?.bind(raw),
+        removeListener: raw.removeListener?.bind(raw),
+      };
       adapterRef.current = new ViemAdapter(
         {
           getPublicClient: ({ chain }: { chain: unknown }) =>
@@ -772,7 +835,7 @@ export default function SwapPage() {
               transport: fallback([walletTransport(), ...ARC_RPCS.map((u) => http(u, { retryCount: 1, timeout: 8000 }))]),
             }),
           getWalletClient: ({ chain }: { chain: unknown }) =>
-            createWalletClient({ account: account as `0x${string}`, chain: chain as never, transport: walletTransport() }),
+            createWalletClient({ account: account as `0x${string}`, chain: chain as never, transport: custom(watched as never) }),
         } as never,
         { addressContext: "user-controlled", supportedChains } as never
       );
@@ -872,15 +935,18 @@ export default function SwapPage() {
   const payUsd = priceOf(from) !== null ? payNum * (priceOf(from) as number) : null;
   const getUsd = priceOf(to) !== null ? getNum * (priceOf(to) as number) : null;
 
+  /* USDC kept back for the network fee: 1.5x the estimated fee (at least 0.01 USDC, or 0.02 while there is no estimate yet) */
+  const gasReserve = netFee !== null ? BigInt(Math.max(10000, Math.ceil(netFee * 1.5 * 1e6))) : BigInt(20000);
+
   /* validation */
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (!amount) return { text: "Enter an amount", hard: false };
     if (units === null) return { text: `Use up to ${fromDec} decimal places`, hard: true };
     if (units <= ZERO) return { text: "Enter an amount", hard: false };
     if (balance !== null && units > balance) return { text: "Insufficient balance", hard: true };
-    if (from === "USDC" && balance !== null && units + GAS_BUFFER > balance) return { text: "Keep a little USDC for the network fee", hard: true };
+    if (from === "USDC" && balance !== null && units + gasReserve > balance) return { text: "Keep a little USDC for the network fee", hard: true };
     return null;
-  }, [amount, units, balance, from, fromDec]);
+  }, [amount, units, balance, from, fromDec, gasReserve]);
 
   /* actions */
   const switchToArc = async () => {
@@ -933,7 +999,7 @@ export default function SwapPage() {
 
   const setFraction = (half: boolean) => {
     if (balance === null) return;
-    const buffer = from === "USDC" ? GAS_BUFFER : ZERO;
+    const buffer = from === "USDC" ? gasReserve : ZERO;
     let v = half ? balance / BigInt(2) : balance;
     if (v + buffer > balance) v = balance > buffer ? balance - buffer : ZERO;
     setAmount(formatUnits(v, fromDec, 0).replace(/,/g, ""));
@@ -957,7 +1023,10 @@ export default function SwapPage() {
     if (swapLock.current || !provider || !account || problem || !quote) return; // lock stops double taps
     swapLock.current = true;
     setPhase("swapping");
-    setPill("swapping");
+    hidePill();
+    confirmRef.current = () => {
+      if (pillRef.current === null) showSwapping();
+    };
     setMessage("");
     try {
       /* 1. check the wallet right before sending */
@@ -994,7 +1063,7 @@ export default function SwapPage() {
       /* 5. confirm on-chain */
       const receipt = await waitForReceipt(result.txHash);
       if (receipt === null) {
-        setPill(null);
+        hidePill();
         setPhase("idle");
         setMessage("Swap sent, but not confirmed yet. Check the explorer before trying again.");
         setPillUrl(url);
@@ -1016,7 +1085,7 @@ export default function SwapPage() {
 
       const paid = `${tidy(cleanAmount, fromDec)} ${from}`;
       setPillUrl(url);
-      setPill("done");
+      showDone();
       setPhase("idle");
       setAmount("");
       setQuote(null);
@@ -1032,11 +1101,12 @@ export default function SwapPage() {
         }
       }
     } catch (e) {
-      setPill(null);
+      hidePill();
       setMessage(explain(e, "The swap could not be completed."));
       setPhase("failed");
     } finally {
       swapLock.current = false;
+      confirmRef.current = null;
     }
   };
 
@@ -1059,7 +1129,8 @@ export default function SwapPage() {
         @keyframes backgroundFloatReverse{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(5vw,-3vw,0) scale(1.12)}}
         @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
-        @keyframes arrowDraw{0%{stroke-dashoffset:1}45%{stroke-dashoffset:0}80%{stroke-dashoffset:0}100%{stroke-dashoffset:-1}}
+        @keyframes arrowSlideA{0%{transform:translateX(10px);opacity:0}40%{transform:translateX(0);opacity:1}80%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:0}}
+        @keyframes arrowSlideB{0%{transform:translateX(-10px);opacity:0}40%{transform:translateX(0);opacity:1}80%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:0}}
         @keyframes pillIn{from{opacity:0;transform:translateY(-8px) scale(.9)}to{opacity:1;transform:none}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
@@ -1083,7 +1154,7 @@ export default function SwapPage() {
           </div>
 
           {/* chart on the left (desktop only) + swap card */}
-          <div className={`mx-auto mt-12 flex w-full items-start justify-center gap-6 sm:mt-14 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
+          <div className={`mx-auto mt-14 flex w-full items-start justify-center gap-6 sm:mt-16 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
             {showChart && (
               <div className="hidden min-w-0 flex-1 min-[900px]:block">
                 <ChartPanel sym={chartSym} setSym={setChartSym} market={market} />
@@ -1093,7 +1164,7 @@ export default function SwapPage() {
             <div className="fade-up relative w-full max-w-lg shrink-0" style={{ "--delay": "150ms" } as CSSProperties}>
               <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
               <div className="relative rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-7">
-                {pill && <StatusPill state={pill} url={pillUrl} />}
+                {pill && <StatusPill stage={pill} url={pillUrl} />}
 
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 sm:pb-4">
                   <div>
