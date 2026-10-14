@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
@@ -10,19 +10,20 @@ const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "
 
 /* ---------- networks (USDC addresses: developers.circle.com/stablecoins/usdc-contract-addresses) ---------- */
 type ChainKey = "Arc" | "Ethereum" | "Base" | "Arbitrum" | "Optimism" | "Polygon" | "Avalanche" | "Unichain" | "Linea";
-type ChainInfo = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string };
+type ChainInfo = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icon: string };
 
 // The key is the name App Kit uses for the network (OP Mainnet is "Optimism", Polygon PoS is "Polygon").
+// `icon` is the network id in @web3icons/react.
 const CHAINS: Record<ChainKey, ChainInfo> = {
-  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC" },
-  Ethereum: { label: "Ethereum", chainId: 1, usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer: "https://etherscan.io", color: "#627EEA", gas: "ETH" },
-  Base: { label: "Base", chainId: 8453, usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer: "https://basescan.org", color: "#0052FF", gas: "ETH" },
-  Arbitrum: { label: "Arbitrum", chainId: 42161, usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", explorer: "https://arbiscan.io", color: "#28A0F0", gas: "ETH" },
-  Optimism: { label: "OP Mainnet", chainId: 10, usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", explorer: "https://optimistic.etherscan.io", color: "#FF0420", gas: "ETH" },
-  Polygon: { label: "Polygon", chainId: 137, usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", explorer: "https://polygonscan.com", color: "#8247E5", gas: "POL" },
-  Avalanche: { label: "Avalanche", chainId: 43114, usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", explorer: "https://snowtrace.io", color: "#E84142", gas: "AVAX" },
-  Unichain: { label: "Unichain", chainId: 130, usdc: "0x078D782b760474a361dDA0AF3839290b0EF57AD6", explorer: "https://uniscan.xyz", color: "#F50DB4", gas: "ETH" },
-  Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH" },
+  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icon: "" },
+  Ethereum: { label: "Ethereum", chainId: 1, usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer: "https://etherscan.io", color: "#627EEA", gas: "ETH", icon: "ethereum" },
+  Base: { label: "Base", chainId: 8453, usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer: "https://basescan.org", color: "#0052FF", gas: "ETH", icon: "base" },
+  Arbitrum: { label: "Arbitrum", chainId: 42161, usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", explorer: "https://arbiscan.io", color: "#28A0F0", gas: "ETH", icon: "arbitrum-one" },
+  Optimism: { label: "OP Mainnet", chainId: 10, usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", explorer: "https://optimistic.etherscan.io", color: "#FF0420", gas: "ETH", icon: "optimism" },
+  Polygon: { label: "Polygon", chainId: 137, usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", explorer: "https://polygonscan.com", color: "#8247E5", gas: "POL", icon: "polygon" },
+  Avalanche: { label: "Avalanche", chainId: 43114, usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", explorer: "https://snowtrace.io", color: "#E84142", gas: "AVAX", icon: "avalanche" },
+  Unichain: { label: "Unichain", chainId: 130, usdc: "0x078D782b760474a361dDA0AF3839290b0EF57AD6", explorer: "https://uniscan.xyz", color: "#F50DB4", gas: "ETH", icon: "unichain" },
+  Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH", icon: "linea" },
 };
 const PARTNERS: ChainKey[] = ["Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea"];
 
@@ -36,8 +37,9 @@ const ARC_RPCS = [
 /* ---------- safety limits ---------- */
 const DECIMALS = 6; // USDC has 6 decimals on every network above
 const ARC_GAS_RESERVE = BigInt(20000); // keep ~0.02 USDC for gas when bridging out of Arc
-const RECEIVE_DRIFT = 0.005; // if the fresh quote gives >0.5% less than the one shown, stop and ask again
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
+const AUTO_SLIPPAGE = 0.5; // percent
+const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -66,8 +68,9 @@ function formatUnits6(value: bigint, minFrac = 2): string {
 }
 const fmtNum = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 const fmtUsd = (n: number | null) => (n === null || !Number.isFinite(n) ? "—" : n > 0 && n < 0.01 ? "<$0.01" : `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+const fmtGas = (n: number) => (n === 0 ? "0" : n < 0.0001 ? "<0.0001" : n < 1 ? n.toFixed(4) : n.toFixed(3));
 const chainNum = (id: unknown) => (typeof id === "string" ? (id.startsWith("0x") ? parseInt(id, 16) : parseInt(id, 10)) : typeof id === "number" ? id : NaN);
-const pad32 = (hex: string) => hex.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const timeAgo = (t: number) => {
   const s = Math.max(1, Math.round((Date.now() - t) / 1000));
   if (s < 60) return "just now";
@@ -79,9 +82,7 @@ const timeAgo = (t: number) => {
 const txUrl = (key: ChainKey, hash: string) => `${CHAINS[key].explorer}/tx/${hash}`;
 
 /* ---------- wallet + App Kit types ---------- */
-type Eip1193 = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-};
+type Eip1193 = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 type Fee = { type?: string; token?: string; amount?: string };
 type StepRes = { name?: string; state?: string; txHash?: string; errorMessage?: string };
 type BridgeRes = { state?: string; steps?: StepRes[] };
@@ -105,12 +106,15 @@ type ReadClient = {
   getBalance: (args: { address: string }) => Promise<bigint>;
 };
 
-type Speed = "FAST" | "SLOW";
-type Quote = { receive: number | null; bridgeFee: number | null; gas: string[]; speed: Speed };
-type StepState = "pending" | "active" | "done";
-type StepRow = { key: "approve" | "burn" | "fetchAttestation" | "mint"; state: StepState; hash?: string };
+type GasFee = { amount: number; token: string };
+type Quote = { receive: number | null; bridgeFee: number | null; gas: GasFee[]; fast: boolean };
+type StepKey = "approve" | "burn" | "fetchAttestation" | "mint";
+type StepState = "pending" | "active" | "done" | "error";
+type StepRow = { key: StepKey; state: StepState; hash?: string };
 type HistoryRow = { id: string; t: number; from: ChainKey; to: ChainKey; amount: string; received: string; burn?: string; mint?: string };
 type Phase = "idle" | "bridging" | "done" | "failed";
+type Slip = { mode: "auto" | "custom"; custom: string };
+const STEP_ORDER: StepKey[] = ["approve", "burn", "fetchAttestation", "mint"];
 
 /* ---------- small UI pieces ---------- */
 function SpaceBackground() {
@@ -140,6 +144,7 @@ function SpaceBackground() {
   );
 }
 
+/** Centered popup on desktop. Closes with Escape or by tapping the dark area. */
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   useEffect(() => {
     if (!open) return;
@@ -164,12 +169,27 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
   );
 }
 
+/** The bridge result card. Dims the page. Pops up in the middle on desktop and slides up from the bottom on phones. */
+function Popup({ children, onClose, label }: { children: ReactNode; onClose?: () => void; label: string }) {
+  return (
+    <div className="fixed inset-0 z-[96] flex items-end justify-center sm:items-center sm:px-4" role="dialog" aria-modal="true" aria-label={label}>
+      <div className="absolute inset-0 bg-black/65" onClick={onClose} />
+      <div className="popup-panel relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] border border-white/[0.1] bg-[#080a0d] p-5 pb-8 shadow-[0_25px_80px_rgba(0,0,0,0.65)] sm:rounded-3xl sm:p-6">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 const Svg = ({ d, size = 20 }: { d: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d={d} />
   </svg>
 );
 const ICON_HISTORY = "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4";
+const ICON_SETTINGS = "M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z";
+const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
+
 const Chevron = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="m6 9 6 6 6-6" />
@@ -183,18 +203,49 @@ const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: 
   </button>
 );
 
-/** Round logo for a network. Arc and USDC use your logo files (mainnet/public), the others a colored letter. */
+/* ---------- logos ---------- */
+type IconComp = ComponentType<Record<string, unknown>>;
+let networkIconPromise: Promise<IconComp | null> | null = null;
+/** Network logos come from @web3icons/react (loaded only when needed). Arc uses your own logo file. */
+const loadNetworkIcon = () => {
+  if (!networkIconPromise) {
+    networkIconPromise = import("@web3icons/react/dynamic")
+      .then((m) => (m as unknown as { NetworkIcon: IconComp }).NetworkIcon)
+      .catch(() => null);
+  }
+  return networkIconPromise;
+};
+
 function ChainLogo({ chain, size = 28 }: { chain: ChainKey; size?: number }) {
   const [failed, setFailed] = useState(false);
+  const [Icon, setIcon] = useState<IconComp | null>(null);
+  useEffect(() => {
+    if (chain === "Arc") return;
+    let live = true;
+    loadNetworkIcon().then((c) => {
+      if (live && c) setIcon(() => c);
+    });
+    return () => {
+      live = false;
+    };
+  }, [chain]);
+
   if (chain === "Arc" && !failed)
     // eslint-disable-next-line @next/next/no-img-element
     return <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />;
+
   return (
-    <span className="flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: CHAINS[chain].color, fontSize: size * 0.45 }} aria-hidden>
+    <span className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-white" style={{ width: size, height: size, background: CHAINS[chain].color, fontSize: size * 0.45 }} aria-label={CHAINS[chain].label}>
       {CHAINS[chain].label[0]}
+      {Icon && chain !== "Arc" && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Icon id={CHAINS[chain].icon} variant="background" size={size} />
+        </span>
+      )}
     </span>
   );
 }
+
 function UsdcLogo({ size = 28 }: { size?: number }) {
   const [failed, setFailed] = useState(false);
   if (!failed)
@@ -209,6 +260,7 @@ function UsdcLogo({ size = 28 }: { size?: number }) {
   );
 }
 
+/** Network chip. inline-flex for both versions, so Arc (no arrow) is never wider than the others. */
 function ChainButton({ chain, onClick, disabled }: { chain: ChainKey; onClick?: () => void; disabled?: boolean }) {
   const content = (
     <>
@@ -217,7 +269,7 @@ function ChainButton({ chain, onClick, disabled }: { chain: ChainKey; onClick?: 
       {onClick && <span className="text-slate-400"><Chevron /></span>}
     </>
   );
-  const cls = "flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base";
+  const cls = "inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base";
   return onClick ? (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={`Choose network, now ${CHAINS[chain].label}`} className={`${cls} transition hover:bg-white/[0.12] disabled:opacity-60`}>
       {content}
@@ -227,7 +279,7 @@ function ChainButton({ chain, onClick, disabled }: { chain: ChainKey; onClick?: 
   );
 }
 
-const STEP_LABEL = (key: StepRow["key"], from: ChainKey, to: ChainKey) =>
+const STEP_LABEL = (key: StepKey, from: ChainKey, to: ChainKey) =>
   ({
     approve: `Approve USDC on ${CHAINS[from].label}`,
     burn: `Send USDC from ${CHAINS[from].label}`,
@@ -235,22 +287,34 @@ const STEP_LABEL = (key: StepRow["key"], from: ChainKey, to: ChainKey) =>
     mint: `Receive USDC on ${CHAINS[to].label}`,
   })[key];
 
-function explain(e: unknown, fallback: string): string {
-  const err = e as { code?: number | string; message?: string };
-  const msg = err?.message ?? "";
-  if (err?.code === 4001 || /reject|denied|cancel/i.test(msg)) return "User rejected the transaction";
+/** Turns wallet / SDK / network errors into a short, clear message. */
+function explain(e: unknown, fallback: string, gasCoin = "gas coin"): string {
+  const err = e as { code?: number | string; message?: string; shortMessage?: string; details?: string; cause?: { code?: number | string; message?: string } };
+  const msg = `${err?.shortMessage ?? ""} ${err?.message ?? ""} ${err?.details ?? ""} ${err?.cause?.message ?? ""}`;
+  const code = err?.code ?? err?.cause?.code;
   const known: Record<string, string> = {
     NO_WALLET: "Wallet not ready. Reconnect and try again.",
     ACCOUNT_CHANGED: "Your wallet account changed. Reconnect and try again.",
     BAD_AMOUNT: "Enter a valid amount.",
     NO_BALANCE: "Insufficient balance",
     NO_QUOTE: "Couldn't get a quote right now. Try again.",
-    QUOTE_CHANGED: "The fees changed. Review the new amount and tap Bridge again.",
+    QUOTE_CHANGED: "The fees changed more than your slippage allows. Review the new amount and tap Bridge again.",
     TOO_SMALL: "This amount is too small to cover the bridge fees.",
   };
-  for (const k of Object.keys(known)) if (msg === k) return known[k];
-  if (/failed to fetch|HTTP request failed|network ?error/i.test(msg)) return "Couldn't reach the network. Please try again.";
-  return msg ? msg.slice(0, 160) : fallback;
+  const trimmed = (err?.message ?? "").trim();
+  if (known[trimmed]) return known[trimmed];
+  if (/switch.{0,20}(chain|network)|wallet_switchEthereumChain|unrecognized chain|chain.{0,20}not (added|supported)/i.test(msg) && code === 4001) return "You cancelled the network switch in your wallet.";
+  if (code === 4001 || code === "ACTION_REJECTED" || /user rejected|user denied|rejected the request|request rejected|denied transaction|user cancel|cancelled by user|canceled by user/i.test(msg)) return "You rejected the request in your wallet.";
+  if (/switch.{0,20}(chain|network)|wallet_switchEthereumChain|unrecognized chain/i.test(msg)) return "Your wallet couldn't switch networks. Switch manually and try again.";
+  if (/insufficient funds|gas required exceeds|exceeds the balance of the account/i.test(msg)) return `Not enough ${gasCoin} to pay the network fee. Add some and try again.`;
+  if (/transfer amount exceeds balance|exceeds balance/i.test(msg)) return "Insufficient USDC balance.";
+  if (/nonce too low|replacement transaction underpriced|already known|transaction underpriced/i.test(msg)) return "A transaction is already pending in your wallet. Wait for it to finish, then try again.";
+  if (/attestation/i.test(msg)) return "Circle hasn't confirmed the transfer yet. Wait a moment, then try Resume.";
+  if (/timeout|timed out|ETIMEDOUT/i.test(msg)) return "The request timed out. Try again. If your USDC already left, use Resume.";
+  if (/rate limit|429|too many requests/i.test(msg)) return "The service is busy. Wait a moment and try again.";
+  if (/failed to fetch|HTTP request failed|network ?error|ECONN|fetch failed/i.test(msg)) return "Couldn't reach the network. Check your connection and try again.";
+  if (/execution reverted|reverted/i.test(msg)) return "The network rejected the transaction. Try a different amount.";
+  return trimmed ? trimmed.slice(0, 160) : fallback;
 }
 
 /* ---------- page ---------- */
@@ -266,10 +330,13 @@ export default function BridgePage() {
   const toKey: ChainKey = dir === "in" ? "Arc" : partner;
 
   const [amount, setAmount] = useState("");
-  const [speed, setSpeed] = useState<Speed>("FAST");
-  const [balance, setBalance] = useState<bigint | null>(null); // USDC on the source network
-  const [destBalance, setDestBalance] = useState<bigint | null>(null);
-  const [gasBalance, setGasBalance] = useState<bigint | null>(null); // native coin on the source network
+  const [fast, setFast] = useState(true);
+  const [slip, setSlip] = useState<Slip>({ mode: "auto", custom: "1" });
+
+  /* balances are stored per wallet + network, so a late answer for another network can never show up here */
+  const [bals, setBals] = useState<Record<string, bigint | null>>({});
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [native, setNative] = useState<Record<string, number>>({});
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoting, setQuoting] = useState(false);
@@ -279,9 +346,9 @@ export default function BridgePage() {
   const [message, setMessage] = useState("");
   const [steps, setSteps] = useState<StepRow[]>([]);
   const [summary, setSummary] = useState<HistoryRow | null>(null);
-  const [canRetry, setCanRetry] = useState(false);
+  const [canResume, setCanResume] = useState(false);
 
-  const [modal, setModal] = useState<null | "chain" | "history">(null);
+  const [modal, setModal] = useState<null | "chain" | "history" | "settings" | "fast">(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
 
   const kitRef = useRef<KitLike | null>(null);
@@ -290,6 +357,37 @@ export default function BridgePage() {
   const executingRef = useRef(false);
   const lockRef = useRef(false);
   const failedRef = useRef<BridgeRes | null>(null);
+  const stepsRef = useRef<StepRow[]>([]);
+
+  const speed: "FAST" | "SLOW" = fast ? "FAST" : "SLOW";
+  const customPct = parseFloat(slip.custom);
+  const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
+  const slipPct = slip.mode === "custom" && customValid ? customPct : AUTO_SLIPPAGE;
+
+  /* settings (Fast on/off, slippage) are remembered on this device */
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("alabaamafi:bridge-settings");
+      if (raw) {
+        const j = JSON.parse(raw) as { fast?: boolean; slip?: Slip };
+        if (typeof j.fast === "boolean") setFast(j.fast);
+        if (j.slip) setSlip(j.slip);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const saveSettings = (next: { fast?: boolean; slip?: Slip }) => {
+    const f = next.fast ?? fast;
+    const s = next.slip ?? slip;
+    setFast(f);
+    setSlip(s);
+    try {
+      window.localStorage.setItem("alabaamafi:bridge-settings", JSON.stringify({ fast: f, slip: s }));
+    } catch {
+      /* ignore */
+    }
+  };
 
   /* the connected wallet's own provider */
   useEffect(() => {
@@ -305,6 +403,27 @@ export default function BridgePage() {
     adapterRef.current = null;
     clientsRef.current = {};
   }, [provider, account]);
+
+  /* gas coin prices (for the "$" next to the gas fee) */
+  useEffect(() => {
+    let live = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market?type=native");
+        if (!r.ok) return;
+        const j = (await r.json()) as { native?: Record<string, number> };
+        if (live) setNative(j.native ?? {});
+      } catch {
+        /* the $ value is optional */
+      }
+    };
+    load();
+    const id = setInterval(load, 60000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, []);
 
   /* history (this device) */
   const historyKey = account ? `alabaamafi:bridges:${account.toLowerCase()}` : null;
@@ -375,27 +494,45 @@ export default function BridgePage() {
     [getClient]
   );
 
-  /* balances on both networks + gas coin on the source network */
-  const loadBalances = useCallback(async () => {
+  /* balances: USDC on both networks, plus the gas coin on the source network. Answers for old networks are ignored. */
+  const bk = (k: ChainKey) => (account ? `${account.toLowerCase()}:${k}` : "");
+  useEffect(() => {
     if (!account) {
-      setBalance(null);
-      setDestBalance(null);
-      setGasBalance(null);
+      setBals({});
       return;
     }
-    const [src, dst] = await Promise.all([readUsdc(fromKey, account), readUsdc(toKey, account)]);
-    setBalance(src);
-    setDestBalance(dst);
-    try {
-      setGasBalance(fromKey === "Arc" ? src : await (await getClient(fromKey)).getBalance({ address: account }));
-    } catch {
-      setGasBalance(null);
-    }
-  }, [account, fromKey, toKey, readUsdc, getClient]);
+    let live = true;
+    const load = async (k: ChainKey) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const v = await readUsdc(k, account);
+        if (!live) return;
+        if (v !== null) {
+          setBals((p) => ({ ...p, [bk(k)]: v }));
+          return;
+        }
+        await sleep(700);
+      }
+    };
+    load(fromKey);
+    load(toKey);
+    (async () => {
+      try {
+        if (fromKey === "Arc") return; // Arc pays gas in USDC
+        const v = await (await getClient(fromKey)).getBalance({ address: account });
+        if (live) setBals((p) => ({ ...p, [`${bk(fromKey)}:gas`]: v }));
+      } catch {
+        /* keep unknown */
+      }
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, fromKey, toKey, readUsdc, getClient, refreshTick, provider]);
 
-  useEffect(() => {
-    loadBalances();
-  }, [loadBalances]);
+  const balance = bals[bk(fromKey)] ?? null;
+  const destBalance = bals[bk(toKey)] ?? null;
+  const gasBalance = fromKey === "Arc" ? balance : bals[`${bk(fromKey)}:gas`] ?? null;
 
   /* Adapter for the connected wallet. It switches the wallet to each network only while a bridge is running. */
   const getAdapter = async (): Promise<unknown> => {
@@ -427,7 +564,10 @@ export default function BridgePage() {
           getPublicClient: ({ chain }: { chain: KitChain }) =>
             createPublicClient({
               chain: chain as never,
-              transport: fallback([...(provider ? [custom({ request: async (args: { method: string; params?: unknown[] }) => { if (chainNum(await provider.request({ method: "eth_chainId" })) !== chain.id) throw new Error("WALLET_ON_OTHER_CHAIN"); return provider.request(args); } } as never)] : []), ...(chain.id === 5042 ? ARC_RPCS.map((u) => http(u, { retryCount: 1, timeout: 8000 })) : [http()])]),
+              transport: fallback([
+                ...(provider ? [custom({ request: async (args: { method: string; params?: unknown[] }) => { if (chainNum(await provider.request({ method: "eth_chainId" })) !== chain.id) throw new Error("WALLET_ON_OTHER_CHAIN"); return provider.request(args); } } as never)] : []),
+                ...(chain.id === 5042 ? ARC_RPCS.map((u) => http(u, { retryCount: 1, timeout: 8000 })) : [http()]),
+              ]),
             }),
           getWalletClient: async ({ chain }: { chain: KitChain }) => {
             if (executingRef.current) await ensureWalletChain(chain); // never switches networks while only getting a quote
@@ -461,18 +601,19 @@ export default function BridgePage() {
         const est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: { adapter, chain: toKey }, amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
         const fees = Array.isArray(est?.fees) ? est.fees : null;
         let bridgeFee: number | null = null;
-        const gas: string[] = [];
+        const gas: GasFee[] = [];
         if (fees) {
           bridgeFee = 0;
           for (const f of fees) {
             const amt = Number(f.amount);
             if (!Number.isFinite(amt)) continue;
-            if (/gas/i.test(f.type ?? "")) gas.push(`${amt < 0.0001 ? "<0.0001" : amt.toFixed(4)} ${f.token ?? ""}`.trim());
-            else if ((f.token ?? "USDC").toUpperCase() === "USDC") bridgeFee += amt;
+            const token = (f.token ?? "USDC").toUpperCase();
+            if (/gas/i.test(f.type ?? "")) gas.push({ amount: amt, token });
+            else if (token === "USDC") bridgeFee += amt;
           }
         }
         const receive = bridgeFee === null ? null : amountNum - bridgeFee;
-        if (live) setQuote({ receive, bridgeFee, gas, speed });
+        if (live) setQuote({ receive, bridgeFee, gas, fast });
       } catch (e) {
         if (live) setQuoteError(explain(e, "Couldn't get a quote right now."));
       } finally {
@@ -514,31 +655,67 @@ export default function BridgePage() {
     if (v + reserve > balance) v = balance > reserve ? balance - reserve : ZERO;
     setAmount(formatUnits6(v, 0).replace(/,/g, ""));
   };
-  const reset = () => {
+
+  const putSteps = (next: StepRow[]) => {
+    stepsRef.current = next;
+    setSteps(next);
+  };
+  /** Close the result popup. After a success the form is cleared; after a failure it keeps your numbers. */
+  const closePopup = () => {
+    const wasDone = phase === "done";
     setPhase("idle");
     setMessage("");
-    setAmount("");
-    setQuote(null);
-    setSteps([]);
+    putSteps([]);
     setSummary(null);
-    setCanRetry(false);
-    failedRef.current = null;
-    loadBalances();
+    setCanResume(false);
+    if (wasDone) {
+      setAmount("");
+      setQuote(null);
+      failedRef.current = null;
+    }
+    setBals((p) => {
+      const n = { ...p };
+      delete n[bk(fromKey)];
+      delete n[bk(toKey)];
+      return n;
+    });
+    setRefreshTick((t) => t + 1);
   };
 
-  const stepOrder: StepRow["key"][] = ["approve", "burn", "fetchAttestation", "mint"];
-  const startSteps = () => setSteps(stepOrder.map((key, i) => ({ key, state: i === 0 ? "active" : "pending" })));
+  const startSteps = () => putSteps(STEP_ORDER.map((key, i) => ({ key, state: i === 0 ? "active" : "pending" })));
+  /** Kit events: a step is only a check mark when it really finished. A failed step is marked red. */
   const onKitEvent = (e: unknown) => {
-    const ev = e as { method?: string; values?: { txHash?: string } };
-    const idx = stepOrder.indexOf(ev?.method as StepRow["key"]);
+    const ev = e as { method?: string; values?: { txHash?: string; state?: string; errorMessage?: string; error?: unknown } };
+    const idx = STEP_ORDER.indexOf(ev?.method as StepKey);
     if (idx < 0) return;
+    const failed = ev.values?.state === "error" || !!ev.values?.errorMessage || !!ev.values?.error;
     const hash = ev.values?.txHash && TX_HASH_RE.test(ev.values.txHash) ? ev.values.txHash : undefined;
-    setSteps((prev) => prev.map((s, i) => (i < idx ? { ...s, state: "done" } : i === idx ? { ...s, state: "done", hash: hash ?? s.hash } : i === idx + 1 ? { ...s, state: "active" } : s)));
+    putSteps(
+      stepsRef.current.map((s, i) => {
+        if (failed) return i === idx ? { ...s, state: "error" } : s;
+        return i < idx ? (s.state === "error" ? s : { ...s, state: "done" }) : i === idx ? { ...s, state: "done", hash: hash ?? s.hash } : i === idx + 1 ? { ...s, state: "active" } : s;
+      })
+    );
+  };
+  /** Use the final result from the kit to set every step exactly as it ended. */
+  const applyResultSteps = (res: BridgeRes) => {
+    if (!res.steps?.length) return;
+    const keyOf = (name: string): StepKey | null => (/approve/i.test(name) ? "approve" : /burn/i.test(name) ? "burn" : /attest/i.test(name) ? "fetchAttestation" : /mint/i.test(name) ? "mint" : null);
+    putSteps(
+      stepsRef.current.map((s) => {
+        const r = res.steps?.find((x) => keyOf(x.name ?? "") === s.key);
+        if (!r) return s;
+        const state: StepState = /success|complete|done/i.test(r.state ?? "") ? "done" : /error|fail/i.test(r.state ?? "") ? "error" : s.state === "done" ? "done" : "pending";
+        const hash = r.txHash && TX_HASH_RE.test(r.txHash) ? r.txHash : s.hash;
+        return { ...s, state, hash };
+      })
+    );
   };
 
   /** Finish: check the result, compare the destination balance, save history. */
   const finish = async (res: BridgeRes, before: bigint | null, sent: string) => {
-    if (res.state !== "success") throw new Error(res.steps?.find((s) => s.errorMessage)?.errorMessage ?? "BRIDGE_FAILED");
+    applyResultSteps(res);
+    if (res.state !== "success") throw new Error(res.steps?.find((s) => s.errorMessage)?.errorMessage ?? "The bridge did not finish.");
     const hashOf = (re: RegExp) => {
       const h = res.steps?.find((s) => re.test(s.name ?? ""))?.txHash;
       return h && TX_HASH_RE.test(h) ? h : undefined;
@@ -549,11 +726,10 @@ export default function BridgePage() {
     const got = before !== null && after !== null && after > before ? formatUnits6(after - before) : quote?.receive != null ? fmtNum(quote.receive) : "—";
     const row: HistoryRow = { id: burn ?? `${Date.now()}`, t: Date.now(), from: fromKey, to: toKey, amount: sent, received: got, burn, mint };
     setSummary(row);
-    setSteps((p) => p.map((s) => ({ ...s, state: "done" })));
+    putSteps(stepsRef.current.map((s) => ({ ...s, state: "done" })));
     setPhase("done");
-    setCanRetry(false);
+    setCanResume(false);
     failedRef.current = null;
-    loadBalances();
     if (historyKey) {
       const next = [row, ...history].slice(0, 50);
       setHistory(next);
@@ -565,12 +741,17 @@ export default function BridgePage() {
     }
   };
 
+  /** What went wrong and what it means for the user's USDC. */
+  const failedMarks = () => {
+    putSteps(stepsRef.current.map((s) => (s.state === "active" ? { ...s, state: "error" } : s)));
+  };
+
   const bridge = async () => {
     if (lockRef.current || !provider || !account || problem || !quote || !units) return; // lock stops double taps
     lockRef.current = true;
     setPhase("bridging");
     setMessage("");
-    setCanRetry(false);
+    setCanResume(false);
     startSteps();
     let kit: KitLike | null = null;
     try {
@@ -580,7 +761,7 @@ export default function BridgePage() {
       const balNow = await readUsdc(fromKey, account);
       if (balNow !== null && units > balNow) throw new Error("NO_BALANCE");
 
-      /* 2. fresh quote: stop if you would receive clearly less than what was shown */
+      /* 2. fresh quote: stop if you would receive less than your slippage allows */
       kit = await getKit();
       const adapter = await getAdapter();
       const params: BridgeArgs = { from: { adapter, chain: fromKey }, to: { adapter, chain: toKey }, amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } };
@@ -590,12 +771,12 @@ export default function BridgePage() {
         const fee = freshFees.filter((f) => !/gas/i.test(f.type ?? "") && (f.token ?? "USDC").toUpperCase() === "USDC").reduce((a, f) => a + (Number(f.amount) || 0), 0);
         const now = amountNum - fee;
         if (now <= 0) throw new Error("TOO_SMALL");
-        if (now < quote.receive * (1 - RECEIVE_DRIFT)) {
+        if (now < quote.receive * (1 - slipPct / 100)) {
           setQuote({ ...quote, receive: now, bridgeFee: fee });
           throw new Error("QUOTE_CHANGED");
         }
-        // for Fast transfers, cap the fee a little above the quote (the kit falls back to Standard if the fee goes above it)
-        if (speed === "FAST" && fee > 0) params.config = { transferSpeed: "FAST", maxFee: (Math.ceil(fee * 1.2 * 1e6) / 1e6).toFixed(6) };
+        // Fast: cap the fee at the quote plus your slippage (the kit falls back to Standard if the fee goes above it)
+        if (speed === "FAST" && fee > 0) params.config = { transferSpeed: "FAST", maxFee: (Math.ceil((fee + quote.receive * (slipPct / 100)) * 1e6) / 1e6).toFixed(6) };
       }
 
       /* 3. run the bridge. The wallet is switched to each network as needed. */
@@ -605,12 +786,13 @@ export default function BridgePage() {
       const res = await kit.bridge(params);
       executingRef.current = false;
       failedRef.current = res.state === "success" ? null : res;
-      await finish(res, before, tidySent(cleanAmount));
+      await finish(res, before, fmtNum(Number(cleanAmount)));
     } catch (e) {
       executingRef.current = false;
-      setMessage(explain(e, "The bridge could not be completed."));
+      failedMarks();
+      setMessage(explain(e, "The bridge could not be completed.", CHAINS[fromKey].gas));
       setPhase("failed");
-      setCanRetry(!!failedRef.current && !!kit?.retry);
+      setCanResume(!!failedRef.current && !!kit?.retry && stepsRef.current.find((s) => s.key === "burn")?.state === "done");
     } finally {
       kit?.off?.("*", onKitEvent);
       executingRef.current = false;
@@ -618,13 +800,14 @@ export default function BridgePage() {
     }
   };
 
-  /** Resume a bridge that stopped halfway (for example, USDC was sent but not yet received). */
-  const retry = async () => {
+  /** Resume a bridge that stopped halfway (USDC was sent but not yet received). */
+  const resume = async () => {
     const failed = failedRef.current;
     if (lockRef.current || !failed || !provider || !account) return;
     lockRef.current = true;
     setPhase("bridging");
     setMessage("");
+    putSteps(stepsRef.current.map((s) => (s.state === "error" ? { ...s, state: "active" } : s)));
     let kit: KitLike | null = null;
     try {
       kit = await getKit();
@@ -635,20 +818,19 @@ export default function BridgePage() {
       const res = await kit.retry!(failed, { from: adapter, to: adapter });
       executingRef.current = false;
       failedRef.current = res.state === "success" ? null : res;
-      await finish(res, before, tidySent(cleanAmount));
+      await finish(res, before, fmtNum(Number(cleanAmount)));
     } catch (e) {
       executingRef.current = false;
-      setMessage(explain(e, "The retry could not be completed."));
+      failedMarks();
+      setMessage(explain(e, "The retry could not be completed.", CHAINS[toKey].gas));
       setPhase("failed");
-      setCanRetry(!!failedRef.current);
+      setCanResume(!!failedRef.current);
     } finally {
       kit?.off?.("*", onKitEvent);
       executingRef.current = false;
       lockRef.current = false;
     }
   };
-
-  const tidySent = (v: string) => fmtNum(Number(v));
 
   /* main button */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
@@ -657,7 +839,22 @@ export default function BridgePage() {
   else action = { label: "Bridge", onClick: bridge, disabled: !!problem || !quote || quoting };
 
   const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.375rem, 5.6vw, 1.625rem)" : "clamp(1.5rem, 6.5vw, 1.875rem)";
-  const slow = speed === "SLOW";
+
+  /* gas fee text: "0.0012 ETH ($3.45)" */
+  const gasParts = useMemo(() => {
+    if (!quote) return [] as { text: string }[];
+    const sums = new Map<string, number>();
+    quote.gas.forEach((g) => sums.set(g.token, (sums.get(g.token) ?? 0) + g.amount));
+    return Array.from(sums.entries()).map(([token, amt]) => {
+      const price = token === "USDC" ? 1 : native[token];
+      const usd = price ? amt * price : null;
+      return { text: `${fmtGas(amt)} ${token}${usd !== null ? ` (${usd > 0 && usd < 0.01 ? "<$0.01" : `$${usd.toFixed(2)}`})` : ""}` };
+    });
+  }, [quote, native]);
+
+  const failedStep = steps.find((s) => s.state === "error");
+  const burnState = steps.find((s) => s.key === "burn")?.state;
+  const burnHash = steps.find((s) => s.key === "burn")?.hash;
 
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
@@ -668,7 +865,11 @@ export default function BridgePage() {
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes checkPop{0%{opacity:0;transform:scale(.3)}100%{opacity:1;transform:scale(1)}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
+        @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+        @keyframes popIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+        .popup-panel{animation:sheetUp .38s cubic-bezier(.2,.8,.2,1) both}
+        @media (min-width:640px){.popup-panel{animation:popIn .3s cubic-bezier(.2,.8,.2,1) both}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
@@ -690,194 +891,140 @@ export default function BridgePage() {
           <div className="fade-up relative mx-auto mt-10 w-full max-w-lg sm:mt-12" style={{ "--delay": "150ms" } as CSSProperties}>
             <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
             <div className="relative rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-7">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 sm:pb-4">
-                <div>
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3 sm:pb-4">
+                <div className="min-w-0">
                   <p className="text-xs text-slate-500">Route</p>
-                  <p className="mt-1 flex items-center gap-2 text-sm font-medium">
-                    {CHAINS[fromKey].label}
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                    <span className="inline-flex items-center gap-1.5"><ChainLogo chain={fromKey} size={20} />{CHAINS[fromKey].label}</span>
                     <span className="text-slate-500">to</span>
-                    {CHAINS[toKey].label}
+                    <span className="inline-flex items-center gap-1.5"><ChainLogo chain={toKey} size={20} />{CHAINS[toKey].label}</span>
                   </p>
                 </div>
-                <button type="button" onClick={() => setModal("history")} aria-label="Bridge history" title="Bridge history" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white">
-                  <Svg d={ICON_HISTORY} />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button type="button" onClick={() => setModal("history")} aria-label="Bridge history" title="Bridge history" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white">
+                    <Svg d={ICON_HISTORY} />
+                  </button>
+                  <button type="button" onClick={() => setModal("settings")} aria-label="Settings" title="Settings" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white">
+                    <Svg d={ICON_SETTINGS} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModal("fast")}
+                    aria-label={fast ? "Fast transfer is on" : "Fast transfer is off"}
+                    title={fast ? "Fast transfer: on" : "Fast transfer: off"}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/[0.07] ${fast ? "text-[#39c4ff]" : "text-slate-400 hover:text-white"}`}
+                    style={fast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" } : undefined}
+                  >
+                    <Svg d={ICON_FAST} />
+                  </button>
+                </div>
               </div>
 
-              {phase === "bridging" || phase === "done" || (phase === "failed" && steps.length > 0) ? (
-                /* progress / result */
-                <div className="mt-5">
-                  {phase === "done" && summary && (
-                    <div className="mb-5 text-center">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center" style={{ animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) both" }}>
-                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
-                          <path d="m4.5 12.5 5 5L19.5 6.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .2s forwards" }} />
-                        </svg>
-                      </div>
-                      <h2 className="mt-2 text-2xl font-semibold tracking-tight">Bridge succeeded</h2>
-                      <dl className="mt-6 space-y-3 text-left text-[15px]">
-                        <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Sent</dt><dd className="font-semibold tabular-nums">{summary.amount} USDC</dd></div>
-                        <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Received</dt><dd className="font-semibold tabular-nums">{summary.received} USDC</dd></div>
-                        <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Route</dt><dd className="font-semibold">{CHAINS[summary.from].label} to {CHAINS[summary.to].label}</dd></div>
-                      </dl>
+              <div className="mt-4 sm:mt-5">
+                {/* from */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
+                  <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
+                    <span>From</span>
+                    <span className="text-xs tabular-nums">{ready && balance !== null ? `Balance ${formatUnits6(balance)} USDC` : "Balance —"}</span>
+                  </div>
+                  <div className="mt-2.5">
+                    <ChainButton chain={fromKey} onClick={dir === "in" ? () => setModal("chain") : undefined} disabled={busy} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <input
+                      value={amount}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(",", ".");
+                        if (v === "" || /^\d*\.?\d{0,6}$/.test(v)) setAmount(v);
+                      }}
+                      disabled={busy}
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      autoComplete="off"
+                      aria-label="Amount of USDC to bridge"
+                      style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}
+                      className="w-full min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
+                    />
+                    <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <p className="text-sm text-slate-500 tabular-nums">{fmtUsd(amountNum)}</p>
+                    <div className="flex gap-1.5">
+                      <Pill onClick={() => setFraction(true)} disabled={busy || !ready || balance === null}>50%</Pill>
+                      <Pill onClick={() => setFraction(false)} disabled={busy || !ready || balance === null}>Max</Pill>
                     </div>
-                  )}
-
-                  <ol className="space-y-2.5">
-                    {steps.map((s) => (
-                      <li key={s.key} className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                          {s.state === "done" ? (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                          ) : s.state === "active" && phase === "bridging" ? (
-                            <Spinner />
-                          ) : (
-                            <span className="h-2 w-2 rounded-full bg-white/20" />
-                          )}
-                        </span>
-                        <span className={`min-w-0 flex-1 text-sm ${s.state === "pending" ? "text-slate-500" : "text-white"}`}>{STEP_LABEL(s.key, fromKey, toKey)}</span>
-                        {s.hash && (
-                          <a href={txUrl(s.key === "mint" ? toKey : fromKey, s.hash)} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#65caff] hover:text-white">View</a>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-
-                  {phase === "bridging" && (
-                    <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                      Confirm each prompt in your wallet. Keep this page open until it finishes{slow ? "; Standard can take 15 minutes or more" : ""}.
-                    </p>
-                  )}
-                  {phase === "failed" && (
-                    <div className="mt-4">
-                      <p className="text-center text-sm text-red-300">{message}</p>
-                      {canRetry && (
-                        <>
-                          <p className="mt-2 text-center text-xs leading-5 text-slate-400">If USDC already left {CHAINS[fromKey].label}, do not send it again. Use Resume instead.</p>
-                          <button onClick={retry} className={`${BUTTON} mt-3`}>Resume bridge</button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  {(phase === "done" || phase === "failed") && (
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      {phase === "done" && summary?.burn && (
-                        <a href={txUrl(summary.from, summary.burn)} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>View on explorer</a>
-                      )}
-                      <button onClick={reset} className={phase === "done" ? BUTTON : `${SECONDARY_BUTTON} sm:col-span-2`}>{phase === "done" ? "Bridge again" : "Back"}</button>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="mt-4 sm:mt-5">
-                    {/* from */}
-                    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
-                      <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
-                        <span>From</span>
-                        <span className="text-xs tabular-nums">{ready && balance !== null ? `Balance ${formatUnits6(balance)} USDC` : "Balance —"}</span>
-                      </div>
-                      <div className="mt-2.5">
-                        <ChainButton chain={fromKey} onClick={dir === "in" ? () => setModal("chain") : undefined} disabled={busy} />
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <input
-                          value={amount}
-                          onChange={(e) => {
-                            const v = e.target.value.replace(",", ".");
-                            if (v === "" || /^\d*\.?\d{0,6}$/.test(v)) setAmount(v);
-                          }}
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          autoComplete="off"
-                          aria-label="Amount of USDC to bridge"
-                          style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}
-                          className="w-full min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700"
-                        />
-                        <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
-                      </div>
-                      <div className="mt-1.5 flex items-center justify-between gap-3">
-                        <p className="text-sm text-slate-500 tabular-nums">{fmtUsd(amountNum)}</p>
-                        <div className="flex gap-1.5">
-                          <Pill onClick={() => setFraction(true)} disabled={!ready || balance === null}>50%</Pill>
-                          <Pill onClick={() => setFraction(false)} disabled={!ready || balance === null}>Max</Pill>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* flip */}
-                    <div className="relative z-10 -my-3 flex justify-center">
-                      <button type="button" onClick={flip} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white sm:h-10 sm:w-10">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
-                          <path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" />
-                        </svg>
-                      </button>
-                    </div>
+                {/* flip */}
+                <div className="relative z-10 -my-3 flex justify-center">
+                  <button type="button" onClick={flip} disabled={busy} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
+                      <path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" />
+                    </svg>
+                  </button>
+                </div>
 
-                    {/* to */}
-                    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 sm:p-4">
-                      <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
-                        <span>To</span>
-                        <span className="text-xs tabular-nums">{ready && destBalance !== null ? `Balance ${formatUnits6(destBalance)} USDC` : "Balance —"}</span>
-                      </div>
-                      <div className="mt-2.5">
-                        <ChainButton chain={toKey} onClick={dir === "out" ? () => setModal("chain") : undefined} disabled={busy} />
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <div className={`min-w-0 flex-1 truncate tabular-nums tracking-tight ${quote && quote.receive !== null ? "text-white" : "text-slate-700"}`} style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}>
-                          {quote && quote.receive !== null ? fmtNum(Math.max(quote.receive, 0)) : quoting ? "…" : "0.00"}
-                        </div>
-                        <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
-                      </div>
-                      <p className="mt-1.5 text-sm text-slate-500 tabular-nums">{quote && quote.receive !== null ? fmtUsd(Math.max(quote.receive, 0)) : fmtUsd(0)}</p>
-                    </div>
-
-                    {/* speed */}
-                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-white/[0.05] p-1">
-                      {(["FAST", "SLOW"] as const).map((m) => (
-                        <button key={m} onClick={() => setSpeed(m)} className={`rounded-full py-2 text-sm font-semibold transition ${speed === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
-                          {m === "FAST" ? "Fast" : "Standard"}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-2 px-1 text-xs leading-5 text-slate-500">
-                      {speed === "FAST" ? "Fast: credited in seconds, with a small fee." : "Standard: waits for the source network to finalize and can take 15 minutes or more. Lowest fee."}
-                    </p>
+                {/* to */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
+                    <span>To</span>
+                    <span className="text-xs tabular-nums">{ready && destBalance !== null ? `Balance ${formatUnits6(destBalance)} USDC` : "Balance —"}</span>
                   </div>
+                  <div className="mt-2.5">
+                    <ChainButton chain={toKey} onClick={dir === "out" ? () => setModal("chain") : undefined} disabled={busy} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className={`min-w-0 flex-1 truncate tabular-nums tracking-tight ${quote && quote.receive !== null ? "text-white" : "text-slate-700"}`} style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}>
+                      {quote && quote.receive !== null ? fmtNum(Math.max(quote.receive, 0)) : quoting ? "…" : "0.00"}
+                    </div>
+                    <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-slate-500 tabular-nums">{quote && quote.receive !== null ? fmtUsd(Math.max(quote.receive, 0)) : fmtUsd(0)}</p>
+                </div>
+              </div>
 
-                  {quote && (
-                    <dl className="mt-4 space-y-2 px-1 text-[13px] sm:text-sm">
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-slate-500">Bridge fee</dt>
-                        <dd className="text-right text-slate-300 tabular-nums">{quote.bridgeFee === null ? "—" : `${fmtNum(quote.bridgeFee)} USDC`}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-slate-500">Network fee</dt>
-                        <dd className="text-right text-slate-300 tabular-nums">{quote.gas.length ? quote.gas.join(" + ") : "Paid in your wallet"}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-slate-500">Estimated time</dt>
-                        <dd className="text-right text-slate-300">{quote.speed === "FAST" ? "Seconds to a few minutes" : "15+ minutes"}</dd>
-                      </div>
-                      {quote.bridgeFee === null && <p className="text-xs leading-5 text-amber-300">Couldn&apos;t read the fee. Check the amounts in your wallet before you confirm.</p>}
-                    </dl>
+              {/* quote details: slippage, gas fee, estimated time, Fast */}
+              {quote && (
+                <dl className="mt-4 space-y-2 px-1 text-[13px] sm:text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-slate-500">Slippage</dt>
+                    <dd className="text-right text-slate-300 tabular-nums">{slipPct}%{slip.mode === "auto" || !customValid ? " (Auto)" : ""}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-slate-500">Gas fee</dt>
+                    <dd className="text-right text-slate-300 tabular-nums">{gasParts.length ? gasParts.map((g) => g.text).join(" + ") : "Paid in your wallet"}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-slate-500">Estimated time</dt>
+                    <dd className="text-right text-slate-300">{quote.fast ? "Seconds to a few minutes" : "15+ minutes"}</dd>
+                  </div>
+                  {quote.fast ? (
+                    <div className="flex justify-between gap-4">
+                      <dt className="flex items-center gap-1.5 text-slate-500"><span className="text-[#39c4ff]"><Svg d={ICON_FAST} size={13} /></span>Fast transfer</dt>
+                      <dd className="text-right text-slate-300 tabular-nums">On{quote.bridgeFee !== null ? ` · fee ${fmtNum(quote.bridgeFee)} USDC` : ""}</dd>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Bridge fee</dt>
+                      <dd className="text-right text-slate-300 tabular-nums">{quote.bridgeFee === null ? "—" : `${fmtNum(quote.bridgeFee)} USDC`}</dd>
+                    </div>
                   )}
-
-                  <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-5 sm:mt-6`}>{action.label}</button>
-
-                  <div className="mt-3 min-h-5 text-center text-sm" role="status">
-                    {!busy && ready && problem && amount ? (
-                      <span className={problem.hard ? "text-red-300" : "text-slate-500"}>{problem.text}</span>
-                    ) : !busy && ready && quoteError ? (
-                      <span className="text-red-300">{quoteError}</span>
-                    ) : !busy && ready && quoting ? (
-                      <span className="text-slate-500">Getting your quote…</span>
-                    ) : message ? (
-                      <span className="text-slate-400">{message}</span>
-                    ) : null}
-                  </div>
-                </>
+                  {quote.bridgeFee === null && <p className="text-xs leading-5 text-amber-300">Couldn&apos;t read the fee. Check the amounts in your wallet before you confirm.</p>}
+                </dl>
               )}
+
+              <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-5 sm:mt-6`}>{action.label}</button>
+
+              <div className="mt-3 min-h-5 text-center text-sm" role="status">
+                {!busy && ready && problem && amount ? (
+                  <span className={problem.hard ? "text-red-300" : "text-slate-500"}>{problem.text}</span>
+                ) : !busy && ready && quoteError ? (
+                  <span className="text-red-300">{quoteError}</span>
+                ) : !busy && ready && quoting ? (
+                  <span className="text-slate-500">Getting your quote…</span>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -888,6 +1035,90 @@ export default function BridgePage() {
           </ul>
         </section>
       </div>
+
+      {/* ---------- bridge popup: progress, success, or failure ---------- */}
+      {phase !== "idle" && (
+        <Popup label="Bridge status" onClose={phase === "bridging" ? undefined : closePopup}>
+          {phase === "done" && summary && (
+            <div className="mb-5 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center" style={{ animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) both" }}>
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
+                  <path d="m4.5 12.5 5 5L19.5 6.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .2s forwards" }} />
+                </svg>
+              </div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Bridge succeeded</h2>
+              <dl className="mt-6 space-y-3 text-left text-[15px]">
+                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Sent</dt><dd className="font-semibold tabular-nums">{summary.amount} USDC</dd></div>
+                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Received</dt><dd className="font-semibold tabular-nums">{summary.received} USDC</dd></div>
+                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Route</dt><dd className="font-semibold">{CHAINS[summary.from].label} to {CHAINS[summary.to].label}</dd></div>
+              </dl>
+            </div>
+          )}
+
+          {phase === "bridging" && <h2 className="mb-4 text-xl font-semibold tracking-tight">Bridging USDC</h2>}
+          {phase === "failed" && (
+            <div className="mb-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-400/10 text-red-300">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </div>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight">Bridge stopped</h2>
+              <p className="mt-2 text-sm leading-6 text-red-300">{message}</p>
+            </div>
+          )}
+
+          <ol className="space-y-2.5">
+            {steps.map((s) => (
+              <li key={s.key} className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 ${s.state === "error" ? "border-red-400/30 bg-red-400/[0.06]" : "border-white/[0.07] bg-white/[0.03]"}`}>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                  {s.state === "done" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                  ) : s.state === "error" ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="3" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                  ) : s.state === "active" && phase === "bridging" ? (
+                    <Spinner />
+                  ) : (
+                    <span className="h-2 w-2 rounded-full bg-white/20" />
+                  )}
+                </span>
+                <span className={`min-w-0 flex-1 text-sm ${s.state === "pending" ? "text-slate-500" : s.state === "error" ? "text-red-200" : "text-white"}`}>{STEP_LABEL(s.key, fromKey, toKey)}</span>
+                {s.hash && <a href={txUrl(s.key === "mint" ? toKey : fromKey, s.hash)} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#65caff] hover:text-white">View</a>}
+              </li>
+            ))}
+          </ol>
+
+          {phase === "bridging" && (
+            <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+              Confirm each prompt in your wallet. Keep this page open until it finishes{fast ? "" : "; Standard can take 15 minutes or more"}.
+            </p>
+          )}
+
+          {phase === "failed" && (
+            <div className="mt-4 text-center text-xs leading-5">
+              {burnState === "done" ? (
+                <p className="text-amber-300">Your USDC already left {CHAINS[fromKey].label} and has not arrived on {CHAINS[toKey].label} yet. Do not send it again.{canResume ? " Tap Resume to finish." : " Check your wallet activity or the explorer."}</p>
+              ) : failedStep?.key === "burn" ? (
+                <p className="text-amber-300">If your wallet shows this transaction as confirmed, your USDC may already be on its way. Check your wallet activity before trying again.</p>
+              ) : (
+                <p className="text-slate-400">No USDC left your wallet.</p>
+              )}
+              {burnHash && <a href={txUrl(fromKey, burnHash)} target="_blank" rel="noreferrer" className="mt-2 inline-block font-medium text-[#65caff] hover:text-white">View the transaction</a>}
+            </div>
+          )}
+
+          {phase === "done" && (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {summary?.burn ? <a href={txUrl(summary.from, summary.burn)} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>View on explorer</a> : <span />}
+              <button onClick={closePopup} className={BUTTON}>Done</button>
+            </div>
+          )}
+          {phase === "failed" && (
+            <div className="mt-5 grid gap-3">
+              {canResume && <button onClick={resume} className={BUTTON}>Resume bridge</button>}
+              <button onClick={closePopup} className={canResume ? SECONDARY_BUTTON : BUTTON}>{canResume ? "Close" : "Try again"}</button>
+            </div>
+          )}
+        </Popup>
+      )}
 
       {/* ---------- choose the other network ---------- */}
       <Modal open={modal === "chain"} onClose={() => setModal(null)} title="Select a network">
@@ -909,6 +1140,88 @@ export default function BridgePage() {
             </li>
           ))}
         </ul>
+      </Modal>
+
+      {/* ---------- settings: slippage ---------- */}
+      <Modal open={modal === "settings"} onClose={() => setModal(null)} title="Settings">
+        <p className="text-sm font-medium">Max slippage</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">Bridging USDC doesn&apos;t trade tokens, so there is no price to move. Slippage only limits how much the fees may change before your bridge starts: if you would receive more than this much less than quoted, the bridge stops.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-white/[0.05] p-1">
+          {(["auto", "custom"] as const).map((m) => (
+            <button key={m} onClick={() => saveSettings({ slip: { ...slip, mode: m } })} className={`rounded-full py-2 text-sm font-semibold capitalize transition ${slip.mode === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
+              {m}
+            </button>
+          ))}
+        </div>
+        {slip.mode === "auto" ? (
+          <p className="mt-3 text-xs leading-5 text-slate-400">Auto uses <span className="font-semibold text-white">{AUTO_SLIPPAGE}%</span>.</p>
+        ) : (
+          <div className="mt-3">
+            <div className="flex flex-wrap gap-2">
+              {SLIP_PRESETS.map((p) => (
+                <button key={p} onClick={() => saveSettings({ slip: { ...slip, custom: p } })} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
+                  {p}%
+                </button>
+              ))}
+            </div>
+            <div className={`mt-3 flex items-center rounded-2xl border bg-white/[0.035] px-4 py-3 ${customValid || !slip.custom ? "border-white/[0.07]" : "border-red-400/40"}`}>
+              <input
+                value={slip.custom}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) saveSettings({ slip: { ...slip, custom: v } });
+                }}
+                inputMode="decimal"
+                placeholder="Custom"
+                aria-label="Custom slippage in percent"
+                style={{ fontFamily: manrope.style.fontFamily, fontWeight: 700, fontSize: "1.125rem" }}
+                className="min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600"
+              />
+              <span className="text-slate-400">%</span>
+            </div>
+            <p className={`mt-2 text-xs leading-5 ${!customValid ? "text-red-300" : customPct > 5 || customPct < 0.1 ? "text-amber-300" : "text-slate-500"}`}>
+              {!customValid ? `Enter a value from 0.01% to 50%. Auto (${AUTO_SLIPPAGE}%) is used until then.` : customPct > 5 ? "High slippage: you could receive noticeably less than quoted." : customPct < 0.1 ? "Very low slippage: the bridge may stop if the fee moves a little." : `You'll receive at least ${(100 - customPct).toFixed(2)}% of the quoted amount.`}
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* ---------- Fast transfer ---------- */}
+      <Modal open={modal === "fast"} onClose={() => setModal(null)} title="Fast transfer">
+        <div className="flex items-center gap-3">
+          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06] ${fast ? "text-[#39c4ff]" : "text-slate-400"}`} style={fast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" } : undefined}>
+            <Svg d={ICON_FAST} size={22} />
+          </span>
+          <p className="text-sm font-semibold">{fast ? "Fast transfer is on" : "Fast transfer is off"}</p>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-300">
+          Fast transfer uses Circle&apos;s CCTP Fast Transfer. Your USDC arrives on the other network in seconds instead of waiting 15 minutes or more for the first network to finalize.
+        </p>
+        <ul className="mt-3 space-y-1.5 text-xs leading-5 text-slate-400">
+          <li>It adds a small fee, taken from the USDC you receive.</li>
+          <li>With Fast off, Standard transfer is used: the lowest fee, but slower.</li>
+          <li>If the Fast fee goes above your slippage limit, the transfer falls back to Standard.</li>
+        </ul>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => {
+              saveSettings({ fast: true });
+              setModal(null);
+            }}
+            className={BUTTON}
+          >
+            Enable
+          </button>
+          <button
+            onClick={() => {
+              saveSettings({ fast: false });
+              setModal(null);
+            }}
+            className={SECONDARY_BUTTON}
+          >
+            Disable
+          </button>
+        </div>
       </Modal>
 
       {/* ---------- history ---------- */}
