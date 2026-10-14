@@ -52,12 +52,13 @@ const FALLBACK: Record<string, Fallback> = {
   Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH", icons: ["linea"] },
 };
 // logo ids for the other networks (if an id isn't in the logo package, a colored letter is shown instead)
-const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world-chain", "worldchain"], Sonic: ["sonic"], Sei: ["sei", "sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyperevm", "hyper-evm", "hyperliquid"], XDC: ["xdc-network", "xdc"], Codex: ["codex"] };
-const WHITE_LOGOS = new Set(["Linea", "Sonic"]); // these logos are dark, so they're drawn in white
+const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world-chain", "worldchain", "world", "world-network", "worldcoin", "wld", "world-mainnet"], Sonic: ["sonic"], Sei: ["sei", "sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyperevm", "hyper-evm", "hyperliquid"], XDC: ["xdc-network", "xdc"], Codex: ["codex"] };
+const WHITE_LOGOS = new Set(["linea", "sonic"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
 
 /* The networks listed on bridge.usdc.com (Solana is not EVM, so it isn't here). */
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+const ICON_GUESS_N: Record<string, string[]> = Object.fromEntries(Object.entries(ICON_GUESS).map(([k, v]) => [norm(k), v]));
 const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea"];
 
 /* Networks where Circle's Forwarding Service delivers the USDC, so there is NO wallet transaction on the receiving network
@@ -225,7 +226,7 @@ function Modal({ open, onClose, title, children, wide = false }: { open: boolean
   return (
     <div className={`fixed inset-0 z-[95] flex items-center justify-center ${wide ? "px-2 sm:px-4" : "px-4"}`} role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/65" onClick={onClose} />
-      <div className={`relative max-h-[85vh] w-full overflow-y-auto rounded-3xl border border-white/[0.1] bg-[#080a0d] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.65)] ${wide ? "max-w-[calc(100vw-1rem)] sm:max-w-3xl" : "max-w-sm"}`}>
+      <div className={`relative max-h-[85vh] w-full overflow-y-auto rounded-3xl border border-white/[0.1] bg-[#080a0d] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.65)] ${wide ? "max-w-[calc(100vw-1rem)] sm:max-w-xl" : "max-w-sm"}`}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.04] text-base text-white/45 transition hover:bg-white/[0.08] hover:text-white">×</button>
@@ -283,18 +284,29 @@ const loadNetworkIcon = () => {
   return networkIconPromise;
 };
 
+/** Simple globe drawing, used for World Chain if the logo package has no logo for it. */
+const GlobeMark = ({ size }: { size: number }) => (
+  <svg width={size * 0.66} height={size * 0.66} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <ellipse cx="12" cy="12" rx="4" ry="9" />
+    <path d="M3 12h18M4.5 7.5h15M4.5 16.5h15" />
+  </svg>
+);
+
 /** Round logo for a network, from @web3icons/react (Arc too). The logo sits inside a round badge at 70% size, so it is never cropped.
-    Dark logos (Linea, Sonic) are drawn in white. If no logo is found, Arc uses your own logo file and the others a colored letter. */
+    Dark logos (Linea, Sonic) are drawn in white. Every known logo id is tried, then the chain id. If nothing is found,
+    Arc uses your own logo file, World Chain a globe, and the others a colored letter. */
 function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: number }) {
   const [Icon, setIcon] = useState<IconComp | null>(null);
   const [idx, setIdx] = useState(0);
   const [hasSvg, setHasSvg] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const holder = useRef<HTMLSpanElement>(null);
-  const icons = view?.icons ?? [];
+  const attempts = view ? [...view.icons, "#chainId"] : [];
+  const gaveUp = !!Icon && idx >= attempts.length;
 
   useEffect(() => {
-    if (!icons.length) return;
+    if (!view?.icons.length && view?.key !== "Arc") return;
     let live = true;
     loadNetworkIcon().then((c) => {
       if (live && c) setIcon(() => c);
@@ -302,9 +314,9 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
     return () => {
       live = false;
     };
-  }, [icons.length]);
+  }, [view?.icons.length, view?.key]);
 
-  /* if a logo id isn't in the package nothing is drawn; then the next id is tried */
+  /* if a logo id isn't in the package nothing is drawn; then the next one is tried */
   useEffect(() => {
     const el = holder.current;
     if (!Icon || !el) return;
@@ -313,37 +325,46 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
     const mo = new MutationObserver(check);
     mo.observe(el, { childList: true, subtree: true });
     const t = setTimeout(() => {
-      if (!el.querySelector("svg") && idx < icons.length - 1) setIdx((i) => i + 1);
-    }, 900);
+      if (!el.querySelector("svg")) setIdx((i) => i + 1);
+    }, 700);
     return () => {
       mo.disconnect();
       clearTimeout(t);
     };
-  }, [Icon, idx, icons.length]);
+  }, [Icon, idx]);
 
   if (!view) return <span className="shrink-0 rounded-full bg-white/10" style={{ width: size, height: size }} />;
 
   const white = view.white;
+  const attempt = attempts[idx];
+  const isWorld = norm(view.key) === "worldchain";
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full"
-      style={{ width: size, height: size, background: hasSvg ? "#101827" : view.key === "Arc" && !imgFailed ? "transparent" : view.color, border: hasSvg ? "1px solid rgba(255,255,255,0.12)" : "none" }}
+      style={{ width: size, height: size, background: hasSvg ? "#101827" : view.key === "Arc" && !imgFailed ? "transparent" : isWorld ? "#101827" : view.color, border: hasSvg || isWorld ? "1px solid rgba(255,255,255,0.12)" : "none" }}
       aria-label={view.label}
     >
       {!hasSvg &&
         (view.key === "Arc" && !imgFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
+        ) : isWorld ? (
+          <GlobeMark size={size} />
         ) : (
           <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{view.label[0]}</span>
         ))}
-      {Icon && icons[idx] && (
+      {Icon && !gaveUp && attempt && (
         <span
           ref={holder}
+          key={attempt}
           className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full"
           style={{ padding: hasSvg ? size * 0.15 : 0, opacity: hasSvg ? 1 : 0, color: white ? "#ffffff" : undefined }}
         >
-          <Icon id={icons[idx]} variant={white ? "mono" : "branded"} size={Math.round(size * 0.7)} />
+          {attempt === "#chainId" ? (
+            <Icon chainId={view.chainId} variant={white ? "mono" : "branded"} size={Math.round(size * 0.7)} />
+          ) : (
+            <Icon id={attempt} variant={white ? "mono" : "branded"} size={Math.round(size * 0.7)} />
+          )}
         </span>
       )}
     </span>
@@ -402,7 +423,7 @@ function Road({ steps, phase, fromLabel, toLabel, forwarder }: { steps: StepRow[
         const lineStyle: CSSProperties = lit
           ? { background: "linear-gradient(180deg,#34d399,#39c4ff)", boxShadow: "0 0 12px rgba(57,196,255,0.85), 0 0 24px rgba(52,211,153,0.4)" }
           : flowing
-          ? { background: "linear-gradient(180deg,#39c4ff 0%,rgba(57,196,255,0.15) 50%,#39c4ff 100%)", backgroundSize: "100% 200%", animation: "roadFlow 1.4s linear infinite", boxShadow: "0 0 12px rgba(57,196,255,0.7)" }
+          ? { background: "linear-gradient(180deg,rgba(57,196,255,0.12) 0%,#39c4ff 50%,rgba(57,196,255,0.12) 100%)", backgroundSize: "100% 56px", backgroundRepeat: "repeat-y", animation: "roadFlow 1.1s linear infinite", boxShadow: "0 0 12px rgba(57,196,255,0.7)" }
           : broken
           ? { background: "linear-gradient(180deg,rgba(248,113,113,0.5),rgba(248,113,113,0.1))" }
           : { background: "rgba(255,255,255,0.1)" };
@@ -540,8 +561,8 @@ export default function BridgePage() {
         usdc,
         gas: key === "Arc" ? "USDC" : def?.nativeCurrency?.symbol ?? f?.gas ?? "",
         color: f?.color ?? colorFor(key),
-        icons: f?.icons ?? ICON_GUESS[key] ?? [],
-        white: WHITE_LOGOS.has(key),
+        icons: f?.icons ?? ICON_GUESS_N[norm(key)] ?? [],
+        white: WHITE_LOGOS.has(norm(key)),
         rpcs: key === "Arc" ? ARC_RPCS : def?.rpcEndpoints ?? [],
         explorer: (hash: string) => (tmpl ? (tmpl.includes("{hash}") ? tmpl.replace("{hash}", hash) : `${tmpl.replace(/\/$/, "")}/tx/${hash}`) : `${f?.explorer ?? ""}/tx/${hash}`),
       };
@@ -1224,7 +1245,7 @@ export default function BridgePage() {
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes checkPop{0%{opacity:0;transform:scale(.3)}100%{opacity:1;transform:scale(1)}}
         @keyframes checkDraw{to{stroke-dashoffset:0}}
-        @keyframes roadFlow{from{background-position:0 0}to{background-position:0 200%}}
+        @keyframes roadFlow{from{background-position:0 0}to{background-position:0 56px}}
         @keyframes nodePulse{0%,100%{box-shadow:0 0 0 0 rgba(57,196,255,.55),0 0 14px rgba(57,196,255,.6)}50%{box-shadow:0 0 0 8px rgba(57,196,255,0),0 0 22px rgba(57,196,255,.9)}}
         @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
         @keyframes popIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
@@ -1534,7 +1555,7 @@ export default function BridgePage() {
 
       {/* ---------- choose a network (either side); wide; shows your USDC balance on each ---------- */}
       <Modal wide open={modal === "from" || modal === "to"} onClose={() => setModal(null)} title={modal === "from" ? "Bridge from" : "Bridge to"}>
-        <ul className="grid gap-1 sm:grid-cols-2">
+        <ul className="space-y-1">
           {list.map((k) => {
             const side = modal === "from" ? "from" : "to";
             const current = side === "from" ? fromKey : toKey;
