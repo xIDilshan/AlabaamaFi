@@ -41,7 +41,7 @@ type ChainView = {
 
 type Fallback = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icons: string[] };
 const FALLBACK: Record<string, Fallback> = {
-  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icons: ["arc", "arc-network", "circle-arc"] },
+  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icons: [] },
   Ethereum: { label: "Ethereum", chainId: 1, usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer: "https://etherscan.io", color: "#627EEA", gas: "ETH", icons: ["ethereum"] },
   Base: { label: "Base", chainId: 8453, usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer: "https://basescan.org", color: "#0052FF", gas: "ETH", icons: ["base"] },
   Arbitrum: { label: "Arbitrum", chainId: 42161, usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", explorer: "https://arbiscan.io", color: "#28A0F0", gas: "ETH", icons: ["arbitrum-one", "arbitrum"] },
@@ -52,8 +52,8 @@ const FALLBACK: Record<string, Fallback> = {
   Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH", icons: ["linea"] },
 };
 // logo ids for the other networks (if an id isn't in the logo package, a colored letter is shown instead)
-const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world-chain", "worldchain", "world", "world-network", "worldcoin", "wld", "world-mainnet"], Sonic: ["sonic"], Sei: ["sei", "sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyperevm", "hyper-evm", "hyperliquid"], XDC: ["xdc-network", "xdc"], Codex: ["codex"] };
-const WHITE_LOGOS = new Set(["linea", "sonic", "world"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
+const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world"], Sonic: ["sonic"], Sei: ["sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyper-evm"], XDC: ["xdc"], Codex: ["codex"] };
+const WHITE_LOGOS = new Set(["linea", "sonic", "worldchain"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
 
 /* The networks listed on bridge.usdc.com (Solana is not EVM, so it isn't here). */
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
@@ -306,7 +306,7 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
   const gaveUp = !!Icon && idx >= attempts.length;
 
   useEffect(() => {
-    if (!view?.icons.length && view?.key !== "Arc") return;
+    if (view?.key === "Arc" || !view?.icons.length) return;
     let live = true;
     loadNetworkIcon().then((c) => {
       if (live && c) setIcon(() => c);
@@ -334,6 +334,15 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
   }, [Icon, idx]);
 
   if (!view) return <span className="shrink-0 rounded-full bg-white/10" style={{ width: size, height: size }} />;
+
+  /* Arc: your own logo file (public/arc-logo.png), shown as a circle inside a round badge like the other networks */
+  if (view.key === "Arc" && !imgFailed)
+    return (
+      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" }} aria-label="Arc">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
+      </span>
+    );
 
   const white = view.white;
   const attempt = attempts[idx];
