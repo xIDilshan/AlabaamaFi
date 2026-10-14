@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
 /*
-  Activity feed for the Activity page: a wallet's recent transactions and token transfers on Arc mainnet,
-  read from Arc's official explorer (Blockscout) and grouped into sends, receives, swaps and bridges.
+  Activity feed for the Activity page: ALL transactions and token transfers of a wallet on Arc mainnet,
+  read page by page from Arc's official explorer (Blockscout). The page asks for the next page with the cursors
+  this route returns, until the whole history is loaded.
   Place at: app/api/activity/route.ts
 
   Optional: BLOCKSCOUT_API_KEY (a free Blockscout Pro API key) in .env.local and in Vercel. With a key the
@@ -13,12 +14,12 @@ const KEY = process.env.BLOCKSCOUT_API_KEY;
 const BASE = KEY ? "https://api.blockscout.com/5042/api/v2" : "https://explorer.arc.io/api/v2";
 
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
-const ZERO = "0x0000000000000000000000000000000000000000";
-const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Any = any;
 
-async function bs(path: string) {
-  const sep = path.includes("?") ? "&" : "?";
-  const url = `${BASE}${path}${KEY ? `${sep}apikey=${encodeURIComponent(KEY)}` : ""}`;
+async function bs(path: string, qs: string) {
+  const parts = [qs, KEY ? `apikey=${encodeURIComponent(KEY)}` : ""].filter(Boolean).join("&");
+  const url = `${BASE}${path}${parts ? `?${parts}` : ""}`;
   const res = await fetch(url, { headers: { accept: "application/json" }, next: { revalidate: 15 } });
   if (!res.ok) throw new Error(`explorer ${res.status}`);
   return res.json();
@@ -35,22 +36,27 @@ function toDecimal(raw: string, decimals: number): string {
   return frac ? `${whole}.${frac}` : whole;
 }
 
-type Leg = { symbol: string; amount: string; dir: "in" | "out" };
-type Ev = {
-  hash: string;
-  t: number;
-  status: "ok" | "error" | "pending";
-  type: "send" | "receive" | "swap" | "bridge-out" | "bridge-in" | "contract";
-  legs: Leg[];
-  peer?: string;
-  fee?: string;
-  method?: string;
-  minted?: boolean;
-};
-type Work = Ev & { nFrom: string; nTo: string; nValue: string; usdcKeys: Set<string> };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Any = any;
+/** The page sends back the "next page" cursor it was given. "none" means that feed is finished. */
+function parseCursor(raw: string | null): { skip: boolean; qs: string; bad: boolean } {
+  if (raw === "none") return { skip: true, qs: "", bad: false };
+  if (!raw) return { skip: false, qs: "", bad: false };
+  try {
+    const o = JSON.parse(raw);
+    if (!o || typeof o !== "object" || Array.isArray(o)) return { skip: false, qs: "", bad: true };
+    const p = new URLSearchParams();
+    let n = 0;
+    for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
+      if (!/^[a-z_]{1,40}$/i.test(k) || n >= 12) continue;
+      if (typeof v === "string" || typeof v === "number") {
+        p.set(k, String(v));
+        n++;
+      }
+    }
+    return { skip: false, qs: p.toString(), bad: false };
+  } catch {
+    return { skip: false, qs: "", bad: true };
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -58,92 +64,63 @@ export async function GET(request: Request) {
   if (!ADDR_RE.test(address)) return NextResponse.json({ error: "bad address" }, { status: 400 });
   const me = address.toLowerCase();
 
-  let txs: Any;
-  let transfers: Any;
+  const txc = parseCursor(searchParams.get("txc"));
+  const trc = parseCursor(searchParams.get("trc"));
+  if (txc.bad || trc.bad) return NextResponse.json({ error: "bad cursor" }, { status: 400 });
+
+  let txs: Any = null;
+  let transfers: Any = null;
   try {
-    [txs, transfers] = await Promise.all([bs(`/addresses/${address}/transactions`), bs(`/addresses/${address}/token-transfers?type=ERC-20`)]);
+    [txs, transfers] = await Promise.all([
+      txc.skip ? Promise.resolve(null) : bs(`/addresses/${address}/transactions`, txc.qs),
+      trc.skip ? Promise.resolve(null) : bs(`/addresses/${address}/token-transfers`, ["type=ERC-20", trc.qs].filter(Boolean).join("&")),
+    ]);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message || "explorer unavailable" }, { status: 502 });
   }
 
-  const map = new Map<string, Work>();
-  const get = (hash: string, t: number): Work => {
-    let ev = map.get(hash);
-    if (!ev) {
-      ev = { hash, t, status: "ok", type: "contract", legs: [], nFrom: "", nTo: "", nValue: "0", usdcKeys: new Set() };
-      map.set(hash, ev);
-    }
-    if (t && !ev.t) ev.t = t;
-    return ev;
-  };
+  const outTxs = ((txs?.items ?? []) as Any[])
+    .filter((x) => x?.hash)
+    .map((x) => {
+      const st = String(x.status ?? x.result ?? "").toLowerCase();
+      const from = String(x.from?.hash ?? "").toLowerCase();
+      return {
+        hash: String(x.hash),
+        t: Date.parse(x.timestamp) || 0,
+        status: st === "error" || st.includes("fail") || st.includes("revert") ? "error" : st === "ok" || st.includes("success") ? "ok" : "pending",
+        method: typeof x.method === "string" ? x.method : null,
+        from,
+        to: String(x.to?.hash ?? "").toLowerCase(),
+        value: String(x.value ?? "0"),
+        fee: from === me && x.fee?.value ? toDecimal(String(x.fee.value), 18) : null,
+      };
+    });
 
-  /* transactions (gas, status, plain USDC sends) */
-  for (const x of (txs?.items ?? []) as Any[]) {
-    if (!x?.hash) continue;
-    const ev = get(String(x.hash), Date.parse(x.timestamp) || 0);
-    const st = String(x.status ?? x.result ?? "").toLowerCase();
-    ev.status = st === "error" || st.includes("fail") || st.includes("revert") ? "error" : st === "ok" || st.includes("success") ? "ok" : "pending";
-    ev.method = typeof x.method === "string" ? x.method : undefined;
-    ev.nFrom = String(x.from?.hash ?? "").toLowerCase();
-    ev.nTo = String(x.to?.hash ?? "").toLowerCase();
-    ev.nValue = String(x.value ?? "0");
-    if (ev.nFrom === me && x.fee?.value) ev.fee = toDecimal(String(x.fee.value), 18);
-  }
+  const outTransfers = ((transfers?.items ?? []) as Any[])
+    .map((tr) => {
+      const hash = String(tr.transaction_hash ?? tr.tx_hash ?? "");
+      if (!hash) return null;
+      const token = tr.token ?? {};
+      const decimals = Number(tr.total?.decimals ?? token.decimals ?? 18);
+      const amount = toDecimal(String(tr.total?.value ?? "0"), Number.isFinite(decimals) ? decimals : 18);
+      const from = String(tr.from?.hash ?? "").toLowerCase();
+      const to = String(tr.to?.hash ?? "").toLowerCase();
+      const symbol = String(token.symbol ?? "TOKEN");
+      return {
+        key: `${hash}:${tr.log_index ?? ""}:${from}:${to}:${amount}:${symbol}`,
+        hash,
+        t: Date.parse(tr.timestamp) || 0,
+        symbol,
+        amount,
+        from,
+        to,
+        token: String(token.address_hash ?? token.address ?? "").toLowerCase(),
+      };
+    })
+    .filter(Boolean);
 
-  /* token transfers (USDC, EURC, cirBTC, ...) */
-  for (const tr of (transfers?.items ?? []) as Any[]) {
-    const hash = String(tr.transaction_hash ?? tr.tx_hash ?? "");
-    if (!hash) continue;
-    const ev = get(hash, Date.parse(tr.timestamp) || 0);
-    const token = tr.token ?? {};
-    const symbol = String(token.symbol ?? "TOKEN");
-    const decimals = Number(tr.total?.decimals ?? token.decimals ?? 18);
-    const amount = toDecimal(String(tr.total?.value ?? "0"), Number.isFinite(decimals) ? decimals : 18);
-    const from = String(tr.from?.hash ?? "").toLowerCase();
-    const to = String(tr.to?.hash ?? "").toLowerCase();
-    if (from === me && to === me) continue;
-    const dir: "in" | "out" | null = from === me ? "out" : to === me ? "in" : null;
-    if (!dir) continue;
-    ev.legs.push({ symbol, amount, dir });
-    ev.peer = ev.peer ?? (dir === "out" ? to : from);
-    if (dir === "in" && from === ZERO) ev.minted = true;
-    const tokenAddr = String(token.address_hash ?? token.address ?? "").toLowerCase();
-    if (tokenAddr === USDC_ERC20) ev.usdcKeys.add(`${dir}:${amount}`);
-  }
-
-  /* plain USDC transfers (Arc's gas coin) that have no token-transfer record */
-  for (const ev of map.values()) {
-    if (!/^[1-9]\d*$/.test(ev.nValue)) continue;
-    const amount = toDecimal(ev.nValue, 18);
-    if (ev.nFrom === me && ev.nTo !== me && !ev.usdcKeys.has(`out:${amount}`)) {
-      ev.legs.push({ symbol: "USDC", amount, dir: "out" });
-      ev.peer = ev.peer ?? ev.nTo;
-    } else if (ev.nTo === me && ev.nFrom !== me && !ev.usdcKeys.has(`in:${amount}`)) {
-      ev.legs.push({ symbol: "USDC", amount, dir: "in" });
-      ev.peer = ev.peer ?? ev.nFrom;
-    }
-  }
-
-  /* what kind of activity is it? */
-  const events: Ev[] = [];
-  for (const w of map.values()) {
-    const outs = w.legs.filter((l) => l.dir === "out");
-    const ins = w.legs.filter((l) => l.dir === "in");
-    const m = (w.method ?? "").toLowerCase();
-    let type: Ev["type"] = "contract";
-    if (/depositforburn|burn/.test(m) && outs.length) type = "bridge-out";
-    else if (/receivemessage|mint/.test(m) && ins.length) type = "bridge-in";
-    else if (outs.length && ins.length && outs.some((o) => ins.some((i) => i.symbol !== o.symbol))) type = "swap";
-    else if (ins.length && w.minted && !outs.length) type = "bridge-in";
-    else if (outs.length && !ins.length) type = "send";
-    else if (ins.length && !outs.length) type = "receive";
-    else if (outs.length && ins.length) type = "send";
-    if (type === "contract" && !w.method && !w.legs.length) continue; // nothing useful to show
-    const { nFrom, nTo, nValue, usdcKeys, ...ev } = w;
-    void nFrom; void nTo; void nValue; void usdcKeys;
-    events.push({ ...ev, type });
-  }
-  events.sort((a, b) => b.t - a.t);
-
-  return NextResponse.json({ events: events.slice(0, 60), updated: Date.now() }, { headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=60" } });
+  return NextResponse.json(
+    { txs: outTxs, transfers: outTransfers, txNext: txs?.next_page_params ?? null, trNext: transfers?.next_page_params ?? null },
+    { headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=60" } }
+  );
 }
