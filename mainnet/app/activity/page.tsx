@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
@@ -9,22 +9,19 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 
 const EXPLORER = "https://explorer.arc.io";
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
+const ZERO = "0x0000000000000000000000000000000000000000";
+const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
+const MIN_VISIBLE = 8; // keep loading older pages until at least this many rows can be shown
 
-/* ---------- types (the same shape the /api/activity route sends) ---------- */
+/* ---------- raw data from /api/activity (all of this wallet's history on Arc mainnet) ---------- */
+type Tx = { hash: string; t: number; status: "ok" | "error" | "pending"; method: string | null; from: string; to: string; value: string; fee: string | null };
+type Tr = { key: string; hash: string; t: number; symbol: string; amount: string; from: string; to: string; token: string };
+type Cursor = Record<string, string | number>;
+
+/* ---------- what the page shows ---------- */
 type Leg = { symbol: string; amount: string; dir: "in" | "out" };
 type EvType = "send" | "receive" | "swap" | "bridge-out" | "bridge-in" | "contract";
-type Ev = {
-  hash: string;
-  t: number;
-  status: "ok" | "error" | "pending";
-  type: EvType;
-  legs: Leg[];
-  peer?: string;
-  fee?: string;
-  method?: string;
-  minted?: boolean;
-  note?: string; // set for activity saved on this device
-};
+type Ev = { hash: string; t: number; status: "ok" | "error" | "pending"; type: EvType; legs: Leg[]; peer?: string; fee?: string; method?: string };
 
 type Filter = "all" | "send" | "receive" | "swap" | "bridge";
 const FILTERS: [Filter, string][] = [
@@ -37,7 +34,6 @@ const FILTERS: [Filter, string][] = [
 
 /* ---------- helpers ---------- */
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
-const ZERO = "0x0000000000000000000000000000000000000000";
 
 function fmtAmt(s: string): string {
   const n = Number(s);
@@ -45,7 +41,6 @@ function fmtAmt(s: string): string {
   const max = n >= 1000 ? 2 : n >= 1 ? 4 : 8;
   return n.toLocaleString("en-US", { minimumFractionDigits: n >= 1 ? 2 : 0, maximumFractionDigits: max });
 }
-
 const timeOf = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 function dayLabel(t: number) {
   const d = new Date(t);
@@ -55,6 +50,83 @@ function dayLabel(t: number) {
   if (d.toDateString() === today.toDateString()) return "Today";
   if (d.toDateString() === y.toDateString()) return "Yesterday";
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
+}
+
+/** "1000000000000000000" with 18 decimals -> "1" (no floating point) */
+function toDecimal(raw: string, decimals: number): string {
+  if (!/^\d+$/.test(raw)) return "0";
+  const s = raw.replace(/^0+/, "") || "0";
+  if (decimals <= 0) return s;
+  const p = s.padStart(decimals + 1, "0");
+  const whole = p.slice(0, p.length - decimals);
+  const frac = p.slice(p.length - decimals).replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : whole;
+}
+
+/** Turns the raw transactions + token transfers into sends, receives, swaps and bridges. Works on everything loaded so far. */
+function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
+  type Work = { hash: string; t: number; status: Ev["status"]; method?: string; fee?: string; nFrom: string; nTo: string; nValue: string; legs: Leg[]; peer?: string; minted: boolean; usdcKeys: Set<string> };
+  const map = new Map<string, Work>();
+  const get = (hash: string, t: number): Work => {
+    let w = map.get(hash);
+    if (!w) {
+      w = { hash, t, status: "ok", nFrom: "", nTo: "", nValue: "0", legs: [], minted: false, usdcKeys: new Set() };
+      map.set(hash, w);
+    }
+    if (t && !w.t) w.t = t;
+    return w;
+  };
+
+  for (const x of txs) {
+    const w = get(x.hash, x.t);
+    w.status = x.status;
+    w.method = x.method ?? undefined;
+    w.nFrom = x.from;
+    w.nTo = x.to;
+    w.nValue = x.value;
+    if (x.fee) w.fee = x.fee;
+  }
+  for (const tr of trs) {
+    const w = get(tr.hash, tr.t);
+    if (tr.from === me && tr.to === me) continue;
+    const dir: "in" | "out" | null = tr.from === me ? "out" : tr.to === me ? "in" : null;
+    if (!dir) continue;
+    w.legs.push({ symbol: tr.symbol, amount: tr.amount, dir });
+    w.peer = w.peer ?? (dir === "out" ? tr.to : tr.from);
+    if (dir === "in" && tr.from === ZERO) w.minted = true;
+    if (tr.token === USDC_ERC20) w.usdcKeys.add(`${dir}:${tr.amount}`);
+  }
+  /* plain USDC transfers (Arc's gas coin) that have no token-transfer record */
+  for (const w of map.values()) {
+    if (!/^[1-9]\d*$/.test(w.nValue)) continue;
+    const amount = toDecimal(w.nValue, 18);
+    if (w.nFrom === me && w.nTo !== me && !w.usdcKeys.has(`out:${amount}`)) {
+      w.legs.push({ symbol: "USDC", amount, dir: "out" });
+      w.peer = w.peer ?? w.nTo;
+    } else if (w.nTo === me && w.nFrom !== me && !w.usdcKeys.has(`in:${amount}`)) {
+      w.legs.push({ symbol: "USDC", amount, dir: "in" });
+      w.peer = w.peer ?? w.nFrom;
+    }
+  }
+
+  const out: Ev[] = [];
+  for (const w of map.values()) {
+    if (horizon && w.t < horizon) continue; // older pages aren't fully loaded yet
+    const outs = w.legs.filter((l) => l.dir === "out");
+    const ins = w.legs.filter((l) => l.dir === "in");
+    const m = (w.method ?? "").toLowerCase();
+    let type: EvType = "contract";
+    if (/depositforburn|burn/.test(m) && outs.length) type = "bridge-out";
+    else if (/receivemessage|mint/.test(m) && ins.length) type = "bridge-in";
+    else if (outs.length && ins.length && outs.some((o) => ins.some((i) => i.symbol !== o.symbol))) type = "swap";
+    else if (ins.length && w.minted && !outs.length) type = "bridge-in";
+    else if (outs.length && !ins.length) type = "send";
+    else if (ins.length && !outs.length) type = "receive";
+    else if (outs.length && ins.length) type = "send";
+    if (type === "contract" && !w.method && !w.legs.length) continue;
+    out.push({ hash: w.hash, t: w.t, status: w.status, type, legs: w.legs, peer: w.peer, fee: w.fee, method: w.method });
+  }
+  return out.sort((a, b) => b.t - a.t);
 }
 
 function titleOf(e: Ev): string {
@@ -76,7 +148,6 @@ function titleOf(e: Ev): string {
   }
 }
 function subtitleOf(e: Ev): string {
-  if (e.note) return e.note;
   if (e.type === "send" && e.peer) return `To ${short(e.peer)}`;
   if (e.type === "receive" && e.peer) return e.peer === ZERO ? "Minted" : `From ${short(e.peer)}`;
   if (e.type === "bridge-in") return e.peer && e.peer !== ZERO ? `From ${short(e.peer)}` : "USDC delivered to Arc";
@@ -85,12 +156,13 @@ function subtitleOf(e: Ev): string {
 }
 
 /* ---------- icons ---------- */
+const BRIDGE_ICON = "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71";
 const ICONS: Record<EvType, string> = {
   send: "M7 17 17 7M8 7h9v9",
   receive: "M17 7 7 17M16 17H7V8",
   swap: "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4",
-  "bridge-out": "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
-  "bridge-in": "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  "bridge-out": BRIDGE_ICON,
+  "bridge-in": BRIDGE_ICON,
   contract: "m16 18 6-6-6-6M8 6l-6 6 6 6",
 };
 const TINT: Record<EvType, string> = {
@@ -197,90 +269,154 @@ function Skeleton() {
   );
 }
 
-/** Swaps and bridges made on this device (saved by the Swap and Bridge pages). Used if the live list can't be loaded. */
-function readLocal(address: string): Ev[] {
-  const out: Ev[] = [];
-  const key = address.toLowerCase();
-  const split = (v: string) => {
-    const [amt, ...rest] = v.trim().split(" ");
-    return { amount: (amt ?? "0").replace(/,/g, ""), symbol: rest.join(" ") || "USDC" };
-  };
-  try {
-    const sw = JSON.parse(window.localStorage.getItem(`alabaamafi:swaps:${key}`) ?? "[]") as { id: string; t: number; paid: string; got: string }[];
-    for (const r of sw) {
-      const a = split(r.paid);
-      const b = split(r.got);
-      out.push({ hash: r.id, t: r.t, status: "ok", type: "swap", legs: [{ ...a, dir: "out" }, { ...b, dir: "in" }], note: "Saved on this device" });
-    }
-  } catch {
-    /* ignore */
-  }
-  try {
-    const br = JSON.parse(window.localStorage.getItem(`alabaamafi:bridges:${key}`) ?? "[]") as { id: string; t: number; from: string; to: string; amount: string; received: string; burn?: string }[];
-    for (const r of br) {
-      out.push({ hash: r.burn ?? r.id, t: r.t, status: "ok", type: "bridge-out", legs: [{ symbol: "USDC", amount: r.amount.replace(/,/g, ""), dir: "out" }], note: `${r.from.replace(/_/g, " ")} to ${r.to.replace(/_/g, " ")} · saved on this device` });
-    }
-  } catch {
-    /* ignore */
-  }
-  return out.sort((a, b) => b.t - a.t);
-}
+const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) => (
+  <button onClick={onClick} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${active ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "bg-white/[0.05] text-slate-400 hover:bg-white/[0.09] hover:text-white"}`}>
+    {children}
+  </button>
+);
 
 /* ---------- page ---------- */
 export default function ActivityPage() {
   const { address, isConnected } = useAccount();
   const account = isConnected && address ? address : null;
+  const me = account ? account.toLowerCase() : "";
 
-  const [events, setEvents] = useState<Ev[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  /* everything loaded so far lives in these maps (no duplicates), newest pages first, older pages added on demand */
+  const txMap = useRef<Map<string, Tx>>(new Map());
+  const trMap = useRef<Map<string, Tr>>(new Map());
+  const txCursor = useRef<Cursor | null>(null); // null = that feed is finished
+  const trCursor = useRef<Cursor | null>(null);
+  const busyRef = useRef(false);
+  const failsRef = useRef(0);
+  const [version, setVersion] = useState(0);
+  const [first, setFirst] = useState(true); // the first page hasn't arrived yet
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [txDone, setTxDone] = useState(false);
+  const [trDone, setTrDone] = useState(false);
   const [error, setError] = useState("");
-  const [local, setLocal] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [updated, setUpdated] = useState(0);
+  const sentinel = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(
-    async (quiet = false) => {
-      if (!account) return;
-      if (!quiet) setLoading(true);
+  const merge = (j: { txs?: Tx[]; transfers?: Tr[] }) => {
+    for (const x of j.txs ?? []) txMap.current.set(x.hash, x);
+    for (const x of j.transfers ?? []) trMap.current.set(x.key, x);
+  };
+
+  /** Newest page of both feeds. Called on load and every 30 seconds; it only adds what's new. */
+  const loadNewest = useCallback(
+    async (initial: boolean) => {
+      if (!account || busyRef.current) return;
+      busyRef.current = true;
       try {
         const r = await fetch(`/api/activity?address=${account}`);
         if (!r.ok) throw new Error(`activity ${r.status}`);
-        const j = (await r.json()) as { events?: Ev[]; updated?: number };
-        setEvents(j.events ?? []);
-        setLocal(false);
+        const j = (await r.json()) as { txs?: Tx[]; transfers?: Tr[]; txNext?: Cursor | null; trNext?: Cursor | null };
+        merge(j);
+        if (initial) {
+          txCursor.current = j.txNext ?? null;
+          trCursor.current = j.trNext ?? null;
+          setTxDone(!j.txNext);
+          setTrDone(!j.trNext);
+          setFirst(false);
+        }
         setError("");
-        setUpdated(j.updated ?? Date.now());
+        setUpdated(Date.now());
+        setVersion((v) => v + 1);
       } catch {
-        // live list unavailable: show what was saved on this device, and say so
-        setEvents(readLocal(account));
-        setLocal(true);
-        setError("The live activity list couldn't be loaded right now.");
+        if (initial) setFirst(false);
+        setError("The activity list couldn't be loaded from the explorer.");
       } finally {
-        setLoading(false);
+        busyRef.current = false;
       }
     },
     [account]
   );
 
-  /* load when the wallet changes, then refresh every 30 seconds and when the tab is shown again */
+  /** One older page of both feeds. */
+  const loadMore = useCallback(async () => {
+    if (!account || busyRef.current || (!txCursor.current && !trCursor.current)) return;
+    busyRef.current = true;
+    setLoadingMore(true);
+    try {
+      const q = new URLSearchParams({ address: account });
+      q.set("txc", txCursor.current ? JSON.stringify(txCursor.current) : "none");
+      q.set("trc", trCursor.current ? JSON.stringify(trCursor.current) : "none");
+      const r = await fetch(`/api/activity?${q.toString()}`);
+      if (!r.ok) throw new Error(`activity ${r.status}`);
+      const j = (await r.json()) as { txs?: Tx[]; transfers?: Tr[]; txNext?: Cursor | null; trNext?: Cursor | null };
+      merge(j);
+      txCursor.current = txCursor.current ? j.txNext ?? null : null;
+      trCursor.current = trCursor.current ? j.trNext ?? null : null;
+      setTxDone(!txCursor.current);
+      setTrDone(!trCursor.current);
+      failsRef.current = 0;
+      setError("");
+      setVersion((v) => v + 1);
+    } catch {
+      failsRef.current += 1;
+      setError("Couldn't load older activity. Tap Load more to try again.");
+    } finally {
+      busyRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [account]);
+
+  /* a new wallet starts from scratch; then new activity is checked for every 30 seconds and when the tab is shown again */
   useEffect(() => {
-    setEvents(null);
+    txMap.current = new Map();
+    trMap.current = new Map();
+    txCursor.current = null;
+    trCursor.current = null;
+    failsRef.current = 0;
+    setTxDone(false);
+    setTrDone(false);
+    setFirst(true);
     setError("");
+    setVersion((v) => v + 1);
     if (!account) return;
-    load();
-    const id = setInterval(() => load(true), 30000);
-    const onVis = () => document.visibilityState === "visible" && load(true);
+    loadNewest(true);
+    const id = setInterval(() => loadNewest(false), 30000);
+    const onVis = () => document.visibilityState === "visible" && loadNewest(false);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [account, load]);
+  }, [account, loadNewest]);
 
-  const shown = useMemo(() => {
-    const list = events ?? [];
-    return list.filter((e) => (filter === "all" ? true : filter === "bridge" ? e.type.startsWith("bridge") : e.type === filter));
-  }, [events, filter]);
+  /* "complete up to here": a row is only shown once BOTH feeds have loaded back to its time, so swaps and bridges are never half-built */
+  const done = txDone && trDone;
+  const horizon = useMemo(() => {
+    void version;
+    if (done) return 0;
+    const oldest = (arr: number[]) => (arr.length ? Math.min(...arr) : 0);
+    const oT = txDone ? 0 : oldest(Array.from(txMap.current.values()).map((x) => x.t).filter(Boolean));
+    const oR = trDone ? 0 : oldest(Array.from(trMap.current.values()).map((x) => x.t).filter(Boolean));
+    return Math.max(oT, oR);
+  }, [version, done, txDone, trDone]);
+
+  const events = useMemo(() => {
+    void version;
+    return account ? buildEvents(Array.from(txMap.current.values()), Array.from(trMap.current.values()), me, horizon) : [];
+  }, [version, horizon, account, me]);
+
+  const shown = useMemo(() => events.filter((e) => (filter === "all" ? true : filter === "bridge" ? e.type.startsWith("bridge") : e.type === filter)), [events, filter]);
+
+  /* keep loading older pages while the list is short, and whenever you scroll to the bottom */
+  useEffect(() => {
+    if (!account || first || done || loadingMore || error || failsRef.current > 0) return;
+    if (shown.length < MIN_VISIBLE) loadMore();
+  }, [account, first, done, loadingMore, error, shown.length, loadMore, version]);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !account) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && !done && !error) loadMore();
+    }, { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [account, done, error, loadMore, shown.length]);
 
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
@@ -293,34 +429,35 @@ export default function ActivityPage() {
     return out;
   }, [shown]);
 
-  const Pill = ({ f, label }: { f: Filter; label: string }) => (
-    <button
-      onClick={() => setFilter(f)}
-      className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${filter === f ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "bg-white/[0.05] text-slate-400 hover:bg-white/[0.09] hover:text-white"}`}
-    >
-      {label}
-    </button>
-  );
-
   let body: ReactNode;
   if (!account) {
     body = (
       <div className="px-4 py-14 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05] text-slate-400"><Svg d="M3 12h4l3-8 4 16 3-8h4" size={26} /></span>
         <p className="mt-4 text-base font-semibold">Connect your wallet</p>
-        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Use the Connect button in the header to see your sends, swaps and bridges on Arc.</p>
+        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Use the Connect button in the header to see all of this wallet&apos;s activity on Arc.</p>
       </div>
     );
-  } else if (events === null || (loading && events.length === 0)) {
+  } else if (first) {
     body = <Skeleton />;
-  } else if (shown.length === 0) {
+  } else if (error && events.length === 0 && txMap.current.size === 0 && trMap.current.size === 0) {
+    body = (
+      <div className="px-4 py-12 text-center">
+        <p className="text-base font-semibold">Couldn&apos;t load activity</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-sm leading-6 text-slate-500">{error} This is the explorer data for this wallet; nothing is read from your device.</p>
+        <button onClick={() => { setFirst(true); loadNewest(true); }} className="mx-auto mt-5 inline-flex rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold">Try again</button>
+      </div>
+    );
+  } else if (shown.length === 0 && (done || filter !== "all")) {
     body = (
       <div className="px-4 py-14 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05] text-slate-400"><Svg d="M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" size={26} /></span>
         <p className="mt-4 text-base font-semibold">{events.length === 0 ? "No activity yet" : "Nothing in this filter"}</p>
-        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">{events.length === 0 ? "Your sends, swaps and bridges will show up here." : "Try another filter, or choose All."}</p>
+        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">{events.length === 0 ? "No transactions found for this wallet on Arc mainnet." : done ? "Try another filter, or choose All." : "Older activity is still loading."}</p>
       </div>
     );
+  } else if (shown.length === 0) {
+    body = <Skeleton />;
   } else {
     body = (
       <div>
@@ -359,7 +496,7 @@ export default function ActivityPage() {
             <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
               <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Your recent sends, swaps and bridges on Arc.</p>
+            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Everything this wallet has done on Arc mainnet.</p>
           </div>
 
           <div className="fade-up relative mx-auto mt-10 w-full max-w-2xl sm:mt-12" style={{ "--delay": "150ms" } as CSSProperties}>
@@ -369,32 +506,43 @@ export default function ActivityPage() {
               <div className="flex items-center gap-2 px-1 pb-3">
                 <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
                   {FILTERS.map(([f, label]) => (
-                    <Pill key={f} f={f} label={label} />
+                    <Pill key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</Pill>
                   ))}
                 </div>
                 <button
                   type="button"
-                  onClick={() => load()}
-                  disabled={!account || loading}
+                  onClick={() => loadNewest(false)}
+                  disabled={!account}
                   aria-label="Refresh"
                   title="Refresh"
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40"
                 >
-                  <span className={loading ? "animate-spin" : ""}><Svg d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" /></span>
+                  <Svg d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
                 </button>
               </div>
 
-              {error && account && (
-                <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">
-                  {error} {local ? "Showing swaps and bridges saved on this device." : ""}
-                </p>
+              {error && account && (txMap.current.size > 0 || trMap.current.size > 0) && (
+                <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
               )}
 
               {body}
 
+              {/* older history loads as you scroll; this button is the backup */}
+              {account && !first && shown.length > 0 && (
+                <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
+                  {done ? (
+                    <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
+                  ) : (
+                    <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
+                      {loadingMore ? "Loading older activity…" : "Load more"}
+                    </button>
+                  )}
+                </div>
+              )}
+
               {account && (
                 <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-4 text-xs text-slate-500">
-                  <span>{updated && !local ? `Updated ${timeOf(updated)}` : local ? "Saved on this device" : ""}</span>
+                  <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
                   <a href={`${EXPLORER}/address/${account}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
                     See everything on the explorer
                   </a>
