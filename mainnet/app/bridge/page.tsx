@@ -53,7 +53,7 @@ const FALLBACK: Record<string, Fallback> = {
 };
 // logo ids for the other networks (if an id isn't in the logo package, a colored letter is shown instead)
 const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world-chain", "worldchain", "world", "world-network", "worldcoin", "wld", "world-mainnet"], Sonic: ["sonic"], Sei: ["sei", "sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyperevm", "hyper-evm", "hyperliquid"], XDC: ["xdc-network", "xdc"], Codex: ["codex"] };
-const WHITE_LOGOS = new Set(["linea", "sonic"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
+const WHITE_LOGOS = new Set(["linea", "sonic", "world"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
 
 /* The networks listed on bridge.usdc.com (Solana is not EVM, so it isn't here). */
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
