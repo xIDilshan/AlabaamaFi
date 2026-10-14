@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
   Runs on the server, so the CoinGecko key stays secret and answers are cached.
   Key (optional): COINGECKO_API_KEY in .env.local and in Vercel.
 
-  Version 3: ranges 1H, 4H, 1D, 7D, 1M, 3M, 1Y and line / candle charts.
+  Version 4: ranges 1H, 4H, 1D, 7D, 1M, 3M, 1Y, line / candle charts, and gas coin prices (type=native).
   Test: /api/market?type=chart&kind=candle&token=EURC&range=3M  should answer {"candles":[...]}
 */
 
@@ -127,6 +127,20 @@ export async function GET(request: Request) {
       }
     }
     return NextResponse.json({ error: "unavailable" }, { status: 502 });
+  }
+
+  /* ---- gas coin prices (for the Bridge page: ETH, POL, AVAX in dollars) ---- */
+  if (type === "native") {
+    try {
+      const d = await cg("/simple/price?ids=ethereum,polygon-ecosystem-token,avalanche-2&vs_currencies=usd", 60);
+      const native: Record<string, number> = {};
+      if (typeof d?.ethereum?.usd === "number") native.ETH = d.ethereum.usd;
+      if (typeof d?.["polygon-ecosystem-token"]?.usd === "number") native.POL = d["polygon-ecosystem-token"].usd;
+      if (typeof d?.["avalanche-2"]?.usd === "number") native.AVAX = d["avalanche-2"].usd;
+      return NextResponse.json({ native }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } });
+    } catch {
+      return NextResponse.json({ native: {} }, { status: 502 });
+    }
   }
 
   /* ---- prices ---- */
