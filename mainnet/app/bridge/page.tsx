@@ -8,13 +8,40 @@ import Header from "@/components/Header";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
 
-/* ---------- networks (USDC addresses: developers.circle.com/stablecoins/usdc-contract-addresses) ---------- */
-type ChainKey = "Arc" | "Ethereum" | "Base" | "Arbitrum" | "Optimism" | "Polygon" | "Avalanche" | "Unichain" | "Linea";
-type ChainInfo = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icon: string };
+/* =====================================================================
+   NETWORKS
+   The list of networks, their USDC address, gas coin and explorer come from Circle's App Kit itself
+   (kit.getSupportedChains("bridge")), so it always matches what Circle can bridge.
+   The table below is only a fallback (used until the kit has loaded) plus colors, logo ids and timing.
+===================================================================== */
+type ChainKey = string; // the name App Kit uses: "Arc", "Ethereum", "Base", "Optimism", "World_Chain", ...
+type ChainDef = {
+  type?: string;
+  chain: string;
+  name: string;
+  chainId?: number;
+  isTestnet?: boolean;
+  nativeCurrency?: { symbol?: string };
+  explorerUrl?: string;
+  rpcEndpoints?: string[];
+  usdcAddress?: string | null;
+  forwarderSupported?: { source?: boolean; destination?: boolean };
+};
+type ChainView = {
+  key: ChainKey;
+  label: string;
+  chainId: number;
+  usdc: string;
+  gas: string;
+  color: string;
+  icon: string; // network id in @web3icons/react
+  rpcs: string[];
+  forwarderDest: boolean;
+  explorer: (hash: string) => string;
+};
 
-// The key is the name App Kit uses for the network (OP Mainnet is "Optimism", Polygon PoS is "Polygon").
-// `icon` is the network id in @web3icons/react.
-const CHAINS: Record<ChainKey, ChainInfo> = {
+type Fallback = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icon: string };
+const FALLBACK: Record<string, Fallback> = {
   Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icon: "" },
   Ethereum: { label: "Ethereum", chainId: 1, usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer: "https://etherscan.io", color: "#627EEA", gas: "ETH", icon: "ethereum" },
   Base: { label: "Base", chainId: 8453, usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer: "https://basescan.org", color: "#0052FF", gas: "ETH", icon: "base" },
@@ -25,7 +52,28 @@ const CHAINS: Record<ChainKey, ChainInfo> = {
   Unichain: { label: "Unichain", chainId: 130, usdc: "0x078D782b760474a361dDA0AF3839290b0EF57AD6", explorer: "https://uniscan.xyz", color: "#F50DB4", gas: "ETH", icon: "unichain" },
   Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH", icon: "linea" },
 };
-const PARTNERS: ChainKey[] = ["Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea"];
+// logo ids for more networks (if an id isn't in the logo package, a colored letter is shown instead)
+const ICON_GUESS: Record<string, string> = { World_Chain: "world-chain", Sonic: "sonic", Sei: "sei", Ink: "ink", Plume: "plume", Monad: "monad", HyperEVM: "hyperevm", XDC: "xdc-network", Codex: "codex", Plasma: "plasma", Cronos: "cronos", Linea: "linea" };
+const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea"];
+
+/* Circle's published attestation times by source network (developers.circle.com/cctp/concepts/finality-and-block-confirmations).
+   Fast Transfer exists only on some source networks; on the others the standard transfer is already fast. */
+const FAST_SOURCES = ["Arbitrum", "Base", "Codex", "Edge", "Ethereum", "Ink", "Linea", "Morph", "Optimism", "Plume", "Unichain", "World_Chain", "X_Layer"];
+const STANDARD_TIME: Record<string, string> = {
+  Arc: "~1 sec",
+  Avalanche: "~8 sec",
+  Polygon: "~8 sec",
+  Ethereum: "~15–19 min",
+  Base: "~15–19 min",
+  Arbitrum: "~15–19 min",
+  Optimism: "~15–19 min",
+  Unichain: "~15–19 min",
+  World_Chain: "~15–19 min",
+  Ink: "~15–19 min",
+  Codex: "~15–19 min",
+  Linea: "~6–32 hours",
+};
+const fastTime = (key: string) => (key === "Ethereum" ? "~20 sec" : "~8 sec");
 
 const ARC_RPCS = [
   "https://rpc.mainnet.arc.io",
@@ -35,11 +83,12 @@ const ARC_RPCS = [
 ];
 
 /* ---------- safety limits ---------- */
-const DECIMALS = 6; // USDC has 6 decimals on every network above
+const DECIMALS = 6; // USDC has 6 decimals on every network here
 const ARC_GAS_RESERVE = BigInt(20000); // keep ~0.02 USDC for gas when bridging out of Arc
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
 const AUTO_SLIPPAGE = 0.5; // percent
 const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
+const FALLBACK_GAS_UNITS = 230000; // approve + burn, only used if the kit gives no gas number
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -68,7 +117,7 @@ function formatUnits6(value: bigint, minFrac = 2): string {
 }
 const fmtNum = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 const fmtUsd = (n: number | null) => (n === null || !Number.isFinite(n) ? "—" : n > 0 && n < 0.01 ? "<$0.01" : `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-const fmtGas = (n: number) => (n === 0 ? "0" : n < 0.0001 ? "<0.0001" : n < 1 ? n.toFixed(4) : n.toFixed(3));
+const fmtGas = (n: number) => (n <= 0 ? "0" : n >= 1 ? n.toFixed(3) : n >= 0.001 ? n.toFixed(4) : n >= 0.000001 ? n.toFixed(6).replace(/0+$/, "") : "<0.000001");
 const chainNum = (id: unknown) => (typeof id === "string" ? (id.startsWith("0x") ? parseInt(id, 16) : parseInt(id, 10)) : typeof id === "number" ? id : NaN);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const timeAgo = (t: number) => {
@@ -78,24 +127,25 @@ const timeAgo = (t: number) => {
   if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
   return new Date(t).toLocaleDateString();
 };
-/** Explorer links are always built here from the transaction hash, never taken from the SDK. */
-const txUrl = (key: ChainKey, hash: string) => `${CHAINS[key].explorer}/tx/${hash}`;
+const colorFor = (s: string) => `hsl(${Array.from(s).reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7)} 65% 50%)`;
 
 /* ---------- wallet + App Kit types ---------- */
 type Eip1193 = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 type Fee = { type?: string; token?: string; amount?: string };
+type GasItem = { name?: string; token?: string; blockchain?: string; fees?: { fee?: string } | null; fee?: string; amount?: string };
 type StepRes = { name?: string; state?: string; txHash?: string; errorMessage?: string };
 type BridgeRes = { state?: string; steps?: StepRes[] };
+type Dest = { adapter?: unknown; chain: string; recipientAddress?: string; useForwarder?: boolean };
 type BridgeArgs = {
   from: { adapter: unknown; chain: string };
-  to: { adapter: unknown; chain: string };
+  to: Dest;
   amount: string;
   token: "USDC";
   config?: { transferSpeed?: "FAST" | "SLOW"; maxFee?: string };
 };
 type KitLike = {
   getSupportedChains: (op?: string) => unknown;
-  estimateBridge: (p: BridgeArgs) => Promise<{ fees?: Fee[] }>;
+  estimateBridge: (p: BridgeArgs) => Promise<{ fees?: Fee[]; gasFees?: GasItem[] }>;
   bridge: (p: BridgeArgs) => Promise<BridgeRes>;
   retry?: (failed: BridgeRes, ctx: { from: unknown; to: unknown }) => Promise<BridgeRes>;
   on?: (event: string, handler: (e: unknown) => void) => void;
@@ -104,10 +154,11 @@ type KitLike = {
 type ReadClient = {
   readContract: (args: unknown) => Promise<unknown>;
   getBalance: (args: { address: string }) => Promise<bigint>;
+  getGasPrice: () => Promise<bigint>;
 };
 
 type GasFee = { amount: number; token: string };
-type Quote = { receive: number | null; bridgeFee: number | null; gas: GasFee[]; fast: boolean };
+type Quote = { receive: number | null; bridgeFee: number | null; deliveryFee: number; gas: GasFee[]; gasApprox: boolean; fast: boolean };
 type StepKey = "approve" | "burn" | "fetchAttestation" | "mint";
 type StepState = "pending" | "active" | "done" | "error";
 type StepRow = { key: StepKey; state: StepState; hash?: string };
@@ -144,7 +195,7 @@ function SpaceBackground() {
   );
 }
 
-/** Centered popup on desktop. Closes with Escape or by tapping the dark area. */
+/** Centered popup. Closes with Escape or by tapping the dark area. */
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   useEffect(() => {
     if (!open) return;
@@ -216,11 +267,17 @@ const loadNetworkIcon = () => {
   return networkIconPromise;
 };
 
-function ChainLogo({ chain, size = 28 }: { chain: ChainKey; size?: number }) {
-  const [failed, setFailed] = useState(false);
+/** Round logo for a network. The logo sits inside a round badge at 70% size, so it is never cropped or zoomed.
+    If the logo package has no logo for a network, a colored letter is shown instead. */
+function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: number }) {
+  const [arcFailed, setArcFailed] = useState(false);
   const [Icon, setIcon] = useState<IconComp | null>(null);
+  const [hasSvg, setHasSvg] = useState(false);
+  const holder = useRef<HTMLSpanElement>(null);
+  const isArc = view?.key === "Arc";
+
   useEffect(() => {
-    if (chain === "Arc") return;
+    if (isArc || !view?.icon) return;
     let live = true;
     loadNetworkIcon().then((c) => {
       if (live && c) setIcon(() => c);
@@ -228,25 +285,45 @@ function ChainLogo({ chain, size = 28 }: { chain: ChainKey; size?: number }) {
     return () => {
       live = false;
     };
-  }, [chain]);
+  }, [isArc, view?.icon]);
 
-  if (chain === "Arc" && !failed)
+  useEffect(() => {
+    const el = holder.current;
+    if (!Icon || !el) return;
+    const check = () => setHasSvg(!!el.querySelector("svg"));
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [Icon]);
+
+  if (!view) return <span className="shrink-0 rounded-full bg-white/10" style={{ width: size, height: size }} />;
+
+  if (isArc && !arcFailed)
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />;
+    return <img src="/arc-logo.png" alt="Arc" onError={() => setArcFailed(true)} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />;
 
   return (
-    <span className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-white" style={{ width: size, height: size, background: CHAINS[chain].color, fontSize: size * 0.45 }} aria-label={CHAINS[chain].label}>
-      {CHAINS[chain].label[0]}
-      {Icon && chain !== "Arc" && (
-        <span className="absolute inset-0 flex items-center justify-center">
-          <Icon id={CHAINS[chain].icon} variant="background" size={size} />
+    <span
+      className="relative inline-flex shrink-0 items-center justify-center rounded-full"
+      style={{ width: size, height: size, background: hasSvg ? "#101827" : view.color, border: hasSvg ? "1px solid rgba(255,255,255,0.12)" : "none" }}
+      aria-label={view.label}
+    >
+      {!hasSvg && <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{view.label[0]}</span>}
+      {Icon && view.icon && (
+        <span
+          ref={holder}
+          className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full"
+          style={{ padding: hasSvg ? size * 0.15 : 0, opacity: hasSvg ? 1 : 0 }}
+        >
+          <Icon id={view.icon} variant="branded" size={Math.round(size * 0.7)} />
         </span>
       )}
     </span>
   );
 }
 
-function UsdcLogo({ size = 28 }: { size?: number }) {
+function UsdcLogo({ size = 36 }: { size?: number }) {
   const [failed, setFailed] = useState(false);
   if (!failed)
     // eslint-disable-next-line @next/next/no-img-element
@@ -260,31 +337,23 @@ function UsdcLogo({ size = 28 }: { size?: number }) {
   );
 }
 
-/** Network chip. inline-flex for both versions, so Arc (no arrow) is never wider than the others. */
-function ChainButton({ chain, onClick, disabled }: { chain: ChainKey; onClick?: () => void; disabled?: boolean }) {
-  const content = (
-    <>
-      <ChainLogo chain={chain} size={30} />
-      <span>{CHAINS[chain].label}</span>
-      {onClick && <span className="text-slate-400"><Chevron /></span>}
-    </>
-  );
-  const cls = "inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base";
-  return onClick ? (
-    <button type="button" onClick={onClick} disabled={disabled} aria-label={`Choose network, now ${CHAINS[chain].label}`} className={`${cls} transition hover:bg-white/[0.12] disabled:opacity-60`}>
-      {content}
+/** Network chip. Every network is clickable, Arc too. */
+function ChainButton({ view, onClick, disabled }: { view: ChainView | undefined; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} aria-label={`Choose network, now ${view?.label ?? ""}`} className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base">
+      <ChainLogo view={view} size={30} />
+      <span>{view?.label ?? "Select"}</span>
+      <span className="text-slate-400"><Chevron /></span>
     </button>
-  ) : (
-    <span className={cls}>{content}</span>
   );
 }
 
-const STEP_LABEL = (key: StepKey, from: ChainKey, to: ChainKey) =>
+const STEP_LABEL = (key: StepKey, fromLabel: string, toLabel: string, forwarder: boolean) =>
   ({
-    approve: `Approve USDC on ${CHAINS[from].label}`,
-    burn: `Send USDC from ${CHAINS[from].label}`,
+    approve: `Approve USDC on ${fromLabel}`,
+    burn: `Send USDC from ${fromLabel}`,
     fetchAttestation: "Circle confirms the transfer",
-    mint: `Receive USDC on ${CHAINS[to].label}`,
+    mint: forwarder ? `Circle delivers USDC on ${toLabel}` : `Receive USDC on ${toLabel}`,
   })[key];
 
 /** Turns wallet / SDK / network errors into a short, clear message. */
@@ -323,11 +392,10 @@ export default function BridgePage() {
   const account = isConnected && address ? address : null;
 
   const [provider, setProvider] = useState<Eip1193 | undefined>(undefined);
-  const [partner, setPartner] = useState<ChainKey>("Ethereum");
-  const [dir, setDir] = useState<"in" | "out">("in"); // "in": partner -> Arc, "out": Arc -> partner
+  const [defs, setDefs] = useState<ChainDef[]>([]);
+  const [fromKey, setFromKey] = useState<ChainKey>("Ethereum");
+  const [toKey, setToKey] = useState<ChainKey>("Arc");
   const [flips, setFlips] = useState(0);
-  const fromKey: ChainKey = dir === "in" ? partner : "Arc";
-  const toKey: ChainKey = dir === "in" ? "Arc" : partner;
 
   const [amount, setAmount] = useState("");
   const [fast, setFast] = useState(true);
@@ -347,22 +415,62 @@ export default function BridgePage() {
   const [steps, setSteps] = useState<StepRow[]>([]);
   const [summary, setSummary] = useState<HistoryRow | null>(null);
   const [canResume, setCanResume] = useState(false);
+  const [usedForwarder, setUsedForwarder] = useState(true);
 
-  const [modal, setModal] = useState<null | "chain" | "history" | "settings" | "fast">(null);
+  const [modal, setModal] = useState<null | "from" | "to" | "history" | "settings" | "fast">(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
 
   const kitRef = useRef<KitLike | null>(null);
   const adapterRef = useRef<unknown>(null);
-  const clientsRef = useRef<Partial<Record<ChainKey, ReadClient>>>({});
+  const clientsRef = useRef<Record<string, ReadClient>>({});
   const executingRef = useRef(false);
   const lockRef = useRef(false);
   const failedRef = useRef<BridgeRes | null>(null);
   const stepsRef = useRef<StepRow[]>([]);
 
-  const speed: "FAST" | "SLOW" = fast ? "FAST" : "SLOW";
   const customPct = parseFloat(slip.custom);
   const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
   const slipPct = slip.mode === "custom" && customValid ? customPct : AUTO_SLIPPAGE;
+
+  /* ----- network list: Circle's own list, with a built-in fallback ----- */
+  const views = useMemo(() => {
+    const out: Record<string, ChainView> = {};
+    const add = (key: string, def?: ChainDef) => {
+      const f = FALLBACK[key];
+      const usdc = def?.usdcAddress ?? f?.usdc ?? null;
+      const chainId = def?.chainId ?? f?.chainId ?? 0;
+      if (!usdc || !chainId) return;
+      const tmpl = def?.explorerUrl && def.explorerUrl.startsWith("https://") ? def.explorerUrl : null;
+      out[key] = {
+        key,
+        label: key === "Arc" ? "Arc" : def?.name ?? f?.label ?? key.replace(/_/g, " "),
+        chainId,
+        usdc,
+        gas: key === "Arc" ? "USDC" : def?.nativeCurrency?.symbol ?? f?.gas ?? "",
+        color: f?.color ?? colorFor(key),
+        icon: f?.icon ?? ICON_GUESS[key] ?? "",
+        rpcs: key === "Arc" ? ARC_RPCS : def?.rpcEndpoints ?? [],
+        forwarderDest: def?.forwarderSupported ? !!def.forwarderSupported.destination : key === "Arc",
+        explorer: (hash: string) => (tmpl ? (tmpl.includes("{hash}") ? tmpl.replace("{hash}", hash) : `${tmpl.replace(/\/$/, "")}/tx/${hash}`) : `${f?.explorer ?? ""}/tx/${hash}`),
+      };
+    };
+    Object.keys(FALLBACK).forEach((k) => add(k, defs.find((d) => d.chain === k)));
+    defs.filter((d) => !d.isTestnet && (d.type ?? "evm") === "evm").forEach((d) => add(d.chain, d));
+    return out;
+  }, [defs]);
+  const list = useMemo(() => {
+    const keys = Object.keys(views);
+    return [...ORDER.filter((k) => views[k]), ...keys.filter((k) => !ORDER.includes(k)).sort((a, b) => views[a].label.localeCompare(views[b].label))];
+  }, [views]);
+  const fromView = views[fromKey];
+  const toView = views[toKey];
+  const txUrl = (key: ChainKey, hash: string) => views[key]?.explorer(hash) ?? "#";
+
+  /* Fast only exists on some source networks; elsewhere the standard transfer is already fast */
+  const canFast = FAST_SOURCES.includes(fromKey);
+  const useFast = fast && canFast;
+  const speed: "FAST" | "SLOW" = useFast ? "FAST" : "SLOW";
+  const forwarder = !!toView?.forwarderDest; // Circle delivers the USDC, so no wallet prompt on the receiving network
 
   /* settings (Fast on/off, slippage) are remembered on this device */
   useEffect(() => {
@@ -404,6 +512,28 @@ export default function BridgePage() {
     clientsRef.current = {};
   }, [provider, account]);
 
+  const getKit = async (): Promise<KitLike> => {
+    if (!kitRef.current) {
+      const { AppKit } = await import("@circle-fin/app-kit");
+      kitRef.current = new AppKit() as unknown as KitLike;
+    }
+    return kitRef.current;
+  };
+
+  /* load Circle's list of bridgeable networks */
+  useEffect(() => {
+    let live = true;
+    getKit()
+      .then((kit) => {
+        const all = kit.getSupportedChains("bridge") as ChainDef[];
+        if (live && Array.isArray(all)) setDefs(all);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+
   /* gas coin prices (for the "$" next to the gas fee) */
   useEffect(() => {
     let live = true;
@@ -437,14 +567,6 @@ export default function BridgePage() {
     }
   }, [historyKey]);
 
-  const getKit = async (): Promise<KitLike> => {
-    if (!kitRef.current) {
-      const { AppKit } = await import("@circle-fin/app-kit");
-      kitRef.current = new AppKit() as unknown as KitLike;
-    }
-    return kitRef.current;
-  };
-
   /* A wallet transport that only answers when the wallet is on the right network; otherwise public RPCs take over. */
   const guardedWallet = useCallback(
     async (chainId: number) => {
@@ -466,75 +588,91 @@ export default function BridgePage() {
     async (key: ChainKey): Promise<ReadClient> => {
       const cached = clientsRef.current[key];
       if (cached) return cached;
+      const v = views[key];
+      if (!v) throw new Error("Unknown network");
       const { createPublicClient, fallback, http, defineChain } = await import("viem");
-      const chains = await import("viem/chains");
-      const map: Record<string, unknown> = { Ethereum: chains.mainnet, Base: chains.base, Arbitrum: chains.arbitrum, Optimism: chains.optimism, Polygon: chains.polygon, Avalanche: chains.avalanche, Unichain: chains.unichain, Linea: chains.linea };
-      const chain =
-        key === "Arc"
-          ? defineChain({ id: 5042, name: "Arc", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: { default: { http: ARC_RPCS } } })
-          : map[key];
-      const urls = key === "Arc" ? ARC_RPCS.map((u) => http(u, { retryCount: 1, timeout: 8000 })) : [http()];
-      const client = createPublicClient({ chain: chain as never, transport: fallback([await guardedWallet(CHAINS[key].chainId), ...urls]) }) as unknown as ReadClient;
+      const chain = defineChain({ id: v.chainId, name: v.label, nativeCurrency: { name: v.gas, symbol: v.gas || "ETH", decimals: 18 }, rpcUrls: { default: { http: v.rpcs.length ? v.rpcs : ["https://invalid.invalid"] } } });
+      const urls = v.rpcs.map((u) => http(u, { retryCount: 1, timeout: 8000 }));
+      const client = createPublicClient({ chain: chain as never, transport: fallback([await guardedWallet(v.chainId), ...urls]) }) as unknown as ReadClient;
       clientsRef.current[key] = client;
       return client;
     },
-    [guardedWallet]
+    [views, guardedWallet]
   );
 
   const readUsdc = useCallback(
     async (key: ChainKey, owner: string): Promise<bigint | null> => {
       try {
+        const v = views[key];
+        if (!v) return null;
         const { erc20Abi } = await import("viem");
         const c = await getClient(key);
-        return (await c.readContract({ address: CHAINS[key].usdc, abi: erc20Abi, functionName: "balanceOf", args: [owner] })) as bigint;
+        return (await c.readContract({ address: v.usdc, abi: erc20Abi, functionName: "balanceOf", args: [owner] })) as bigint;
       } catch {
         return null;
       }
     },
-    [getClient]
+    [getClient, views]
   );
 
   /* balances: USDC on both networks, plus the gas coin on the source network. Answers for old networks are ignored. */
   const bk = (k: ChainKey) => (account ? `${account.toLowerCase()}:${k}` : "");
+  const loadOne = useCallback(
+    async (k: ChainKey, live: () => boolean) => {
+      if (!account) return;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const v = await readUsdc(k, account);
+        if (!live()) return;
+        if (v !== null) {
+          setBals((p) => ({ ...p, [`${account.toLowerCase()}:${k}`]: v }));
+          return;
+        }
+        await sleep(700);
+      }
+    },
+    [account, readUsdc]
+  );
   useEffect(() => {
     if (!account) {
       setBals({});
       return;
     }
-    let live = true;
-    const load = async (k: ChainKey) => {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const v = await readUsdc(k, account);
-        if (!live) return;
-        if (v !== null) {
-          setBals((p) => ({ ...p, [bk(k)]: v }));
-          return;
-        }
-        await sleep(700);
-      }
-    };
-    load(fromKey);
-    load(toKey);
+    let alive = true;
+    const live = () => alive;
+    loadOne(fromKey, live);
+    loadOne(toKey, live);
     (async () => {
       try {
         if (fromKey === "Arc") return; // Arc pays gas in USDC
         const v = await (await getClient(fromKey)).getBalance({ address: account });
-        if (live) setBals((p) => ({ ...p, [`${bk(fromKey)}:gas`]: v }));
+        if (alive) setBals((p) => ({ ...p, [`${account.toLowerCase()}:${fromKey}:gas`]: v }));
       } catch {
         /* keep unknown */
       }
     })();
     return () => {
-      live = false;
+      alive = false;
+    };
+  }, [account, fromKey, toKey, loadOne, getClient, refreshTick, provider]);
+
+  /* when a network list is open, load the wallet's USDC on every network (shown next to each network) */
+  useEffect(() => {
+    if (!account || (modal !== "from" && modal !== "to")) return;
+    let alive = true;
+    list.forEach((k) => {
+      if (bals[bk(k)] === undefined) loadOne(k, () => alive);
+    });
+    return () => {
+      alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account, fromKey, toKey, readUsdc, getClient, refreshTick, provider]);
+  }, [modal, account, list, loadOne]);
 
   const balance = bals[bk(fromKey)] ?? null;
   const destBalance = bals[bk(toKey)] ?? null;
   const gasBalance = fromKey === "Arc" ? balance : bals[`${bk(fromKey)}:gas`] ?? null;
 
-  /* Adapter for the connected wallet. It switches the wallet to each network only while a bridge is running. */
+  /* Adapter for the connected wallet. It switches the wallet to the source network when a bridge starts. */
   const getAdapter = async (): Promise<unknown> => {
     if (!adapterRef.current) {
       const { ViemAdapter } = await import("@circle-fin/adapter-viem-v2");
@@ -580,6 +718,10 @@ export default function BridgePage() {
     return adapterRef.current;
   };
 
+  /** Where the USDC goes: Circle's Forwarding Service delivers it (no wallet prompt on the receiving network) when the network supports it. */
+  const destination = (adapter: unknown): Dest =>
+    forwarder ? { recipientAddress: account as string, chain: toKey, useForwarder: true } : { adapter, chain: toKey };
+
   /* derived */
   const units = parseUnits6(amount);
   const cleanAmount = amount.endsWith(".") ? amount.slice(0, -1) : amount;
@@ -587,20 +729,23 @@ export default function BridgePage() {
   const busy = phase === "bridging";
   const ready = !!account;
 
-  /* quote: bridge fee, gas, and what you receive (0.6s after you stop typing) */
+  /* quote: fees, gas, and what you receive (0.6s after you stop typing) */
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
-    if (!ready || !provider || !units || units <= ZERO) return;
+    if (!ready || !provider || !units || units <= ZERO || !fromView || !toView || fromKey === toKey) return;
     let live = true;
     setQuoting(true);
     const t = setTimeout(async () => {
       try {
         const kit = await getKit();
         const adapter = await getAdapter();
-        const est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: { adapter, chain: toKey }, amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
+        const est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: destination(adapter), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
+
+        /* fees: delivery (Circle forwarder) and bridge / Fast fee */
         const fees = Array.isArray(est?.fees) ? est.fees : null;
         let bridgeFee: number | null = null;
+        let deliveryFee = 0;
         const gas: GasFee[] = [];
         if (fees) {
           bridgeFee = 0;
@@ -609,11 +754,34 @@ export default function BridgePage() {
             if (!Number.isFinite(amt)) continue;
             const token = (f.token ?? "USDC").toUpperCase();
             if (/gas/i.test(f.type ?? "")) gas.push({ amount: amt, token });
-            else if (token === "USDC") bridgeFee += amt;
+            else if (token === "USDC") {
+              if (/forward|relay/i.test(f.type ?? "")) deliveryFee += amt;
+              else bridgeFee += amt;
+            }
           }
         }
-        const receive = bridgeFee === null ? null : amountNum - bridgeFee;
-        if (live) setQuote({ receive, bridgeFee, gas, fast });
+        /* gas: the kit lists it separately (approve, burn and, without the forwarder, mint) */
+        const gasItems = Array.isArray(est?.gasFees) ? est.gasFees : [];
+        for (const g of gasItems) {
+          const amt = Number(g.fees?.fee ?? g.fee ?? g.amount);
+          if (!Number.isFinite(amt) || amt <= 0) continue;
+          const chainSym = (g.blockchain && views[g.blockchain]?.gas) || fromView.gas;
+          const tok = (g.token && g.token.toUpperCase() !== "NATIVE" ? g.token : chainSym).toUpperCase();
+          gas.push({ amount: amt, token: tok });
+        }
+        /* fallback when the kit gave no gas number: current gas price x a typical approve + burn */
+        let gasApprox = false;
+        if (!gas.length) {
+          try {
+            const price = await (await getClient(fromKey)).getGasPrice();
+            gas.push({ amount: (Number(price) * FALLBACK_GAS_UNITS) / 1e18, token: fromView.gas || "ETH" });
+            gasApprox = true;
+          } catch {
+            /* leave empty */
+          }
+        }
+        const receive = bridgeFee === null ? null : amountNum - bridgeFee - deliveryFee;
+        if (live) setQuote({ receive, bridgeFee, deliveryFee, gas, gasApprox, fast: useFast });
       } catch (e) {
         if (live) setQuoteError(explain(e, "Couldn't get a quote right now."));
       } finally {
@@ -626,28 +794,43 @@ export default function BridgePage() {
       setQuoting(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, provider, fromKey, toKey, cleanAmount, speed, account]);
+  }, [ready, provider, fromKey, toKey, cleanAmount, speed, account, views]);
 
   /* validation */
   const reserve = fromKey === "Arc" ? ARC_GAS_RESERVE : ZERO;
   const problem = useMemo((): { text: string; hard: boolean } | null => {
+    if (fromKey === toKey) return { text: "Choose two different networks", hard: true };
     if (!amount) return { text: "Enter an amount", hard: false };
     if (units === null) return { text: `Use up to ${DECIMALS} decimal places`, hard: true };
     if (units <= ZERO) return { text: "Enter an amount", hard: false };
     if (balance !== null && units > balance) return { text: "Insufficient balance", hard: true };
     if (reserve > ZERO && balance !== null && units + reserve > balance) return { text: "Keep a little USDC for the network fee", hard: true };
-    if (fromKey !== "Arc" && gasBalance !== null && gasBalance === ZERO) return { text: `You need some ${CHAINS[fromKey].gas} on ${CHAINS[fromKey].label} for gas`, hard: true };
+    if (fromKey !== "Arc" && gasBalance !== null && gasBalance === ZERO) return { text: `You need some ${fromView?.gas ?? "gas coin"} on ${fromView?.label ?? "this network"} for gas`, hard: true };
     if (quote && quote.receive !== null && quote.receive <= 0) return { text: "Amount is too small to cover the fees", hard: true };
     return null;
-  }, [amount, units, balance, reserve, fromKey, gasBalance, quote]);
+  }, [amount, units, balance, reserve, fromKey, toKey, gasBalance, quote, fromView]);
 
   /* actions */
   const flip = () => {
     if (busy) return;
-    setDir((d) => (d === "in" ? "out" : "in"));
+    setFromKey(toKey);
+    setToKey(fromKey);
     setFlips((n) => n + 1);
     setAmount("");
     setMessage("");
+  };
+  /** Choose a network on either side. Picking the network that is on the other side swaps them. */
+  const pickNetwork = (side: "from" | "to", key: ChainKey) => {
+    if (side === "from") {
+      if (key === toKey) setToKey(fromKey);
+      setFromKey(key);
+    } else {
+      if (key === fromKey) setFromKey(toKey);
+      setToKey(key);
+    }
+    setAmount("");
+    setMessage("");
+    setModal(null);
   };
   const setFraction = (half: boolean) => {
     if (balance === null) return;
@@ -722,8 +905,16 @@ export default function BridgePage() {
     };
     const burn = hashOf(/burn/i);
     const mint = hashOf(/mint/i);
-    const after = account ? await readUsdc(toKey, account) : null;
-    const got = before !== null && after !== null && after > before ? formatUnits6(after - before) : quote?.receive != null ? fmtNum(quote.receive) : "—";
+    let got = quote?.receive != null ? fmtNum(quote.receive) : "—";
+    /* the forwarder can take a few seconds to deliver; look for the new balance for up to ~20s */
+    for (let i = 0; i < 8 && account; i++) {
+      const after = await readUsdc(toKey, account);
+      if (before !== null && after !== null && after > before) {
+        got = formatUnits6(after - before);
+        break;
+      }
+      await sleep(2500);
+    }
     const row: HistoryRow = { id: burn ?? `${Date.now()}`, t: Date.now(), from: fromKey, to: toKey, amount: sent, received: got, burn, mint };
     setSummary(row);
     putSteps(stepsRef.current.map((s) => ({ ...s, state: "done" })));
@@ -741,10 +932,8 @@ export default function BridgePage() {
     }
   };
 
-  /** What went wrong and what it means for the user's USDC. */
-  const failedMarks = () => {
-    putSteps(stepsRef.current.map((s) => (s.state === "active" ? { ...s, state: "error" } : s)));
-  };
+  /** A step that was waiting when the bridge failed is shown red, never as a check mark. */
+  const failedMarks = () => putSteps(stepsRef.current.map((s) => (s.state === "active" ? { ...s, state: "error" } : s)));
 
   const bridge = async () => {
     if (lockRef.current || !provider || !account || problem || !quote || !units) return; // lock stops double taps
@@ -752,6 +941,7 @@ export default function BridgePage() {
     setPhase("bridging");
     setMessage("");
     setCanResume(false);
+    setUsedForwarder(forwarder);
     startSteps();
     let kit: KitLike | null = null;
     try {
@@ -764,7 +954,7 @@ export default function BridgePage() {
       /* 2. fresh quote: stop if you would receive less than your slippage allows */
       kit = await getKit();
       const adapter = await getAdapter();
-      const params: BridgeArgs = { from: { adapter, chain: fromKey }, to: { adapter, chain: toKey }, amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } };
+      const params: BridgeArgs = { from: { adapter, chain: fromKey }, to: destination(adapter), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } };
       const fresh = await kit.estimateBridge(params);
       const freshFees = Array.isArray(fresh?.fees) ? fresh.fees : null;
       if (freshFees && quote.receive !== null) {
@@ -772,14 +962,14 @@ export default function BridgePage() {
         const now = amountNum - fee;
         if (now <= 0) throw new Error("TOO_SMALL");
         if (now < quote.receive * (1 - slipPct / 100)) {
-          setQuote({ ...quote, receive: now, bridgeFee: fee });
+          setQuote({ ...quote, receive: now });
           throw new Error("QUOTE_CHANGED");
         }
         // Fast: cap the fee at the quote plus your slippage (the kit falls back to Standard if the fee goes above it)
         if (speed === "FAST" && fee > 0) params.config = { transferSpeed: "FAST", maxFee: (Math.ceil((fee + quote.receive * (slipPct / 100)) * 1e6) / 1e6).toFixed(6) };
       }
 
-      /* 3. run the bridge. The wallet is switched to each network as needed. */
+      /* 3. run the bridge. The wallet is switched to the source network as needed. */
       const before = await readUsdc(toKey, account);
       kit.on?.("*", onKitEvent);
       executingRef.current = true;
@@ -790,7 +980,7 @@ export default function BridgePage() {
     } catch (e) {
       executingRef.current = false;
       failedMarks();
-      setMessage(explain(e, "The bridge could not be completed.", CHAINS[fromKey].gas));
+      setMessage(explain(e, "The bridge could not be completed.", fromView?.gas));
       setPhase("failed");
       setCanResume(!!failedRef.current && !!kit?.retry && stepsRef.current.find((s) => s.key === "burn")?.state === "done");
     } finally {
@@ -815,14 +1005,14 @@ export default function BridgePage() {
       const before = await readUsdc(toKey, account);
       kit.on?.("*", onKitEvent);
       executingRef.current = true;
-      const res = await kit.retry!(failed, { from: adapter, to: adapter });
+      const res = await kit.retry!(failed, { from: adapter, to: usedForwarder ? undefined : adapter });
       executingRef.current = false;
       failedRef.current = res.state === "success" ? null : res;
       await finish(res, before, fmtNum(Number(cleanAmount)));
     } catch (e) {
       executingRef.current = false;
       failedMarks();
-      setMessage(explain(e, "The retry could not be completed.", CHAINS[toKey].gas));
+      setMessage(explain(e, "The retry could not be completed.", toView?.gas));
       setPhase("failed");
       setCanResume(!!failedRef.current);
     } finally {
@@ -840,18 +1030,21 @@ export default function BridgePage() {
 
   const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.375rem, 5.6vw, 1.625rem)" : "clamp(1.5rem, 6.5vw, 1.875rem)";
 
-  /* gas fee text: "0.0012 ETH ($3.45)" */
-  const gasParts = useMemo(() => {
-    if (!quote) return [] as { text: string }[];
+  /* gas fee text: "$0.02" for USDC, or "0.00001 ETH ($0.03)" for a gas coin */
+  const gasText = useMemo(() => {
+    if (!quote || !quote.gas.length) return "—";
     const sums = new Map<string, number>();
     quote.gas.forEach((g) => sums.set(g.token, (sums.get(g.token) ?? 0) + g.amount));
-    return Array.from(sums.entries()).map(([token, amt]) => {
-      const price = token === "USDC" ? 1 : native[token];
-      const usd = price ? amt * price : null;
-      return { text: `${fmtGas(amt)} ${token}${usd !== null ? ` (${usd > 0 && usd < 0.01 ? "<$0.01" : `$${usd.toFixed(2)}`})` : ""}` };
+    const usdStr = (usd: number) => (usd > 0 && usd < 0.01 ? "<$0.01" : `$${usd.toFixed(2)}`);
+    const parts = Array.from(sums.entries()).map(([token, amt]) => {
+      if (token === "USDC") return usdStr(amt);
+      const price = native[token];
+      return `${fmtGas(amt)} ${token}${price ? ` (${usdStr(amt * price)})` : ""}`;
     });
+    return `${quote.gasApprox ? "≈ " : ""}${parts.join(" + ")}`;
   }, [quote, native]);
 
+  const timeText = quote ? (quote.fast ? fastTime(fromKey) : STANDARD_TIME[fromKey] ?? "Varies") : "";
   const failedStep = steps.find((s) => s.state === "error");
   const burnState = steps.find((s) => s.key === "burn")?.state;
   const burnHash = steps.find((s) => s.key === "burn")?.hash;
@@ -895,9 +1088,9 @@ export default function BridgePage() {
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Route</p>
                   <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
-                    <span className="inline-flex items-center gap-1.5"><ChainLogo chain={fromKey} size={20} />{CHAINS[fromKey].label}</span>
+                    <span className="inline-flex items-center gap-1.5"><ChainLogo view={fromView} size={20} />{fromView?.label}</span>
                     <span className="text-slate-500">to</span>
-                    <span className="inline-flex items-center gap-1.5"><ChainLogo chain={toKey} size={20} />{CHAINS[toKey].label}</span>
+                    <span className="inline-flex items-center gap-1.5"><ChainLogo view={toView} size={20} />{toView?.label}</span>
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -910,10 +1103,10 @@ export default function BridgePage() {
                   <button
                     type="button"
                     onClick={() => setModal("fast")}
-                    aria-label={fast ? "Fast transfer is on" : "Fast transfer is off"}
-                    title={fast ? "Fast transfer: on" : "Fast transfer: off"}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/[0.07] ${fast ? "text-[#39c4ff]" : "text-slate-400 hover:text-white"}`}
-                    style={fast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" } : undefined}
+                    aria-label={useFast ? "Fast transfer is on" : "Fast transfer is off"}
+                    title={useFast ? "Fast transfer: on" : canFast ? "Fast transfer: off" : "Fast transfer is not available from this network"}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/[0.07] ${useFast ? "text-[#39c4ff]" : "text-slate-400 hover:text-white"}`}
+                    style={useFast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" } : undefined}
                   >
                     <Svg d={ICON_FAST} />
                   </button>
@@ -928,7 +1121,7 @@ export default function BridgePage() {
                     <span className="text-xs tabular-nums">{ready && balance !== null ? `Balance ${formatUnits6(balance)} USDC` : "Balance —"}</span>
                   </div>
                   <div className="mt-2.5">
-                    <ChainButton chain={fromKey} onClick={dir === "in" ? () => setModal("chain") : undefined} disabled={busy} />
+                    <ChainButton view={fromView} onClick={() => setModal("from")} disabled={busy} />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <input
@@ -945,7 +1138,7 @@ export default function BridgePage() {
                       style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}
                       className="w-full min-w-0 flex-1 bg-transparent tabular-nums tracking-tight text-white outline-none placeholder:text-slate-700 disabled:opacity-60"
                     />
-                    <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
+                    <span className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3.5 text-base font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-4 sm:text-[17px]"><UsdcLogo size={36} />USDC</span>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between gap-3">
                     <p className="text-sm text-slate-500 tabular-nums">{fmtUsd(amountNum)}</p>
@@ -972,13 +1165,13 @@ export default function BridgePage() {
                     <span className="text-xs tabular-nums">{ready && destBalance !== null ? `Balance ${formatUnits6(destBalance)} USDC` : "Balance —"}</span>
                   </div>
                   <div className="mt-2.5">
-                    <ChainButton chain={toKey} onClick={dir === "out" ? () => setModal("chain") : undefined} disabled={busy} />
+                    <ChainButton view={toView} onClick={() => setModal("to")} disabled={busy} />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className={`min-w-0 flex-1 truncate tabular-nums tracking-tight ${quote && quote.receive !== null ? "text-white" : "text-slate-700"}`} style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}>
                       {quote && quote.receive !== null ? fmtNum(Math.max(quote.receive, 0)) : quoting ? "…" : "0.00"}
                     </div>
-                    <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:text-base"><UsdcLogo size={30} />USDC</span>
+                    <span className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3.5 text-base font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-4 sm:text-[17px]"><UsdcLogo size={36} />USDC</span>
                   </div>
                   <p className="mt-1.5 text-sm text-slate-500 tabular-nums">{quote && quote.receive !== null ? fmtUsd(Math.max(quote.receive, 0)) : fmtUsd(0)}</p>
                 </div>
@@ -993,16 +1186,21 @@ export default function BridgePage() {
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Gas fee</dt>
-                    <dd className="text-right text-slate-300 tabular-nums">{gasParts.length ? gasParts.map((g) => g.text).join(" + ") : "Paid in your wallet"}</dd>
+                    <dd className="text-right text-slate-300 tabular-nums">{gasText}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Estimated time</dt>
-                    <dd className="text-right text-slate-300">{quote.fast ? "Seconds to a few minutes" : "15+ minutes"}</dd>
+                    <dd className="text-right text-slate-300 tabular-nums">{timeText}</dd>
                   </div>
                   {quote.fast ? (
                     <div className="flex justify-between gap-4">
                       <dt className="flex items-center gap-1.5 text-slate-500"><span className="text-[#39c4ff]"><Svg d={ICON_FAST} size={13} /></span>Fast transfer</dt>
                       <dd className="text-right text-slate-300 tabular-nums">On{quote.bridgeFee !== null ? ` · fee ${fmtNum(quote.bridgeFee)} USDC` : ""}</dd>
+                    </div>
+                  ) : fast && !canFast ? (
+                    <div className="flex justify-between gap-4">
+                      <dt className="flex items-center gap-1.5 text-slate-500"><span className="text-slate-500"><Svg d={ICON_FAST} size={13} /></span>Fast transfer</dt>
+                      <dd className="text-right text-slate-300">Not needed here</dd>
                     </div>
                   ) : (
                     <div className="flex justify-between gap-4">
@@ -1010,14 +1208,21 @@ export default function BridgePage() {
                       <dd className="text-right text-slate-300 tabular-nums">{quote.bridgeFee === null ? "—" : `${fmtNum(quote.bridgeFee)} USDC`}</dd>
                     </div>
                   )}
+                  {quote.deliveryFee > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Delivery fee</dt>
+                      <dd className="text-right text-slate-300 tabular-nums">{fmtNum(quote.deliveryFee)} USDC</dd>
+                    </div>
+                  )}
                   {quote.bridgeFee === null && <p className="text-xs leading-5 text-amber-300">Couldn&apos;t read the fee. Check the amounts in your wallet before you confirm.</p>}
+                  {!forwarder && <p className="text-xs leading-5 text-slate-500">Receiving on {toView?.label} needs one extra confirmation in your wallet.</p>}
                 </dl>
               )}
 
               <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-5 sm:mt-6`}>{action.label}</button>
 
               <div className="mt-3 min-h-5 text-center text-sm" role="status">
-                {!busy && ready && problem && amount ? (
+                {!busy && ready && problem && (amount || problem.hard) ? (
                   <span className={problem.hard ? "text-red-300" : "text-slate-500"}>{problem.text}</span>
                 ) : !busy && ready && quoteError ? (
                   <span className="text-red-300">{quoteError}</span>
@@ -1031,7 +1236,7 @@ export default function BridgePage() {
           <ul className="fade-up mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500" style={{ "--delay": "300ms" } as CSSProperties}>
             <li>Powered by Circle CCTP</li>
             <li>Sent to your own wallet address</li>
-            <li>Your wallet asks you to switch networks when needed</li>
+            <li>{forwarder ? "No wallet prompt on the receiving network" : "Your wallet asks you to switch networks when needed"}</li>
           </ul>
         </section>
       </div>
@@ -1050,7 +1255,7 @@ export default function BridgePage() {
               <dl className="mt-6 space-y-3 text-left text-[15px]">
                 <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Sent</dt><dd className="font-semibold tabular-nums">{summary.amount} USDC</dd></div>
                 <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Received</dt><dd className="font-semibold tabular-nums">{summary.received} USDC</dd></div>
-                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Route</dt><dd className="font-semibold">{CHAINS[summary.from].label} to {CHAINS[summary.to].label}</dd></div>
+                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Route</dt><dd className="font-semibold">{views[summary.from]?.label} to {views[summary.to]?.label}</dd></div>
               </dl>
             </div>
           )}
@@ -1080,7 +1285,7 @@ export default function BridgePage() {
                     <span className="h-2 w-2 rounded-full bg-white/20" />
                   )}
                 </span>
-                <span className={`min-w-0 flex-1 text-sm ${s.state === "pending" ? "text-slate-500" : s.state === "error" ? "text-red-200" : "text-white"}`}>{STEP_LABEL(s.key, fromKey, toKey)}</span>
+                <span className={`min-w-0 flex-1 text-sm ${s.state === "pending" ? "text-slate-500" : s.state === "error" ? "text-red-200" : "text-white"}`}>{STEP_LABEL(s.key, fromView?.label ?? "", toView?.label ?? "", usedForwarder)}</span>
                 {s.hash && <a href={txUrl(s.key === "mint" ? toKey : fromKey, s.hash)} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#65caff] hover:text-white">View</a>}
               </li>
             ))}
@@ -1088,14 +1293,14 @@ export default function BridgePage() {
 
           {phase === "bridging" && (
             <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-              Confirm each prompt in your wallet. Keep this page open until it finishes{fast ? "" : "; Standard can take 15 minutes or more"}.
+              Confirm the prompt{usedForwarder ? "" : "s"} in your wallet. Keep this page open until it finishes{useFast ? "" : canFast ? "; Standard can take 15 minutes or more" : ""}.
             </p>
           )}
 
           {phase === "failed" && (
             <div className="mt-4 text-center text-xs leading-5">
               {burnState === "done" ? (
-                <p className="text-amber-300">Your USDC already left {CHAINS[fromKey].label} and has not arrived on {CHAINS[toKey].label} yet. Do not send it again.{canResume ? " Tap Resume to finish." : " Check your wallet activity or the explorer."}</p>
+                <p className="text-amber-300">Your USDC already left {fromView?.label} and has not arrived on {toView?.label} yet. Do not send it again.{canResume ? " Tap Resume to finish." : " Check your wallet activity or the explorer."}</p>
               ) : failedStep?.key === "burn" ? (
                 <p className="text-amber-300">If your wallet shows this transaction as confirmed, your USDC may already be on its way. Check your wallet activity before trying again.</p>
               ) : (
@@ -1120,25 +1325,23 @@ export default function BridgePage() {
         </Popup>
       )}
 
-      {/* ---------- choose the other network ---------- */}
-      <Modal open={modal === "chain"} onClose={() => setModal(null)} title="Select a network">
+      {/* ---------- choose a network (either side); shows your USDC balance on each ---------- */}
+      <Modal open={modal === "from" || modal === "to"} onClose={() => setModal(null)} title={modal === "from" ? "Bridge from" : "Bridge to"}>
         <ul className="space-y-1">
-          {PARTNERS.map((k) => (
-            <li key={k}>
-              <button
-                onClick={() => {
-                  setPartner(k);
-                  setAmount("");
-                  setModal(null);
-                }}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.06] ${k === partner ? "bg-white/[0.05]" : ""}`}
-              >
-                <ChainLogo chain={k} size={36} />
-                <span className="min-w-0 flex-1 text-base font-semibold">{CHAINS[k].label}</span>
-                <span className="text-xs text-slate-500">gas: {CHAINS[k].gas}</span>
-              </button>
-            </li>
-          ))}
+          {list.map((k) => {
+            const side = modal === "from" ? "from" : "to";
+            const current = side === "from" ? fromKey : toKey;
+            const b = bals[bk(k)];
+            return (
+              <li key={k}>
+                <button onClick={() => pickNetwork(side, k)} className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.06] ${k === current ? "bg-white/[0.05]" : ""}`}>
+                  <ChainLogo view={views[k]} size={36} />
+                  <span className="min-w-0 flex-1 text-base font-semibold">{views[k].label}</span>
+                  <span className="text-sm tabular-nums text-slate-400">{account ? (b === undefined ? "…" : b === null ? "—" : `${formatUnits6(b)} USDC`) : ""}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </Modal>
 
@@ -1189,18 +1392,20 @@ export default function BridgePage() {
       {/* ---------- Fast transfer ---------- */}
       <Modal open={modal === "fast"} onClose={() => setModal(null)} title="Fast transfer">
         <div className="flex items-center gap-3">
-          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06] ${fast ? "text-[#39c4ff]" : "text-slate-400"}`} style={fast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" } : undefined}>
+          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06] ${useFast ? "text-[#39c4ff]" : "text-slate-400"}`} style={useFast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" } : undefined}>
             <Svg d={ICON_FAST} size={22} />
           </span>
           <p className="text-sm font-semibold">{fast ? "Fast transfer is on" : "Fast transfer is off"}</p>
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-300">
-          Fast transfer uses Circle&apos;s CCTP Fast Transfer. Your USDC arrives on the other network in seconds instead of waiting 15 minutes or more for the first network to finalize.
+          Fast transfer uses Circle&apos;s CCTP Fast Transfer. Your USDC arrives on the other network in seconds instead of waiting about 15 minutes for the first network to finalize.
         </p>
         <ul className="mt-3 space-y-1.5 text-xs leading-5 text-slate-400">
           <li>It adds a small fee, taken from the USDC you receive.</li>
-          <li>With Fast off, Standard transfer is used: the lowest fee, but slower.</li>
+          <li>With Fast off, Standard transfer is used: no Fast fee, but slower.</li>
           <li>If the Fast fee goes above your slippage limit, the transfer falls back to Standard.</li>
+          <li>Fast works when sending from networks such as Ethereum, Base, Arbitrum, OP Mainnet, Unichain and Linea. From Arc, Avalanche and Polygon the standard transfer is already fast.</li>
+          {!canFast && <li className="text-amber-300">The network you are sending from ({fromView?.label}) doesn&apos;t need Fast.</li>}
         </ul>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button
@@ -1234,11 +1439,11 @@ export default function BridgePage() {
           <ul className="space-y-1">
             {history.map((h) => (
               <li key={h.id}>
-                <a href={h.burn ? txUrl(h.from, h.burn) : CHAINS[h.from].explorer} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-white/[0.06]">
-                  <span className="flex -space-x-2"><ChainLogo chain={h.from} size={26} /><ChainLogo chain={h.to} size={26} /></span>
+                <a href={h.burn ? txUrl(h.from, h.burn) : "#"} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-white/[0.06]">
+                  <span className="flex -space-x-2"><ChainLogo view={views[h.from]} size={26} /><ChainLogo view={views[h.to]} size={26} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold tabular-nums">{h.amount} USDC</span>
-                    <span className="block truncate text-xs text-slate-500">{CHAINS[h.from].label} to {CHAINS[h.to].label} · received {h.received}</span>
+                    <span className="block truncate text-xs text-slate-500">{views[h.from]?.label} to {views[h.to]?.label} · received {h.received}</span>
                   </span>
                   <span className="text-xs text-slate-500">{timeAgo(h.t)}</span>
                 </a>
