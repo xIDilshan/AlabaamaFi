@@ -181,7 +181,7 @@ function SpaceBackground() {
 }
 
 const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: ReactNode; disabled?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-1.5 py-[2px] text-[9px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-2.5 sm:py-[3px] sm:text-[11px]">
+  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center rounded-full bg-white/[0.07] px-1.5 py-[1px] text-[8px] font-medium text-[#8fd4ff] transition hover:bg-white/[0.12] disabled:opacity-40 sm:px-2.5 sm:py-[3px] sm:text-[11px]">
     {children}
   </button>
 );
@@ -609,7 +609,7 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
             </span>
           )}
         </span>
-        <span className="block overflow-hidden whitespace-nowrap" style={{ width: open ? "12.5rem" : 0, opacity: open ? 1 : 0, transition: "width .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}>
+        <span className="block overflow-hidden whitespace-nowrap" style={{ width: open ? (isDone ? "12.5rem" : "6.75rem") : 0, opacity: open ? 1 : 0, transition: "width .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}>
           <span className="block pr-4">{isDone ? "Successfully swapped" : "Swapping"}</span>
         </span>
       </a>
@@ -816,12 +816,17 @@ export default function SwapPage() {
       const kit = await getKit();
       const supportedChains = ((await kit.getSupportedChains()) as { type: string }[]).filter((c) => c.type === "evm");
       const walletTransport = () => custom(provider as never);
-      // The wallet client reports when you confirm something in your wallet, so the pill can appear at that moment.
+      // The wallet client reports when you confirm the swap transaction in your wallet, so the pill can appear at that moment.
       const raw = provider as Eip1193;
       const watched = {
         request: async (args: { method: string; params?: unknown[] }) => {
           const result = await raw.request(args);
-          if (args.method === "eth_sendTransaction" || args.method.startsWith("eth_signTypedData")) confirmRef.current?.();
+          if (args.method === "eth_sendTransaction") {
+            // a token approval (0x095ea7b3) is not the swap itself; the first other transaction is
+            const tx = (args.params?.[0] ?? {}) as { data?: string; input?: string };
+            const data = (tx.data ?? tx.input ?? "").toLowerCase();
+            if (!data.startsWith("0x095ea7b3")) confirmRef.current?.();
+          }
           return result;
         },
         on: raw.on?.bind(raw),
@@ -973,7 +978,7 @@ export default function SwapPage() {
     if (busy) return;
     setFrom(to);
     setTo(from);
-    setAmount((a) => trimDecimals(a, toDec));
+    setAmount(""); // clear the amount when the tokens are flipped
     setFlips((n) => n + 1);
     setMessage("");
   };
