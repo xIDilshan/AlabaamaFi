@@ -582,19 +582,20 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
   );
 }
 
-/* Pill above the swap card. It appears when you confirm in your wallet:
-   a round badge with the swap icon -> unfolds to show "Swapping" -> folds back -> check mark -> unfolds to show "Successfully swapped".
-   Plain dark card; only the icon is colored. */
+/* Pill on the top edge of the swap card: half of it sticks out above the card, half sits inside.
+   It appears when you confirm the swap in your wallet:
+   a round badge with the swap icon -> unfolds to show "Swapping" -> folds back -> check mark -> unfolds to show "Swap succeeded".
+   Plain dark card; only the icon is colored. The text part is exactly as wide as its text. */
 function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: string }) {
   const isDone = stage === "done-circle" || stage === "done-open";
   const open = stage === "swap-open" || stage === "done-open";
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-1 flex justify-center" role="status" aria-live="polite">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex -translate-y-1/2 justify-center" role="status" aria-live="polite">
       <a
         href={isDone ? url : undefined}
         target={isDone ? "_blank" : undefined}
         rel={isDone ? "noreferrer" : undefined}
-        aria-label={isDone ? "Successfully swapped. View the transaction on the explorer" : "Swapping"}
+        aria-label={isDone ? "Swap succeeded. View the transaction on the explorer" : "Swapping"}
         className={`inline-flex h-12 items-center overflow-hidden rounded-full border border-white/[0.1] bg-[#0a0f1a]/95 text-[15px] font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:h-14 sm:text-base ${isDone ? "pointer-events-auto" : ""}`}
         style={{ animation: "pillIn .45s cubic-bezier(.2,1.2,.3,1) both" }}
       >
@@ -609,8 +610,11 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
             </span>
           )}
         </span>
-        <span className="block overflow-hidden whitespace-nowrap" style={{ width: open ? (isDone ? "12.5rem" : "6.75rem") : 0, opacity: open ? 1 : 0, transition: "width .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}>
-          <span className="block pr-4">{isDone ? "Successfully swapped" : "Swapping"}</span>
+        <span
+          className="grid overflow-hidden"
+          style={{ gridTemplateColumns: open ? "1fr" : "0fr", opacity: open ? 1 : 0, transition: "grid-template-columns .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}
+        >
+          <span className="block min-w-0 overflow-hidden whitespace-nowrap pr-4">{isDone ? "Swap succeeded" : "Swapping"}</span>
         </span>
       </a>
     </div>
@@ -682,7 +686,7 @@ export default function SwapPage() {
   const adapterRef = useRef<unknown>(null);
   const swapLock = useRef(false);
 
-  /* the pill: circle -> unfolds to "Swapping" -> folds -> check mark circle -> unfolds to "Successfully swapped" */
+  /* the pill: circle -> unfolds to "Swapping" -> folds -> check mark circle -> unfolds to "Swap succeeded" */
   const pillRef = useRef<PillStage>(null);
   const pillTimers = useRef<number[]>([]);
   const confirmRef = useRef<(() => void) | null>(null);
@@ -1159,7 +1163,7 @@ export default function SwapPage() {
           </div>
 
           {/* chart on the left (desktop only) + swap card */}
-          <div className={`mx-auto mt-14 flex w-full items-start justify-center gap-6 sm:mt-16 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
+          <div className={`mx-auto mt-10 flex w-full items-start justify-center gap-6 sm:mt-12 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
             {showChart && (
               <div className="hidden min-w-0 flex-1 min-[900px]:block">
                 <ChartPanel sym={chartSym} setSym={setChartSym} market={market} />
@@ -1171,7 +1175,7 @@ export default function SwapPage() {
               <div className="relative rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-7">
                 {pill && <StatusPill stage={pill} url={pillUrl} />}
 
-                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 sm:pb-4">
+                <div className={`flex items-center justify-between border-b border-white/[0.06] pb-3 transition-[margin] duration-300 sm:pb-4 ${pill ? "mt-4 sm:mt-2" : ""}`}>
                   <div>
                     <p className="text-xs text-slate-500">Network</p>
                     <p className="mt-1 flex items-center gap-2 text-sm font-medium">
