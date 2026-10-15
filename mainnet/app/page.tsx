@@ -17,8 +17,9 @@ const ARC = {
   rpc: "https://rpc.mainnet.arc.io",
   explorer: "https://explorer.arc.io",
   docs: "https://docs.arc.io",
-  x: "https://x.com/arc",
 };
+
+const SOCIAL = { x: "https://x.com/Alabaama_Fi" };
 
 // Same edge padding as the Header, so the logo, the headline and every section line up.
 const CONTAINER = "w-full px-4 sm:px-6 md:px-7 lg:px-10 xl:px-12";
@@ -68,6 +69,14 @@ function Icon({ d, size = 22, sw = 1.7 }: { d: string; size?: number; sw?: numbe
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />
+    </svg>
+  );
+}
+
+function XLogo({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
 }
@@ -754,11 +763,13 @@ export default function Home() {
         {/* ---------------- FOOTER ---------------- */}
         <footer>
           <div className={`flex flex-col items-center gap-5 py-8 text-center text-sm text-slate-600 sm:flex-row sm:justify-between sm:text-left ${CONTAINER}`}>
-            <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
-            <nav className="flex flex-wrap justify-center gap-6">
-              <a href={ARC.docs} target="_blank" rel="noreferrer" className="transition hover:text-white">Docs</a>
-              <a href={ARC.explorer} target="_blank" rel="noreferrer" className="transition hover:text-white">Explorer</a>
-              <a href={ARC.x} target="_blank" rel="noreferrer" className="transition hover:text-white">Arc on X</a>
+            <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+            <nav className="flex flex-wrap items-center justify-center gap-6">
+              <Link href="/docs" className="transition hover:text-white">Docs</Link>
+              <Link href="/faq" className="transition hover:text-white">FAQ</Link>
+              <a href={SOCIAL.x} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="AlabaamaFi on X" className="transition hover:text-white">
+                <XLogo />
+              </a>
             </nav>
           </div>
         </footer>
