@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
@@ -15,7 +15,7 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 const SITE = "https://app.alabaamafi.xyz";
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
-const OFFSET = 150; // px: how far below the top a heading counts as "current" (the sticky header is about 110px)
+const OFFSET = 170; // px: how far below the top a heading counts as "current" (the sticky header is about 110px)
 const UPDATED = "October 15, 2026";
 
 /* ---------- icons ---------- */
@@ -61,6 +61,21 @@ const L = ({ href, children }: { href: string; children: ReactNode }) => (
   <Link href={href} className="font-medium text-[#65caff] underline-offset-4 hover:text-white hover:underline">{children}</Link>
 );
 const B = ({ children }: { children: ReactNode }) => <strong className="font-semibold text-white">{children}</strong>;
+const PAGE_ICONS = {
+  send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
+  swap: "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4",
+  bridge: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  activity: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4",
+};
+/** A page name with its icon drawn as a glowing line (no box around it). */
+const PageName = ({ d, name }: { d: string; name: string }) => (
+  <span className="inline-flex items-center gap-3">
+    <span className="text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 12px rgba(22,136,245,0.6))" }}>
+      <Svg d={d} size={22} sw={1.6} />
+    </span>
+    <strong className="font-semibold text-white">{name}</strong>
+  </span>
+);
 const Code = ({ children }: { children: ReactNode }) => <code className="rounded-md bg-white/[0.07] px-1.5 py-0.5 text-[13px] text-[#9fe0ff] [overflow-wrap:anywhere]">{children}</code>;
 
 /* ---------- the guides ---------- */
@@ -79,10 +94,10 @@ const SECTIONS: Sec[] = [
         t: "table",
         head: ["Page", "What it does", "Open"],
         rows: [
-          [<B key="s">Send</B>, "Send USDC to any wallet address on Arc.", <L key="a" href="/send">Open Send</L>],
-          [<B key="w">Swap</B>, "Swap USDC, EURC and cirBTC on Arc with a clear rate and minimum received.", <L key="b" href="/swap">Open Swap</L>],
-          [<B key="b">Bridge</B>, "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP.", <L key="c" href="/bridge">Open Bridge</L>],
-          [<B key="a">Activity</B>, "See everything your wallet has done on Arc, newest first.", <L key="d" href="/activity">Open Activity</L>],
+          [<PageName key="s" d={PAGE_ICONS.send} name="Send" />, "Send USDC to any wallet address on Arc.", <L key="a" href="/send">Open Send</L>],
+          [<PageName key="w" d={PAGE_ICONS.swap} name="Swap" />, "Swap USDC, EURC and cirBTC on Arc with a clear rate and minimum received.", <L key="b" href="/swap">Open Swap</L>],
+          [<PageName key="b" d={PAGE_ICONS.bridge} name="Bridge" />, "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP.", <L key="c" href="/bridge">Open Bridge</L>],
+          [<PageName key="a" d={PAGE_ICONS.activity} name="Activity" />, "See everything your wallet has done on Arc, newest first.", <L key="d" href="/activity">Open Activity</L>],
         ],
       },
       { t: "h3", id: "how-it-works", c: "How AlabaamaFi works" },
@@ -647,6 +662,47 @@ const SECTIONS: Sec[] = [
 
 const GROUPS = Array.from(new Set(SECTIONS.map((s) => s.group)));
 
+/** A link target can be a section id or the id of a sub-heading inside a section. */
+function resolve(id: string): { sec: string; sub: string | null } | null {
+  const sec = SECTIONS.find((s) => s.id === id);
+  if (sec) return { sec: sec.id, sub: null };
+  const host = SECTIONS.find((s) => s.blocks.some((b) => b.t === "h3" && b.id === id));
+  return host ? { sec: host.id, sub: id } : null;
+}
+
+/* ---------- tables: a real table on wider screens, stacked cards on phones (so words never break in two) ---------- */
+function TableView({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
+  return (
+    <>
+      <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-white/[0.08] sm:block">
+        <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+          <thead className="bg-white/[0.04] text-xs uppercase tracking-[0.12em] text-slate-500">
+            <tr>{head.map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>)}</tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.06]">
+            {rows.map((r, i) => (
+              <tr key={i}>{r.map((c, j) => <td key={j} className="break-normal px-4 py-3.5 align-top leading-6 text-slate-300">{c}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-5 space-y-3 sm:hidden">
+        {rows.map((r, i) => (
+          <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+            <div className="text-[15px] font-semibold leading-6 text-white">{r[0]}</div>
+            {r.slice(1).map((c, j) => (
+              <div key={j} className="mt-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{head[j + 1]}</p>
+                <div className="mt-1 break-words text-sm leading-6 text-slate-300">{c}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* ---------- blocks ---------- */
 function BlockView({ b }: { b: Block }) {
   switch (b.t) {
@@ -654,7 +710,7 @@ function BlockView({ b }: { b: Block }) {
       return <p className="mt-4 text-[15px] leading-7 text-slate-300">{b.c}</p>;
     case "h3":
       return (
-        <h3 id={b.id} data-sub={b.id} className="mt-10 scroll-mt-36 text-lg font-semibold tracking-tight text-white">
+        <h3 id={b.id} data-sub={b.id} className="mt-10 scroll-mt-40 text-lg font-semibold tracking-tight text-white">
           {b.c}
         </h3>
       );
@@ -692,45 +748,8 @@ function BlockView({ b }: { b: Block }) {
       );
     }
     case "table":
-      return (
-        <div className="mt-5 overflow-x-auto rounded-2xl border border-white/[0.08]">
-          <table className="w-full min-w-[460px] text-left text-sm">
-            <thead className="bg-white/[0.04] text-xs uppercase tracking-[0.14em] text-slate-500">
-              <tr>{b.head.map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {b.rows.map((r, i) => (
-                <tr key={i}>{r.map((c, j) => <td key={j} className="px-4 py-3 align-top leading-6 text-slate-300 [overflow-wrap:anywhere]">{c}</td>)}</tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
+      return <TableView head={b.head} rows={b.rows} />;
   }
-}
-
-function SpaceBackground() {
-  const { stars, dust } = useMemo(() => {
-    let seed = 41;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const r2 = (n: number) => Math.round(n * 100) / 100;
-    return {
-      stars: Array.from({ length: 120 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1 + rnd() * 1.8), d: r2(rnd() * 7), t: r2(3 + rnd() * 5) })),
-      dust: Array.from({ length: 20 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1.5 + rnd() * 2), d: r2(rnd() * 14), t: r2(14 + rnd() * 14) })),
-    };
-  }, []);
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
-      <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.2),transparent_68%)] blur-3xl" />
-      {stars.map((s) => (
-        <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
-      ))}
-      {dust.map((p) => (
-        <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
-      ))}
-    </div>
-  );
 }
 
 /* ---------- page ---------- */
@@ -740,68 +759,100 @@ export default function DocsPage() {
   const [activeSec, setActiveSec] = useState(SECTIONS[0].id);
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [focus, setFocus] = useState(false); // desktop search box has focus
+  const [mSearch, setMSearch] = useState(false); // phone search is open
   const [showTop, setShowTop] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const deskWrap = useRef<HTMLDivElement>(null);
+  const mInput = useRef<HTMLInputElement>(null);
 
-  const current = SECTIONS.find((s) => s.id === activeSec) ?? SECTIONS[0];
+  const idx = Math.max(0, SECTIONS.findIndex((s) => s.id === activeSec));
+  const current = SECTIONS[idx];
+  const prev = SECTIONS[idx - 1];
+  const next = SECTIONS[idx + 1];
   const currentSubs = current.blocks.filter((b): b is Extract<Block, { t: "h3" }> => b.t === "h3");
 
-  /* which section / sub-heading is on screen (checked while scrolling) */
+  /* only one section is shown at a time: the one picked in the menu (or in the link you opened) */
+  const go = useCallback((id: string) => {
+    const r = resolve(id);
+    if (!r) return;
+    setActiveSec(r.sec);
+    setActiveSub(r.sub);
+    setDrawer(false);
+    setMSearch(false);
+    setFocus(false);
+    setQuery("");
+    history.replaceState(null, "", `#${id}`);
+    if (r.sub) setTimeout(() => document.getElementById(r.sub as string)?.scrollIntoView({ behavior: "smooth", block: "start" }), 90);
+    else window.scrollTo({ top: 0 });
+  }, []);
+
+  /* open the right section from the address (for example /docs#bridge-fast) and when the address changes */
+  useEffect(() => {
+    const apply = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      const r = id ? resolve(id) : null;
+      if (!r) return;
+      setActiveSec(r.sec);
+      setActiveSub(r.sub);
+      if (r.sub) setTimeout(() => document.getElementById(r.sub as string)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      else window.scrollTo({ top: 0 });
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
+
+  /* which sub-heading of the open section is on screen (for the "On this page" list) */
   useEffect(() => {
     let raf = 0;
     const update = () => {
       raf = 0;
-      const secs = Array.from(document.querySelectorAll<HTMLElement>("[data-sec]"));
-      let sec = secs[0]?.id ?? SECTIONS[0].id;
-      for (const el of secs) if (el.getBoundingClientRect().top <= OFFSET) sec = el.id;
-      setActiveSec(sec);
-      const subs = Array.from(document.querySelectorAll<HTMLElement>(`[data-sec="${sec}"] [data-sub]`));
       let sub: string | null = null;
-      for (const el of subs) if (el.getBoundingClientRect().top <= OFFSET) sub = el.id;
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-sub]"))) if (el.getBoundingClientRect().top <= OFFSET) sub = el.id;
       setActiveSub(sub);
       setShowTop(window.scrollY > 900);
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
     };
-    update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [activeSec]);
 
-  /* keyboard: Ctrl/Cmd + K opens search, Escape closes things */
+  /* Escape closes things; clicking outside the desktop search closes its results */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
-      } else if (e.key === "Escape") {
-        setSearchOpen(false);
+      if (e.key === "Escape") {
+        setMSearch(false);
         setDrawer(false);
+        setFocus(false);
       }
     };
+    const onDown = (e: MouseEvent) => {
+      if (deskWrap.current && !deskWrap.current.contains(e.target as Node)) setFocus(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
   }, []);
   useEffect(() => {
-    if (searchOpen) setTimeout(() => searchRef.current?.focus(), 30);
-    else setQuery("");
-  }, [searchOpen]);
+    if (mSearch) setTimeout(() => mInput.current?.focus(), 60);
+  }, [mSearch]);
   useEffect(() => {
-    document.body.style.overflow = drawer || searchOpen ? "hidden" : "";
+    document.body.style.overflow = drawer || mSearch ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [drawer, searchOpen]);
+  }, [drawer, mSearch]);
 
-  /* search index: sections and their sub-headings */
+  /* search: nothing is suggested until you type */
   const index = useMemo<Hit[]>(
     () =>
       SECTIONS.flatMap((s) => [
@@ -810,20 +861,31 @@ export default function DocsPage() {
       ]),
     []
   );
+  const typed = query.trim().length > 0;
   const results = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!words.length) return index.filter((h) => SECTIONS.some((s) => s.id === h.id)).slice(0, 8);
-    return index.filter((h) => words.every((w) => (h.title + " " + h.where + " " + h.kw).toLowerCase().includes(w))).slice(0, 10);
+    if (!words.length) return [];
+    return index.filter((h) => words.every((w) => (h.title + " " + h.where + " " + h.kw).toLowerCase().includes(w))).slice(0, 8);
   }, [query, index]);
 
-  const go = useCallback((id: string) => {
-    setDrawer(false);
-    setSearchOpen(false);
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-    history.replaceState(null, "", `#${id}`);
-  }, []);
+  const resultList = () => (
+    <ul className="max-h-[60vh] overflow-y-auto p-2">
+      {results.length === 0 && <li className="px-4 py-8 text-center text-sm text-slate-500">No results. Try another word.</li>}
+      {results.map((h) => (
+        <li key={h.id}>
+          <button onMouseDown={(e) => e.preventDefault()} onClick={() => go(h.id)} className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition hover:bg-white/[0.06]">
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] font-semibold">{h.title}</span>
+              <span className="block truncate text-xs text-slate-500">{h.where}</span>
+            </span>
+            <span className="shrink-0 text-slate-600"><Svg d={I.chevron} size={16} /></span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 
-  /* sidebar list (used on desktop and in the phone menu) */
+  /* the menu: just the sections */
   const sideList = (onPick: (id: string) => void) => (
     <nav aria-label="Docs sections">
       {GROUPS.map((g) => (
@@ -855,143 +917,139 @@ export default function DocsPage() {
   );
 
   const iconBtn = "flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white";
+  const FAQ_ICON = "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01";
 
   return (
-    <div className={`${brandFont.className} relative min-h-screen bg-[#010205] text-white selection:bg-[#167cff]/30`}>
+    <div className={`${brandFont.className} min-h-screen bg-[#05080f] text-white selection:bg-[#167cff]/30`}>
       <style>{`
         html{scroll-behavior:smooth}
-        @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
-        @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
-        @keyframes searchIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+        @keyframes searchGrow{from{width:9.5rem;opacity:.6}to{width:100%;opacity:1}}
+        @keyframes sectionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
       `}</style>
 
-      <SpaceBackground />
+      {/* ================= HEADER ================= */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
+        {/* phones: logo, and a short search bar with its icon at the corner */}
+        <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" />
+            <span className="truncate text-[17px] font-bold tracking-tight">
+              Alabaama<span className="text-[#159fff]">Fi</span>
+            </span>
+          </Link>
+          <button onClick={() => setMSearch(true)} className="flex h-10 w-[9.5rem] shrink-0 items-center justify-between rounded-full border border-white/[0.1] bg-white/[0.04] pl-4 pr-3 text-sm text-slate-500 transition hover:bg-white/[0.07]" aria-label="Search the docs">
+            <span>Search</span>
+            <Svg d={I.search} size={16} />
+          </button>
+        </div>
 
-      {/* ================= HEADER (docs style) ================= */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#010205]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Link href="/docs" className="flex shrink-0 items-center gap-2.5" aria-label="AlabaamaFi Docs">
+        {/* desktop: logo on the left, search in the exact center, icons on the right */}
+        <div className="mx-auto hidden h-16 max-w-[90rem] items-center gap-4 px-6 md:grid md:grid-cols-[1fr_minmax(0,30rem)_1fr] lg:px-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 justify-self-start" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
             <span className="text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
-            <span className="hidden rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300 sm:inline">Docs</span>
+            <span className="rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300">Docs</span>
           </Link>
 
-          {/* search (looks like a search box) */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="ml-2 hidden h-10 min-w-0 flex-1 items-center gap-3 rounded-full border border-white/[0.09] bg-white/[0.04] px-4 text-left text-sm text-slate-500 transition hover:border-white/20 hover:bg-white/[0.06] md:flex lg:max-w-md xl:mx-auto"
-            aria-label="Search the docs"
-          >
-            <Svg d={I.search} size={16} />
-            <span className="flex-1 truncate">Search the docs…</span>
-            <kbd className="hidden rounded-md border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-[11px] text-slate-500 lg:inline">Ctrl K</kbd>
-          </button>
+          <div ref={deskWrap} className="relative">
+            <label className="flex h-10 items-center gap-3 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.06]">
+              <span className="shrink-0 text-slate-500"><Svg d={I.search} size={16} /></span>
+              <input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setFocus(true);
+                }}
+                onFocus={() => setFocus(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && results[0]) go(results[0].id);
+                }}
+                placeholder="Search the docs"
+                aria-label="Search the docs"
+                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} aria-label="Clear search" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.1] text-xs text-slate-300 hover:text-white">×</button>
+              )}
+            </label>
+            {focus && typed && (
+              <div className="absolute left-0 right-0 top-[3.1rem] z-50 overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0b1018] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">{resultList()}</div>
+            )}
+          </div>
 
-          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-            <button onClick={() => setSearchOpen(true)} className={`${iconBtn} md:hidden`} aria-label="Search the docs">
-              <Svg d={I.search} />
-            </button>
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={`${iconBtn} hidden sm:flex`} aria-label="AlabaamaFi on Discord" title="Discord">
-              <DiscordLogo />
-            </a>
-            <a href={X_URL} target="_blank" rel="noreferrer" className={`${iconBtn} hidden sm:flex`} aria-label="AlabaamaFi on X" title="X">
-              <XLogo />
-            </a>
-            <Link
-              href="/"
-              className="ml-1 inline-flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-sm font-semibold text-white shadow-[0_8px_30px_rgba(30,120,255,0.25)] transition hover:brightness-110 sm:px-4"
-            >
-              <Svg d={I.back} size={16} sw={2.2} />
-              <span className="hidden sm:inline">Back to AlabaamaFi</span>
-              <span className="sm:hidden">Home</span>
-            </Link>
+          <div className="flex items-center justify-end gap-1">
+            <Link href="/faq" className={iconBtn} aria-label="FAQ" title="FAQ"><Svg d={FAQ_ICON} /></Link>
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on Discord" title="Discord"><DiscordLogo /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on X" title="X"><XLogo /></a>
           </div>
         </div>
 
-        {/* tabs, like docs.arc.io */}
-        <div className="mx-auto hidden max-w-[90rem] gap-1 px-4 sm:px-6 md:flex lg:px-8">
-          {[
-            { label: "Documentation", href: "#overview", on: true, ext: false },
-            { label: "FAQ", href: "/faq", on: false, ext: false },
-            { label: "Terms of Service", href: "#terms", on: false, ext: false },
-            { label: "Discord", href: DISCORD_URL, on: false, ext: true },
-          ].map((t) =>
-            t.ext ? (
-              <a key={t.label} href={t.href} target="_blank" rel="noreferrer" className="border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white">{t.label}</a>
-            ) : t.href.startsWith("#") ? (
-              <a key={t.label} href={t.href} onClick={(e) => { e.preventDefault(); go(t.href.slice(1)); }} className={`border-b-2 px-3 py-2.5 text-sm font-medium transition ${t.on ? "border-[#159fff] text-white" : "border-transparent text-slate-400 hover:text-white"}`}>{t.label}</a>
-            ) : (
-              <Link key={t.label} href={t.href} className="border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white">{t.label}</Link>
-            )
-          )}
+        {/* desktop: the way back to the main site (plain link with the home icon) */}
+        <div className="mx-auto hidden h-11 max-w-[90rem] items-center border-t border-white/[0.06] px-5 md:flex lg:px-7">
+          <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+            <Svg d={I.home} size={16} /> AlabaamaFi home
+          </Link>
         </div>
 
-        {/* phone: menu button + where you are */}
-        <button
-          onClick={() => setDrawer(true)}
-          className="flex h-12 w-full items-center gap-3 border-t border-white/[0.06] px-4 text-left sm:px-6 lg:hidden"
-          aria-label="Open the docs menu"
-          aria-expanded={drawer}
-        >
-          <span className="flex h-8 items-center gap-2 rounded-full bg-white/[0.07] px-3 text-sm font-semibold">
-            <Svg d={I.menu} size={16} />
-            Menu
-          </span>
-          <span className="min-w-0 flex-1 truncate text-sm text-slate-400">
+        {/* phones and tablets: the menu icon opens the menu; the path shows where you are */}
+        <div className="flex h-12 items-center gap-2 border-t border-white/[0.06] px-3 sm:px-5 lg:hidden">
+          <button onClick={() => setDrawer(true)} aria-label="Open the docs menu" aria-expanded={drawer} className={iconBtn}>
+            <Svg d={I.menu} />
+          </button>
+          <p className="min-w-0 flex-1 truncate text-sm text-slate-400">
             <span className="text-slate-600">{current.group}</span>
             <span className="mx-1.5 text-slate-600">/</span>
             <span className="font-medium text-white">{current.title}</span>
-          </span>
-          <span className="text-slate-500"><Svg d={I.chevron} size={16} /></span>
-        </button>
+          </p>
+        </div>
       </header>
 
       {/* ================= BODY ================= */}
-      <div className="relative z-10 mx-auto flex max-w-[90rem] gap-0 px-4 sm:px-6 lg:px-8">
-        {/* left menu (desktop) */}
-        <aside className="sticky top-[7.1rem] hidden h-[calc(100vh-7.1rem)] w-64 shrink-0 overflow-y-auto py-8 pr-6 lg:block xl:w-72">
-          {sideList(go)}
-          <div className="mt-2 space-y-2 border-t border-white/[0.07] pt-5">
-            <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-              <Svg d={I.home} size={16} /> AlabaamaFi home
-            </Link>
-            <Link href="/faq" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-              <Svg d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" size={16} /> FAQ
-            </Link>
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-              <DiscordLogo size={16} /> Join our Discord
-            </a>
-          </div>
-        </aside>
+      <div className="mx-auto flex max-w-[90rem] gap-0 px-4 sm:px-6 lg:px-8">
+        <aside className="sticky top-[6.9rem] hidden h-[calc(100vh-6.9rem)] w-64 shrink-0 overflow-y-auto py-8 pr-6 lg:block xl:w-72">{sideList(go)}</aside>
 
-        {/* content */}
-        <main className="min-w-0 flex-1 py-8 lg:border-l lg:border-white/[0.06] lg:px-10 lg:py-10 xl:px-14">
-          <div className="mx-auto max-w-3xl rounded-[1.5rem] border border-white/[0.07] bg-[#050a16]/70 p-5 backdrop-blur-xl sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-            {SECTIONS.map((s, i) => (
-              <section key={s.id} id={s.id} data-sec={s.id} className={`scroll-mt-36 ${i === 0 ? "" : "mt-16 border-t border-white/[0.07] pt-14"}`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2588ff]">{s.group}</p>
-                <h2 className="mt-2 text-[1.9rem] font-bold leading-tight tracking-[-0.02em] sm:text-4xl">{s.title}</h2>
-                <p className="mt-3 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">{s.lead}</p>
-                <div className="mt-2">
-                  {s.blocks.map((b, k) => (
-                    <BlockView key={k} b={b} />
-                  ))}
-                </div>
-              </section>
-            ))}
+        <main className="min-w-0 flex-1 py-8 lg:border-l lg:border-white/[0.07] lg:px-10 lg:py-10 xl:px-14">
+          <article key={current.id} className="mx-auto max-w-3xl" style={{ animation: "sectionIn .25s ease-out both" }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2588ff]">{current.group}</p>
+            <h1 className="mt-2 text-[1.9rem] font-bold leading-tight tracking-[-0.02em] sm:text-4xl">{current.title}</h1>
+            <p className="mt-3 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">{current.lead}</p>
+            <div className="mt-2">
+              {current.blocks.map((b, k) => (
+                <BlockView key={k} b={b} />
+              ))}
+            </div>
 
-            {/* end of page */}
-            <div className="mt-20 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-center sm:p-8">
+            {/* previous / next */}
+            <nav aria-label="Previous and next" className="mt-16 grid gap-3 sm:grid-cols-2">
+              {prev ? (
+                <button onClick={() => go(prev.id)} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:border-[#2588ff]/40 hover:bg-white/[0.05]">
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><Svg d={I.back} size={13} sw={2.2} /> Previous</span>
+                  <span className="mt-1 block font-semibold">{prev.title}</span>
+                </button>
+              ) : (
+                <span className="hidden sm:block" />
+              )}
+              {next && (
+                <button onClick={() => go(next.id)} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-right transition hover:border-[#2588ff]/40 hover:bg-white/[0.05] sm:col-start-2">
+                  <span className="flex items-center justify-end gap-1.5 text-xs text-slate-500">Next <Svg d={I.chevron} size={13} sw={2.2} /></span>
+                  <span className="mt-1 block font-semibold">{next.title}</span>
+                </button>
+              )}
+            </nav>
+
+            {/* ready to try it */}
+            <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-center sm:p-8">
               <h2 className="text-xl font-semibold tracking-tight">Ready to try it?</h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">Head back to AlabaamaFi, or ask the community if something is unclear.</p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition hover:brightness-110">
-                  <Svg d={I.back} size={16} sw={2.2} /> Back to AlabaamaFi
+                  <Svg d={I.home} size={16} sw={2} /> Back to AlabaamaFi
                 </Link>
                 <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-6 py-3 text-sm font-semibold text-white transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
                   <DiscordLogo size={16} /> Join Discord
@@ -1000,11 +1058,10 @@ export default function DocsPage() {
               </div>
             </div>
             <p className="mt-8 text-center text-xs text-slate-600">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
-          </div>
+          </article>
         </main>
 
-        {/* on this page (wide screens) */}
-        <aside className="sticky top-[7.1rem] hidden h-[calc(100vh-7.1rem)] w-56 shrink-0 overflow-y-auto py-10 pl-2 xl:block">
+        <aside className="sticky top-[6.9rem] hidden h-[calc(100vh-6.9rem)] w-56 shrink-0 overflow-y-auto py-10 pl-2 xl:block">
           {currentSubs.length > 0 && (
             <>
               <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">On this page</p>
@@ -1029,14 +1086,13 @@ export default function DocsPage() {
         </aside>
       </div>
 
-      {/* back to top */}
       {showTop && (
-        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Back to top" className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a1226]/90 text-slate-300 shadow-lg backdrop-blur transition hover:text-white">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Back to top" className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#0b1018]/90 text-slate-300 shadow-lg backdrop-blur transition hover:text-white">
           <Svg d={I.up} />
         </button>
       )}
 
-      {/* ================= PHONE MENU ================= */}
+      {/* ================= PHONE MENU: just the sections ================= */}
       {drawer && (
         <div className="fixed inset-0 z-[90] lg:hidden" role="dialog" aria-modal="true" aria-label="Docs menu">
           <div className="absolute inset-0 bg-black/65" onClick={() => setDrawer(false)} />
@@ -1049,55 +1105,36 @@ export default function DocsPage() {
               </span>
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
-              <Link href="/" className="mb-5 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_30px_rgba(30,120,255,0.25)]">
-                <Svg d={I.back} size={16} sw={2.2} /> Back to AlabaamaFi
-              </Link>
-              {sideList(go)}
-            </div>
-            <div className="flex shrink-0 items-center gap-2 border-t border-white/[0.07] px-4 py-4">
-              <Link href="/faq" className="flex-1 rounded-full border border-white/10 bg-white/[0.045] px-4 py-2.5 text-center text-sm font-semibold text-white">FAQ</Link>
-              <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.045] text-slate-300" aria-label="Discord"><DiscordLogo /></a>
-              <a href={X_URL} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.045] text-slate-300" aria-label="X"><XLogo /></a>
-            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">{sideList(go)}</div>
           </div>
         </div>
       )}
 
-      {/* ================= SEARCH ================= */}
-      {searchOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-[10vh] sm:px-4" role="dialog" aria-modal="true" aria-label="Search the docs">
-          <div className="absolute inset-0 bg-black/65" onClick={() => setSearchOpen(false)} />
-          <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/[0.1] bg-[#080a0d] shadow-[0_25px_80px_rgba(0,0,0,0.65)]" style={{ animation: "searchIn .2s ease-out both" }}>
-            <div className="flex items-center gap-3 border-b border-white/[0.07] px-5">
-              <span className="text-slate-500"><Svg d={I.search} /></span>
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && results[0]) go(results[0].id);
-                }}
-                placeholder="Search the docs"
-                aria-label="Search the docs"
-                className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-slate-600"
-              />
-              <button onClick={() => setSearchOpen(false)} className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-500 hover:text-white">Esc</button>
+      {/* ================= PHONE SEARCH: grows to full width, the page behind is dimmed ================= */}
+      {mSearch && (
+        <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true" aria-label="Search the docs">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setMSearch(false)} />
+          <div className="relative p-3">
+            <div className="flex justify-end">
+              <div className="flex h-12 w-full items-center gap-3 rounded-full border border-[#2588ff]/50 bg-[#0b1018] pl-5 pr-4 shadow-[0_10px_40px_rgba(0,0,0,0.5)]" style={{ animation: "searchGrow .25s ease-out both" }}>
+                <input
+                  ref={mInput}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && results[0]) go(results[0].id);
+                  }}
+                  placeholder="Search the docs"
+                  aria-label="Search the docs"
+                  className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-slate-500"
+                />
+                {query ? (
+                  <button onClick={() => setQuery("")} aria-label="Clear search" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.1] text-sm text-slate-300">×</button>
+                ) : null}
+                <span className="shrink-0 text-slate-400"><Svg d={I.search} size={18} /></span>
+              </div>
             </div>
-            <ul className="max-h-[55vh] overflow-y-auto p-2">
-              {results.length === 0 && <li className="px-4 py-10 text-center text-sm text-slate-500">No results. Try another word.</li>}
-              {results.map((h) => (
-                <li key={h.id}>
-                  <button onClick={() => go(h.id)} className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-white/[0.06]">
-                    <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-semibold">{h.title}</span>
-                      <span className="block truncate text-xs text-slate-500">{h.where}</span>
-                    </span>
-                    <span className="shrink-0 text-slate-600"><Svg d={I.chevron} size={16} /></span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {typed && <div className="mt-2 overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0b1018] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">{resultList()}</div>}
           </div>
         </div>
       )}
