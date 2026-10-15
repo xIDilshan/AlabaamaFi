@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
@@ -37,11 +38,12 @@ type ChainView = {
   white: boolean; // dark logos are shown in white
   rpcs: string[];
   explorer: (hash: string) => string;
+  lifi?: boolean; // bridged by LI.FI instead of Circle
 };
 
 type Fallback = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icons: string[] };
 const FALLBACK: Record<string, Fallback> = {
-  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icons: [] },
+  Arc: { label: "Arc", chainId: 5042, usdc: "0x3600000000000000000000000000000000000000", explorer: "https://explorer.arc.io", color: "#12b9ff", gas: "USDC", icons: ["arc", "arc-network", "circle-arc"] },
   Ethereum: { label: "Ethereum", chainId: 1, usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer: "https://etherscan.io", color: "#627EEA", gas: "ETH", icons: ["ethereum"] },
   Base: { label: "Base", chainId: 8453, usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer: "https://basescan.org", color: "#0052FF", gas: "ETH", icons: ["base"] },
   Arbitrum: { label: "Arbitrum", chainId: 42161, usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", explorer: "https://arbiscan.io", color: "#28A0F0", gas: "ETH", icons: ["arbitrum-one", "arbitrum"] },
@@ -53,13 +55,14 @@ const FALLBACK: Record<string, Fallback> = {
 };
 // logo ids for the other networks (if an id isn't in the logo package, a colored letter is shown instead)
 const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world"], Sonic: ["sonic"], Sei: ["sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyper-evm"], XDC: ["xdc"], Codex: ["codex"] };
-const WHITE_LOGOS = new Set(["linea", "sonic", "worldchain"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
+const WHITE_LOGOS = new Set(["arc", "linea", "sonic", "worldchain"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
 
 /* The networks listed on bridge.usdc.com (Solana is not EVM, so it isn't here). */
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
 const ICON_GUESS_N: Record<string, string[]> = Object.fromEntries(Object.entries(ICON_GUESS).map(([k, v]) => [norm(k), v]));
-const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea"];
+const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea", "Robinhood"];
+const ROBINHOOD_KEY = "Robinhood"; // not on Circle's list: routes to or from it are bridged by LI.FI
 
 /* Networks where Circle's Forwarding Service delivers the USDC, so there is NO wallet transaction on the receiving network
    (developers.circle.com/cctp/concepts/supported-chains-and-domains). Codex, Plume and XDC aren't on that list. */
@@ -212,6 +215,12 @@ function SpaceBackground() {
   );
 }
 
+// The LI.FI widget is heavy and only works in the browser, so it is loaded on the client only (components/LifiWidget.tsx).
+const LifiWidget = dynamic(() => import("@/components/LifiWidget"), {
+  ssr: false,
+  loading: () => <div className="h-[520px] w-full animate-pulse rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03]" aria-label="Loading the bridge" />,
+});
+
 /** Centered popup. `wide` makes it wider (the network list). Closes with Escape or by tapping the dark area. */
 function Modal({ open, onClose, title, children, wide = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
   useEffect(() => {
@@ -306,7 +315,7 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
   const gaveUp = !!Icon && idx >= attempts.length;
 
   useEffect(() => {
-    if (view?.key === "Arc" || !view?.icons.length) return;
+    if (!view?.icons.length) return;
     let live = true;
     loadNetworkIcon().then((c) => {
       if (live && c) setIcon(() => c);
@@ -334,15 +343,6 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
   }, [Icon, idx]);
 
   if (!view) return <span className="shrink-0 rounded-full bg-white/10" style={{ width: size, height: size }} />;
-
-  /* Arc: your own logo file (public/arc-logo.png), shown as a circle inside a round badge like the other networks */
-  if (view.key === "Arc" && !imgFailed)
-    return (
-      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" }} aria-label="Arc">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
-      </span>
-    );
 
   const white = view.white;
   const attempt = attempts[idx];
@@ -578,6 +578,19 @@ export default function BridgePage() {
     };
     Object.keys(FALLBACK).forEach((k) => add(k, defs.find((d) => d.chain === k)));
     defs.filter((d) => !d.isTestnet && (d.type ?? "evm") === "evm").forEach((d) => add(d.chain, d));
+    out[ROBINHOOD_KEY] = {
+      key: ROBINHOOD_KEY,
+      label: "Robinhood Chain",
+      chainId: 4663,
+      usdc: "", // Circle has no USDC bridge to this network
+      gas: "ETH",
+      color: "#00C805",
+      icons: ["robinhood-chain", "robinhood"],
+      white: false,
+      rpcs: ["https://rpc.mainnet.chain.robinhood.com"],
+      explorer: () => "#",
+      lifi: true,
+    };
     return out;
   }, [defs]);
   const list = useMemo(() => {
@@ -587,6 +600,7 @@ export default function BridgePage() {
   const fromView = views[fromKey];
   const toView = views[toKey];
   const txUrl = (key: ChainKey, hash: string) => views[key]?.explorer(hash) ?? "#";
+  const lifiMode = !!fromView?.lifi || !!toView?.lifi; // Robinhood Chain on either side: LI.FI does the bridging
 
   /* Fast only exists on some source networks; elsewhere the standard transfer is already fast */
   const canFast = FAST_SOURCES.includes(fromKey);
@@ -600,7 +614,7 @@ export default function BridgePage() {
 
   /* where the USDC goes: your own address, or another address you choose */
   const otherTrim = otherAddr.trim();
-  const otherIsToken = list.some((k) => views[k]?.usdc.toLowerCase() === otherTrim.toLowerCase());
+  const otherIsToken = list.some((k) => !!views[k]?.usdc && views[k].usdc.toLowerCase() === otherTrim.toLowerCase());
   const otherValid = useOther && ADDR_RE.test(otherTrim) && !/^0x0{40}$/i.test(otherTrim) && !otherIsToken;
   const recipient = useOther && otherValid ? otherTrim : account ?? "";
   const customRecipient = useOther && otherValid && otherTrim.toLowerCase() !== (account ?? "").toLowerCase();
@@ -748,7 +762,7 @@ export default function BridgePage() {
     async (key: ChainKey, owner: string): Promise<bigint | null> => {
       try {
         const v = views[key];
-        if (!v) return null;
+        if (!v || !v.usdc) return null;
         const { erc20Abi } = await import("viem");
         const c = await getClient(key);
         return (await c.readContract({ address: v.usdc, abi: erc20Abi, functionName: "balanceOf", args: [owner] })) as bigint;
@@ -763,7 +777,7 @@ export default function BridgePage() {
   const bk = (k: ChainKey) => (account ? `${account.toLowerCase()}:${k}` : "");
   const loadOne = useCallback(
     async (k: ChainKey, live: () => boolean) => {
-      if (!account) return;
+      if (!account || !views[k]?.usdc) return;
       for (let attempt = 0; attempt < 3; attempt++) {
         const v = await readUsdc(k, account);
         if (!live()) return;
@@ -774,13 +788,14 @@ export default function BridgePage() {
         await sleep(700);
       }
     },
-    [account, readUsdc]
+    [account, readUsdc, views]
   );
   useEffect(() => {
     if (!account) {
       setBals({});
       return;
     }
+    if (lifiMode) return;
     let alive = true;
     const live = () => alive;
     loadOne(fromKey, live);
@@ -797,7 +812,7 @@ export default function BridgePage() {
     return () => {
       alive = false;
     };
-  }, [account, fromKey, toKey, loadOne, getClient, refreshTick, provider, views]);
+  }, [account, fromKey, toKey, loadOne, getClient, refreshTick, provider, views, lifiMode]);
 
   /* when a network list is open, load the wallet's USDC on every network (shown next to each network) */
   useEffect(() => {
@@ -878,7 +893,7 @@ export default function BridgePage() {
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
-    if (!ready || !provider || !units || units <= ZERO || !fromView || !toView || fromKey === toKey || (useOther && !otherValid)) return;
+    if (lifiMode || !ready || !provider || !units || units <= ZERO || !fromView || !toView || fromKey === toKey || (useOther && !otherValid)) return;
     let live = true;
     setQuoting(true);
     const t = setTimeout(async () => {
@@ -1291,6 +1306,7 @@ export default function BridgePage() {
                     <span className="inline-flex items-center gap-1.5"><ChainLogo view={toView} size={20} />{toView?.label}</span>
                   </p>
                 </div>
+                {!lifiMode && (
                 <div className="flex shrink-0 items-center gap-1">
                   <button type="button" onClick={() => setModal("history")} aria-label="Bridge history" title="Bridge history" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white">
                     <Svg d={ICON_HISTORY} />
@@ -1309,8 +1325,30 @@ export default function BridgePage() {
                     <Svg d={ICON_FAST} />
                   </button>
                 </div>
+                )}
               </div>
 
+              {lifiMode ? (
+                <div className="mt-4 sm:mt-5">
+                  {/* the two networks are picked here; the LI.FI widget below does the bridging */}
+                  <div className="flex items-center justify-between gap-2">
+                    <ChainButton view={fromView} onClick={() => setModal("from")} />
+                    <button type="button" onClick={flip} aria-label="Switch direction" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
+                        <path d="M17 4 21 8l-4 4M3 8h18M7 20l-4-4 4-4M21 16H3" />
+                      </svg>
+                    </button>
+                    <ChainButton view={toView} onClick={() => setModal("to")} />
+                  </div>
+                  <p className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-xs leading-5 text-slate-400">
+                    Circle&apos;s USDC bridge doesn&apos;t support Robinhood Chain, so this route is bridged by LI.FI, a third-party bridge aggregator. USDC sent to Robinhood Chain usually arrives as USDG. Check the quote and the token you receive, and start with a small amount.
+                  </p>
+                  <div className="mt-4">
+                    <LifiWidget key={`${fromKey}-${toKey}`} from={fromView?.chainId} to={toView?.chainId} embedded />
+                  </div>
+                </div>
+              ) : (
+              <>
               <div className="mt-4 sm:mt-5">
                 {/* from */}
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
@@ -1484,13 +1522,15 @@ export default function BridgePage() {
                   <span className="text-slate-500">Getting your quote…</span>
                 ) : null}
               </div>
+              </>
+              )}
             </div>
           </div>
 
           <ul className="fade-up mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500" style={{ "--delay": "300ms" } as CSSProperties}>
-            <li>Powered by Circle CCTP</li>
-            <li>{customRecipient ? "Sent to the address you entered" : "Sent to your own wallet address"}</li>
-            <li>{forwarder ? "No wallet prompt on the receiving network" : "One extra wallet confirmation on the receiving network"}</li>
+            <li>{lifiMode ? "Robinhood Chain routes are bridged by LI.FI" : "Powered by Circle CCTP"}</li>
+            {!lifiMode && <li>{customRecipient ? "Sent to the address you entered" : "Sent to your own wallet address"}</li>}
+            {!lifiMode && <li>{forwarder ? "No wallet prompt on the receiving network" : "One extra wallet confirmation on the receiving network"}</li>}
           </ul>
         </section>
       </div>
@@ -1574,7 +1614,11 @@ export default function BridgePage() {
                 <button onClick={() => pickNetwork(side, k)} className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.06] ${k === current ? "bg-white/[0.06] ring-1 ring-[#2588ff]/50" : ""}`}>
                   <ChainLogo view={views[k]} size={38} />
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{views[k].label}</span>
-                  <span className="shrink-0 text-sm tabular-nums text-slate-400">{account ? (b === undefined ? "…" : b === null ? "—" : `${formatUnits6(b)} USDC`) : ""}</span>
+                  {views[k].lifi ? (
+                    <span className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#8fd4ff]">via LI.FI</span>
+                  ) : (
+                    <span className="shrink-0 text-sm tabular-nums text-slate-400">{account ? (b === undefined ? "…" : b === null ? "—" : `${formatUnits6(b)} USDC`) : ""}</span>
+                  )}
                 </button>
               </li>
             );
