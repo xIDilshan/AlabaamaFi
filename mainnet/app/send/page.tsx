@@ -454,8 +454,15 @@ export default function SendPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500">Balance</p>
-                      <p className="mt-1 text-sm font-semibold tabular-nums">
-                        {ready && balance !== null ? `${formatUnits6(balance)} USDC` : "—"}
+                      <p className="mt-1 flex items-center justify-end gap-1.5 text-sm font-semibold tabular-nums">
+                        {ready && balance !== null ? (
+                          <>
+                            {formatUnits6(balance)}
+                            <UsdcLogo size={16} />
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </p>
                     </div>
                   </div>
