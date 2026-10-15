@@ -1,16 +1,16 @@
-AlabaamaFi Testnet
+## AlabaamaFi Testnet
 
-«❌ TESTNET WEBSITE CLOSED
+# ❌ TESTNET WEBSITE CLOSED
 
 The AlabaamaFi Testnet website has been discontinued. The Testnet source code remains available in this repository for reference.»
 
-🚀 Mainnet Is Live
+# 🚀 Mainnet Is Live
 
 The AlabaamaFi Mainnet website is now live on Arc Network.
 
 🌐 Live Website: https://app.alabaamafi.xyz
 
-📂 Mainnet Source Code
+# 📂 Mainnet Source Code
 
 The source code for the live Mainnet application is available in the ""mainnet"" (./mainnet) folder of this repository.
 
