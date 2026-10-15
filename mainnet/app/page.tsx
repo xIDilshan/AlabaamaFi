@@ -64,15 +64,15 @@ const STEPS = [
 ];
 
 /* ---------- helpers ---------- */
-function Icon({ d, size = 22 }: { d: string; size?: number }) {
+function Icon({ d, size = 22, sw = 1.7 }: { d: string; size?: number; sw?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />
     </svg>
   );
 }
 
-function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+function Reveal({ children, delay = 0, className = "", from = "bottom" }: { children: ReactNode; delay?: number; className?: string; from?: "bottom" | "right" | "left" }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -91,7 +91,7 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} className={`reveal ${visible ? "reveal-visible" : ""} ${className}`} style={{ "--delay": `${delay}ms` } as CSSProperties}>
+    <div ref={ref} className={`reveal ${from === "right" ? "reveal-right" : from === "left" ? "reveal-left" : ""} ${visible ? "reveal-visible" : ""} ${className}`} style={{ "--delay": `${delay}ms` } as CSSProperties}>
       {children}
     </div>
   );
@@ -133,29 +133,29 @@ function SpaceBackground() {
    Each cycle: the outlines draw, the blades fill in, the dots appear one by one, the logo holds and turns slowly, then it fades and draws again.
 ===================================================================== */
 const LOGO_ARCS = [
-  { d: "M40.75 -84.23C42.13 -85.47 31.54 -87.31 25.55 -87.82C19.56 -88.32 10.31 -87.82 4.82 -87.27C-0.66 -86.71 -2.27 -86.39 -7.34 -84.50C-12.40 -82.61 -20.74 -78.74 -25.58 -75.93C-30.41 -73.12 -32.53 -71.37 -36.35 -67.64C-40.18 -63.91 -45.38 -58.02 -48.51 -53.55C-51.65 -49.08 -53.76 -43.97 -55.15 -40.84C-56.53 -37.70 -56.80 -36.92 -56.80 -34.76C-56.80 -32.59 -56.39 -29.55 -55.15 -27.85C-53.90 -26.14 -51.09 -24.94 -49.34 -24.53C-47.59 -24.12 -47.78 -20.89 -44.64 -25.36C-41.51 -29.83 -34.37 -45.49 -30.55 -51.34C-26.73 -57.19 -25.21 -57.51 -21.71 -60.46C-18.21 -63.41 -16.04 -65.71 -9.55 -69.03C-3.05 -72.34 8.88 -77.82 17.26 -80.36C25.64 -82.89 39.37 -82.98 40.75 -84.23Z", x1: 29.3, y1: -99.9, x2: -60.0, y2: -34.5, c1: "#205fb7", c2: "#0da6df" },
-  { d: "M25.55 -54.10C23.76 -53.00 22.28 -50.97 22.24 -49.13C22.19 -47.28 22.37 -44.84 25.28 -43.05C28.18 -41.25 35.46 -40.19 39.65 -38.35C43.84 -36.51 47.11 -34.43 50.43 -31.99C53.74 -29.55 56.28 -27.16 59.55 -23.70C62.82 -20.25 66.36 -17.76 70.05 -11.26C73.73 -4.77 78.89 5.13 81.65 15.27C84.42 25.40 85.16 46.73 86.63 49.54C88.10 52.35 89.95 38.53 90.50 32.12C91.05 25.72 90.41 16.79 89.95 11.12C89.48 5.46 89.53 3.70 87.73 -1.87C85.94 -7.44 82.02 -16.93 79.17 -22.32C76.31 -27.71 75.07 -29.69 70.60 -34.20C66.13 -38.72 57.20 -46.09 52.36 -49.40C47.52 -52.72 44.81 -53.04 41.58 -54.10C38.36 -55.16 35.69 -55.76 33.01 -55.76C30.34 -55.76 27.35 -55.21 25.55 -54.10Z", x1: 34.9, y1: -60.7, x2: 104.3, y2: 37.0, c1: "#10a3e0", c2: "#235eb6" },
-  { d: "M-83.06 -54.10C-83.98 -53.32 -88.72 -41.76 -89.97 -34.76C-91.21 -27.75 -91.17 -18.91 -90.52 -12.09C-89.88 -5.28 -87.94 0.57 -86.10 6.15C-84.26 11.72 -82.05 16.83 -79.47 21.35C-76.89 25.86 -73.80 29.64 -70.62 33.23C-67.44 36.82 -63.16 40.60 -60.40 42.90C-57.63 45.21 -57.54 45.25 -54.04 47.05C-50.54 48.84 -43.86 52.58 -39.39 53.68C-34.93 54.79 -30.09 54.65 -27.23 53.68C-24.38 52.71 -22.86 49.58 -22.26 47.88C-21.66 46.17 -23.00 44.56 -23.64 43.46C-24.29 42.35 -23.13 42.44 -26.13 41.24C-29.12 40.05 -37.14 38.25 -41.60 36.27C-46.07 34.29 -48.93 32.54 -52.94 29.36C-56.94 26.18 -62.38 21.21 -65.65 17.20C-68.92 13.19 -69.89 11.44 -72.56 5.32C-75.23 -0.81 -79.70 -12.09 -81.68 -19.56C-83.66 -27.02 -84.21 -33.70 -84.44 -39.45C-84.67 -45.21 -82.14 -54.88 -83.06 -54.10Z", x1: -104.1, y1: -39.6, x2: -35.7, y2: 59.5, c1: "#215fb4", c2: "#088de0" },
-  { d: "M55.12 27.98C53.93 26.60 51.02 24.62 49.32 24.11C47.62 23.60 46.10 24.16 44.90 24.94C43.70 25.72 43.01 26.46 42.13 28.81C41.26 31.16 40.84 36.04 39.65 39.03C38.45 42.03 38.31 42.86 34.95 46.77C31.59 50.69 23.80 58.79 19.47 62.52C15.14 66.26 15.79 66.26 8.97 69.16C2.15 72.06 -11.30 77.59 -21.43 79.94C-31.56 82.28 -49.76 81.92 -51.83 83.25C-53.90 84.59 -39.58 87.03 -33.87 87.95C-28.15 88.87 -22.81 89.01 -17.56 88.78C-12.31 88.55 -8.21 88.04 -2.36 86.57C3.49 85.09 11.04 83.21 17.54 79.94C24.03 76.67 31.45 71.37 36.61 66.95C41.77 62.52 45.36 57.87 48.49 53.40C51.62 48.94 54.06 43.64 55.40 40.14C56.74 36.64 56.55 34.43 56.51 32.40C56.46 30.37 56.32 29.36 55.12 27.98Z", x1: 60.8, y1: 36.9, x2: -40.7, y2: 100.9, c1: "#128cdf", c2: "#225fb4" },
+  { d: "M34.8 -89.3C31.9 -89.7 22.5 -90.6 16.8 -90.4C11.2 -90.3 6.2 -89.5 1.0 -88.3C-4.2 -87.1 -9.5 -85.5 -14.6 -83.3C-19.6 -81.1 -24.8 -78.3 -29.4 -75.0C-34.0 -71.8 -38.4 -68.1 -42.3 -63.9C-46.1 -59.7 -50.3 -53.3 -52.5 -49.8C-54.8 -46.2 -55.1 -44.5 -55.8 -42.3C-56.6 -40.2 -56.9 -38.3 -57.1 -36.8C-57.3 -35.2 -57.3 -34.2 -57.0 -32.9C-56.6 -31.6 -56.2 -30.1 -55.2 -28.9C-54.3 -27.7 -52.5 -26.4 -51.4 -25.9C-50.3 -25.4 -49.5 -25.6 -48.5 -25.8C-47.6 -25.9 -46.6 -26.3 -45.8 -26.9C-45.0 -27.5 -44.6 -27.5 -43.7 -29.5C-42.7 -31.5 -41.7 -35.8 -40.1 -39.0C-38.5 -42.3 -36.7 -45.8 -34.1 -49.2C-31.6 -52.6 -27.8 -56.7 -24.8 -59.6C-21.9 -62.5 -20.2 -63.9 -16.4 -66.5C-12.6 -69.0 -6.0 -72.7 -1.9 -74.7C2.3 -76.8 4.5 -77.6 8.7 -78.9C12.9 -80.2 18.8 -81.7 23.3 -82.4C27.8 -83.2 33.6 -83.0 35.7 -83.6C37.8 -84.2 36.1 -85.3 36.0 -86.0C35.8 -86.7 34.9 -87.2 34.7 -87.7C34.5 -88.3 37.8 -88.8 34.8 -89.3Z", x1: 27.7, y1: -99.4, x2: -60.8, y2: -36.8, c1: "#003294", cm: "#0076ff", c2: "#26bcff" },
+  { d: "M27.0 -55.6C26.0 -55.1 25.3 -54.6 24.7 -53.8C24.1 -52.9 23.6 -51.8 23.4 -50.8C23.3 -49.7 23.5 -48.6 23.8 -47.6C24.2 -46.7 22.8 -46.4 25.7 -45.0C28.6 -43.7 37.2 -41.1 41.3 -39.3C45.3 -37.5 46.8 -36.4 49.8 -34.2C52.8 -32.0 56.1 -29.4 59.2 -26.1C62.4 -22.7 66.0 -18.6 68.9 -14.2C71.9 -9.9 74.7 -4.2 76.7 0.1C78.6 4.3 79.1 4.4 80.8 11.2C82.5 18.0 85.3 35.7 86.8 40.6C88.3 45.5 89.3 40.3 89.8 40.5C90.3 40.6 89.7 41.4 89.9 41.6C90.1 41.8 90.9 41.9 90.9 41.6C91.0 41.3 90.1 40.0 90.2 39.6C90.3 39.2 91.0 42.1 91.4 39.3C91.7 36.6 92.4 28.7 92.2 23.2C92.0 17.7 91.4 12.2 90.2 6.5C89.0 0.8 87.3 -5.3 85.1 -10.8C82.9 -16.3 80.1 -21.5 76.9 -26.3C73.8 -31.1 70.4 -35.5 66.2 -39.6C62.1 -43.7 55.7 -48.2 52.0 -50.8C48.2 -53.3 46.2 -53.8 43.7 -54.7C41.1 -55.7 38.9 -56.4 36.7 -56.7C34.5 -57.1 32.2 -57.1 30.5 -56.9C28.9 -56.7 28.0 -56.1 27.0 -55.6Z", x1: 35.4, y1: -61.7, x2: 103.1, y2: 32.9, c1: "#29bbff", cm: "#006bff", c2: "#003090" },
+  { d: "M-88.5 -39.2C-89.0 -39.0 -88.3 -38.5 -88.6 -38.2C-89.0 -37.9 -89.9 -39.3 -90.4 -37.6C-90.8 -36.0 -91.4 -33.1 -91.4 -28.3C-91.3 -23.6 -91.1 -15.3 -90.2 -9.4C-89.3 -3.4 -87.9 1.8 -85.8 7.3C-83.7 12.9 -80.7 19.1 -77.8 23.9C-74.9 28.8 -71.0 33.3 -68.2 36.5C-65.4 39.7 -63.6 41.1 -61.1 43.2C-58.6 45.2 -55.5 47.3 -53.0 48.9C-50.4 50.5 -48.4 51.5 -45.7 52.6C-42.9 53.7 -39.0 55.0 -36.5 55.5C-34.1 56.0 -32.5 55.8 -30.8 55.6C-29.2 55.4 -27.7 54.7 -26.7 54.2C-25.6 53.6 -25.1 53.0 -24.6 52.2C-24.0 51.4 -23.5 50.4 -23.4 49.5C-23.3 48.5 -23.6 47.2 -24.0 46.3C-24.4 45.4 -23.2 45.2 -26.0 43.9C-28.8 42.6 -36.4 40.6 -40.7 38.8C-44.9 36.9 -47.8 35.3 -51.4 32.6C-55.0 29.9 -59.4 26.0 -62.4 22.8C-65.4 19.6 -67.2 17.1 -69.5 13.5C-71.8 9.8 -74.5 5.0 -76.4 0.9C-78.3 -3.2 -79.6 -6.9 -80.9 -11.2C-82.2 -15.5 -83.5 -20.4 -84.2 -25.1C-85.0 -29.7 -84.8 -36.7 -85.5 -39.0C-86.2 -41.4 -88.0 -39.3 -88.5 -39.2Z", x1: -101.6, y1: -29.5, x2: -35.0, y2: 60.3, c1: "#002e8d", cm: "#0063fc", c2: "#009dff" },
+  { d: "M56.2 28.9C55.3 27.6 53.1 25.9 52.0 25.3C50.8 24.7 50.4 25.1 49.5 25.3C48.7 25.6 47.5 26.0 46.7 26.8C45.8 27.5 45.7 27.5 44.5 29.9C43.4 32.3 42.0 37.2 40.0 40.9C37.9 44.6 35.1 48.7 32.3 52.0C29.5 55.4 26.7 58.0 23.1 60.9C19.5 63.8 14.7 66.9 10.6 69.3C6.4 71.7 2.8 73.3 -1.7 75.0C-6.2 76.7 -11.8 78.4 -16.3 79.6C-20.7 80.7 -23.4 81.3 -28.3 81.9C-33.1 82.4 -42.5 82.0 -45.4 82.7C-48.3 83.4 -45.7 85.4 -45.5 86.0C-45.3 86.6 -44.5 86.0 -44.3 86.3C-44.0 86.5 -44.4 87.4 -44.1 87.4C-43.8 87.5 -42.8 86.6 -42.4 86.7C-42.0 86.8 -43.2 87.6 -41.5 88.0C-39.8 88.4 -37.1 89.1 -32.3 89.3C-27.4 89.4 -18.3 89.5 -12.3 88.9C-6.2 88.2 -1.7 87.3 4.1 85.4C10.0 83.6 17.3 80.4 22.7 77.6C28.1 74.7 32.9 70.9 36.3 68.3C39.6 65.7 40.7 64.4 43.0 62.0C45.2 59.6 47.9 56.5 49.8 53.7C51.8 51.0 53.4 48.1 54.7 45.6C55.9 43.2 56.7 41.1 57.2 39.0C57.8 37.0 58.0 34.9 57.8 33.2C57.6 31.5 57.2 30.2 56.2 28.9Z", x1: 61.9, y1: 37.9, x2: -37.0, y2: 99.6, c1: "#17b0ff", cm: "#006bff", c2: "#003195" },
 ];
 
 const LOGO_DOTS = [
-  { x: 2.3, y: -58.8, r: 8.4, c: "#1087ec" },
-  { x: 27.0, y: -67.0, r: 8.1, c: "#1566dc" },
-  { x: 55.0, y: -66.9, r: 8.7, c: "#1763de" },
-  { x: 43.0, y: -19.9, r: 8.8, c: "#0994e9" },
-  { x: 60.2, y: 1.3, r: 8.7, c: "#1072f2" },
-  { x: 69.6, y: 28.8, r: 8.3, c: "#1c5fd4" },
-  { x: 68.9, y: 55.3, r: 7.7, c: "#235eb9" },
-  { x: 20.8, y: 40.8, r: 8.3, c: "#0a89f2" },
-  { x: 0.3, y: 57.3, r: 8.7, c: "#1968ef" },
-  { x: -27.5, y: 66.2, r: 8.3, c: "#1864e5" },
-  { x: -56.7, y: 65.2, r: 8.5, c: "#1b61d8" },
-  { x: -41.3, y: 21.0, r: 8.4, c: "#0791ec" },
-  { x: -60.0, y: -0.1, r: 8.6, c: "#0e85f0" },
-  { x: -69.0, y: -26.9, r: 8.1, c: "#1567e3" },
-  { x: -67.7, y: -54.2, r: 8.0, c: "#1c60cb" },
-  { x: -20.0, y: -41.4, r: 8.7, c: "#0ba3f0" },
+  { x: 2.0, y: -60.9, r: 8.5, c: "#0085ff" },
+  { x: 27.3, y: -69.3, r: 8.3, c: "#005beb" },
+  { x: 54.7, y: -68.6, r: 8.2, c: "#0043be" },
+  { x: 43.3, y: -21.0, r: 8.5, c: "#009cff" },
+  { x: 61.9, y: 1.2, r: 8.5, c: "#007fff" },
+  { x: 70.9, y: 29.4, r: 8.3, c: "#0057e4" },
+  { x: 70.6, y: 56.7, r: 8.2, c: "#00359f" },
+  { x: 22.1, y: 42.6, r: 8.5, c: "#0091ff" },
+  { x: 0.4, y: 59.3, r: 8.4, c: "#0077ff" },
+  { x: -28.4, y: 67.9, r: 8.3, c: "#0058e6" },
+  { x: -57.9, y: 67.4, r: 8.2, c: "#0038a4" },
+  { x: -42.6, y: 21.7, r: 8.5, c: "#0095ff" },
+  { x: -61.3, y: -0.2, r: 8.4, c: "#007dff" },
+  { x: -70.9, y: -28.0, r: 8.3, c: "#004ed3" },
+  { x: -69.5, y: -55.6, r: 8.1, c: "#00339a" },
+  { x: -20.6, y: -42.9, r: 8.5, c: "#009bff" },
 ];
 
 const LOGO_CYCLE = 15; // seconds for one draw -> hold -> fade round
@@ -186,13 +186,14 @@ function HeroLogo() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[820px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_70%,transparent)] [mask-image:linear-gradient(to_bottom,#000_70%,transparent)]">
       <style>{css}</style>
-      <div className="absolute -right-[24%] top-0 h-[min(105vw,700px)] w-[min(105vw,700px)] sm:-right-[8%] lg:right-[1%] xl:right-[4%]">
+      <div className="absolute left-1/2 top-0 h-[min(105vw,700px)] w-[min(105vw,700px)] -translate-x-1/2 sm:left-auto sm:-right-[12%] sm:translate-x-0 lg:-right-[3%] xl:-right-[1%]">
         <div className="absolute inset-[6%] rounded-full bg-[radial-gradient(circle,rgba(30,120,255,0.42),transparent_68%)] blur-2xl" style={{ animation: "glowPulse 8s ease-in-out infinite" }} />
-        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-55 sm:opacity-90 lg:opacity-100" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
+        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-40 sm:opacity-90 lg:opacity-100" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
           <defs>
             {LOGO_ARCS.map((a, i) => (
               <linearGradient key={i} id={`logoArc${i}`} gradientUnits="userSpaceOnUse" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}>
                 <stop offset="0" stopColor={a.c1} />
+                <stop offset="0.5" stopColor={a.cm} />
                 <stop offset="1" stopColor={a.c2} />
               </linearGradient>
             ))}
@@ -226,16 +227,17 @@ function ActionCard({ href, title, text, icon }: { href: string; title: string; 
   return (
     <Link
       href={href}
-      className="group relative flex h-full min-h-[12rem] flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-6 transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-7"
+      className="group relative flex h-full min-h-[12rem] flex-col items-center overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-6 text-center transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:items-start sm:p-7 sm:text-left"
     >
       <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
       <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 text-[#2588ff]/[0.07] transition duration-500 group-hover:scale-110 group-hover:text-[#2588ff]/[0.14]">
         <Icon d={icon} size={160} />
       </div>
-      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white shadow-[0_10px_30px_rgba(30,120,255,0.35)] transition duration-500 group-hover:-rotate-3 group-hover:scale-105">
-        <Icon d={icon} size={24} />
+      {/* the icon is drawn as a glowing line, with no box around it */}
+      <div className="relative text-[#62d4ff] transition duration-500 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" }}>
+        <Icon d={icon} size={40} sw={1.5} />
       </div>
-      <h3 className="relative mt-auto pt-10 text-2xl font-semibold tracking-tight">{title}</h3>
+      <h3 className="relative mt-auto pt-9 text-2xl font-semibold tracking-tight">{title}</h3>
       <p className="relative mt-2 text-sm leading-6 text-slate-400">{text}</p>
     </Link>
   );
@@ -272,17 +274,27 @@ const Chip = ({ sym, caret = false }: { sym: Tok; caret?: boolean }) => (
   </span>
 );
 
-/** Round network badge: Arc uses your logo file, others a colored letter. */
+/** Round network badge: Arc uses your logo file, Ethereum is drawn here, others a colored letter. */
 function NetBadge({ name, size = 30 }: { name: "Arc" | "Ethereum" | "Base"; size?: number }) {
   const [failed, setFailed] = useState(false);
+  const badge = { width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" } as CSSProperties;
   if (name === "Arc" && !failed)
     return (
-      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
       </span>
     );
-  const color = name === "Ethereum" ? "#627EEA" : name === "Base" ? "#0052FF" : "#12b9ff";
+  if (name === "Ethereum")
+    return (
+      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge} aria-label="Ethereum">
+        <svg width={size * 0.56} height={size * 0.56} viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#8fa2f5" d="M12.056 0 4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
+          <path fill="#627eea" d="M11.944 17.97 4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003z" />
+        </svg>
+      </span>
+    );
+  const color = name === "Base" ? "#0052FF" : "#12b9ff";
   return (
     <span className="flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: color, fontSize: size * 0.45 }}>
       {name[0]}
@@ -497,6 +509,62 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
   );
 }
 
+/* ---------- Arc network details: everything a wallet asks for when you add a custom network ---------- */
+const NETWORK_FIELDS: [string, string][] = [
+  ["Network name", "Arc Mainnet"],
+  ["RPC URL", ARC.rpc],
+  ["Chain ID", String(ARC.chainId)],
+  ["Currency symbol", "USDC"],
+  ["Block explorer URL", ARC.explorer],
+];
+
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard not available */
+    }
+  };
+  return (
+    <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
+      <div className="min-w-0 flex-1 text-left">
+        <p className="text-xs uppercase tracking-[0.16em] text-slate-600">{label}</p>
+        <p className="mt-1 break-all font-medium tabular-nums text-slate-100">{value}</p>
+      </div>
+      <button onClick={copy} aria-label={`Copy ${label}`} className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-1.5 text-xs font-semibold text-[#8fd4ff] transition hover:bg-white/[0.1]">
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
+function NetworkDetails() {
+  return (
+    <div className="relative mx-auto w-full max-w-xl">
+      <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem]">
+        <div className="border-b border-white/[0.06] px-4 py-5 text-left sm:px-6">
+          <p className="text-xs text-slate-500">Add it as a custom network</p>
+          <p className="mt-1 flex items-center gap-2 text-lg font-semibold">
+            <NetBadge name="Arc" size={26} />
+            Arc network details
+          </p>
+        </div>
+        <div className="divide-y divide-white/[0.06]">
+          {NETWORK_FIELDS.map(([k, v]) => (
+            <CopyRow key={k} label={k} value={v} />
+          ))}
+        </div>
+        <p className="border-t border-white/[0.06] px-4 py-4 text-left text-xs leading-5 text-slate-500 sm:px-6">Gas is paid in USDC. Finality takes under 1 second.</p>
+      </div>
+    </div>
+  );
+}
+
 const SHOWCASE: { kind: "send" | "swap" | "bridge" | "activity"; label: string; pre: string; hi: string; post: string; text: string }[] = [
   { kind: "send", label: "Send", pre: "Send ", hi: "USDC", post: " in seconds.", text: "Paste an address, enter an amount, and send. Fees are paid in USDC, so there is no second token to hold." },
   { kind: "swap", label: "Swap", pre: "Swap ", hi: "tokens", post: " with clear pricing.", text: "Swap USDC, EURC and cirBTC on Arc. See the rate, the minimum you receive, and the market price before you confirm." },
@@ -533,6 +601,8 @@ export default function Home() {
         @keyframes logoSpin{to{transform:rotate(360deg)}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
+        .reveal-right{transform:translateX(70px)}
+        .reveal-left{transform:translateX(-70px)}
         .reveal-visible{opacity:1;transform:none}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}.logo-part{animation:none!important}.logo-line{display:none}.logo-spin{animation:none!important}}
       `}</style>
@@ -546,7 +616,7 @@ export default function Home() {
         {/* ---------------- HERO ---------------- */}
         <section className="relative min-h-[440px] sm:min-h-[480px] lg:min-h-[540px]">
           <div className={`relative flex min-h-[440px] items-center sm:min-h-[480px] lg:min-h-[540px] ${CONTAINER}`}>
-            <div className="relative z-10 w-full max-w-[950px] py-10 sm:py-12 lg:py-14 xl:max-w-none">
+            <div className="relative z-10 w-full max-w-[950px] py-10 text-center sm:py-12 sm:text-left lg:py-14 xl:max-w-none">
               <Reveal>
                 <h1 className="text-[2.75rem] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[3.5rem] md:text-7xl lg:text-[5.8rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.6vw,10rem)]">
                   One place.{" "}
@@ -556,10 +626,10 @@ export default function Home() {
               </Reveal>
               <Reveal delay={120}>
                 <p className="mt-7 text-xl font-medium tracking-tight text-slate-300 sm:text-2xl">A simple interface for Arc</p>
-                <p className="mt-5 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
+                <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-400 sm:mx-0 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
               </Reveal>
               <Reveal delay={240}>
-                <div className="mt-9 flex flex-wrap gap-3">
+                <div className="mt-9 flex flex-wrap justify-center gap-3 sm:justify-start">
                   <Link href="/swap" className={BUTTON}>Start swapping</Link>
                   <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
                 </div>
@@ -570,10 +640,10 @@ export default function Home() {
 
         {/* ---------------- ACTIONS ---------------- */}
         <section className={`pb-24 pt-12 lg:pb-32 ${CONTAINER}`}>
-          <Reveal>
+          <Reveal className="text-center sm:text-left">
             <p className={EYEBROW}>Everything in one place</p>
             <h2 className={H2}>Move through <span className={GRAD}>Arc.</span></h2>
-            <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-500 sm:mx-0">A focused interface for the actions you use most onchain.</p>
           </Reveal>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {ACTIONS.map((a, i) => (
@@ -586,10 +656,10 @@ export default function Home() {
         <section className={`pb-10 lg:pb-16 ${CONTAINER}`}>
           {SHOWCASE.map((item, i) => (
             <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
-              <Reveal className={i % 2 ? "lg:order-2" : ""}>
+              <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
                 <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
                 <h2 className={H2}>{item.pre}<span className={GRAD}>{item.hi}</span>{item.post}</h2>
-                <p className="mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg">{item.text}</p>
+                <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
               </Reveal>
               <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
                 <Preview kind={item.kind} />
@@ -621,55 +691,43 @@ export default function Home() {
         {/* ---------------- WHY ARC ---------------- */}
         <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
           <div className="grid gap-14 lg:grid-cols-[0.75fr_1.25fr]">
-            <Reveal>
+            <Reveal className="text-center lg:text-left">
               <p className={EYEBROW}>The network</p>
               <h2 className={H2}>Why Arc?</h2>
-              <p className="mt-5 max-w-md leading-7 text-slate-400">Arc is a USDC-native, EVM-compatible Layer 1 designed around modern onchain finance and payments.</p>
-              <a href={ARC.docs} target="_blank" rel="noreferrer" className={`${SECONDARY_BUTTON} mt-8`}>Read Arc documentation</a>
+              <p className="mx-auto mt-5 max-w-md leading-7 text-slate-400 lg:mx-0">Arc is a USDC-native, EVM-compatible Layer 1 designed around modern onchain finance and payments.</p>
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <a href={ARC.docs} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>Read Arc documentation</a>
+              </div>
             </Reveal>
-            <div className="grid gap-x-10 gap-y-12 sm:grid-cols-2">
+            <div className="grid gap-x-10 gap-y-12 text-center sm:grid-cols-2 sm:text-left">
               {FEATURES.map((f, i) => (
                 <Reveal key={f.number} delay={i * 100}>
                   <span className="text-xs tracking-[0.2em] text-[#2588ff]">{f.number}</span>
                   <h3 className="mt-3 text-xl font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{f.text}</p>
+                  <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500 sm:mx-0">{f.text}</p>
                 </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ---------------- WALLET SETUP ---------------- */}
+        {/* ---------------- WALLET SETUP: text comes in from the right, the network details from the left ---------------- */}
         <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
-          <Reveal>
-            <div className="grid gap-14 lg:grid-cols-2">
-              <div>
-                <p className={EYEBROW}>Wallet setup</p>
-                <h2 className={H2}>Add Arc to your wallet.</h2>
-                <p className="mt-5 max-w-md leading-7 text-slate-400">Add Arc Mainnet to any EVM wallet in one click, or browse the network in the explorer.</p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button onClick={addArcToWallet} className={BUTTON}>Add Arc Mainnet</button>
-                  <a href={ARC.explorer} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>Explorer</a>
-                </div>
-                <p role="status" className="mt-4 min-h-5 text-sm text-slate-500">{walletMsg}</p>
+          <div className="grid items-center gap-14 lg:grid-cols-2">
+            <Reveal from="left" delay={100} className="order-2 lg:order-1">
+              <NetworkDetails />
+            </Reveal>
+            <Reveal from="right" className="order-1 text-center lg:order-2 lg:text-left">
+              <p className={EYEBROW}>Wallet setup</p>
+              <h2 className={H2}>Add Arc to your wallet.</h2>
+              <p className="mx-auto mt-5 max-w-md leading-7 text-slate-400 lg:mx-0">Add Arc Mainnet to any EVM wallet in one click. If your wallet asks for the details, copy them from the card.</p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+                <button onClick={addArcToWallet} className={BUTTON}>Add Arc Mainnet</button>
+                <a href={ARC.explorer} target="_blank" rel="noreferrer" className={SECONDARY_BUTTON}>Explorer</a>
               </div>
-              <div>
-                <div className="grid grid-cols-2 border-y border-white/[0.07]">
-                  {[
-                    ["Network", "Arc Mainnet"],
-                    ["Chain ID", String(ARC.chainId)],
-                    ["Gas token", "USDC"],
-                    ["Finality", "< 1 second"],
-                  ].map(([k, v], i) => (
-                    <div key={k} className={`min-w-0 break-words p-4 sm:p-7 ${i % 2 === 0 ? "border-r border-white/[0.07]" : ""} ${i < 2 ? "border-b border-white/[0.07]" : ""}`}>
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-600">{k}</p>
-                      <p className="mt-2 font-medium tabular-nums">{v}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
+              <p role="status" className="mt-4 min-h-5 text-sm text-slate-500">{walletMsg}</p>
+            </Reveal>
+          </div>
         </section>
 
         {/* ---------------- CTA ---------------- */}
@@ -695,9 +753,9 @@ export default function Home() {
 
         {/* ---------------- FOOTER ---------------- */}
         <footer>
-          <div className={`flex flex-col gap-5 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between ${CONTAINER}`}>
+          <div className={`flex flex-col items-center gap-5 py-8 text-center text-sm text-slate-600 sm:flex-row sm:justify-between sm:text-left ${CONTAINER}`}>
             <p>© {new Date().getFullYear()} AlabaamaFi. An independent interface for Arc.</p>
-            <nav className="flex flex-wrap gap-6">
+            <nav className="flex flex-wrap justify-center gap-6">
               <a href={ARC.docs} target="_blank" rel="noreferrer" className="transition hover:text-white">Docs</a>
               <a href={ARC.explorer} target="_blank" rel="noreferrer" className="transition hover:text-white">Explorer</a>
               <a href={ARC.x} target="_blank" rel="noreferrer" className="transition hover:text-white">Arc on X</a>
