@@ -51,7 +51,8 @@ type Block =
   | { t: "ul"; items: ReactNode[] }
   | { t: "steps"; items: ReactNode[] }
   | { t: "note"; title: string; c: ReactNode; tone?: "info" | "warn" | "tip" }
-  | { t: "table"; head: string[]; rows: ReactNode[][] };
+  | { t: "table"; head: string[]; rows: ReactNode[][] }
+  | { t: "pages" };
 type Sec = { id: string; group: string; title: string; lead: string; kw: string; blocks: Block[] };
 
 const A = ({ href, children }: { href: string; children: ReactNode }) => (
@@ -67,15 +68,18 @@ const PAGE_ICONS = {
   bridge: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
   activity: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4",
 };
-/** A page name with its icon drawn as a glowing line (no box around it). */
-const PageName = ({ d, name }: { d: string; name: string }) => (
-  <span className="inline-flex items-center gap-3">
-    <span className="text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 12px rgba(22,136,245,0.6))" }}>
-      <Svg d={d} size={22} sw={1.6} />
-    </span>
-    <strong className="font-semibold text-white">{name}</strong>
+/** An icon drawn as a glowing line (no box around it). */
+const GlowIcon = ({ d, size = 24 }: { d: string; size?: number }) => (
+  <span className="inline-flex text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 12px rgba(22,136,245,0.6))" }}>
+    <Svg d={d} size={size} sw={1.6} />
   </span>
 );
+const PAGES = [
+  { name: "Send", d: PAGE_ICONS.send, href: "/send", text: "Send USDC to any wallet address on Arc." },
+  { name: "Swap", d: PAGE_ICONS.swap, href: "/swap", text: "Swap USDC, EURC and cirBTC on Arc with a clear rate and minimum received." },
+  { name: "Bridge", d: PAGE_ICONS.bridge, href: "/bridge", text: "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP." },
+  { name: "Activity", d: PAGE_ICONS.activity, href: "/activity", text: "See everything your wallet has done on Arc, newest first." },
+];
 const Code = ({ children }: { children: ReactNode }) => <code className="rounded-md bg-white/[0.07] px-1.5 py-0.5 text-[13px] text-[#9fe0ff] [overflow-wrap:anywhere]">{children}</code>;
 
 /* ---------- the guides ---------- */
@@ -90,16 +94,7 @@ const SECTIONS: Sec[] = [
     blocks: [
       { t: "p", c: <>Arc is Circle’s USDC-native, EVM-compatible Layer 1. AlabaamaFi puts the things you do most on Arc into four clear pages, so you can move money without learning a new tool for each job.</> },
       { t: "h3", id: "what-you-can-do", c: "What you can do" },
-      {
-        t: "table",
-        head: ["Page", "What it does", "Open"],
-        rows: [
-          [<PageName key="s" d={PAGE_ICONS.send} name="Send" />, "Send USDC to any wallet address on Arc.", <L key="a" href="/send">Open Send</L>],
-          [<PageName key="w" d={PAGE_ICONS.swap} name="Swap" />, "Swap USDC, EURC and cirBTC on Arc with a clear rate and minimum received.", <L key="b" href="/swap">Open Swap</L>],
-          [<PageName key="b" d={PAGE_ICONS.bridge} name="Bridge" />, "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP.", <L key="c" href="/bridge">Open Bridge</L>],
-          [<PageName key="a" d={PAGE_ICONS.activity} name="Activity" />, "See everything your wallet has done on Arc, newest first.", <L key="d" href="/activity">Open Activity</L>],
-        ],
-      },
+      { t: "pages" },
       { t: "h3", id: "how-it-works", c: "How AlabaamaFi works" },
       {
         t: "ul",
@@ -670,34 +665,76 @@ function resolve(id: string): { sec: string; sub: string | null } | null {
   return host ? { sec: host.id, sub: id } : null;
 }
 
-/* ---------- tables: a real table on wider screens, stacked cards on phones (so words never break in two) ---------- */
+/* ---------- tables: a real table on every screen, compact on phones. Words are never split in two; a wide table scrolls sideways. ---------- */
 function TableView({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
+  return (
+    <div className="mt-5 overflow-x-auto rounded-2xl border border-white/[0.08]">
+      <table className="w-full border-collapse text-left text-[13px] sm:text-sm">
+        <thead className="bg-white/[0.04] text-[11px] uppercase tracking-[0.1em] text-slate-500 sm:text-xs sm:tracking-[0.12em]">
+          <tr>{head.map((h) => <th key={h} className="whitespace-nowrap px-3 py-2.5 font-semibold sm:px-4 sm:py-3">{h}</th>)}</tr>
+        </thead>
+        <tbody className="divide-y divide-white/[0.06]">
+          {rows.map((r, i) => (
+            <tr key={i}>{r.map((c, j) => <td key={j} className="break-normal px-3 py-3 align-top leading-6 text-slate-300 sm:px-4 sm:py-3.5">{c}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** The Overview table: the glowing icon is in the "Open" column and is a link to that page.
+    On phones it is a two-column table: the glowing icon (a link) and the description. */
+function PagesTable() {
   return (
     <>
       <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-white/[0.08] sm:block">
-        <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+        <table className="w-full border-collapse text-left text-sm">
           <thead className="bg-white/[0.04] text-xs uppercase tracking-[0.12em] text-slate-500">
-            <tr>{head.map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>)}</tr>
+            <tr>
+              <th className="whitespace-nowrap px-4 py-3 font-semibold">Page</th>
+              <th className="whitespace-nowrap px-4 py-3 font-semibold">What it does</th>
+              <th className="whitespace-nowrap px-4 py-3 font-semibold">Open</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.06]">
-            {rows.map((r, i) => (
-              <tr key={i}>{r.map((c, j) => <td key={j} className="break-normal px-4 py-3.5 align-top leading-6 text-slate-300">{c}</td>)}</tr>
+            {PAGES.map((p) => (
+              <tr key={p.name}>
+                <td className="px-4 py-4 align-middle font-semibold text-white">{p.name}</td>
+                <td className="px-4 py-4 align-middle leading-6 text-slate-300">{p.text}</td>
+                <td className="px-4 py-4 align-middle">
+                  <Link href={p.href} aria-label={`Open ${p.name}`} className="group inline-flex items-center gap-2.5 font-medium text-[#65caff] hover:text-white">
+                    <span className="transition duration-300 group-hover:scale-110"><GlowIcon d={p.d} /></span>
+                    <span className="whitespace-nowrap">Open {p.name}</span>
+                  </Link>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="mt-5 space-y-3 sm:hidden">
-        {rows.map((r, i) => (
-          <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-            <div className="text-[15px] font-semibold leading-6 text-white">{r[0]}</div>
-            {r.slice(1).map((c, j) => (
-              <div key={j} className="mt-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{head[j + 1]}</p>
-                <div className="mt-1 break-words text-sm leading-6 text-slate-300">{c}</div>
-              </div>
+
+      <div className="mt-5 overflow-hidden rounded-2xl border border-white/[0.08] sm:hidden">
+        <table className="w-full border-collapse text-left text-[13px]">
+          <thead className="bg-white/[0.04] text-[11px] uppercase tracking-[0.1em] text-slate-500">
+            <tr>
+              <th className="w-16 whitespace-nowrap px-3 py-2.5 text-center font-semibold">Open</th>
+              <th className="whitespace-nowrap px-3 py-2.5 font-semibold">What it does</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.06]">
+            {PAGES.map((p) => (
+              <tr key={p.name}>
+                <td className="px-3 py-3.5 text-center align-middle">
+                  <Link href={p.href} aria-label={`Open ${p.name}`} className="inline-flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95">
+                    <GlowIcon d={p.d} size={26} />
+                  </Link>
+                </td>
+                <td className="px-3 py-3.5 align-middle leading-6 text-slate-300">{p.text}</td>
+              </tr>
             ))}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
@@ -730,7 +767,7 @@ function BlockView({ b }: { b: Block }) {
         <ol className="mt-5 space-y-4">
           {b.items.map((t, i) => (
             <li key={i} className="flex gap-4 text-[15px] leading-7 text-slate-300">
-              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#2588ff]/30 bg-[#0d4fc5]/10 text-xs font-semibold text-[#62c8ff]">{i + 1}</span>
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/20 text-xs font-bold text-[#8fe3ff]" style={{ textShadow: "0 0 7px rgba(57,196,255,0.95), 0 0 16px rgba(22,136,245,0.75)" }}>{i + 1}</span>
               <span className="min-w-0">{t}</span>
             </li>
           ))}
@@ -749,6 +786,8 @@ function BlockView({ b }: { b: Block }) {
     }
     case "table":
       return <TableView head={b.head} rows={b.rows} />;
+    case "pages":
+      return <PagesTable />;
   }
 }
 
@@ -993,7 +1032,7 @@ export default function DocsPage() {
         {/* desktop: the way back to the main site (plain link with the home icon) */}
         <div className="mx-auto hidden h-11 max-w-[90rem] items-center border-t border-white/[0.06] px-5 md:flex lg:px-7">
           <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-            <Svg d={I.home} size={16} /> AlabaamaFi home
+            <Svg d={I.home} size={16} /> Home
           </Link>
         </div>
 
@@ -1049,7 +1088,7 @@ export default function DocsPage() {
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">Head back to AlabaamaFi, or ask the community if something is unclear.</p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition hover:brightness-110">
-                  <Svg d={I.home} size={16} sw={2} /> Back to AlabaamaFi
+                  <Svg d={I.home} size={16} sw={2} /> Back to Home
                 </Link>
                 <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-6 py-3 text-sm font-semibold text-white transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
                   <DiscordLogo size={16} /> Join Discord
@@ -1105,7 +1144,10 @@ export default function DocsPage() {
               </span>
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">{sideList(go)}</div>
+            <Link href="/" onClick={() => setDrawer(false)} className="mx-3 mt-3 flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+              <Svg d={I.home} size={16} /> Home
+            </Link>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">{sideList(go)}</div>
           </div>
         </div>
       )}
