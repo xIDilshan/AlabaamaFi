@@ -21,22 +21,18 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
-// Black space look for the mobile menu: near-black with tiny white stars, no blue.
-const SPACE_MENU_BG = [
-  "radial-gradient(1.5px 1.5px at 8% 22%, rgba(255,255,255,.85), transparent)",
-  "radial-gradient(1px 1px at 17% 64%, rgba(255,255,255,.6), transparent)",
-  "radial-gradient(1.5px 1.5px at 26% 12%, rgba(255,255,255,.75), transparent)",
-  "radial-gradient(1px 1px at 34% 48%, rgba(255,255,255,.55), transparent)",
-  "radial-gradient(1.5px 1.5px at 43% 80%, rgba(255,255,255,.75), transparent)",
-  "radial-gradient(1px 1px at 52% 30%, rgba(255,255,255,.6), transparent)",
-  "radial-gradient(1.5px 1.5px at 61% 70%, rgba(255,255,255,.85), transparent)",
-  "radial-gradient(1px 1px at 69% 16%, rgba(255,255,255,.55), transparent)",
-  "radial-gradient(1.5px 1.5px at 77% 54%, rgba(255,255,255,.75), transparent)",
-  "radial-gradient(1px 1px at 84% 86%, rgba(255,255,255,.6), transparent)",
-  "radial-gradient(1.5px 1.5px at 91% 38%, rgba(255,255,255,.85), transparent)",
-  "radial-gradient(1px 1px at 96% 72%, rgba(255,255,255,.55), transparent)",
-  "linear-gradient(180deg, #06070a 0%, #000000 100%)",
-].join(",");
+// extra links at the bottom of the mobile menu (Docs and FAQ are pages of this site, X is the AlabaamaFi account)
+const moreLinks = [
+  { href: "/docs", label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
+  { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
+];
+const X_URL = "https://x.com/Alabaama_Fi";
+
+const XLogo = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 const connectButton =
   "bg-gradient-to-r from-[#13b8ff] via-[#1688f5] to-[#263be8] text-white shadow-[0_8px_30px_rgba(19,145,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_12px_38px_rgba(19,145,255,0.32)] active:translate-y-0";
@@ -194,39 +190,33 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         <div className="md:hidden">
           <div className="relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
-            {/* LEFT */}
+            {/* LEFT: logo, then the menu button */}
 
-            <button
-              onClick={handleMenuToggle}
-              className="flex h-12 w-12 shrink-0 items-center justify-center text-white/80 hover:text-white"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-            >
-              <svg
-                width="36"
-                height="36"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
+            <div className="flex min-w-0 items-center gap-1">
+              <Link href="/" onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
+                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
+              </Link>
+
+              <button
+                onClick={handleMenuToggle}
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-white/80 hover:text-white"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileMenuOpen}
               >
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            </button>
-
-            {/* CENTER LOGO */}
-
-            <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
-              <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-7 w-7 shrink-0 object-contain" />
-
-              <div className="min-w-0">
-                <h1 className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
-                  Alabaama<span className="text-[#159fff]">Fi</span>
-                </h1>
-              </div>
-            </Link>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              </button>
+            </div>
 
             {/* RIGHT WALLET */}
 
@@ -254,12 +244,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
             aria-hidden="true"
           />
 
-          {/* MOBILE MENU: slides down from the top and covers the header */}
+          {/* MOBILE MENU: same card look as the network list on the Bridge page. Slides down from the top and covers the header. */}
 
           <div
-            className="fixed left-0 right-0 top-0 z-[80] overflow-hidden rounded-b-[32px] border-x border-b border-white/[0.08] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+            className="fixed left-0 right-0 top-0 z-[80] overflow-hidden rounded-b-[28px] border-x border-b border-white/[0.1] bg-[#080a0d] shadow-[0_25px_80px_rgba(0,0,0,0.65)]"
             style={{
-              backgroundImage: SPACE_MENU_BG,
               transform: mobileMenuOpen ? `translateY(${dragY}px)` : "translateY(-105%)",
               visibility: mobileMenuOpen ? "visible" : "hidden",
               transition: dragging
@@ -272,10 +261,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
             {/* top row: logo + name on one corner, connect button on the other */}
             <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
               <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
-                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-7 w-7 shrink-0 object-contain" />
-                <h1 className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
+                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
+                <span className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
                   Alabaama<span className="text-[#159fff]">Fi</span>
-                </h1>
+                </span>
               </Link>
 
               <button
@@ -296,7 +285,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </div>
 
             {/* sections */}
-            <nav className="grid gap-1 px-3 pb-2 pt-1 sm:px-5">
+            <p className="px-6 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/30 sm:px-8">Menu</p>
+            <nav className="grid gap-0.5 px-3 pb-3 sm:px-5">
               {navItems.map((item) => {
                 const active = isActive(item.href);
 
@@ -305,28 +295,61 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={item.href}
                     href={item.href}
                     onClick={closeMobileMenu}
-                    className={`group flex items-center gap-4 rounded-2xl px-3 py-3.5 transition-colors duration-200 ${
+                    className={`group flex items-center gap-3.5 rounded-2xl px-3 py-2.5 transition-colors duration-200 ${
                       active ? "bg-gradient-to-r from-[#159fff]/[0.16] via-[#159fff]/[0.05] to-transparent" : "hover:bg-white/[0.04]"
                     }`}
                   >
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors duration-200 ${
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 ${
                         active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
                       }`}
-                      style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" } : undefined}
+                      style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 14px rgba(22,136,245,0.7))" } : undefined}
                     >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d={item.icon} />
                       </svg>
                     </span>
 
-                    <span className={`text-base font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                    <span className={`text-sm font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
                       {item.label}
                     </span>
                   </Link>
                 );
               })}
             </nav>
+
+            {/* Docs, FAQ and X */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] px-4 pb-1 pt-4 sm:px-6">
+              {moreLinks.map((l) => {
+                const active = isActive(l.href);
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={closeMobileMenu}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold transition ${
+                      active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
+                    }`}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d={l.icon} />
+                    </svg>
+                    {l.label}
+                  </Link>
+                );
+              })}
+              <a
+                href={X_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={closeMobileMenu}
+                aria-label="AlabaamaFi on X"
+                title="AlabaamaFi on X"
+                className="ml-auto flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.045] text-white/75 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
+              >
+                <XLogo />
+              </a>
+            </div>
 
             {/* little pill: swipe up (or tap) to close */}
             <div
