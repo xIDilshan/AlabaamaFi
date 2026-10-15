@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import type { RobinhoodMode } from "@/components/LifiWidget";
 
 /*
-  Robinhood Chain routes, powered by LI.FI.
+  Robinhood Chain routes, powered by LI.FI (embedded LI.FI Widget).
   Save as: app/bridge/robinhood/page.tsx
   Covers: Robinhood Chain to Arc, Arc to Robinhood Chain, Robinhood Chain to other networks, other networks to Robinhood Chain.
 */
