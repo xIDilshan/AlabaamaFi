@@ -3,7 +3,8 @@
 /*
   LI.FI Widget for the Robinhood Chain routes.
   Save as: components/LifiWidget.tsx
-  Install: npm install @lifi/widget @tanstack/react-query @lifi/widget-provider-ethereum wagmi @wagmi/core
+  Install: npm install @lifi/widget @lifi/widget-provider-ethereum @tanstack/react-query
+  (wagmi and @wagmi/core are already in your project, so they are not listed again.)
   It is loaded only in the browser by app/bridge/robinhood/page.tsx.
 */
 
@@ -33,9 +34,10 @@ export default function LifiWidget({ mode }: { mode: RobinhoodMode }) {
         // Robinhood Chain is locked on one side, every other network LI.FI supports is open on the other side
         chains: mode === "to" ? { to: { allow: [ROBINHOOD_CHAIN_ID] } } : { from: { allow: [ROBINHOOD_CHAIN_ID] } },
         hiddenUI: ["appearance", "language"],
-        // use the connect button of your own Header
+        // The widget connects wallets itself, with its own list of LI.FI chains (so switching to Robinhood Chain just works).
+        // Without this it would reuse your site's wagmi config, which only knows the chains you listed there.
         walletConfig: {
-          onConnect: () => window.dispatchEvent(new Event("open-wallet-modal")),
+          forceInternalWalletManagement: true,
         },
         theme: {
           palette: {
