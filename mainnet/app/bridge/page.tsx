@@ -215,7 +215,7 @@ function SpaceBackground() {
   );
 }
 
-// The LI.FI widget is heavy and only works in the browser, so it is loaded on the client only (components/LifiWidget.tsx).
+// The LI.FI widget is heavy and only works in the browser, so it is loaded on the client only, and only when Robinhood Chain is picked (components/LifiWidget.tsx).
 const LifiWidget = dynamic(() => import("@/components/LifiWidget"), {
   ssr: false,
   loading: () => <div className="h-[520px] w-full animate-pulse rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03]" aria-label="Loading the bridge" />,
@@ -1346,6 +1346,10 @@ export default function BridgePage() {
                   <div className="mt-4">
                     <LifiWidget key={`${fromKey}-${toKey}`} from={fromView?.chainId} to={toView?.chainId} embedded />
                   </div>
+                  <p className="mt-3 text-center text-xs text-slate-500">
+                    Widget not working for this pair?{" "}
+                    <a href={`https://jumper.exchange/?fromChain=${fromView?.chainId}&toChain=${toView?.chainId}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">Open it in Jumper</a>
+                  </p>
                 </div>
               ) : (
               <>
