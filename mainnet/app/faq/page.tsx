@@ -38,6 +38,7 @@ const I = {
   chevron: "m9 6 6 6-6 6",
   down: "m6 9 6 6 6-6",
   book: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20",
+  home: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z",
 };
 
 /* ---------- topics ---------- */
@@ -120,30 +121,6 @@ const FAQ: Q[] = [
 ];
 
 /* ---------- pieces ---------- */
-function SpaceBackground() {
-  const { stars, dust } = useMemo(() => {
-    let seed = 41;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const r2 = (n: number) => Math.round(n * 100) / 100;
-    return {
-      stars: Array.from({ length: 120 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1 + rnd() * 1.8), d: r2(rnd() * 7), t: r2(3 + rnd() * 5) })),
-      dust: Array.from({ length: 20 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1.5 + rnd() * 2), d: r2(rnd() * 14), t: r2(14 + rnd() * 14) })),
-    };
-  }, []);
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
-      <div className="absolute left-1/2 top-[6%] h-[60vw] w-[60vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" />
-      {stars.map((s) => (
-        <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
-      ))}
-      {dust.map((p) => (
-        <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
-      ))}
-    </div>
-  );
-}
-
 function Item({ item, id, open, onToggle, showCat = false }: { item: Q; id: string; open: boolean; onToggle: () => void; showCat?: boolean }) {
   return (
     <div className={`rounded-2xl border transition-colors ${open ? "border-[#2588ff]/35 bg-white/[0.05]" : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.04]"}`}>
@@ -172,11 +149,42 @@ function Item({ item, id, open, onToggle, showCat = false }: { item: Q; id: stri
   );
 }
 
+/* ---------- footer ---------- */
+const FOOTER_COLS: { title: string; links: { label: string; href: string; ext?: boolean }[] }[] = [
+  {
+    title: "Product",
+    links: [
+      { label: "Send", href: "/send" },
+      { label: "Swap", href: "/swap" },
+      { label: "Bridge", href: "/bridge" },
+      { label: "Activity", href: "/activity" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Docs", href: "/docs" },
+      { label: "FAQ", href: "/faq" },
+      { label: "Terms of Service", href: "/docs#terms" },
+      { label: "Arc documentation", href: "https://docs.arc.io", ext: true },
+      { label: "Arc explorer", href: "https://explorer.arc.io", ext: true },
+    ],
+  },
+  {
+    title: "Community",
+    links: [
+      { label: "Discord", href: DISCORD_URL, ext: true },
+      { label: "X (@Alabaama_Fi)", href: X_URL, ext: true },
+    ],
+  },
+];
+
 /* ---------- page ---------- */
 export default function FaqPage() {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<Cat | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [focus, setFocus] = useState(false); // search box has focus (on phones the page behind is dimmed)
 
   const all = useMemo(() => FAQ.map((f, i) => ({ ...f, id: `q${i}` })), []);
   const searching = query.trim().length > 0;
@@ -199,51 +207,47 @@ export default function FaqPage() {
   };
   const toggle = (id: string) => setOpenId((cur) => (cur === id ? null : id));
 
-  const pillLink = "inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition";
+  const iconBtn = "flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white";
 
   return (
-    <div className={`${brandFont.className} relative min-h-screen bg-[#010205] text-white selection:bg-[#167cff]/30`}>
+    <div className={`${brandFont.className} min-h-screen overflow-x-hidden bg-[#05080f] text-white selection:bg-[#167cff]/30`}>
       <style>{`
-        @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.9}}
-        @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .8s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
 
-      <SpaceBackground />
-
-      {/* ================= HEADER (help-center style) ================= */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#010205]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
-          <button onClick={() => pick(null)} className="flex min-w-0 items-center gap-2.5 text-left" aria-label="AlabaamaFi Help Center home">
+      {/* ================= HEADER ================= */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
             <span className="hidden rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300 sm:inline">Help Center</span>
-          </button>
+          </Link>
 
-          <div className="ml-auto flex items-center gap-1.5">
-            <Link href="/docs" className={`${pillLink} text-slate-300 hover:bg-white/[0.07] hover:text-white`}>
-              <Svg d={I.book} size={16} />
-              <span className="hidden sm:inline">Docs</span>
-            </Link>
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={`${pillLink} border border-white/10 bg-white/[0.045] text-white hover:border-[#2f8bff]/40 hover:bg-white/[0.08]`} aria-label="Join the AlabaamaFi Discord">
-              <DiscordLogo size={16} />
-              <span className="hidden sm:inline">Discord</span>
-            </a>
-            <Link href="/" className={`${pillLink} bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white shadow-[0_8px_30px_rgba(30,120,255,0.25)] hover:brightness-110`}>
-              <Svg d={I.back} size={16} sw={2.2} />
-              <span className="hidden sm:inline">Back to AlabaamaFi</span>
-              <span className="sm:hidden">Home</span>
-            </Link>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Link href="/docs" className={iconBtn} aria-label="Docs" title="Docs"><Svg d={I.book} /></Link>
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on Discord" title="Discord"><DiscordLogo /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on X" title="X"><XLogo /></a>
           </div>
+        </div>
+
+        {/* the way back to the main site: a plain link with the home icon */}
+        <div className="mx-auto flex h-11 max-w-6xl items-center border-t border-white/[0.06] px-3 sm:px-5">
+          <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+            <Svg d={I.home} size={16} /> Home
+          </Link>
         </div>
       </header>
 
-      <main className="relative z-10">
+      {/* on phones the page behind the search is dimmed while you type */}
+      {focus && <div className="fixed inset-0 z-[60] bg-black/65 md:hidden" onClick={() => setFocus(false)} aria-hidden="true" />}
+
+      <main>
         {/* ================= HERO + SEARCH ================= */}
         <section className="px-4 pb-10 pt-12 text-center sm:px-6 sm:pb-14 sm:pt-16">
           <div className="fade-up mx-auto max-w-3xl">
@@ -252,31 +256,26 @@ export default function FaqPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[15px] leading-6 text-slate-400 sm:text-lg sm:leading-7">Answers about sending, swapping, bridging and staying safe on Arc.</p>
 
-            <label className="mx-auto mt-8 flex max-w-2xl items-center gap-3 rounded-full border border-white/[0.1] bg-[#050a16]/85 px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl transition focus-within:border-[#2588ff]/60">
-              <span className="shrink-0 text-slate-500"><Svg d={I.search} /></span>
-              <input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setOpenId(null);
-                }}
-                placeholder="Search for answers"
-                aria-label="Search for answers"
-                className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-slate-600"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} aria-label="Clear search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-sm text-slate-300 hover:text-white">×</button>
-              )}
-            </label>
-
-            {!searching && !cat && (
-              <div className="mx-auto mt-4 flex max-w-2xl flex-wrap justify-center gap-2 text-sm">
-                <span className="text-slate-500">Popular:</span>
-                {["slippage", "Fast transfer", "gas", "Robinhood", "seed phrase"].map((w) => (
-                  <button key={w} onClick={() => setQuery(w)} className="rounded-full bg-white/[0.06] px-3 py-1 text-slate-300 transition hover:bg-white/[0.11] hover:text-white">{w}</button>
-                ))}
-              </div>
-            )}
+            <div className="relative z-[70] mx-auto mt-8 max-w-2xl">
+              <label className={`flex items-center gap-3 rounded-full border bg-[#0a1018] px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition duration-200 ${focus ? "scale-[1.03] border-[#2588ff]/60 md:scale-100" : "border-white/[0.1]"} focus-within:border-[#2588ff]/60`}>
+                <span className="shrink-0 text-slate-500"><Svg d={I.search} /></span>
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setOpenId(null);
+                  }}
+                  onFocus={() => setFocus(true)}
+                  onBlur={() => setFocus(false)}
+                  placeholder="Search for answers"
+                  aria-label="Search for answers"
+                  className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-slate-600"
+                />
+                {query && (
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => setQuery("")} aria-label="Clear search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-sm text-slate-300 hover:text-white">×</button>
+                )}
+              </label>
+            </div>
           </div>
         </section>
 
@@ -305,9 +304,9 @@ export default function FaqPage() {
 
           {/* ================= A TOPIC ================= */}
           {!searching && cat && (
-            <section className="grid gap-8 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-12">
-              <aside className="lg:sticky lg:top-24 lg:self-start">
-                <ul className="flex gap-2 overflow-x-auto pb-2 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
+            <section className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-12">
+              <aside className="min-w-0 lg:sticky lg:top-32 lg:self-start">
+                <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 lg:pb-0">
                   {CATS.map((c) => (
                     <li key={c.id} className="shrink-0">
                       <button
@@ -344,19 +343,22 @@ export default function FaqPage() {
             <>
               <section>
                 <h2 className="mb-5 px-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2588ff]">Browse by topic</h2>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 min-[460px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
                   {CATS.map((c, i) => (
                     <button
                       key={c.id}
                       onClick={() => pick(c.id)}
-                      className="fade-up group flex h-full flex-col items-start rounded-[1.5rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-4 text-left transition duration-300 hover:-translate-y-1 hover:border-[#2588ff]/50 hover:shadow-[0_24px_70px_rgba(16,93,255,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-6"
+                      className="fade-up group flex h-full min-w-0 flex-col items-start rounded-[1.5rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-[#2588ff]/50 hover:shadow-[0_24px_70px_rgba(16,93,255,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-6"
                       style={{ "--delay": `${i * 50}ms` } as CSSProperties}
                     >
-                      <span className="text-[#62d4ff] transition duration-300 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" }}>
-                        <Svg d={c.icon} size={30} sw={1.6} />
+                      {/* icon and title on one line, then the description, then how many articles */}
+                      <span className="flex items-center gap-3">
+                        <span className="shrink-0 text-[#62d4ff] transition duration-300 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" }}>
+                          <Svg d={c.icon} size={26} sw={1.6} />
+                        </span>
+                        <span className="text-base font-semibold tracking-tight sm:text-lg">{c.id}</span>
                       </span>
-                      <span className="mt-4 text-base font-semibold tracking-tight sm:text-lg">{c.id}</span>
-                      <span className="mt-1 hidden text-sm leading-5 text-slate-400 sm:block">{c.blurb}</span>
+                      <span className="mt-3 text-sm leading-5 text-slate-400">{c.blurb}</span>
                       <span className="mt-3 text-xs font-medium text-slate-500">{count(c.id)} articles</span>
                     </button>
                   ))}
@@ -381,17 +383,17 @@ export default function FaqPage() {
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400 sm:text-base">Our community and the docs can help with the rest.</p>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
-              <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="group rounded-[1.5rem] border border-white/[0.08] bg-[#050a16]/80 p-5 text-center backdrop-blur-xl transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
+              <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
                 <span className="mx-auto flex h-11 w-11 items-center justify-center text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" }}><DiscordLogo size={28} /></span>
                 <p className="mt-3 text-base font-semibold">Join our Discord</p>
                 <p className="mt-1 text-sm leading-5 text-slate-400">Ask the community and the team.</p>
               </a>
-              <Link href="/docs" className="group rounded-[1.5rem] border border-white/[0.08] bg-[#050a16]/80 p-5 text-center backdrop-blur-xl transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
+              <Link href="/docs" className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
                 <span className="mx-auto flex h-11 w-11 items-center justify-center text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" }}><Svg d={I.book} size={28} sw={1.6} /></span>
                 <p className="mt-3 text-base font-semibold">Read the docs</p>
                 <p className="mt-1 text-sm leading-5 text-slate-400">Step-by-step guides for every page.</p>
               </Link>
-              <a href={X_URL} target="_blank" rel="noreferrer" className="group rounded-[1.5rem] border border-white/[0.08] bg-[#050a16]/80 p-5 text-center backdrop-blur-xl transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
+              <a href={X_URL} target="_blank" rel="noreferrer" className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
                 <span className="mx-auto flex h-11 w-11 items-center justify-center text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" }}><XLogo size={24} /></span>
                 <p className="mt-3 text-base font-semibold">Follow on X</p>
                 <p className="mt-1 text-sm leading-5 text-slate-400">News and updates from @Alabaama_Fi.</p>
@@ -399,17 +401,52 @@ export default function FaqPage() {
             </div>
             <p className="mx-auto mt-8 max-w-md text-center text-xs leading-5 text-slate-600">Nobody from AlabaamaFi will ever ask for your seed phrase or private key.</p>
           </section>
-
-          <div className="mt-14 flex flex-col items-center gap-3 border-t border-white/[0.06] pt-8 text-center text-xs text-slate-600 sm:flex-row sm:justify-between sm:text-left">
-            <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
-            <nav className="flex flex-wrap justify-center gap-5">
-              <Link href="/" className="hover:text-white">AlabaamaFi home</Link>
-              <Link href="/docs" className="hover:text-white">Docs</Link>
-              <Link href="/docs#terms" className="hover:text-white">Terms of Service</Link>
-            </nav>
-          </div>
         </div>
       </main>
+
+      {/* ================= FOOTER ================= */}
+      <footer className="border-t border-white/[0.07] bg-[#04060b]">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="grid gap-10 text-center sm:grid-cols-2 sm:text-left lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Link href="/" className="inline-flex items-center gap-2.5" aria-label="AlabaamaFi home">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/alabaamafi-logo.png" alt="" className="h-9 w-9 object-contain" />
+                <span className="text-xl font-bold tracking-tight">
+                  Alabaama<span className="text-[#159fff]">Fi</span>
+                </span>
+              </Link>
+              <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-slate-400 sm:mx-0">A simple interface for Arc. Send, swap, bridge and follow your activity from one place.</p>
+              <div className="mt-5 flex justify-center gap-2 sm:justify-start">
+                <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
+                <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
+              </div>
+            </div>
+
+            {FOOTER_COLS.map((col) => (
+              <nav key={col.title} aria-label={col.title}>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{col.title}</p>
+                <ul className="mt-4 space-y-3">
+                  {col.links.map((l) => (
+                    <li key={l.label}>
+                      {l.ext ? (
+                        <a href={l.href} target="_blank" rel="noreferrer" className="text-sm text-slate-300 transition hover:text-white">{l.label}</a>
+                      ) : (
+                        <Link href={l.href} className="text-sm text-slate-300 transition hover:text-white">{l.label}</Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
+
+          <div className="mt-12 flex flex-col items-center gap-3 border-t border-white/[0.07] pt-6 text-center text-xs leading-5 text-slate-500 sm:flex-row sm:justify-between sm:text-left">
+            <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+            <p className="max-w-md">Not financial advice. Never share your seed phrase or private key.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
