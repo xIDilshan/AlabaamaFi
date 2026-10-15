@@ -458,7 +458,7 @@ export default function SendPage() {
                         {ready && balance !== null ? (
                           <>
                             {formatUnits6(balance)}
-                            <UsdcLogo size={16} />
+                            <UsdcLogo size={20} />
                           </>
                         ) : (
                           "—"
