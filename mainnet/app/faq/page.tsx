@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
@@ -15,6 +15,8 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
+// Change this to your real GitHub page (the footer GitHub icon links here).
+const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
 
 /* ---------- icons ---------- */
 const Svg = ({ d, size = 20, sw = 1.8 }: { d: string; size?: number; sw?: number }) => (
@@ -32,7 +34,15 @@ const DiscordLogo = ({ size = 18 }: { size?: number }) => (
     <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
   </svg>
 );
+const GitHubLogo = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12Z" />
+  </svg>
+);
 const I = {
+  menu: "M4 7h16M4 12h16M4 17h16",
+  close: "M6 6l12 12M18 6 6 18",
+  grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35",
   back: "M19 12H5M12 19l-7-7 7-7",
   chevron: "m9 6 6 6-6 6",
@@ -149,42 +159,13 @@ function Item({ item, id, open, onToggle, showCat = false }: { item: Q; id: stri
   );
 }
 
-/* ---------- footer ---------- */
-const FOOTER_COLS: { title: string; links: { label: string; href: string; ext?: boolean }[] }[] = [
-  {
-    title: "Product",
-    links: [
-      { label: "Send", href: "/send" },
-      { label: "Swap", href: "/swap" },
-      { label: "Bridge", href: "/bridge" },
-      { label: "Activity", href: "/activity" },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { label: "Docs", href: "/docs" },
-      { label: "FAQ", href: "/faq" },
-      { label: "Terms of Service", href: "/docs#terms" },
-      { label: "Arc documentation", href: "https://docs.arc.io", ext: true },
-      { label: "Arc explorer", href: "https://explorer.arc.io", ext: true },
-    ],
-  },
-  {
-    title: "Community",
-    links: [
-      { label: "Discord", href: DISCORD_URL, ext: true },
-      { label: "X (@Alabaama_Fi)", href: X_URL, ext: true },
-    ],
-  },
-];
-
 /* ---------- page ---------- */
 export default function FaqPage() {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<Cat | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [focus, setFocus] = useState(false); // search box has focus (on phones the page behind is dimmed)
+  const [menu, setMenu] = useState(false); // phone topics menu
 
   const all = useMemo(() => FAQ.map((f, i) => ({ ...f, id: `q${i}` })), []);
   const searching = query.trim().length > 0;
@@ -209,10 +190,53 @@ export default function FaqPage() {
 
   const iconBtn = "flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white";
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => {
+    document.body.style.overflow = menu ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menu]);
+
+  /* the list of topics: the left column on desktop, and the phone menu */
+  const topicList = (onPick: (c: Cat | null) => void) => (
+    <nav aria-label="Topics">
+      <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Topics</p>
+      <ul className="space-y-0.5">
+        <li>
+          <button onClick={() => onPick(null)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] font-medium text-slate-400 transition hover:bg-white/[0.04] hover:text-white">
+            <Svg d={I.grid} size={18} />
+            <span className="flex-1">All topics</span>
+          </button>
+        </li>
+        {CATS.map((c) => (
+          <li key={c.id}>
+            <button
+              onClick={() => onPick(c.id)}
+              aria-current={cat === c.id ? "true" : undefined}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] font-medium transition ${cat === c.id ? "bg-[#159fff]/[0.14] text-[#7dd3fc]" : "text-slate-400 hover:bg-white/[0.04] hover:text-white"}`}
+            >
+              <Svg d={c.icon} size={18} />
+              <span className="flex-1">{c.id}</span>
+              <span className="text-xs text-slate-600">{count(c.id)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+
   return (
-    <div className={`${brandFont.className} min-h-screen overflow-x-hidden bg-[#05080f] text-white selection:bg-[#167cff]/30`}>
+    <div className={`${brandFont.className} flex min-h-screen flex-col overflow-x-hidden bg-[#05080f] text-white selection:bg-[#167cff]/30`}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+        @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
         .fade-up{opacity:0;animation:fadeUp .8s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
@@ -229,17 +253,11 @@ export default function FaqPage() {
             <span className="hidden rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300 sm:inline">Help Center</span>
           </Link>
 
-          <div className="flex shrink-0 items-center gap-0.5">
-            <Link href="/docs" className={iconBtn} aria-label="Docs" title="Docs"><Svg d={I.book} /></Link>
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on Discord" title="Discord"><DiscordLogo /></a>
-            <a href={X_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on X" title="X"><XLogo /></a>
-          </div>
-        </div>
-
-        {/* the way back to the main site: a plain link with the home icon */}
-        <div className="mx-auto flex h-11 max-w-6xl items-center border-t border-white/[0.06] px-3 sm:px-5">
-          <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-            <Svg d={I.home} size={16} /> Home
+          <Link
+            href="/"
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-4 text-sm font-semibold text-white shadow-[0_8px_30px_rgba(30,120,255,0.25)] transition hover:brightness-110"
+          >
+            <Svg d={I.home} size={16} sw={2} /> Home
           </Link>
         </div>
       </header>
@@ -247,7 +265,7 @@ export default function FaqPage() {
       {/* on phones the page behind the search is dimmed while you type */}
       {focus && <div className="fixed inset-0 z-[60] bg-black/65 md:hidden" onClick={() => setFocus(false)} aria-hidden="true" />}
 
-      <main>
+      <main className="flex-1">
         {/* ================= HERO + SEARCH ================= */}
         <section className="px-4 pb-10 pt-12 text-center sm:px-6 sm:pb-14 sm:pt-16">
           <div className="fade-up mx-auto max-w-3xl">
@@ -305,27 +323,16 @@ export default function FaqPage() {
           {/* ================= A TOPIC ================= */}
           {!searching && cat && (
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-12">
-              <aside className="min-w-0 lg:sticky lg:top-32 lg:self-start">
-                <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 lg:pb-0">
-                  {CATS.map((c) => (
-                    <li key={c.id} className="shrink-0">
-                      <button
-                        onClick={() => pick(c.id)}
-                        className={`flex w-full items-center gap-2.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition lg:rounded-xl lg:px-3 lg:py-2.5 ${cat === c.id ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white lg:bg-none lg:bg-[#159fff]/[0.14] lg:text-[#7dd3fc]" : "bg-white/[0.05] text-slate-400 hover:text-white lg:bg-transparent lg:hover:bg-white/[0.04]"}`}
-                      >
-                        <span className="hidden lg:block"><Svg d={c.icon} size={17} /></span>
-                        {c.id}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
+              <aside className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:self-start">{topicList(pick)}</aside>
 
               <div className="min-w-0">
-                <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
+                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <button onClick={() => setMenu(true)} aria-label="Open the topics menu" aria-expanded={menu} className={`${iconBtn} -ml-2.5 shrink-0 lg:hidden`}>
+                    <Svg d={I.menu} />
+                  </button>
                   <button onClick={() => pick(null)} className="font-medium text-[#65caff] hover:text-white">Help Center</button>
                   <Svg d={I.chevron} size={14} />
-                  <span className="text-slate-300">{cat}</span>
+                  <span className="truncate text-slate-300">{cat}</span>
                 </nav>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{cat}</h2>
                 <p className="mt-2 text-slate-400">{CATS.find((c) => c.id === cat)?.blurb}</p>
@@ -404,47 +411,42 @@ export default function FaqPage() {
         </div>
       </main>
 
+      {/* ================= PHONE TOPICS MENU ================= */}
+      {menu && (
+        <div className="fixed inset-0 z-[90] lg:hidden" role="dialog" aria-modal="true" aria-label="Help Center topics">
+          <div className="absolute inset-0 bg-black/65" onClick={() => setMenu(false)} />
+          <div className="absolute inset-y-0 left-0 flex w-[86%] max-w-sm flex-col border-r border-white/[0.1] bg-[#080a0d] shadow-[0_25px_80px_rgba(0,0,0,0.65)]" style={{ animation: "drawerIn .3s cubic-bezier(.2,.8,.2,1) both" }}>
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
+              <span className="flex items-center gap-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
+                <span className="text-base font-bold tracking-tight">Alabaama<span className="text-[#159fff]">Fi</span> <span className="font-medium text-slate-500">Help</span></span>
+              </span>
+              <button onClick={() => setMenu(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+              {topicList((c) => {
+                pick(c);
+                setMenu(false);
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= FOOTER ================= */}
       <footer className="border-t border-white/[0.07] bg-[#04060b]">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="grid gap-10 text-center sm:grid-cols-2 sm:text-left lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <Link href="/" className="inline-flex items-center gap-2.5" aria-label="AlabaamaFi home">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/alabaamafi-logo.png" alt="" className="h-9 w-9 object-contain" />
-                <span className="text-xl font-bold tracking-tight">
-                  Alabaama<span className="text-[#159fff]">Fi</span>
-                </span>
-              </Link>
-              <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-slate-400 sm:mx-0">A simple interface for Arc. Send, swap, bridge and follow your activity from one place.</p>
-              <div className="mt-5 flex justify-center gap-2 sm:justify-start">
-                <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
-                <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
-              </div>
-            </div>
-
-            {FOOTER_COLS.map((col) => (
-              <nav key={col.title} aria-label={col.title}>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{col.title}</p>
-                <ul className="mt-4 space-y-3">
-                  {col.links.map((l) => (
-                    <li key={l.label}>
-                      {l.ext ? (
-                        <a href={l.href} target="_blank" rel="noreferrer" className="text-sm text-slate-300 transition hover:text-white">{l.label}</a>
-                      ) : (
-                        <Link href={l.href} className="text-sm text-slate-300 transition hover:text-white">{l.label}</Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-col items-center gap-3 border-t border-white/[0.07] pt-6 text-center text-xs leading-5 text-slate-500 sm:flex-row sm:justify-between sm:text-left">
-            <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
-            <p className="max-w-md">Not financial advice. Never share your seed phrase or private key.</p>
-          </div>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-6 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left">
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi</p>
+          <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            <Link href="/docs" className="text-sm text-slate-300 transition hover:text-white">Docs</Link>
+            <Link href="/faq" className="text-sm text-slate-300 transition hover:text-white">FAQ</Link>
+            <span className="flex items-center gap-1">
+              <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><DiscordLogo /></a>
+              <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><XLogo /></a>
+              <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><GitHubLogo /></a>
+            </span>
+          </nav>
         </div>
       </footer>
     </div>
