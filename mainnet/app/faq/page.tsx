@@ -439,23 +439,26 @@ export default function FaqPage() {
       )}
 
       {/* ================= FOOTER ================= */}
-      <footer className="border-t border-white/[0.07] bg-[#04060b]">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          {/* social icons, with the copyright text under them */}
-          <div className="flex items-center gap-2">
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
-            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><GitHubLogo /></a>
+      <footer className="relative border-t border-white/[0.07] bg-[#04060b]">
+        {/* a soft glowing line along the top edge */}
+        <div aria-hidden className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[#2588ff]/60 to-transparent" />
+
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-9 sm:px-6">
+          {/* one rounded bar: the page links, a divider, then the social icons */}
+          <div className="flex max-w-full items-center rounded-full border border-white/[0.1] bg-white/[0.035] p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+            <nav aria-label="Footer" className="flex items-center">
+              <Link href="/docs" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white">Docs</Link>
+              <Link href="/faq" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white">FAQ</Link>
+            </nav>
+            <span aria-hidden className="mx-2 h-5 w-px bg-white/[0.14]" />
+            <div className="flex items-center">
+              <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={17} /></a>
+              <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={15} /></a>
+              <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={17} /></a>
+            </div>
           </div>
 
-          {/* the text on the left, Docs and FAQ on the other side, on the same line as the text */}
-          <div className="mt-5 flex items-start justify-between gap-6">
-            <p className="min-w-0 text-xs leading-5 text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
-            <nav aria-label="Footer" className="flex shrink-0 items-start gap-5 sm:gap-7">
-              <Link href="/docs" className="text-xs font-medium leading-5 text-slate-300 transition hover:text-white sm:text-sm">Docs</Link>
-              <Link href="/faq" className="text-xs font-medium leading-5 text-slate-300 transition hover:text-white sm:text-sm">FAQ</Link>
-            </nav>
-          </div>
+          <p className="text-center text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
         </div>
       </footer>
     </div>
