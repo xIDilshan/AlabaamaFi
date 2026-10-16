@@ -99,7 +99,7 @@ const FAQ: Q[] = [
   { cat: "Swap", q: "Where do I find my swap history?", a: "The History icon on the Swap card lists swaps made on this device. For everything your wallet has done on Arc, use the Activity page." },
 
   /* ---- Bridge ---- */
-  { cat: "Bridge", q: "Which networks can I bridge between?", a: "The ones on bridge.usdc.com that work with an EVM wallet: Arc, Ethereum, Base, Arbitrum, OP Mainnet, Polygon, Avalanche, Unichain, Linea, Codex, HyperEVM, Ink, Monad, Plume, Sei, Sonic, World Chain and XDC. You can bridge from Arc, to Arc, or between two other networks.", popular: true, more: { label: "Read the Bridge guide", href: "/docs#bridge" } },
+  { cat: "Bridge", q: "Which networks can I bridge between?", a: "The ones on bridge.usdc.com that work with an EVM wallet: Arc, Ethereum, Base, Arbitrum, OP Mainnet, Polygon, Avalanche, Unichain, Linea, Codex, HyperEVM, Ink, Monad, Plume, Sei, Sonic, World Chain and XDC. You can bridge from Arc, to Arc, or between two other networks. Robinhood Chain is also available, through LI.FI.", popular: true, more: { label: "Read the Bridge guide", href: "/docs#bridge" } },
   { cat: "Bridge", q: "How does the bridge work?", a: "It uses Circle’s CCTP. Your USDC is burned on the first network and the same amount of native USDC is minted on the second one. It is not a wrapped token." },
   { cat: "Bridge", q: "What is Fast transfer?", a: "Fast transfer, the lightning-bolt icon, delivers your USDC in seconds instead of waiting about 15 minutes for the first network to finalize. It adds a small fee, taken from what you receive. It exists only on some source networks. From Arc, Avalanche and Polygon the standard transfer is already fast.", more: { label: "Fast or Standard", href: "/docs#bridge-fast" } },
   { cat: "Bridge", q: "How long does a bridge take?", a: "With Fast, about 8 seconds from most networks and about 20 seconds from Ethereum. Standard takes about 15 to 19 minutes from Ethereum, Base, Arbitrum, OP Mainnet and Unichain, about 8 seconds from Avalanche and Polygon, about 1 second from Arc, and hours from Linea. The quote shows the time for your route.", popular: true },
@@ -109,6 +109,13 @@ const FAQ: Q[] = [
   { cat: "Bridge", q: "Can I send the bridged USDC to a different address?", a: "Yes. Turn on Send to a different address, enter the address on the receiving network and tick the box that confirms it is correct. USDC sent to a wrong address cannot be recovered." },
   { cat: "Bridge", q: "Why do I need ETH (or another coin) to bridge?", a: "When you bridge from another network, you pay its gas in that network’s coin, such as ETH, POL or AVAX. The page warns you if you have none. From Arc, gas is paid in USDC." },
   { cat: "Bridge", q: "How do I bridge to or from Robinhood Chain?", a: "Pick Robinhood Chain as one of the two networks. Circle’s bridge does not support it, so the page switches to LI.FI, a third-party bridge aggregator. USDC sent there often arrives as USDG, so check the token in the quote, and start with a small amount.", more: { label: "Robinhood Chain routes", href: "/docs#robinhood" } },
+  { cat: "Bridge", q: "Why does Robinhood Chain use a different bridge?", a: "Circle’s USDC bridge only works with networks that Circle has set up for its burn-and-mint transfers, and Robinhood Chain is not one of them. So when you pick Robinhood Chain, AlabaamaFi uses LI.FI, a bridge aggregator, for that route. Every other route still uses Circle’s bridge." },
+  { cat: "Bridge", q: "What is LI.FI?", a: "LI.FI is a third-party service that finds a route between two networks and gets your funds there through bridges and relayers. AlabaamaFi shows its widget on the Bridge page for Robinhood Chain routes only. LI.FI shows its own quote, fees and time, and you confirm in your wallet." },
+  { cat: "Bridge", q: "Which Robinhood Chain routes can I use?", a: "Pick Robinhood Chain on either side of the Bridge page: Robinhood Chain to Arc, Arc to Robinhood Chain, or Robinhood Chain to and from another network. The widget shows only the routes LI.FI supports.", more: { label: "Robinhood Chain routes", href: "/docs#robinhood" } },
+  { cat: "Bridge", q: "Why did my USDC arrive as USDG on Robinhood Chain?", a: "USDC sent to Robinhood Chain often arrives as USDG, a different stablecoin issued by Paxos. Check the token you will receive in the quote before you confirm. If you need USDC again later, use a route that ends in USDC." },
+  { cat: "Bridge", q: "Do I need a special coin for gas on Robinhood Chain?", a: "Robinhood Chain uses ETH for gas. If you bridge out of it, keep a little ETH there for the fee. When you bridge into it, the quote shows what you pay on the source network." },
+  { cat: "Bridge", q: "Is a Robinhood Chain route as safe as Circle’s bridge?", a: "It works differently. Circle’s bridge burns and mints native USDC. LI.FI routes use bridges and relayers that deliver your funds, so each has its own risks. Read the quote, the fees and the time, start with a small amount, and only use the site at app.alabaamafi.xyz." },
+  { cat: "Bridge", q: "The LI.FI widget does not work for my pair. What can I do?", a: "Try a different token or amount, or switch the two networks. If a pair still fails, use the “Open it in Jumper” link under the widget, which opens LI.FI’s own app with both networks chosen, or ask in our Discord." },
 
   /* ---- Activity ---- */
   { cat: "Activity", q: "What does the Activity page show?", a: "Everything your connected wallet has done on Arc mainnet, newest first: sends, receives, swaps and bridges. It loads older history as you scroll until the very first transaction.", more: { label: "Read the Activity guide", href: "/docs#activity" } },
@@ -253,11 +260,8 @@ export default function FaqPage() {
             <span className="hidden rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300 sm:inline">Help Center</span>
           </Link>
 
-          <Link
-            href="/"
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-4 text-sm font-semibold text-white shadow-[0_8px_30px_rgba(30,120,255,0.25)] transition hover:brightness-110"
-          >
-            <Svg d={I.home} size={16} sw={2} /> Home
+          <Link href="/" className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+            <Svg d={I.home} size={17} /> Home
           </Link>
         </div>
       </header>
@@ -436,17 +440,17 @@ export default function FaqPage() {
 
       {/* ================= FOOTER ================= */}
       <footer className="border-t border-white/[0.07] bg-[#04060b]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-6 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi</p>
-          <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-            <Link href="/docs" className="text-sm text-slate-300 transition hover:text-white">Docs</Link>
-            <Link href="/faq" className="text-sm text-slate-300 transition hover:text-white">FAQ</Link>
-            <span className="flex items-center gap-1">
-              <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><DiscordLogo /></a>
-              <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><XLogo /></a>
-              <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><GitHubLogo /></a>
-            </span>
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 py-10 text-center sm:px-6">
+          <nav aria-label="Footer" className="flex items-center gap-8">
+            <Link href="/docs" className="text-sm font-medium text-slate-300 transition hover:text-white">Docs</Link>
+            <Link href="/faq" className="text-sm font-medium text-slate-300 transition hover:text-white">FAQ</Link>
           </nav>
+          <div className="flex items-center gap-3">
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><GitHubLogo /></a>
+          </div>
+          <p className="w-full border-t border-white/[0.06] pt-6 text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
         </div>
       </footer>
     </div>
