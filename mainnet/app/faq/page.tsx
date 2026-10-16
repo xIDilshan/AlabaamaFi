@@ -441,21 +441,21 @@ export default function FaqPage() {
       {/* ================= FOOTER ================= */}
       <footer className="border-t border-white/[0.07] bg-[#04060b]">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          {/* social links on one side, Docs and FAQ on the other */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
-              <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
-              <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><GitHubLogo /></a>
-            </div>
-            <nav aria-label="Footer" className="flex items-center gap-6 sm:gap-8">
-              <Link href="/docs" className="text-sm font-medium text-slate-300 transition hover:text-white">Docs</Link>
-              <Link href="/faq" className="text-sm font-medium text-slate-300 transition hover:text-white">FAQ</Link>
-            </nav>
+          {/* social icons, with the copyright text under them */}
+          <div className="flex items-center gap-2">
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><DiscordLogo /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><XLogo /></a>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"><GitHubLogo /></a>
           </div>
 
-          {/* copyright below */}
-          <p className="mt-7 border-t border-white/[0.06] pt-6 text-center text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+          {/* the text on the left, Docs and FAQ on the other side, on the same line as the text */}
+          <div className="mt-5 flex items-start justify-between gap-6">
+            <p className="min-w-0 text-xs leading-5 text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+            <nav aria-label="Footer" className="flex shrink-0 items-start gap-5 sm:gap-7">
+              <Link href="/docs" className="text-xs font-medium leading-5 text-slate-300 transition hover:text-white sm:text-sm">Docs</Link>
+              <Link href="/faq" className="text-xs font-medium leading-5 text-slate-300 transition hover:text-white sm:text-sm">FAQ</Link>
+            </nav>
+          </div>
         </div>
       </footer>
     </div>
