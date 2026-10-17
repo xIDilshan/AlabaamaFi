@@ -443,22 +443,22 @@ export default function FaqPage() {
         {/* a soft glowing line along the top edge */}
         <div aria-hidden className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[#2588ff]/60 to-transparent" />
 
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-9 sm:px-6">
-          {/* one rounded bar: the page links, a divider, then the social icons */}
-          <div className="flex max-w-full items-center rounded-full border border-white/[0.1] bg-white/[0.035] p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
-            <nav aria-label="Footer" className="flex items-center">
-              <Link href="/docs" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white">Docs</Link>
-              <Link href="/faq" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white">FAQ</Link>
-            </nav>
-            <span aria-hidden className="mx-2 h-5 w-px bg-white/[0.14]" />
-            <div className="flex items-center">
-              <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={17} /></a>
-              <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={15} /></a>
-              <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={17} /></a>
-            </div>
+        {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
+            Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6">
+          <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+
+          <div className="order-1 flex items-center gap-1 sm:order-2">
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={18} /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={16} /></a>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={18} /></a>
           </div>
 
-          <p className="text-center text-xs text-slate-500">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+          <nav aria-label="Footer" className="order-2 flex items-center sm:order-3 sm:justify-self-end">
+            <Link href="/docs" className="text-xs font-medium text-slate-300 transition hover:text-white">Docs</Link>
+            <span aria-hidden className="mx-3 h-3 w-px bg-white/25" />
+            <Link href="/faq" className="text-xs font-medium text-slate-300 transition hover:text-white">FAQ</Link>
+          </nav>
         </div>
       </footer>
     </div>
