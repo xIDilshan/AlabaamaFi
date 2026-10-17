@@ -225,7 +225,7 @@ function Row({ e }: { e: Ev }) {
   const [copied, setCopied] = useState(false);
   const outs = e.legs.filter((l) => l.dir === "out");
   const ins = e.legs.filter((l) => l.dir === "in");
-  const sub = subtitleOf(e);
+  const who = subtitleOf(e);
   const copyHash = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
     ev.preventDefault(); // the row is a link to the explorer; copying must not open it
     ev.stopPropagation();
@@ -238,19 +238,22 @@ function Row({ e }: { e: Ev }) {
     }
   };
   return (
-    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group flex items-center gap-3.5 rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
+    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group flex items-start gap-3.5 rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${e.status === "error" ? "text-red-300" : TINT[e.type]}`}>
         <Svg d={ICONS[e.type]} />
       </span>
+
+      {/* left: what happened, with whom, and the transaction hash */}
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="truncate text-[15px] font-semibold">{titleOf(e)}</span>
           {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
           {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
         </span>
-        <span className="mt-0.5 block truncate text-xs text-slate-500">{[sub, e.t ? timeOf(e.t) : ""].filter(Boolean).join(" · ")}</span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-          <span className="tabular-nums">Txn {e.hash.slice(0, 10)}…{e.hash.slice(-6)}</span>
+        {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
+        <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+          <span>Tx hash</span>
+          <span className="tabular-nums text-slate-400">{e.hash.slice(0, 8)}…{e.hash.slice(-6)}</span>
           <span
             role="button"
             tabIndex={0}
@@ -266,6 +269,8 @@ function Row({ e }: { e: Ev }) {
           </span>
         </span>
       </span>
+
+      {/* right: the amounts, then the time, then the fee */}
       <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
         {[...ins, ...outs].map((l, i) => (
           <span key={i} className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums ${l.dir === "in" ? "text-emerald-300" : "text-slate-100"}`}>
@@ -274,6 +279,7 @@ function Row({ e }: { e: Ev }) {
             <TokenDot symbol={l.symbol} />
           </span>
         ))}
+        {e.t ? <span className="mt-1 text-xs tabular-nums text-slate-400">{timeOf(e.t)}</span> : null}
         {e.fee && <span className="text-[11px] tabular-nums text-slate-600">Fee {fmtAmt(e.fee)} USDC</span>}
       </span>
     </a>
@@ -336,13 +342,17 @@ const I = {
 
 /* ---------- page ---------- */
 export default function ActivityPage() {
-  const { address, isConnected, connector } = useAccount();
+  const { address, isConnected } = useAccount();
   const account = isConnected && address ? address : null;
 
   /* any wallet can be looked up; otherwise the connected wallet is shown */
   const [lookup, setLookup] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState("");
+  useEffect(() => {
+    setInput("");
+    setInputError("");
+  }, [account]);
   const target = lookup ?? account;
   const me = target ? target.toLowerCase() : "";
   const viewingOther = !!lookup && lookup.toLowerCase() !== (account ?? "").toLowerCase();
@@ -369,6 +379,7 @@ export default function ActivityPage() {
   const [infoFailed, setInfoFailed] = useState(false);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const merge = (j: { txs?: Tx[]; transfers?: Tr[] }) => {
     for (const x of j.txs ?? []) txMap.current.set(x.hash, x);
@@ -561,8 +572,8 @@ export default function ActivityPage() {
   /* ----- actions ----- */
   const submitLookup = (raw: string) => {
     const v = raw.trim();
-    if (!v) return setInputError("Paste a wallet address to look it up.");
-    if (!ADDR_RE.test(v)) return setInputError("That doesn’t look like a wallet address. It should start with 0x and have 42 characters.");
+    if (!v) return setInputError("Paste a wallet address first.");
+    if (!ADDR_RE.test(v)) return setInputError("Invalid wallet address.");
     setInputError("");
     setInput("");
     setLookup(v);
@@ -579,6 +590,23 @@ export default function ActivityPage() {
     }
   };
   const connect = () => window.dispatchEvent(new Event("open-wallet-modal"));
+  /** Back to the first screen (the search box and the Connect wallet button). */
+  const backToStart = () => {
+    setLookup(null);
+    setInput("");
+    setInputError("");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const refreshCard = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    const t0 = Date.now();
+    await Promise.all([loadInfo(), loadNewest(false)]);
+    const wait = 900 - (Date.now() - t0);
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    setRefreshing(false);
+  };
+  const loadingInfo = (info === null && !infoFailed) || refreshing;
 
   /* the search box (used on the landing screen and at the top of the dashboard) */
   const searchBox = (big: boolean) => (
@@ -664,13 +692,13 @@ export default function ActivityPage() {
       <div className="relative z-10">
         <Header />
 
-        <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
+        <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 ${!target ? "min-[900px]:[zoom:0.9]" : ""} ${CONTAINER}`}>
           {!target ? (
             /* ================= BEFORE A WALLET IS CONNECTED ================= */
             <>
               <div className="fade-up mx-auto max-w-2xl text-center">
                 <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
-                  <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity Checker</span>
+                  Activity <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Checker</span>
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">See the portfolio and transactions of any wallet on Arc.</p>
               </div>
@@ -692,14 +720,14 @@ export default function ActivityPage() {
             </>
           ) : (
             /* ================= A WALLET IS SHOWN ================= */
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto w-full max-w-[90rem]">
               {/* who is shown, and the search */}
               <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 backdrop-blur-xl sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
                     <div className="min-w-0">
-                      <p className="text-xs text-slate-500">{viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
+                      <p className="text-xs text-slate-500">{!account ? "Wallet address" : viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
                       <p className="mt-0.5 truncate text-lg font-bold tracking-tight sm:text-xl" title={target}>{short(target)}</p>
                     </div>
                   </div>
@@ -711,19 +739,13 @@ export default function ActivityPage() {
                       <Svg d={I.link} size={14} /> Explorer
                     </a>
                     {!account && lookup && (
-                      <button onClick={connect} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
+                      <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
                         <Svg d={I.wallet} size={15} /> Connect wallet
                       </button>
                     )}
                     {account && viewingOther && (
-                      <button onClick={() => { setLookup(null); setInput(""); setInputError(""); }} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
-                        {connector?.icon ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={connector.icon} alt="" className="h-[18px] w-[18px] rounded-[5px] bg-white/90 object-contain p-[1px]" />
-                        ) : (
-                          <Svg d={I.wallet} size={15} />
-                        )}
-                        My wallet
+                      <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
+                        <Svg d={I.wallet} size={15} /> My wallet
                       </button>
                     )}
                   </div>
@@ -731,99 +753,103 @@ export default function ActivityPage() {
                 <div className="mt-4">{searchBox(false)}</div>
               </div>
 
-              {/* portfolio + counts */}
-              <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6 lg:col-span-2" style={{ "--delay": "100ms" } as CSSProperties}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Portfolio</p>
-                      <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
-                        {info === null && !infoFailed ? <span className="inline-block h-9 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-                    </div>
-                    <button onClick={() => { loadInfo(); loadNewest(false); }} aria-label="Refresh" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><Svg d={I.refresh} /></button>
-                  </div>
-
-                  {/* how the value is split */}
-                  <div className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
-                    {haveUsd && totalUsd > 0 && rows.map((r) => (r.usd && r.usd > 0 ? <span key={r.sym} style={{ width: `${Math.max((r.usd / totalUsd) * 100, 2)}%`, background: r.color }} /> : null))}
-                  </div>
-
-                  <ul className="mt-4 divide-y divide-white/[0.06]">
-                    {rows.map((r) => (
-                      <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
-                        <TokenDot symbol={r.sym} size={38} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <span className="text-[15px] font-semibold">{r.sym}</span>
-                            <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
-                          </span>
-                          <span className="block truncate text-xs text-slate-500">{r.name}</span>
-                        </span>
-                        <span className="text-right">
-                          <span className="block text-[15px] font-semibold tabular-nums">
-                            {info === null && !infoFailed ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
-                          </span>
-                          <span className="block text-xs tabular-nums text-slate-500">{r.usd !== null ? fmtUsd(r.usd) : ""}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  {infoFailed && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
-                </div>
-
-                <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "180ms" } as CSSProperties}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Transactions</p>
-                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{info === null && !infoFailed && totalTx === null ? <span className="inline-block h-9 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
-                  <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
-                  <dl className="mt-6 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-slate-400">Sent by this wallet</dt>
-                      <dd className="font-semibold tabular-nums">{fmtInt(info?.sent ?? null)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-slate-400">Token transfers</dt>
-                      <dd className="font-semibold tabular-nums">{fmtInt(info?.transfersCount ?? null)}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-
-              {/* the activity list */}
-              <div className="fade-up mt-4 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
-                <div className="px-1 pb-3">
-                  <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-white/[0.1] bg-white/[0.03] p-0.5">
-                    {FILTERS.map(([f, label]) => (
-                      <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
-                    ))}
-                  </div>
-                </div>
-
-                {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
-                  <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
-                )}
-
-                {body}
-
-                {/* older history loads as you scroll; this button is the backup */}
-                {!first && shown.length > 0 && (
-                  <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
-                    {done ? (
-                      <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
-                    ) : (
-                      <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
-                        {loadingMore ? "Loading older activity…" : "Load more"}
+              <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
+                {/* left: portfolio and counts */}
+                <div className="space-y-4">
+                  <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "100ms" } as CSSProperties}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Portfolio</p>
+                        <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
+                          {loadingInfo ? <span className="inline-block h-9 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                      </div>
+                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh portfolio" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                        <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-4 text-xs text-slate-500">
-                  <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
-                  <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
-                    See everything on the explorer
-                  </a>
+                    {/* how the value is split */}
+                    <div className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
+                      {!loadingInfo && haveUsd && totalUsd > 0 && rows.map((r) => (r.usd && r.usd > 0 ? <span key={r.sym} style={{ width: `${Math.max((r.usd / totalUsd) * 100, 2)}%`, background: r.color }} /> : null))}
+                    </div>
+
+                    <ul className="mt-4 divide-y divide-white/[0.06]">
+                      {rows.map((r) => (
+                        <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                          <TokenDot symbol={r.sym} size={38} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="text-[15px] font-semibold">{r.sym}</span>
+                              <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
+                            </span>
+                            <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                          </span>
+                          <span className="text-right">
+                            <span className="block text-[15px] font-semibold tabular-nums">
+                              {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
+                            </span>
+                            <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                  </div>
+
+                  <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "180ms" } as CSSProperties}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Transactions</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{loadingInfo && totalTx === null ? <span className="inline-block h-9 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
+                    <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
+                    <dl className="mt-6 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-slate-400">Sent by this wallet</dt>
+                        <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-slate-400">Token transfers</dt>
+                        <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+
+                {/* right: the transactions */}
+                <div className="fade-up min-w-0 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
+                  <div className="px-1 pb-3">
+                    <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-white/[0.1] bg-white/[0.03] p-0.5">
+                      {FILTERS.map(([f, label]) => (
+                        <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
+                      ))}
+                    </div>
+                  </div>
+
+                  {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
+                    <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
+                  )}
+
+                  {body}
+
+                  {/* older history loads as you scroll; this button is the backup */}
+                  {!first && shown.length > 0 && (
+                    <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
+                      {done ? (
+                        <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
+                      ) : (
+                        <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
+                          {loadingMore ? "Loading older activity…" : "Load more"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-4 text-xs text-slate-500">
+                    <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
+                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
+                      See everything on the explorer
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
