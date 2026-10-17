@@ -439,9 +439,7 @@ export default function FaqPage() {
       )}
 
       {/* ================= FOOTER ================= */}
-      <footer className="relative border-t border-white/[0.07] bg-[#04060b]">
-        {/* a soft glowing line along the top edge */}
-        <div aria-hidden className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[#2588ff]/60 to-transparent" />
+      <footer className="border-t border-white/[0.12] bg-[#0a101b]">
 
         {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
             Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
