@@ -275,11 +275,49 @@ const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
+/* ---------- portfolio ---------- */
+type Info = { balances: Record<string, string> | null; txCount: number | null; transfersCount: number | null; sent: number | null };
+const PORTFOLIO = [
+  { sym: "USDC", name: "USD Coin", dec: 6, color: "#26bcff" },
+  { sym: "EURC", name: "Euro Coin", dec: 6, color: "#0076ff" },
+  { sym: "cirBTC", name: "Circle Wrapped Bitcoin", dec: 8, color: "#0043be" },
+];
+const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
+const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
+const hue = (a: string) => parseInt(a.slice(2, 8), 16) % 360;
+
+/** An icon drawn as a glowing line (no box around it). */
+const GlowIcon = ({ d, size = 28 }: { d: string; size?: number }) => (
+  <span className="inline-flex text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  </span>
+);
+const I = {
+  search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35",
+  wallet: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01",
+  pie: "M21 12A9 9 0 1 1 12 3v9h9ZM15 3.5A9 9 0 0 1 20.5 9H15V3.5Z",
+  history: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4",
+  copy: "M9 9h10v10H9zM5 15V5h10",
+  link: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+  back: "M19 12H5M12 19l-7-7 7-7",
+  refresh: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5",
+};
+
 /* ---------- page ---------- */
 export default function ActivityPage() {
   const { address, isConnected } = useAccount();
   const account = isConnected && address ? address : null;
-  const me = account ? account.toLowerCase() : "";
+
+  /* any wallet can be looked up; otherwise the connected wallet is shown */
+  const [lookup, setLookup] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [inputError, setInputError] = useState("");
+  const target = lookup ?? account;
+  const me = target ? target.toLowerCase() : "";
+  const viewingOther = !!lookup && lookup.toLowerCase() !== (account ?? "").toLowerCase();
 
   /* everything loaded so far lives in these maps (no duplicates), newest pages first, older pages added on demand */
   const txMap = useRef<Map<string, Tx>>(new Map());
@@ -298,6 +336,12 @@ export default function ActivityPage() {
   const [updated, setUpdated] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
 
+  /* portfolio + counts + prices */
+  const [info, setInfo] = useState<Info | null>(null);
+  const [infoFailed, setInfoFailed] = useState(false);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [copied, setCopied] = useState(false);
+
   const merge = (j: { txs?: Tx[]; transfers?: Tr[] }) => {
     for (const x of j.txs ?? []) txMap.current.set(x.hash, x);
     for (const x of j.transfers ?? []) trMap.current.set(x.key, x);
@@ -306,10 +350,10 @@ export default function ActivityPage() {
   /** Newest page of both feeds. Called on load and every 30 seconds; it only adds what's new. */
   const loadNewest = useCallback(
     async (initial: boolean) => {
-      if (!account || busyRef.current) return;
+      if (!target || busyRef.current) return;
       busyRef.current = true;
       try {
-        const r = await fetch(`/api/activity?address=${account}`);
+        const r = await fetch(`/api/activity?address=${target}`);
         if (!r.ok) throw new Error(`activity ${r.status}`);
         const j = (await r.json()) as { txs?: Tx[]; transfers?: Tr[]; txNext?: Cursor | null; trNext?: Cursor | null };
         merge(j);
@@ -330,16 +374,16 @@ export default function ActivityPage() {
         busyRef.current = false;
       }
     },
-    [account]
+    [target]
   );
 
   /** One older page of both feeds. */
   const loadMore = useCallback(async () => {
-    if (!account || busyRef.current || (!txCursor.current && !trCursor.current)) return;
+    if (!target || busyRef.current || (!txCursor.current && !trCursor.current)) return;
     busyRef.current = true;
     setLoadingMore(true);
     try {
-      const q = new URLSearchParams({ address: account });
+      const q = new URLSearchParams({ address: target });
       q.set("txc", txCursor.current ? JSON.stringify(txCursor.current) : "none");
       q.set("trc", trCursor.current ? JSON.stringify(trCursor.current) : "none");
       const r = await fetch(`/api/activity?${q.toString()}`);
@@ -360,7 +404,7 @@ export default function ActivityPage() {
       busyRef.current = false;
       setLoadingMore(false);
     }
-  }, [account]);
+  }, [target]);
 
   /* a new wallet starts from scratch; then new activity is checked for every 30 seconds and when the tab is shown again */
   useEffect(() => {
@@ -373,8 +417,9 @@ export default function ActivityPage() {
     setTrDone(false);
     setFirst(true);
     setError("");
+    setFilter("all");
     setVersion((v) => v + 1);
-    if (!account) return;
+    if (!target) return;
     loadNewest(true);
     const id = setInterval(() => loadNewest(false), 30000);
     const onVis = () => document.visibilityState === "visible" && loadNewest(false);
@@ -383,7 +428,51 @@ export default function ActivityPage() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [account, loadNewest]);
+  }, [target, loadNewest]);
+
+  /* the portfolio: balances and counts, refreshed every minute */
+  const loadInfo = useCallback(async () => {
+    if (!target) return;
+    try {
+      const r = await fetch(`/api/activity?address=${target}&info=1`);
+      if (!r.ok) throw new Error("info");
+      setInfo((await r.json()) as Info);
+      setInfoFailed(false);
+    } catch {
+      setInfoFailed(true);
+    }
+  }, [target]);
+  useEffect(() => {
+    setInfo(null);
+    setInfoFailed(false);
+    if (!target) return;
+    loadInfo();
+    const id = setInterval(loadInfo, 60000);
+    return () => clearInterval(id);
+  }, [target, loadInfo]);
+
+  /* dollar prices (optional: if they can't load, USDC counts as $1 and the others show no dollar value) */
+  useEffect(() => {
+    let live = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market?type=prices");
+        if (!r.ok) return;
+        const j = (await r.json()) as { prices?: Record<string, { price?: number } | null> };
+        const p: Record<string, number> = {};
+        for (const k of ["USDC", "EURC", "cirBTC"]) if (typeof j.prices?.[k]?.price === "number") p[k] = j.prices[k]!.price as number;
+        if (live) setPrices(p);
+      } catch {
+        /* optional */
+      }
+    };
+    load();
+    const id = setInterval(load, 60000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, []);
 
   /* "complete up to here": a row is only shown once BOTH feeds have loaded back to its time, so swaps and bridges are never half-built */
   const done = txDone && trDone;
@@ -398,25 +487,25 @@ export default function ActivityPage() {
 
   const events = useMemo(() => {
     void version;
-    return account ? buildEvents(Array.from(txMap.current.values()), Array.from(trMap.current.values()), me, horizon) : [];
-  }, [version, horizon, account, me]);
+    return target ? buildEvents(Array.from(txMap.current.values()), Array.from(trMap.current.values()), me, horizon) : [];
+  }, [version, horizon, target, me]);
 
   const shown = useMemo(() => events.filter((e) => (filter === "all" ? true : filter === "bridge" ? e.type.startsWith("bridge") : e.type === filter)), [events, filter]);
 
   /* keep loading older pages while the list is short, and whenever you scroll to the bottom */
   useEffect(() => {
-    if (!account || first || done || loadingMore || error || failsRef.current > 0) return;
+    if (!target || first || done || loadingMore || error || failsRef.current > 0) return;
     if (shown.length < MIN_VISIBLE) loadMore();
-  }, [account, first, done, loadingMore, error, shown.length, loadMore, version]);
+  }, [target, first, done, loadingMore, error, shown.length, loadMore, version]);
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || !account) return;
+    if (!el || !target) return;
     const io = new IntersectionObserver((entries) => {
       if (entries[0]?.isIntersecting && !done && !error) loadMore();
     }, { rootMargin: "300px" });
     io.observe(el);
     return () => io.disconnect();
-  }, [account, done, error, loadMore, shown.length]);
+  }, [target, done, error, loadMore, shown.length]);
 
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
@@ -429,29 +518,86 @@ export default function ActivityPage() {
     return out;
   }, [shown]);
 
+  /* ----- portfolio numbers ----- */
+  const rows = PORTFOLIO.map((t) => {
+    const raw = info?.balances?.[t.sym];
+    const amount = raw !== undefined ? toDecimal(raw, t.dec) : null;
+    const price = prices[t.sym] ?? (t.sym === "USDC" ? 1 : null);
+    const usd = amount !== null && price !== null ? Number(amount) * price : null;
+    return { ...t, amount, usd };
+  });
+  const totalUsd = rows.reduce((a, r) => a + (r.usd ?? 0), 0);
+  const haveUsd = rows.some((r) => r.usd !== null);
+  const totalTx = info?.txCount ?? (txDone && txMap.current.size ? txMap.current.size : null);
+
+  /* ----- actions ----- */
+  const submitLookup = (raw: string) => {
+    const v = raw.trim();
+    if (!v) return setInputError("Paste a wallet address to look it up.");
+    if (!ADDR_RE.test(v)) return setInputError("That doesn’t look like a wallet address. It should start with 0x and have 42 characters.");
+    setInputError("");
+    setInput("");
+    setLookup(v);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const copyAddress = async () => {
+    if (!target) return;
+    try {
+      await navigator.clipboard.writeText(target);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
+  const connect = () => window.dispatchEvent(new Event("open-wallet-modal"));
+
+  /* the search box (used on the landing screen and at the top of the dashboard) */
+  const searchBox = (big: boolean) => (
+    <div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitLookup(input);
+        }}
+        className={`flex items-center gap-2 rounded-full border bg-[#0a1018] pl-4 pr-1.5 transition focus-within:border-[#2588ff]/60 ${inputError ? "border-red-400/50" : "border-white/[0.1]"} ${big ? "py-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]" : "py-1"}`}
+      >
+        <span className="shrink-0 text-slate-500"><Svg d={I.search} size={18} /></span>
+        <input
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            setInputError("");
+          }}
+          placeholder={big ? "Paste any wallet address (0x…)" : "Look up another wallet (0x…)"}
+          aria-label="Wallet address to look up"
+          spellCheck={false}
+          autoComplete="off"
+          autoCapitalize="off"
+          className={`min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600 ${big ? "py-2.5 text-[15px]" : "py-2 text-sm"}`}
+        />
+        <button type="submit" className={`shrink-0 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] font-semibold text-white transition hover:brightness-110 ${big ? "px-5 py-2.5 text-sm" : "px-4 py-2 text-xs"}`}>Look up</button>
+      </form>
+      {inputError && <p className="mt-2 px-4 text-xs text-red-300">{inputError}</p>}
+    </div>
+  );
+
+  /* ----- the activity list ----- */
   let body: ReactNode;
-  if (!account) {
-    body = (
-      <div className="px-4 py-14 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05] text-slate-400"><Svg d="M3 12h4l3-8 4 16 3-8h4" size={26} /></span>
-        <p className="mt-4 text-base font-semibold">Connect your wallet</p>
-        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Use the Connect button in the header to see all of this wallet&apos;s activity on Arc.</p>
-      </div>
-    );
-  } else if (first) {
+  if (first) {
     body = <Skeleton />;
   } else if (error && events.length === 0 && txMap.current.size === 0 && trMap.current.size === 0) {
     body = (
       <div className="px-4 py-12 text-center">
         <p className="text-base font-semibold">Couldn&apos;t load activity</p>
-        <p className="mx-auto mt-1.5 max-w-sm text-sm leading-6 text-slate-500">{error} This is the explorer data for this wallet; nothing is read from your device.</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-sm leading-6 text-slate-500">{error}</p>
         <button onClick={() => { setFirst(true); loadNewest(true); }} className="mx-auto mt-5 inline-flex rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold">Try again</button>
       </div>
     );
   } else if (shown.length === 0 && (done || filter !== "all")) {
     body = (
       <div className="px-4 py-14 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05] text-slate-400"><Svg d="M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" size={26} /></span>
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05] text-slate-400"><Svg d={I.history} size={26} /></span>
         <p className="mt-4 text-base font-semibold">{events.length === 0 ? "No activity yet" : "Nothing in this filter"}</p>
         <p className="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">{events.length === 0 ? "No transactions found for this wallet on Arc mainnet." : done ? "Try another filter, or choose All." : "Older activity is still loading."}</p>
       </div>
@@ -490,66 +636,174 @@ export default function ActivityPage() {
       <div className="relative z-10">
         <Header />
 
-        {/* phones: normal size. Screens 900px+ wide: content at 90% (same as the Swap page). */}
         <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
-          <div className="fade-up mx-auto max-w-2xl text-center">
-            <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
-              <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity</span>
-            </h1>
-            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Everything this wallet has done on Arc mainnet.</p>
-          </div>
+          {!target ? (
+            /* ================= BEFORE A WALLET IS CONNECTED ================= */
+            <>
+              <div className="fade-up mx-auto max-w-2xl text-center">
+                <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
+                  <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity</span>
+                </h1>
+                <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">See the portfolio and the full history of any wallet on Arc.</p>
+              </div>
 
-          <div className="fade-up relative mx-auto mt-10 w-full max-w-2xl sm:mt-12" style={{ "--delay": "150ms" } as CSSProperties}>
-            <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
-            <div className="relative rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5">
-              {/* filters + refresh */}
-              <div className="flex items-center gap-2 px-1 pb-3">
-                <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
-                  {FILTERS.map(([f, label]) => (
-                    <Pill key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</Pill>
-                  ))}
+              <div className="fade-up mx-auto mt-10 max-w-2xl" style={{ "--delay": "120ms" } as CSSProperties}>
+                <p className="mb-3 px-2 text-center text-sm font-medium text-slate-400">Search a wallet address</p>
+                {searchBox(true)}
+
+                <div className="my-6 flex items-center gap-4 text-xs uppercase tracking-[0.2em] text-slate-600">
+                  <span className="h-px flex-1 bg-white/[0.08]" />
+                  or
+                  <span className="h-px flex-1 bg-white/[0.08]" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => loadNewest(false)}
-                  disabled={!account}
-                  aria-label="Refresh"
-                  title="Refresh"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40"
-                >
-                  <Svg d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
+
+                <button onClick={connect} className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 text-base font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
+                  <Svg d={I.wallet} size={20} /> Connect your wallet
                 </button>
               </div>
 
-              {error && account && (txMap.current.size > 0 || trMap.current.size > 0) && (
-                <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
-              )}
-
-              {body}
-
-              {/* older history loads as you scroll; this button is the backup */}
-              {account && !first && shown.length > 0 && (
-                <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
-                  {done ? (
-                    <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
-                  ) : (
-                    <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
-                      {loadingMore ? "Loading older activity…" : "Load more"}
+              <div className="mx-auto mt-14 grid max-w-4xl gap-3 sm:mt-16 sm:grid-cols-3 sm:gap-4">
+                {[
+                  { icon: I.pie, title: "Portfolio", text: "Balances of USDC, EURC and cirBTC with their value in dollars." },
+                  { icon: I.history, title: "Full history", text: "Every send, receive, swap and bridge, from the very first transaction." },
+                  { icon: I.search, title: "Any wallet", text: "Look up any address. You don’t need to connect to see public data." },
+                ].map((f, i) => (
+                  <div key={f.title} className="fade-up rounded-[1.5rem] border border-white/[0.08] bg-[#050a16]/70 p-5 text-center backdrop-blur-xl sm:p-6 sm:text-left" style={{ "--delay": `${220 + i * 80}ms` } as CSSProperties}>
+                    <span className="mx-auto flex sm:mx-0"><GlowIcon d={f.icon} size={30} /></span>
+                    <p className="mt-4 text-base font-semibold">{f.title}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-400">{f.text}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* ================= A WALLET IS SHOWN ================= */
+            <div className="mx-auto max-w-5xl">
+              {/* who is shown, and the search */}
+              <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 backdrop-blur-xl sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-500">{viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
+                      <p className="mt-0.5 truncate text-lg font-bold tracking-tight sm:text-xl" title={target}>{short(target)}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button onClick={copyAddress} className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                      <Svg d={I.copy} size={14} /> {copied ? "Copied" : "Copy"}
                     </button>
-                  )}
+                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                      <Svg d={I.link} size={14} /> Explorer
+                    </a>
+                    {lookup && (
+                      <button onClick={() => { setLookup(null); setInput(""); setInputError(""); }} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-semibold text-white transition hover:brightness-110">
+                        <Svg d={I.back} size={14} /> {account ? "My wallet" : "Search again"}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+                <div className="mt-4">{searchBox(false)}</div>
+              </div>
 
-              {account && (
+              {/* portfolio + counts */}
+              <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6 lg:col-span-2" style={{ "--delay": "100ms" } as CSSProperties}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Portfolio</p>
+                      <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
+                        {info === null && !infoFailed ? <span className="inline-block h-9 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                    </div>
+                    <button onClick={() => { loadInfo(); loadNewest(false); }} aria-label="Refresh" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white"><Svg d={I.refresh} /></button>
+                  </div>
+
+                  {/* how the value is split */}
+                  <div className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
+                    {haveUsd && totalUsd > 0 && rows.map((r) => (r.usd && r.usd > 0 ? <span key={r.sym} style={{ width: `${Math.max((r.usd / totalUsd) * 100, 2)}%`, background: r.color }} /> : null))}
+                  </div>
+
+                  <ul className="mt-4 divide-y divide-white/[0.06]">
+                    {rows.map((r) => (
+                      <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                        <TokenDot symbol={r.sym} size={38} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="text-[15px] font-semibold">{r.sym}</span>
+                            <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
+                          </span>
+                          <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                        </span>
+                        <span className="text-right">
+                          <span className="block text-[15px] font-semibold tabular-nums">
+                            {info === null && !infoFailed ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
+                          </span>
+                          <span className="block text-xs tabular-nums text-slate-500">{r.usd !== null ? fmtUsd(r.usd) : ""}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {infoFailed && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                </div>
+
+                <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "180ms" } as CSSProperties}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Transactions</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{info === null && !infoFailed && totalTx === null ? <span className="inline-block h-9 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
+                  <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
+                  <dl className="mt-6 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-slate-400">Sent by this wallet</dt>
+                      <dd className="font-semibold tabular-nums">{fmtInt(info?.sent ?? null)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-slate-400">Token transfers</dt>
+                      <dd className="font-semibold tabular-nums">{fmtInt(info?.transfersCount ?? null)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+
+              {/* the activity list */}
+              <div className="fade-up mt-4 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
+                <div className="flex items-center gap-2 px-1 pb-3">
+                  <h2 className="shrink-0 px-2 text-base font-semibold">Activity</h2>
+                  <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+                    {FILTERS.map(([f, label]) => (
+                      <Pill key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</Pill>
+                    ))}
+                  </div>
+                </div>
+
+                {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
+                  <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
+                )}
+
+                {body}
+
+                {/* older history loads as you scroll; this button is the backup */}
+                {!first && shown.length > 0 && (
+                  <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
+                    {done ? (
+                      <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
+                    ) : (
+                      <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
+                        {loadingMore ? "Loading older activity…" : "Load more"}
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-4 text-xs text-slate-500">
                   <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
-                  <a href={`${EXPLORER}/address/${account}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
+                  <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
                     See everything on the explorer
                   </a>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </section>
       </div>
     </main>
