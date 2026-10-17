@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
   this route returns, until the whole history is loaded.
   Place at: app/api/activity/route.ts
 
+  Also: /api/activity?address=0x...&info=1 returns the wallet's USDC, EURC and cirBTC balances and its transaction counts
+  (used by the portfolio on the Activity page).
+
   Optional: BLOCKSCOUT_API_KEY (a free Blockscout Pro API key) in .env.local and in Vercel. With a key the
   Blockscout Pro API is used (more reliable); without one the public explorer API is tried.
 */
@@ -16,6 +19,32 @@ const BASE = KEY ? "https://api.blockscout.com/5042/api/v2" : "https://explorer.
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
+
+const RPCS = [
+  "https://rpc.mainnet.arc.io",
+  "https://rpc.blockdaemon.mainnet.arc.io",
+  "https://rpc.drpc.mainnet.arc.io",
+  "https://rpc.quicknode.mainnet.arc.io",
+];
+const TOKEN_ADDR: Record<string, string> = {
+  USDC: "0x3600000000000000000000000000000000000000",
+  EURC: "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+  cirBTC: "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
+};
+
+async function rpc(method: string, params: unknown[]): Promise<string> {
+  for (const url of RPCS) {
+    try {
+      const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }), cache: "no-store" });
+      if (!r.ok) continue;
+      const j = (await r.json()) as { result?: string; error?: unknown };
+      if (typeof j.result === "string") return j.result;
+    } catch {
+      /* try the next endpoint */
+    }
+  }
+  throw new Error("rpc unavailable");
+}
 
 async function bs(path: string, qs: string) {
   const parts = [qs, KEY ? `apikey=${encodeURIComponent(KEY)}` : ""].filter(Boolean).join("&");
@@ -63,6 +92,40 @@ export async function GET(request: Request) {
   const address = (searchParams.get("address") ?? "").trim();
   if (!ADDR_RE.test(address)) return NextResponse.json({ error: "bad address" }, { status: 400 });
   const me = address.toLowerCase();
+
+  /* ---- portfolio info: balances + transaction counts ---- */
+  if (searchParams.get("info")) {
+    const pad = me.replace(/^0x/, "").padStart(64, "0");
+    const [counters, nonce, ...bals] = await Promise.allSettled([
+      bs(`/addresses/${address}/counters`, ""),
+      rpc("eth_getTransactionCount", [address, "latest"]),
+      ...Object.values(TOKEN_ADDR).map((a) => rpc("eth_call", [{ to: a, data: "0x70a08231" + pad }, "latest"])),
+    ]);
+    const names = Object.keys(TOKEN_ADDR);
+    const balances: Record<string, string> = {};
+    let ok = false;
+    bals.forEach((b, i) => {
+      if (b.status === "fulfilled") {
+        try {
+          balances[names[i]] = BigInt(b.value || "0x0").toString();
+          ok = true;
+        } catch {
+          /* skip */
+        }
+      }
+    });
+    const num = (v: unknown) => (v !== undefined && v !== null && /^\d+$/.test(String(v)) ? Number(v) : null);
+    const c = counters.status === "fulfilled" ? (counters.value as Any) : null;
+    return NextResponse.json(
+      {
+        balances: ok ? balances : null,
+        txCount: num(c?.transactions_count),
+        transfersCount: num(c?.token_transfers_count),
+        sent: nonce.status === "fulfilled" ? Number(BigInt(nonce.value)) : null,
+      },
+      { headers: { "Cache-Control": "public, s-maxage=20, stale-while-revalidate=60" } }
+    );
+  }
 
   const txc = parseCursor(searchParams.get("txc"));
   const trc = parseCursor(searchParams.get("trc"));
