@@ -439,7 +439,7 @@ export default function FaqPage() {
       )}
 
       {/* ================= FOOTER ================= */}
-      <footer className="border-t border-white/[0.12] bg-[#0a101b]">
+      <footer className="border-t border-white/[0.1] bg-[#080a0d]">
 
         {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
             Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
