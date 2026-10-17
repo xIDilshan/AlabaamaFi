@@ -222,9 +222,21 @@ function TokenDot({ symbol, size = 16 }: { symbol: string; size?: number }) {
 }
 
 function Row({ e }: { e: Ev }) {
+  const [copied, setCopied] = useState(false);
   const outs = e.legs.filter((l) => l.dir === "out");
   const ins = e.legs.filter((l) => l.dir === "in");
   const sub = subtitleOf(e);
+  const copyHash = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
+    ev.preventDefault(); // the row is a link to the explorer; copying must not open it
+    ev.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(e.hash);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
   return (
     <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group flex items-center gap-3.5 rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${e.status === "error" ? "text-red-300" : TINT[e.type]}`}>
@@ -237,6 +249,22 @@ function Row({ e }: { e: Ev }) {
           {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
         </span>
         <span className="mt-0.5 block truncate text-xs text-slate-500">{[sub, e.t ? timeOf(e.t) : ""].filter(Boolean).join(" · ")}</span>
+        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+          <span className="tabular-nums">Txn {e.hash.slice(0, 10)}…{e.hash.slice(-6)}</span>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={copied ? "Transaction hash copied" : "Copy transaction hash"}
+            title={copied ? "Copied" : "Copy hash"}
+            onClick={copyHash}
+            onKeyDown={(ev) => {
+              if (ev.key === "Enter" || ev.key === " ") copyHash(ev);
+            }}
+            className="inline-flex h-5 shrink-0 items-center justify-center rounded px-1 text-slate-500 transition hover:bg-white/[0.08] hover:text-white"
+          >
+            {copied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d="M9 9h10v10H9zM5 15V5h10" size={13} />}
+          </span>
+        </span>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
         {[...ins, ...outs].map((l, i) => (
@@ -269,8 +297,8 @@ function Skeleton() {
   );
 }
 
-const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) => (
-  <button onClick={onClick} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${active ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "bg-white/[0.05] text-slate-400 hover:bg-white/[0.09] hover:text-white"}`}>
+const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) => (
+  <button onClick={onClick} aria-pressed={active} className={`shrink-0 rounded-md px-3.5 py-1.5 text-sm font-medium transition ${active ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
     {children}
   </button>
 );
@@ -308,7 +336,7 @@ const I = {
 
 /* ---------- page ---------- */
 export default function ActivityPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const account = isConnected && address ? address : null;
 
   /* any wallet can be looked up; otherwise the connected wallet is shown */
@@ -569,14 +597,14 @@ export default function ActivityPage() {
             setInput(e.target.value);
             setInputError("");
           }}
-          placeholder={big ? "Paste any wallet address (0x…)" : "Look up another wallet (0x…)"}
-          aria-label="Wallet address to look up"
+          placeholder={big ? "Paste any wallet address (0x…)" : "Search another wallet (0x…)"}
+          aria-label="Wallet address to search"
           spellCheck={false}
           autoComplete="off"
           autoCapitalize="off"
           className={`min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600 ${big ? "py-2.5 text-[15px]" : "py-2 text-sm"}`}
         />
-        <button type="submit" className={`shrink-0 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] font-semibold text-white transition hover:brightness-110 ${big ? "px-5 py-2.5 text-sm" : "px-4 py-2 text-xs"}`}>Look up</button>
+        <button type="submit" className={`shrink-0 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] font-bold text-white transition hover:brightness-110 ${big ? "px-5 py-2.5 text-sm" : "px-4 py-2 text-xs"}`}>Search</button>
       </form>
       {inputError && <p className="mt-2 px-4 text-xs text-red-300">{inputError}</p>}
     </div>
@@ -642,9 +670,9 @@ export default function ActivityPage() {
             <>
               <div className="fade-up mx-auto max-w-2xl text-center">
                 <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
-                  <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity</span>
+                  <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Activity Checker</span>
                 </h1>
-                <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">See the portfolio and the full history of any wallet on Arc.</p>
+                <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">See the portfolio and transactions of any wallet on Arc.</p>
               </div>
 
               <div className="fade-up mx-auto mt-10 max-w-2xl" style={{ "--delay": "120ms" } as CSSProperties}>
@@ -660,20 +688,6 @@ export default function ActivityPage() {
                 <button onClick={connect} className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 text-base font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
                   <Svg d={I.wallet} size={20} /> Connect your wallet
                 </button>
-              </div>
-
-              <div className="mx-auto mt-14 grid max-w-4xl gap-3 sm:mt-16 sm:grid-cols-3 sm:gap-4">
-                {[
-                  { icon: I.pie, title: "Portfolio", text: "Balances of USDC, EURC and cirBTC with their value in dollars." },
-                  { icon: I.history, title: "Full history", text: "Every send, receive, swap and bridge, from the very first transaction." },
-                  { icon: I.search, title: "Any wallet", text: "Look up any address. You don’t need to connect to see public data." },
-                ].map((f, i) => (
-                  <div key={f.title} className="fade-up rounded-[1.5rem] border border-white/[0.08] bg-[#050a16]/70 p-5 text-center backdrop-blur-xl sm:p-6 sm:text-left" style={{ "--delay": `${220 + i * 80}ms` } as CSSProperties}>
-                    <span className="mx-auto flex sm:mx-0"><GlowIcon d={f.icon} size={30} /></span>
-                    <p className="mt-4 text-base font-semibold">{f.title}</p>
-                    <p className="mt-1.5 text-sm leading-6 text-slate-400">{f.text}</p>
-                  </div>
-                ))}
               </div>
             </>
           ) : (
@@ -696,9 +710,20 @@ export default function ActivityPage() {
                     <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
                       <Svg d={I.link} size={14} /> Explorer
                     </a>
-                    {lookup && (
-                      <button onClick={() => { setLookup(null); setInput(""); setInputError(""); }} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-semibold text-white transition hover:brightness-110">
-                        <Svg d={I.back} size={14} /> {account ? "My wallet" : "Search again"}
+                    {!account && lookup && (
+                      <button onClick={connect} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
+                        <Svg d={I.wallet} size={15} /> Connect wallet
+                      </button>
+                    )}
+                    {account && viewingOther && (
+                      <button onClick={() => { setLookup(null); setInput(""); setInputError(""); }} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
+                        {connector?.icon ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={connector.icon} alt="" className="h-[18px] w-[18px] rounded-[5px] bg-white/90 object-contain p-[1px]" />
+                        ) : (
+                          <Svg d={I.wallet} size={15} />
+                        )}
+                        My wallet
                       </button>
                     )}
                   </div>
@@ -767,11 +792,10 @@ export default function ActivityPage() {
 
               {/* the activity list */}
               <div className="fade-up mt-4 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
-                <div className="flex items-center gap-2 px-1 pb-3">
-                  <h2 className="shrink-0 px-2 text-base font-semibold">Activity</h2>
-                  <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+                <div className="px-1 pb-3">
+                  <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-white/[0.1] bg-white/[0.03] p-0.5">
                     {FILTERS.map(([f, label]) => (
-                      <Pill key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</Pill>
+                      <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
                     ))}
                   </div>
                 </div>
