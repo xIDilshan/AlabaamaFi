@@ -1,4 +1,4 @@
-import { createConfig, http } from "wami";
+import { createConfig, http } from "wagmi";
 import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 import { arc } from "viem/chains";
 
