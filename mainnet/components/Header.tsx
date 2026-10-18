@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect } from "wagi";
 import { Manrope } from "next/font/google";
 import WalletModal from "@/components/WalletModal";
 import { WalletLogo, useWalletIdentity } from "@/components/WalletLogo";
