@@ -22,6 +22,7 @@
     "@walletconnect/modal": "^2.7.0",
     "@web3icons/react": "latest",
     "next": "latest",
+    "qrcode.react": "^4.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "viem": "^2.57.4",
