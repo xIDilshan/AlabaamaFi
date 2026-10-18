@@ -12,6 +12,7 @@
 */
 
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useConnectors } from "wagmi";
 import type { Connector } from "wagmi";
 
 /* ---------------------------------------------------------------------
@@ -21,11 +22,13 @@ import type { Connector } from "wagmi";
    files    your own logo files in public/wallets/ (tried first)
    wallet   the wallet's name in web3icons (used if there is no file)
    exchange the exchange's name in web3icons (for Binance, Gate)
+   strip    true = try to remove the background tile from the web3icons logo (used for Rabby and Keplr).
+            If a wallet still shows a tile, put a logo with no background in public/wallets/ (the "files" entry) and it is used first.
    variant  "mono" (default) draws only the wallet's logo in its own color, with no background tile.
             "branded" uses the colors web3icons gives it. If a wallet looks wrong, switch it here.
    glyph    show a drawn wallet icon until the logo file is uploaded
    --------------------------------------------------------------------- */
-type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; variant?: "branded" | "mono"; glyph?: boolean; letter: string; color: string };
+type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; variant?: "branded" | "mono"; strip?: boolean; glyph?: boolean; letter: string; color: string };
 
 const RULES: Rule[] = [
   { keys: ["brave"], files: ["/wallets/brave.svg"], letter: "B", color: "#fb542b" },
@@ -43,7 +46,7 @@ const RULES: Rule[] = [
   { keys: ["gate"], exchange: ["gate", "gate-io"], letter: "G", color: "#2354e6" },
   { keys: ["metamask"], wallet: ["metamask"], variant: "branded", letter: "M", color: "#f6851b" },
   { keys: ["walletconnect", "wallet connect"], wallet: ["wallet-connect"], letter: "W", color: "#3b99fc" },
-  { keys: ["rabby"], wallet: ["rabby"], letter: "R", color: "#7084ff" },
+  { keys: ["rabby"], files: ["/wallets/rabby.png"], wallet: ["rabby"], variant: "branded", strip: true, letter: "R", color: "#7084ff" },
   { keys: ["phantom"], wallet: ["phantom"], letter: "P", color: "#ab9ff2" },
   { keys: ["rainbow"], wallet: ["rainbow"], letter: "R", color: "#2563eb" },
   { keys: ["zerion"], wallet: ["zerion"], letter: "Z", color: "#2962ef" },
@@ -52,7 +55,7 @@ const RULES: Rule[] = [
   { keys: ["tokenpocket", "token pocket"], wallet: ["token-pocket"], letter: "T", color: "#2980fe" },
   { keys: ["coin98"], wallet: ["coin98"], letter: "C", color: "#d9b432" },
   { keys: ["enkrypt"], wallet: ["enkrypt"], letter: "E", color: "#7b3fe4" },
-  { keys: ["keplr"], wallet: ["keplr"], letter: "K", color: "#3b82f6" },
+  { keys: ["keplr"], files: ["/wallets/keplr.png"], wallet: ["keplr"], variant: "branded", strip: true, letter: "K", color: "#3b82f6" },
   { keys: ["backpack"], wallet: ["backpack"], letter: "B", color: "#e33e3f" },
   { keys: ["browser wallet", "injected"], glyph: true, letter: "B", color: "#1978f5" },
 ];
@@ -89,9 +92,41 @@ export function detectInjectedName(p: AnyProvider): string | null {
   return null;
 }
 
-/** The real name and logo of the connected wallet. For a browser (injected) connection it looks at the wallet itself;
-    for WalletConnect it uses the name the mobile wallet gave. */
+/* wallet-specific names on `window`; if the connection is the very same object, that wallet is the one connected */
+const WALLET_GLOBALS: { path: string[]; name: string }[] = [
+  { path: ["okxwallet"], name: "OKX Wallet" },
+  { path: ["okxwallet", "ethereum"], name: "OKX Wallet" },
+  { path: ["phantom", "ethereum"], name: "Phantom" },
+  { path: ["trustwallet"], name: "Trust Wallet" },
+  { path: ["rabby"], name: "Rabby" },
+  { path: ["bitkeep", "ethereum"], name: "Bitget Wallet" },
+  { path: ["bitget", "ethereum"], name: "Bitget Wallet" },
+  { path: ["coinbaseWalletExtension"], name: "Coinbase Wallet" },
+  { path: ["binancew3w", "ethereum"], name: "Binance Wallet" },
+  { path: ["xfi", "ethereum"], name: "Ctrl Wallet" },
+  { path: ["braveEthereum"], name: "Brave Wallet" },
+  { path: ["talismanEth"], name: "Talisman" },
+  { path: ["safepalProvider"], name: "SafePal" },
+  { path: ["tokenpocket", "ethereum"], name: "TokenPocket" },
+];
+function nameFromGlobals(p: unknown): string | null {
+  if (typeof window === "undefined" || !p) return null;
+  for (const g of WALLET_GLOBALS) {
+    let v: unknown = window;
+    for (const k of g.path) v = (v as Record<string, unknown> | undefined)?.[k];
+    if (v && v === p) return g.name;
+  }
+  return null;
+}
+
+/** The real name and logo of the connected wallet.
+    A wallet picked from its own row already has its exact name and logo. For the generic "Browser Wallet" connection it looks for the wallet that owns the connection:
+    1. the installed wallet whose connection is the very same object, 2. a wallet-specific name on `window`, 3. the small flags the wallet sets about itself.
+    For WalletConnect it uses the name the mobile wallet gave. */
 export function useWalletIdentity(connector: Connector | undefined): { name: string; icon?: string } {
+  const connectors = useConnectors();
+  const connectorsRef = useRef(connectors);
+  connectorsRef.current = connectors;
   const [info, setInfo] = useState<{ name: string; icon?: string }>({ name: connector?.name || "Wallet", icon: connector?.icon });
 
   useEffect(() => {
@@ -113,7 +148,21 @@ export function useWalletIdentity(connector: Connector | undefined): { name: str
           if (meta?.name) setInfo({ name: meta.name, icon: meta.icons?.[0] });
           return;
         }
-        setInfo({ name: detectInjectedName(p) ?? "Browser Wallet", icon: connector.icon });
+        // 1. an installed wallet that announced this very connection
+        for (const c of connectorsRef.current) {
+          if (c.type !== "injected" || c.id === "injected") continue;
+          try {
+            if ((await c.getProvider()) === p) {
+              if (live) setInfo({ name: c.name, icon: c.icon });
+              return;
+            }
+          } catch {
+            /* try the next one */
+          }
+        }
+        // 2. a wallet-specific name on window, then 3. the wallet's own flags
+        const name = nameFromGlobals(p) ?? detectInjectedName(p) ?? "Browser Wallet";
+        if (live) setInfo({ name, icon: connector.icon });
       } catch {
         /* keep the name wagmi gave */
       }
@@ -121,7 +170,7 @@ export function useWalletIdentity(connector: Connector | undefined): { name: str
     return () => {
       live = false;
     };
-  }, [connector]);
+  }, [connector, connectors.length]);
 
   return info;
 }
@@ -134,6 +183,25 @@ const loadIcons = () => {
   if (!iconsPromise) iconsPromise = import("@web3icons/react/dynamic").then((m) => m as unknown as IconModule).catch(() => null);
   return iconsPromise;
 };
+
+/** Hides a background tile: the first shape of the logo, if it covers (almost) the whole drawing and other shapes remain on top of it.
+    If the tile and the logo are one single shape there is nothing to separate, and the logo is left as it is. */
+function stripBackground(svg: SVGSVGElement) {
+  try {
+    const vb = svg.viewBox?.baseVal;
+    const W = vb && vb.width ? vb.width : 24;
+    const H = vb && vb.height ? vb.height : 24;
+    const shapes = Array.from(svg.querySelectorAll("rect, circle, ellipse, path, polygon")).filter(
+      (el) => !el.closest("defs, clipPath, mask, linearGradient, radialGradient, pattern")
+    ) as SVGGraphicsElement[];
+    const first = shapes[0];
+    if (!first || shapes.length < 2) return;
+    const b = first.getBBox();
+    if (b.width >= W * 0.88 && b.height >= H * 0.88) first.style.display = "none";
+  } catch {
+    /* leave the logo as it is */
+  }
+}
 
 const WalletGlyph = ({ size }: { size: number }) => (
   <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -176,7 +244,14 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
   useEffect(() => {
     const el = holder.current;
     if (!mod || useImg || !el) return;
-    const check = () => setHasSvg(!!el.querySelector("svg"));
+    const check = () => {
+      const svg = el.querySelector("svg");
+      if (svg && rule?.strip && !svg.getAttribute("data-stripped")) {
+        svg.setAttribute("data-stripped", "1");
+        stripBackground(svg as unknown as SVGSVGElement);
+      }
+      setHasSvg(!!svg);
+    };
     check();
     const mo = new MutationObserver(check);
     mo.observe(el, { childList: true, subtree: true });
@@ -187,7 +262,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
       mo.disconnect();
       clearTimeout(t);
     };
-  }, [mod, webIdx, useImg]);
+  }, [mod, webIdx, useImg, rule]);
 
   const box = `relative inline-flex shrink-0 items-center justify-center overflow-hidden ${plain ? "rounded-[18%]" : "rounded-lg"} ${className}`;
   if (useImg) {
