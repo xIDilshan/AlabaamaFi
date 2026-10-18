@@ -310,7 +310,7 @@ const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void
     className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-bold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[17px]"
   >
     <span className="block h-9 w-9 shrink-0 sm:h-10 sm:w-10"><Logo name={sym} fluid /></span>
-    <span style={{ fontWeight: 800 }}>{sym}</span>
+    <span style={{ fontWeight: 700 }}>{sym}</span>
     <span className="text-slate-400"><Chevron /></span>
   </button>
 );
