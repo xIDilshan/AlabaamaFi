@@ -213,22 +213,23 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
 
 /* ---------------------------------------------------------------------
    THE BROWSER WALLET ICON
-   Four wallet logos (colored icon only, no background tile) in a 2x2 grid, inside a dark rounded square.
+   Four wallet logos (colored icon only), each in its own small box, in a 2x2 grid.
    To change which wallets are shown, edit the four names below.
    --------------------------------------------------------------------- */
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
 export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
-  const cell = Math.round(size * 0.36); // the same size for all four logos
+  const gap = Math.max(2, Math.round(size * 0.08));
+  const tile = Math.floor((size - gap) / 2); // four boxes of the same size
   return (
     <span
-      className={`inline-grid shrink-0 place-content-center place-items-center rounded-[24%] border border-white/[0.1] bg-[#15171c] ${className}`}
-      style={{ width: size, height: size, gridTemplateColumns: `repeat(2, ${cell}px)`, gridTemplateRows: `repeat(2, ${cell}px)`, gap: Math.max(2, Math.round(size * 0.07)) }}
+      className={`inline-grid shrink-0 ${className}`}
+      style={{ width: size, height: size, gridTemplateColumns: `repeat(2, ${tile}px)`, gridTemplateRows: `repeat(2, ${tile}px)`, gap }}
       aria-hidden
     >
       {BROWSER_WALLET_LOGOS.map((n) => (
-        <span key={n} className="flex items-center justify-center" style={{ width: cell, height: cell }}>
-          <WalletLogoInner name={n} size={cell} plain />
+        <span key={n} className="flex items-center justify-center rounded-[28%] border border-white/[0.1] bg-[#1b1e25]" style={{ width: tile, height: tile }}>
+          <WalletLogoInner name={n} size={Math.round(tile * 0.64)} plain />
         </span>
       ))}
     </span>
