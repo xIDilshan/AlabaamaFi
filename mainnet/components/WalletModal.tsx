@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAccount, useConnect } from "wagmi";
 import { WalletLogo } from "@/components/WalletLogo";
@@ -12,29 +12,11 @@ type WalletModalProps = {
 
 type ConnectorItem = ReturnType<typeof useConnect>["connectors"][number];
 
-/* the second card (the QR code): `getUrl` is where "Get wallet" goes (left out for WalletConnect) */
+/* the second card (QR code on a computer, wallet apps on a phone): `getUrl` is where "Get wallet" goes (left out for WalletConnect) */
 type QrView = { name: string; getUrl?: string };
 
-function getFriendlyErrorMessage(message: string): string {
-  const lowerMessage = message.toLowerCase();
-
-  if (
-    lowerMessage.includes("user rejected") ||
-    lowerMessage.includes("user denied") ||
-    lowerMessage.includes("connection request reset")
-  ) {
-    return "Wallet connection rejected. Please try again.";
-  }
-
-  if (
-    lowerMessage.includes("provider not found") ||
-    lowerMessage.includes("provider")
-  ) {
-    return "Wallet connection failed. Please make sure your wallet is installed and try again.";
-  }
-
-  return "Something went wrong. Please try again.";
-}
+/* the one message shown for every connection problem (rejected, cancelled, came back from a wallet app without connecting...) */
+const ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 /* ---------- where "Get wallet" goes (the Chrome Web Store page; other browsers get the wallet's own site) ---------- */
 const GET_WALLET = {
@@ -49,6 +31,14 @@ const GET_WALLET = {
 };
 const getWalletUrl = (w: keyof typeof GET_WALLET) =>
   typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent) ? GET_WALLET[w].chrome : GET_WALLET[w].site;
+
+/* ---------- phones: the wallet apps shown on the WalletConnect card (each opens the app with the connection link) ---------- */
+const MOBILE_WALLETS: { name: string; link: (uri: string) => string }[] = [
+  { name: "MetaMask", link: (u) => `https://metamask.app.link/wc?uri=${encodeURIComponent(u)}` },
+  { name: "Trust Wallet", link: (u) => `https://link.trustwallet.com/wc?uri=${encodeURIComponent(u)}` },
+  { name: "Rainbow", link: (u) => `https://rnbwapp.com/wc?uri=${encodeURIComponent(u)}` },
+  { name: "Coinbase Wallet", link: (u) => `https://go.cb-w.com/wc?uri=${encodeURIComponent(u)}` },
+];
 
 const isMobileDevice = () => {
   if (typeof window === "undefined") {
@@ -93,7 +83,8 @@ const WalletGlyph = () => (
 );
 
 /* one wallet row: logo, name, arrow.
-   `dot` puts a green availability dot on the top corner of the logo. The logo sits in a fixed 36px box, so every name starts at the same place. */
+   `dot` puts a green availability dot on the top corner of the logo. The logo sits in a fixed 36px box (centered, with no text-line gap),
+   so every logo lines up with its name and every name starts at the same place. */
 function Row({
   name,
   icon,
@@ -112,7 +103,7 @@ function Row({
     <button onClick={onClick} disabled={disabled} className={ROW_CLASS}>
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center">
-          <div className="relative">
+          <div className="relative flex" style={{ width: logoSize, height: logoSize }}>
             <WalletLogo name={name} icon={icon} size={logoSize} />
 
             {dot && (
@@ -143,9 +134,22 @@ export default function WalletModal({
     error: connectError,
   } = useConnect();
 
-  const [qr, setQr] = useState<QrView | null>(null); // null = the wallet list, otherwise the QR card is shown
+  const [qr, setQr] = useState<QrView | null>(null); // null = the wallet list, otherwise the second card is shown
   const [uri, setUri] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [localError, setLocalError] = useState("");
+
+  /* the window's height follows the card that is showing (so there is never an empty space under the list) */
+  const listRef = useRef<HTMLDivElement>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [heights, setHeights] = useState<{ list: number; qr: number } | null>(null);
+
+  const isConnectedRef = useRef(isConnected);
+  const isPendingRef = useRef(isPending);
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+    isPendingRef.current = isPending;
+  }, [isConnected, isPending]);
 
   const lower = (c: ConnectorItem) => ({
     name: (c.name || "").toLowerCase(),
@@ -209,7 +213,7 @@ export default function WalletModal({
     !!browserConnector &&
     (hasEthereum || installedOthers.length > 0 || !!metaMaskConnector || !!binanceConnector);
 
-  /* WalletConnect gives out its pairing link while it connects; the QR card draws it */
+  /* WalletConnect gives out its pairing link while it connects; the second card uses it */
   useEffect(() => {
     if (!walletConnectConnector) return;
     const onMessage = (m: { type: string; data?: unknown }) => {
@@ -221,14 +225,55 @@ export default function WalletModal({
     };
   }, [walletConnectConnector]);
 
-  /* start fresh each time the window is opened */
+  /* start fresh each time the window is opened (and never stay "connecting") */
   useEffect(() => {
     if (!isOpen) {
       setQr(null);
       setUri(null);
       setCopied(false);
+      setLocalError("");
+      setHeights(null);
+      reset();
     }
-  }, [isOpen]);
+  }, [isOpen, reset]);
+
+  /* measure both cards, so the window is exactly as tall as the one that shows */
+  useLayoutEffect(() => {
+    if (!isOpen || isConnected) return;
+    const measure = () => {
+      const l = listRef.current?.offsetHeight ?? 0;
+      const q = qrRef.current?.offsetHeight ?? 0;
+      if (l) setHeights((h) => (h && h.list === l && h.qr === q ? h : { list: l, qr: q }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (listRef.current) ro.observe(listRef.current);
+    if (qrRef.current) ro.observe(qrRef.current);
+    return () => ro.disconnect();
+  }, [isOpen, isConnected]);
+
+  /* coming back from a wallet app (Coinbase, MetaMask...) without having connected: do not leave the window frozen on "connecting" */
+  useEffect(() => {
+    if (!isOpen) return;
+    let timer: number | undefined;
+    const onBack = () => {
+      if (document.visibilityState !== "visible") return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (isPendingRef.current && !isConnectedRef.current) {
+          reset();
+          setLocalError(ERROR_MESSAGE);
+        }
+      }, 2000);
+    };
+    document.addEventListener("visibilitychange", onBack);
+    window.addEventListener("pageshow", onBack);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onBack);
+      window.removeEventListener("pageshow", onBack);
+    };
+  }, [isOpen, reset]);
 
   const openMetaMaskMobile = () => {
     if (typeof window === "undefined") {
@@ -247,6 +292,7 @@ export default function WalletModal({
   };
 
   const handleConnect = (connector: ConnectorItem) => {
+    setLocalError("");
     connect(
       { connector },
       {
@@ -257,10 +303,11 @@ export default function WalletModal({
     );
   };
 
-  /* slide to the QR card and start the WalletConnect connection (the QR code appears as soon as the link is ready) */
+  /* slide to the second card and start the WalletConnect connection (the code / the wallet apps appear as soon as the link is ready) */
   const showQrCard = (view: QrView) => {
     if (!walletConnectConnector) return;
     reset();
+    setLocalError("");
     setUri(null);
     setCopied(false);
     setQr(view);
@@ -270,6 +317,7 @@ export default function WalletModal({
   const backToList = () => {
     setQr(null);
     setUri(null);
+    setLocalError("");
     reset();
   };
 
@@ -316,6 +364,7 @@ export default function WalletModal({
   const mobile = isMobileDevice();
   const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0;
   const showQr = qr !== null;
+  const shownError = connectError ? ERROR_MESSAGE : localError;
 
   /* the two cards sit side by side; the visible one slides in, the other slides out */
   const panelStyle = (visible: boolean, offset: "-100%" | "100%"): CSSProperties => ({
@@ -324,15 +373,28 @@ export default function WalletModal({
     transition: `transform .32s cubic-bezier(.32,.72,0,1), visibility 0s linear ${visible ? "0s" : ".32s"}`,
   });
 
+  const errorBox = shownError ? (
+    <div className="mt-4 w-full rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
+      <p className="break-words text-sm font-medium leading-5 text-red-400">{shownError}</p>
+    </div>
+  ) : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/55 px-3 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
       {/* a click on the dim area closes the window */}
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative my-auto max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-hidden rounded-3xl border border-white/[0.07] bg-[#040506] shadow-2xl shadow-black/60 sm:max-h-[90vh]">
-        <div className="grid">
-          {/* CARD 1: the wallets */}
-          <div className="col-start-1 row-start-1 max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:max-h-[90vh] sm:p-5" style={panelStyle(!showQr, "-100%")} aria-hidden={showQr}>
+      <div
+        className="relative my-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/[0.07] bg-[#040506] shadow-2xl shadow-black/60"
+        style={{
+          height: heights ? (showQr ? heights.qr : heights.list) : undefined,
+          maxHeight: "calc(100vh - 2rem)",
+          transition: heights ? "height .32s cubic-bezier(.32,.72,0,1)" : undefined,
+        }}
+      >
+        {/* CARD 1: the wallets */}
+        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(!showQr, "-100%")} aria-hidden={showQr}>
+          <div ref={listRef} className="p-4 sm:p-5">
             <CardHeader left={<WalletGlyph />} title="Connect Wallet" onClose={onClose} />
 
             <div className="space-y-2">
@@ -363,17 +425,13 @@ export default function WalletModal({
               )}
             </div>
 
-            {connectError && !showQr && (
-              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                <p className="break-words text-sm font-medium leading-5 text-red-400">
-                  {getFriendlyErrorMessage(connectError.message)}
-                </p>
-              </div>
-            )}
+            {!showQr && errorBox}
           </div>
+        </div>
 
-          {/* CARD 2: the QR code (and "Get wallet") */}
-          <div className="col-start-1 row-start-1 max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:max-h-[90vh] sm:p-5" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
+        {/* CARD 2: the QR code with the wallet logo in its center on a computer, the wallet apps on a phone; "Get wallet" at the bottom */}
+        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
+          <div ref={qrRef} className="p-4 sm:p-5">
             <CardHeader
               left={
                 <button onClick={backToList} aria-label="Back to the wallet list" className="flex h-10 w-10 items-center justify-center rounded-full text-white/55 transition hover:bg-white/[0.04] hover:text-white">
@@ -387,29 +445,40 @@ export default function WalletModal({
             />
 
             <div className="flex flex-col items-center">
-              <div className="rounded-2xl bg-white p-3">
-                {uri ? (
-                  <QRCodeSVG value={uri} size={208} level="M" bgColor="#ffffff" fgColor="#000000" />
-                ) : (
-                  <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />
-                )}
-              </div>
+              {mobile ? (
+                /* phones: you cannot scan your own screen, so the wallet apps are listed */
+                <div className="w-full space-y-2">
+                  {MOBILE_WALLETS.map((w) => (
+                    <Row key={w.name} name={w.name} disabled={!uri} onClick={() => uri && (window.location.href = w.link(uri))} />
+                  ))}
+                  <Row name="Other wallet" disabled={!uri} onClick={() => uri && (window.location.href = uri)} />
+                </div>
+              ) : (
+                /* computers: the QR code, with the wallet's logo in the center */
+                <>
+                  <div className="relative rounded-2xl bg-white p-3">
+                    {uri ? (
+                      <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" />
+                    ) : (
+                      <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />
+                    )}
 
-              <p className="mt-4 text-center text-sm text-white/50">
-                {mobile ? "Open your wallet app to connect" : qr ? `Scan this code with your ${qr.name === "WalletConnect" ? "mobile wallet" : qr.name + " app"}` : ""}
-              </p>
+                    {uri && qr && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <div className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl bg-white">
+                          <WalletLogo name={qr.name} size={40} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-center text-sm text-white/50">
+                    {qr ? `Scan this code with your ${qr.name === "WalletConnect" ? "mobile wallet" : qr.name + " app"}` : ""}
+                  </p>
+                </>
+              )}
 
               <div className="mt-4 grid w-full gap-2">
-                {mobile && (
-                  <button
-                    onClick={() => uri && (window.location.href = uri)}
-                    disabled={!uri}
-                    className="flex min-h-[48px] items-center justify-center rounded-2xl bg-gradient-to-r from-[#13b8ff] via-[#1688f5] to-[#263be8] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
-                  >
-                    Open wallet app
-                  </button>
-                )}
-
                 <button
                   onClick={copyLink}
                   disabled={!uri}
@@ -430,13 +499,7 @@ export default function WalletModal({
                 )}
               </div>
 
-              {connectError && showQr && (
-                <div className="mt-4 w-full rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
-                  <p className="break-words text-sm font-medium leading-5 text-red-400">
-                    {getFriendlyErrorMessage(connectError.message)}
-                  </p>
-                </div>
-              )}
+              {showQr && errorBox}
             </div>
           </div>
         </div>
