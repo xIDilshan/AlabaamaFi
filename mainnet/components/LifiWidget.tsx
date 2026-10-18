@@ -8,7 +8,7 @@
   It is loaded only in the browser by app/bridge/robinhood/page.tsx.
 */
 
-import { useMemo } from "rect";
+import { useMemo } from "react";
 import { LiFiWidget } from "@lifi/widget";
 import type { WidgetConfig } from "@lifi/widget";
 import { EthereumProvider } from "@lifi/widget-provider-ethereum";
