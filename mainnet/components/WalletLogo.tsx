@@ -219,16 +219,16 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
 export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
-  const gap = Math.max(1, Math.round(size * 0.035)); // the small space between the boxes
-  const tile = Math.floor((size - gap) / 2); // four boxes of the same size
+  const gap = Math.max(2, Math.round(size * 0.06)); // the same space between the boxes sideways and up and down
+  const tile = (size - gap) / 2; // four boxes of the same size
   return (
     <span
-      className={`inline-grid shrink-0 ${className}`}
-      style={{ width: size, height: size, gridTemplateColumns: `repeat(2, ${tile}px)`, gridTemplateRows: `repeat(2, ${tile}px)`, gap }}
+      className={`grid shrink-0 ${className}`}
+      style={{ width: size, height: size, gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", columnGap: gap, rowGap: gap }}
       aria-hidden
     >
       {BROWSER_WALLET_LOGOS.map((n) => (
-        <span key={n} className="flex items-center justify-center rounded-[28%] border border-white/[0.1] bg-[#1b1e25]" style={{ width: tile, height: tile }}>
+        <span key={n} className="flex h-full w-full items-center justify-center rounded-[28%] border border-white/[0.1] bg-[#1b1e25]">
           <WalletLogoInner name={n} size={Math.round(tile * 0.64)} plain />
         </span>
       ))}
