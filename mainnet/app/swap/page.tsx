@@ -302,15 +302,16 @@ function Logo({ name, size = 24, fluid = false }: { name: "Arc" | Sym; size?: nu
 
 /* big clickable token (opens the token list) */
 const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void; disabled?: boolean }) => (
+  /* like the "USDC" chip on the Bridge page (semibold name), but the logo keeps its larger 40px size on wider screens, so the name is 18px there to stay in proportion */
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
     aria-label={`Choose token, now ${sym}`}
-    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-bold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[17px]"
+    className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[18px]"
   >
     <span className="block h-9 w-9 shrink-0 sm:h-10 sm:w-10"><Logo name={sym} fluid /></span>
-    <span style={{ fontWeight: 700 }}>{sym}</span>
+    {sym}
     <span className="text-slate-400"><Chevron /></span>
   </button>
 );
