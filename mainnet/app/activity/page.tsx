@@ -223,6 +223,8 @@ function TokenDot({ symbol, size = 16 }: { symbol: string; size?: number }) {
 }
 
 /* the columns of the wide-screen table (the header above the list uses the same ones) */
+/* long texts (like "Swapped EURC for USDC") slide sideways, with no scroll bar, instead of being cut off */
+const SLIDE = "block max-w-full overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const DESK_COLS = "lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]";
 
 /** A small clock whose hands show the real time of the transaction (the same time that is written next to it, in your time zone). */
@@ -276,7 +278,7 @@ function Row({ e }: { e: Ev }) {
   };
   const hashCell = (
     <span className="inline-flex items-center gap-1.5">
-      <span className="tabular-nums text-slate-300">{e.hash.slice(0, 8)}…{e.hash.slice(-6)}</span>
+      <span className="tabular-nums text-slate-300">{e.hash.slice(0, 7)}…{e.hash.slice(-4)}</span>
       <span
         role="button"
         tabIndex={0}
@@ -320,11 +322,11 @@ function Row({ e }: { e: Ev }) {
         {iconBox}
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="truncate text-[15px] font-semibold">{titleOf(e)}</span>
+            <span className={`${SLIDE} min-w-0 text-[15px] font-semibold`} title={titleOf(e)}>{titleOf(e)}</span>
             {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
             {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
           </span>
-          {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
+          {who && <span className={`${SLIDE} mt-0.5 text-[13px] text-slate-400`} title={who}>{who}</span>}
           <span className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
             <span>Tx hash</span>
             {hashCell}
@@ -342,8 +344,8 @@ function Row({ e }: { e: Ev }) {
         <span className="flex min-w-0 items-center gap-3.5">
           {iconBox}
           <span className="min-w-0">
-            <span className="block truncate text-[15px] font-semibold">{titleOf(e)}</span>
-            {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
+            <span className={`${SLIDE} text-[15px] font-semibold`} title={titleOf(e)}>{titleOf(e)}</span>
+            {who && <span className={`${SLIDE} mt-0.5 text-[13px] text-slate-400`} title={who}>{who}</span>}
           </span>
         </span>
         <span className="min-w-0 truncate">{hashCell}</span>
@@ -828,7 +830,11 @@ function ActivityInner() {
                     <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
                     <div className="min-w-0">
                       <p className="text-xs text-slate-500">{!account ? "Wallet address" : viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
-                      <p className="mt-0.5 truncate text-lg font-bold tracking-tight sm:text-xl" title={target}>{short(target)}</p>
+                      <p className="mt-0.5 break-all text-base font-bold leading-snug tracking-tight sm:text-lg" title={target}>
+                        <span className="sm:hidden">{target.slice(0, 12)}…{target.slice(-10)}</span>
+                        <span className="hidden sm:inline xl:hidden">{target.slice(0, 20)}…{target.slice(-14)}</span>
+                        <span className="hidden xl:inline">{target}</span>
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
