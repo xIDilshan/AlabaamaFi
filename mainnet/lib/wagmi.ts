@@ -8,7 +8,7 @@ import { arc } from "viem/chains";
    Project ID and paste it between the quotes on the line below.
    (While it is empty, the WalletConnect option is hidden.)
    ==================================================================== */
-const WALLETCONNECT_PROJECT_ID = "";
+const WALLETCONNECT_PROJECT_ID = "6672b2a513af880372a1ca90167637f2";
 
 /* Phones open WalletConnect's own window (the real WalletConnect card, with the wallet apps).
    Computers use our QR card (components/WalletModal.tsx). */
