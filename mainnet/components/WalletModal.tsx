@@ -2,11 +2,14 @@
 
 import { useMemo } from "react";
 import { useAccount, useConnect } from "wagmi";
+import { WalletLogo } from "@/components/WalletLogo";
 
 type WalletModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
+
+type ConnectorItem = ReturnType<typeof useConnect>["connectors"][number];
 
 function getFriendlyErrorMessage(message: string): string {
   const lowerMessage = message.toLowerCase();
@@ -29,6 +32,50 @@ function getFriendlyErrorMessage(message: string): string {
   return "Something went wrong. Please try again.";
 }
 
+const ROW_CLASS =
+  "flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
+
+/* one wallet row. `installed` puts the green dot on the logo, to show the wallet is available in this browser */
+function Row({
+  name,
+  icon,
+  sub,
+  installed,
+  disabled,
+  onClick,
+}: {
+  name: string;
+  icon?: string;
+  sub: string;
+  installed?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled} className={ROW_CLASS}>
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="relative shrink-0">
+          <WalletLogo name={name} icon={icon} size={32} />
+
+          {installed && (
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <p className="truncate font-black">{name}</p>
+
+          <p className="mt-1 text-xs font-medium leading-5 text-white/25">
+            {sub}
+          </p>
+        </div>
+      </div>
+
+      <span className="shrink-0 text-sm font-bold text-white/25">•</span>
+    </button>
+  );
+}
+
 export default function WalletModal({
   isOpen,
   onClose,
@@ -42,97 +89,53 @@ export default function WalletModal({
     error: connectError,
   } = useConnect();
 
+  const lower = (c: ConnectorItem) => ({
+    name: (c.name || "").toLowerCase(),
+    id: (c.id || "").toLowerCase(),
+  });
+
   const walletConnectConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name = connector.name.toLowerCase();
-      const id = connector.id.toLowerCase();
-
-      return (
-        name.includes("walletconnect") ||
-        id.includes("walletconnect")
-      );
+      const { name, id } = lower(connector);
+      return name.includes("walletconnect") || id.includes("walletconnect");
     });
   }, [connectors]);
 
   const coinbaseConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name = connector.name.toLowerCase();
-      const id = connector.id.toLowerCase();
-
-      return (
-        name.includes("coinbase") ||
-        name.includes("base") ||
-        id.includes("coinbase")
-      );
+      const { name, id } = lower(connector);
+      return name.includes("coinbase") || id.includes("coinbase");
     });
   }, [connectors]);
 
   const metaMaskConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name = connector.name.toLowerCase();
-      const id = connector.id.toLowerCase();
-
-      return (
-        name.includes("metamask") ||
-        id.includes("metamask") ||
-        id === "io.metamask"
-      );
+      const { name, id } = lower(connector);
+      return name.includes("metamask") || id.includes("metamask") || id === "io.metamask";
     });
   }, [connectors]);
 
   const browserConnector = useMemo(() => {
     return connectors.find((connector) => {
-      const name = connector.name.toLowerCase();
-      const id = connector.id.toLowerCase();
-
-      return (
-        id === "injected" ||
-        name === "injected" ||
-        name === "browser wallet"
-      );
+      const { name, id } = lower(connector);
+      return id === "injected" || name === "injected" || name === "browser wallet";
     });
   }, [connectors]);
 
+  /* every other wallet that is installed in this browser (they announce themselves, so wagmi lists each one) */
   const detectedBrowserWallets = useMemo(() => {
-    const excludedIds = new Set(
-      [
-        walletConnectConnector?.id,
-        coinbaseConnector?.id,
-        metaMaskConnector?.id,
-      ].filter(Boolean)
+    const excluded = new Set(
+      [walletConnectConnector?.id, coinbaseConnector?.id, metaMaskConnector?.id, browserConnector?.id].filter(Boolean)
     );
 
     return connectors.filter((connector) => {
-      if (excludedIds.has(connector.id)) {
-        return false;
-      }
-
-      const name = connector.name.toLowerCase();
-      const id = connector.id.toLowerCase();
-
-      if (
-        id === "injected" ||
-        name === "injected" ||
-        name === "browser wallet"
-      ) {
-        return false;
-      }
-
-      return (
-        name.includes("wallet") ||
-        name.includes("brave") ||
-        name.includes("rabby") ||
-        name.includes("okx") ||
-        name.includes("metamask") ||
-        id.includes(".")
-      );
+      if (excluded.has(connector.id)) return false;
+      return connector.type === "injected";
     });
-  }, [
-    connectors,
-    walletConnectConnector,
-    coinbaseConnector,
-    metaMaskConnector,
-  ]);
+  }, [connectors, walletConnectConnector, coinbaseConnector, metaMaskConnector, browserConnector]);
+
+  const isDetected = (word: string) =>
+    detectedBrowserWallets.some((c) => (c.name || "").toLowerCase().includes(word));
 
   const isMobileDevice = () => {
     if (typeof window === "undefined") {
@@ -168,9 +171,7 @@ export default function WalletModal({
     );
   };
 
-  const handleConnect = (
-    connector: (typeof connectors)[number]
-  ) => {
+  const handleConnect = (connector: ConnectorItem) => {
     connect(
       { connector },
       {
@@ -181,14 +182,23 @@ export default function WalletModal({
     );
   };
 
+  /* WalletConnect draws its own QR code window, so this window closes first */
+  const handleWalletConnect = () => {
+    if (!walletConnectConnector) return;
+    onClose();
+    connect({ connector: walletConnectConnector });
+  };
+
   const handleMetaMaskClick = () => {
-    if (isMobileDevice()) {
-      openMetaMaskMobile();
+    // MetaMask is installed (a computer, or inside the MetaMask app browser): connect right away
+    if (metaMaskConnector) {
+      handleConnect(metaMaskConnector);
       return;
     }
 
-    if (metaMaskConnector) {
-      handleConnect(metaMaskConnector);
+    // a phone without MetaMask in the browser: open this site inside the MetaMask app
+    if (isMobileDevice()) {
+      openMetaMaskMobile();
       return;
     }
 
@@ -198,6 +208,9 @@ export default function WalletModal({
   if (!isOpen || isConnected) {
     return null;
   }
+
+  const showBinance = !!walletConnectConnector && !isDetected("binance");
+  const showGate = !!walletConnectConnector && !isDetected("gate");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8">
@@ -223,216 +236,85 @@ export default function WalletModal({
         </div>
 
         <div className="space-y-3">
+          {/* the wallet in this browser (a green dot means at least one wallet is installed) */}
           {browserConnector && (
-            <button
-              onClick={() =>
-                handleConnect(browserConnector)
-              }
+            <Row
+              name="Browser Wallet"
+              sub="MetaMask and other browser wallets"
+              installed={detectedBrowserWallets.length > 0 || !!metaMaskConnector}
               disabled={isPending}
-              className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="relative shrink-0">
-                  <img
-                    src="/wallets/browser.svg"
-                    alt=""
-                    className="h-8 w-8 rounded-lg object-contain"
-                  />
-
-                  {detectedBrowserWallets.length > 0 && (
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="font-black">
-                    Browser Wallet
-                  </p>
-
-                  <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                    MetaMask and other browser wallets
-                  </p>
-                </div>
-              </div>
-
-              <span className="shrink-0 text-sm font-bold text-white/25">
-                •
-              </span>
-            </button>
+              onClick={() => handleConnect(browserConnector)}
+            />
           )}
 
-          {detectedBrowserWallets.map((connector) => {
-            const name =
-              connector.name.toLowerCase();
-
-            let displayName =
-              connector.name;
-
-            let logo =
-              connector.icon || null;
-
-            if (name.includes("brave")) {
-              displayName = "Brave Wallet";
-              logo = "/wallets/brave.svg";
-            } else if (name.includes("rabby")) {
-              displayName = "Rabby";
-              logo = "/wallets/rabby.svg";
-            } else if (
-              name.includes("okx") ||
-              name.includes("okex")
-            ) {
-              displayName = "OKX Wallet";
-              logo = "/wallets/okx.svg";
-            }
-
-            return (
-              <button
-                key={connector.uid}
-                onClick={() =>
-                  handleConnect(connector)
-                }
-                disabled={isPending}
-                className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="relative shrink-0">
-                    {logo ? (
-                      <img
-                        src={logo}
-                        alt=""
-                        className="h-8 w-8 rounded-lg object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b1017] text-sm font-bold">
-                        ◇
-                      </div>
-                    )}
-
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate font-black">
-                      {displayName}
-                    </p>
-
-                    <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                      Available in your browser
-                    </p>
-                  </div>
-                </div>
-
-                <span className="shrink-0 text-sm font-bold text-white/25">
-                  •
-                </span>
-              </button>
-            );
-          })}
+          {/* every other wallet installed in this browser */}
+          {detectedBrowserWallets.map((connector) => (
+            <Row
+              key={connector.uid}
+              name={connector.name}
+              icon={connector.icon}
+              sub="Available in your browser"
+              installed
+              disabled={isPending}
+              onClick={() => handleConnect(connector)}
+            />
+          ))}
 
           {walletConnectConnector && (
-            <button
-              onClick={() =>
-                handleConnect(
-                  walletConnectConnector
-                )
-              }
+            <Row
+              name="WalletConnect"
+              sub="Scan the QR code with a mobile wallet"
               disabled={isPending}
-              className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src="/wallets/walletconnect.svg"
-                  alt=""
-                  className="h-8 w-8 shrink-0 rounded-lg object-contain"
-                />
-
-                <div className="min-w-0">
-                  <p className="font-black">
-                    WalletConnect
-                  </p>
-
-                  <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                    Scan with a mobile wallet
-                  </p>
-                </div>
-              </div>
-
-              <span className="shrink-0 text-sm font-bold text-white/25">
-                •
-              </span>
-            </button>
+              onClick={handleWalletConnect}
+            />
           )}
 
-          <button
-            onClick={handleMetaMaskClick}
+          <Row
+            name="MetaMask"
+            sub={
+              metaMaskConnector
+                ? "Available in your browser"
+                : isMobileDevice()
+                ? "Open in MetaMask"
+                : "Install MetaMask"
+            }
+            installed={!!metaMaskConnector}
             disabled={isPending}
-            className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="relative shrink-0">
-                <img
-                  src="/wallets/metamask.svg"
-                  alt=""
-                  className="h-8 w-8 rounded-lg object-contain"
-                />
-
-                {metaMaskConnector && (
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-[#040506] bg-green-500" />
-                )}
-              </div>
-
-              <div className="min-w-0">
-                <p className="font-black">
-                  MetaMask
-                </p>
-
-                <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                  {isMobileDevice()
-                    ? "Open in MetaMask"
-                    : metaMaskConnector
-                    ? "Available in your browser"
-                    : "Install MetaMask"}
-                </p>
-              </div>
-            </div>
-
-            <span className="shrink-0 text-sm font-bold text-white/25">
-              •
-            </span>
-          </button>
+            onClick={handleMetaMaskClick}
+          />
 
           {coinbaseConnector && (
-            <button
-              onClick={() =>
-                handleConnect(
-                  coinbaseConnector
-                )
-              }
+            <Row
+              name="Coinbase Wallet"
+              sub="Connect with Coinbase Wallet"
               disabled={isPending}
-              className="flex min-h-[72px] w-full items-center justify-between gap-3 rounded-full border border-white/[0.07] bg-[#060709] px-4 py-3.5 text-left transition-all duration-200 hover:border-[#2b6cff]/18 hover:bg-[#0a0d12] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src="/wallets/base.svg"
-                  alt=""
-                  className="h-8 w-8 shrink-0 rounded-lg object-contain"
-                />
+              onClick={() => handleConnect(coinbaseConnector)}
+            />
+          )}
 
-                <div className="min-w-0">
-                  <p className="font-black">
-                    Coinbase Wallet
-                  </p>
+          {/* exchange wallets: they connect through WalletConnect (unless installed in this browser, then they are listed above) */}
+          {(showBinance || showGate) && (
+            <p className="px-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/25">
+              Exchange wallets
+            </p>
+          )}
 
-                  <p className="mt-1 text-xs font-medium leading-5 text-white/25">
-                    Connect with Coinbase Wallet
-                  </p>
-                </div>
-              </div>
+          {showBinance && (
+            <Row
+              name="Binance Wallet"
+              sub="Connect with the Binance app"
+              disabled={isPending}
+              onClick={handleWalletConnect}
+            />
+          )}
 
-              <span className="shrink-0 text-sm font-bold text-white/25">
-                •
-              </span>
-            </button>
+          {showGate && (
+            <Row
+              name="Gate Wallet"
+              sub="Connect with the Gate app"
+              disabled={isPending}
+              onClick={handleWalletConnect}
+            />
           )}
         </div>
 
@@ -452,4 +334,4 @@ export default function WalletModal({
       </div>
     </div>
   );
-                                         }
+}
