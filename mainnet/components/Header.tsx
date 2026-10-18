@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
 import { Manrope } from "next/font/google";
 import WalletModal from "@/components/WalletModal";
+import { WalletLogo, useWalletIdentity } from "@/components/WalletLogo";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -56,38 +57,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const mobileShortAddress = address ? `${address.slice(0, 4)}...${address.slice(-3)}` : "";
   const menuAddress = address ? `${address.slice(0, 10)}...${address.slice(-8)}` : "";
 
-  const connectedWallet = React.useMemo(() => {
-    if (!connector) {
-      return { name: "Browser Wallet", logo: "/wallets/browser.svg" };
-    }
-
-    const name = connector.name?.toLowerCase() || "";
-    const id = connector.id?.toLowerCase() || "";
-
-    if (name.includes("brave") || id.includes("brave")) {
-      return { name: "Brave Wallet", logo: "/wallets/brave.svg" };
-    }
-    if (name.includes("rabby") || id.includes("rabby")) {
-      return { name: "Rabby", logo: "/wallets/rabby.svg" };
-    }
-    if (name.includes("okx") || name.includes("okex") || id.includes("okx")) {
-      return { name: "OKX Wallet", logo: "/wallets/okx.svg" };
-    }
-    if (name.includes("metamask") || id.includes("metamask") || id === "io.metamask") {
-      return { name: "MetaMask", logo: "/wallets/metamask.svg" };
-    }
-    if (name.includes("coinbase") || name.includes("base") || id.includes("coinbase")) {
-      return { name: "Coinbase Wallet", logo: "/wallets/base.svg" };
-    }
-    if (name.includes("walletconnect") || id.includes("walletconnect")) {
-      return { name: "WalletConnect", logo: "/wallets/walletconnect.svg" };
-    }
-    if (connector.icon) {
-      return { name: connector.name || "Browser Wallet", logo: connector.icon };
-    }
-
-    return { name: connector.name || "Browser Wallet", logo: "/wallets/browser.svg" };
-  }, [connector]);
+  // the real name and logo of the wallet that is connected (for a browser wallet it looks at the wallet itself, so it says MetaMask, Rabby, Brave Wallet...)
+  const connectedWallet = useWalletIdentity(connector);
 
   React.useEffect(() => {
     const openWalletModal = () => {
@@ -446,7 +417,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] p-2">
-                    <img src={connectedWallet.logo} alt={`${connectedWallet.name} logo`} className="h-full w-full object-contain" />
+                    <WalletLogo name={connectedWallet.name} icon={connectedWallet.icon} size={26} />
                   </div>
 
                   <div className="min-w-0">
