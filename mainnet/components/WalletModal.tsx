@@ -12,7 +12,7 @@ type WalletModalProps = {
 
 type ConnectorItem = ReturnType<typeof useConnect>["connectors"][number];
 
-/* the second card (QR code on a computer, wallet apps on a phone): `getUrl` is where "Get wallet" goes (left out for WalletConnect) */
+/* the second card (the QR code, on a computer): `getUrl` is where "Get wallet" goes (left out for WalletConnect) */
 type QrView = { name: string; getUrl?: string };
 
 /* the one message shown for every connection problem (rejected, cancelled, came back from a wallet app without connecting...) */
@@ -31,14 +31,6 @@ const GET_WALLET = {
 };
 const getWalletUrl = (w: keyof typeof GET_WALLET) =>
   typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent) ? GET_WALLET[w].chrome : GET_WALLET[w].site;
-
-/* ---------- phones: the wallet apps shown on the WalletConnect card (each opens the app with the connection link) ---------- */
-const MOBILE_WALLETS: { name: string; link: (uri: string) => string }[] = [
-  { name: "MetaMask", link: (u) => `https://metamask.app.link/wc?uri=${encodeURIComponent(u)}` },
-  { name: "Trust Wallet", link: (u) => `https://link.trustwallet.com/wc?uri=${encodeURIComponent(u)}` },
-  { name: "Rainbow", link: (u) => `https://rnbwapp.com/wc?uri=${encodeURIComponent(u)}` },
-  { name: "Coinbase Wallet", link: (u) => `https://go.cb-w.com/wc?uri=${encodeURIComponent(u)}` },
-];
 
 const isMobileDevice = () => {
   if (typeof window === "undefined") {
@@ -144,12 +136,14 @@ export default function WalletModal({
   const qrRef = useRef<HTMLDivElement>(null);
   const [heights, setHeights] = useState<{ list: number; qr: number } | null>(null);
 
+  const resetRef = useRef(reset);
   const isConnectedRef = useRef(isConnected);
   const isPendingRef = useRef(isPending);
   useEffect(() => {
+    resetRef.current = reset;
     isConnectedRef.current = isConnected;
     isPendingRef.current = isPending;
-  }, [isConnected, isPending]);
+  }, [reset, isConnected, isPending]);
 
   const lower = (c: ConnectorItem) => ({
     name: (c.name || "").toLowerCase(),
@@ -227,15 +221,13 @@ export default function WalletModal({
 
   /* start fresh each time the window is opened (and never stay "connecting") */
   useEffect(() => {
-    if (!isOpen) {
-      setQr(null);
-      setUri(null);
-      setCopied(false);
-      setLocalError("");
-      setHeights(null);
-      reset();
-    }
-  }, [isOpen, reset]);
+    setQr(null);
+    setUri(null);
+    setCopied(false);
+    setLocalError("");
+    if (isOpen) resetRef.current();
+    else setHeights(null);
+  }, [isOpen]);
 
   /* measure both cards, so the window is exactly as tall as the one that shows */
   useLayoutEffect(() => {
@@ -261,7 +253,7 @@ export default function WalletModal({
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         if (isPendingRef.current && !isConnectedRef.current) {
-          reset();
+          resetRef.current();
           setLocalError(ERROR_MESSAGE);
         }
       }, 2000);
@@ -273,7 +265,7 @@ export default function WalletModal({
       document.removeEventListener("visibilitychange", onBack);
       window.removeEventListener("pageshow", onBack);
     };
-  }, [isOpen, reset]);
+  }, [isOpen]);
 
   const openMetaMaskMobile = () => {
     if (typeof window === "undefined") {
@@ -312,6 +304,15 @@ export default function WalletModal({
     setCopied(false);
     setQr(view);
     connect({ connector: walletConnectConnector }, { onSuccess: () => onClose() });
+  };
+
+  /* phones: close this window and let WalletConnect open its own window (the real WalletConnect card) */
+  const openWalletConnectWindow = () => {
+    if (!walletConnectConnector) return;
+    resetRef.current();
+    setLocalError("");
+    connect({ connector: walletConnectConnector });
+    onClose();
   };
 
   const backToList = () => {
@@ -354,7 +355,11 @@ export default function WalletModal({
       handleConnect(binanceConnector);
       return;
     }
-    showQrCard({ name: "Binance Wallet", getUrl: isMobileDevice() ? undefined : getWalletUrl("binance") });
+    if (isMobileDevice()) {
+      openWalletConnectWindow();
+      return;
+    }
+    showQrCard({ name: "Binance Wallet", getUrl: getWalletUrl("binance") });
   };
 
   if (!isOpen || isConnected) {
@@ -413,7 +418,7 @@ export default function WalletModal({
               <Row name="MetaMask" dot={!!metaMaskConnector} disabled={isPending && !showQr} onClick={handleMetaMaskClick} />
 
               {walletConnectConnector && (
-                <Row name="WalletConnect" dot={mobile} onClick={() => showQrCard({ name: "WalletConnect" })} />
+                <Row name="WalletConnect" dot={mobile} onClick={() => (mobile ? openWalletConnectWindow() : showQrCard({ name: "WalletConnect" }))} />
               )}
 
               {coinbaseConnector && (
@@ -429,7 +434,7 @@ export default function WalletModal({
           </div>
         </div>
 
-        {/* CARD 2: the QR code with the wallet logo in its center on a computer, the wallet apps on a phone; "Get wallet" at the bottom */}
+        {/* CARD 2: the QR code with the wallet logo in its center, and "Get wallet" at the bottom (computers only) */}
         <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
           <div ref={qrRef} className="p-4 sm:p-5">
             <CardHeader
@@ -445,38 +450,26 @@ export default function WalletModal({
             />
 
             <div className="flex flex-col items-center">
-              {mobile ? (
-                /* phones: you cannot scan your own screen, so the wallet apps are listed */
-                <div className="w-full space-y-2">
-                  {MOBILE_WALLETS.map((w) => (
-                    <Row key={w.name} name={w.name} disabled={!uri} onClick={() => uri && (window.location.href = w.link(uri))} />
-                  ))}
-                  <Row name="Other wallet" disabled={!uri} onClick={() => uri && (window.location.href = uri)} />
-                </div>
-              ) : (
-                /* computers: the QR code, with the wallet's logo in the center */
-                <>
-                  <div className="relative rounded-2xl bg-white p-3">
-                    {uri ? (
-                      <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" />
-                    ) : (
-                      <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />
-                    )}
+              {/* the QR code, with the wallet's logo in the center */}
+              <div className="relative rounded-2xl bg-white p-3">
+                {uri ? (
+                  <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" />
+                ) : (
+                  <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />
+                )}
 
-                    {uri && qr && (
-                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl bg-white">
-                          <WalletLogo name={qr.name} size={40} />
-                        </div>
-                      </div>
-                    )}
+                {uri && qr && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl bg-white">
+                      <WalletLogo name={qr.name} size={40} />
+                    </div>
                   </div>
+                )}
+              </div>
 
-                  <p className="mt-4 text-center text-sm text-white/50">
-                    {qr ? `Scan this code with your ${qr.name === "WalletConnect" ? "mobile wallet" : qr.name + " app"}` : ""}
-                  </p>
-                </>
-              )}
+              <p className="mt-4 text-center text-sm text-white/50">
+                {qr ? `Scan this code with your ${qr.name === "WalletConnect" ? "mobile wallet" : qr.name + " app"}` : ""}
+              </p>
 
               <div className="mt-4 grid w-full gap-2">
                 <button
