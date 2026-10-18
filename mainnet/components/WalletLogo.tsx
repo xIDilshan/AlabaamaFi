@@ -21,9 +21,11 @@ import type { Connector } from "wagmi";
    files    your own logo files in public/wallets/ (tried first)
    wallet   the wallet's name in web3icons (used if there is no file)
    exchange the exchange's name in web3icons (for Binance, Gate)
+   variant  "mono" (default) draws only the wallet's logo in its own color, with no background tile.
+            "branded" uses the colors web3icons gives it. If a wallet looks wrong, switch it here.
    glyph    show a drawn wallet icon until the logo file is uploaded
    --------------------------------------------------------------------- */
-type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; glyph?: boolean; letter: string; color: string };
+type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; variant?: "branded" | "mono"; glyph?: boolean; letter: string; color: string };
 
 const RULES: Rule[] = [
   { keys: ["brave"], files: ["/wallets/brave.svg"], letter: "B", color: "#fb542b" },
@@ -39,7 +41,7 @@ const RULES: Rule[] = [
   { keys: ["math wallet", "mathwallet"], files: ["/wallets/mathwallet.png"], letter: "M", color: "#2b2f33" },
   { keys: ["binance"], exchange: ["binance"], letter: "B", color: "#f0b90b" },
   { keys: ["gate"], exchange: ["gate", "gate-io"], letter: "G", color: "#2354e6" },
-  { keys: ["metamask"], wallet: ["metamask"], letter: "M", color: "#f6851b" },
+  { keys: ["metamask"], wallet: ["metamask"], variant: "branded", letter: "M", color: "#f6851b" },
   { keys: ["walletconnect", "wallet connect"], wallet: ["wallet-connect"], letter: "W", color: "#3b99fc" },
   { keys: ["rabby"], wallet: ["rabby"], letter: "R", color: "#7084ff" },
   { keys: ["phantom"], wallet: ["phantom"], letter: "P", color: "#ab9ff2" },
@@ -201,8 +203,8 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
     <span className={box} style={{ width: size, height: size, background: hasSvg ? "transparent" : rule?.glyph ? "rgba(255,255,255,0.08)" : rule?.color ?? "#1978f5", color: "rgba(255,255,255,0.7)" }} aria-hidden>
       {!hasSvg && (rule?.glyph ? <WalletGlyph size={size} /> : <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{(rule?.letter ?? name[0] ?? "W").toUpperCase()}</span>)}
       {Comp && webLeft && (
-        <span ref={holder} key={webNames[webIdx]} className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ opacity: hasSvg ? 1 : 0 }}>
-          <Comp name={webNames[webIdx]} variant="branded" size={size} />
+        <span ref={holder} key={webNames[webIdx]} className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ opacity: hasSvg ? 1 : 0, color: rule?.color }}>
+          <Comp name={webNames[webIdx]} variant={rule?.variant ?? "mono"} size={size} />
         </span>
       )}
     </span>
@@ -217,15 +219,17 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
 export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
-  const cell = Math.round(size * 0.37);
+  const cell = Math.round(size * 0.36); // the same size for all four logos
   return (
     <span
-      className={`inline-grid shrink-0 grid-cols-2 place-content-center place-items-center rounded-[26%] border border-white/[0.1] bg-[#15171c] ${className}`}
-      style={{ width: size, height: size, gap: Math.max(1, Math.round(size * 0.06)) }}
+      className={`inline-grid shrink-0 place-content-center place-items-center rounded-[24%] border border-white/[0.1] bg-[#15171c] ${className}`}
+      style={{ width: size, height: size, gridTemplateColumns: `repeat(2, ${cell}px)`, gridTemplateRows: `repeat(2, ${cell}px)`, gap: Math.max(2, Math.round(size * 0.07)) }}
       aria-hidden
     >
       {BROWSER_WALLET_LOGOS.map((n) => (
-        <WalletLogoInner key={n} name={n} size={cell} plain />
+        <span key={n} className="flex items-center justify-center" style={{ width: cell, height: cell }}>
+          <WalletLogoInner name={n} size={cell} plain />
+        </span>
       ))}
     </span>
   );
