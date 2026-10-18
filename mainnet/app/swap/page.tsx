@@ -307,7 +307,7 @@ const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void
     onClick={onClick}
     disabled={disabled}
     aria-label={`Choose token, now ${sym}`}
-    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[17px]"
+    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-bold transition hover:bg-white/[0.12] disabled:opacity-60 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[17px]"
   >
     <span className="block h-9 w-9 shrink-0 sm:h-10 sm:w-10"><Logo name={sym} fluid /></span>
     {sym}
@@ -492,7 +492,7 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
         {!compact && (
           <div className="flex gap-1.5">
             {SYMS.map((s) => (
-              <button key={s} onClick={() => setSym?.(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
+              <button key={s} onClick={() => setSym?.(s)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold transition ${s === sym ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
                 <span className="block h-5 w-5"><Logo name={s} fluid /></span>
                 {s}
               </button>
@@ -1345,7 +1345,7 @@ export default function SwapPage() {
                 <button onClick={() => pick(side, s)} className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.06] ${s === current ? "bg-white/[0.05]" : ""}`}>
                   <span className="block h-10 w-10 shrink-0"><Logo name={s} fluid /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-base font-semibold">{s}</span>
+                    <span className="block text-base font-bold">{s}</span>
                     <span className="block truncate text-xs text-slate-500">{TOKENS[s].name}</span>
                   </span>
                   <span className="text-sm text-slate-400 tabular-nums">{ready && balances[s] !== null ? formatUnits(balances[s] as bigint, TOKENS[s].decimals) : "—"}</span>
