@@ -11,7 +11,7 @@
     4. a drawn wallet icon, or the first letter of the name
 */
 
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "rect";
 import type { Connector } from "wagmi";
 
 /* ---------------------------------------------------------------------
