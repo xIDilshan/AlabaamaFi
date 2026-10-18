@@ -8,7 +8,11 @@ import { arc } from "viem/chains";
    Project ID and paste it between the quotes on the line below.
    (While it is empty, the WalletConnect option is hidden.)
    ==================================================================== */
-const WALLETCONNECT_PROJECT_ID = "6672b2a513af880372a1ca90167637f2";
+const WALLETCONNECT_PROJECT_ID = "";
+
+/* Phones open WalletConnect's own window (the real WalletConnect card, with the wallet apps).
+   Computers use our QR card (components/WalletModal.tsx). */
+const IS_MOBILE = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
 
 export const arcMainnet = arc;
 
@@ -29,7 +33,7 @@ export const config = createConfig({
       ? [
           walletConnect({
             projectId: WALLETCONNECT_PROJECT_ID,
-            showQrModal: false, // our own QR card (WalletModal) shows the code
+            showQrModal: IS_MOBILE, // phones: WalletConnect's own window. Computers: our own QR card (WalletModal)
             metadata: {
               name: "AlabaamaFi",
               description: "A simple interface for Arc",
