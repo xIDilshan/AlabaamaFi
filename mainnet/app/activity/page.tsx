@@ -831,8 +831,7 @@ function ActivityInner() {
                     <div className="min-w-0">
                       <p className="text-xs text-slate-500">{!account ? "Wallet address" : viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
                       <p className="mt-0.5 break-all text-base font-bold leading-snug tracking-tight sm:text-lg" title={target}>
-                        <span className="sm:hidden">{target.slice(0, 12)}…{target.slice(-10)}</span>
-                        <span className="hidden sm:inline xl:hidden">{target.slice(0, 20)}…{target.slice(-14)}</span>
+                        <span className="xl:hidden">{target.slice(0, 12)}…{target.slice(-8)}</span>
                         <span className="hidden xl:inline">{target}</span>
                       </p>
                     </div>
