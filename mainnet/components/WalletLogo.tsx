@@ -219,7 +219,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
 export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
-  const gap = Math.max(2, Math.round(size * 0.08));
+  const gap = Math.max(1, Math.round(size * 0.035)); // the small space between the boxes
   const tile = Math.floor((size - gap) / 2); // four boxes of the same size
   return (
     <span
