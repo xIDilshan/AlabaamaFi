@@ -21,7 +21,7 @@ function getFriendlyErrorMessage(message: string): string {
   if (
     lowerMessage.includes("user rejected") ||
     lowerMessage.includes("user denied") ||
-    lowerMessage.includes("connection request reset")
+    lowerMessage.includes("connection reqest reset")
   ) {
     return "Wallet connection rejected. Please try again.";
   }
