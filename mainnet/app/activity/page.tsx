@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Inter } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
@@ -221,6 +222,42 @@ function TokenDot({ symbol, size = 16 }: { symbol: string; size?: number }) {
   );
 }
 
+/* the columns of the wide-screen table (the header above the list uses the same ones) */
+const DESK_COLS = "lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]";
+
+/** A small clock whose hands show the real time of the transaction (the same time that is written next to it, in your time zone). */
+function ClockIcon({ t, size = 15 }: { t: number; size?: number }) {
+  const d = new Date(t);
+  const minutes = d.getMinutes();
+  const hourDeg = ((d.getHours() % 12) + minutes / 60) * 30; // 360° / 12 hours
+  const minuteDeg = minutes * 6; // 360° / 60 minutes
+  const tip = (deg: number, len: number) => {
+    const r = (deg * Math.PI) / 180;
+    return { x: 12 + len * Math.sin(r), y: 12 - len * Math.cos(r) };
+  };
+  const h = tip(hourDeg, 5);
+  const m = tip(minuteDeg, 7.6);
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" role="img" aria-label={`Clock showing ${timeOf(t)}`}>
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.7" />
+      <line x1="12" y1="12" x2={h.x} y2={h.y} strokeWidth="2.3" />
+      <line x1="12" y1="12" x2={m.x} y2={m.y} strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+const fullDate = (t: number) => new Date(t).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+
+function StatusText({ status }: { status: Ev["status"] }) {
+  const cfg = status === "error" ? { c: "bg-red-400", t: "text-red-300", l: "Failed" } : status === "pending" ? { c: "bg-amber-400", t: "text-amber-300", l: "Pending" } : { c: "bg-emerald-400", t: "text-emerald-300", l: "Success" };
+  return (
+    <span className={`inline-flex items-center gap-2 text-sm font-medium ${cfg.t}`}>
+      <span className={`h-2 w-2 rounded-full ${cfg.c}`} aria-hidden />
+      {cfg.l}
+    </span>
+  );
+}
+
 function Row({ e }: { e: Ev }) {
   const [copied, setCopied] = useState(false);
   const outs = e.legs.filter((l) => l.dir === "out");
@@ -237,51 +274,87 @@ function Row({ e }: { e: Ev }) {
       /* clipboard blocked */
     }
   };
+  const hashCell = (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="tabular-nums text-slate-300">{e.hash.slice(0, 8)}…{e.hash.slice(-6)}</span>
+      <span
+        role="button"
+        tabIndex={0}
+        aria-label={copied ? "Transaction hash copied" : "Copy transaction hash"}
+        title={copied ? "Copied" : "Copy hash"}
+        onClick={copyHash}
+        onKeyDown={(ev) => {
+          if (ev.key === "Enter" || ev.key === " ") copyHash(ev);
+        }}
+        className="inline-flex h-5 shrink-0 items-center justify-center rounded px-1 text-slate-500 transition hover:bg-white/[0.08] hover:text-white"
+      >
+        {copied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d="M9 9h10v10H9zM5 15V5h10" size={13} />}
+      </span>
+    </span>
+  );
+  const amounts = [...ins, ...outs].map((l, i) => (
+    <span key={i} className={`flex items-center justify-end gap-1.5 text-sm font-semibold tabular-nums ${l.dir === "in" ? "text-emerald-300" : "text-slate-100"}`}>
+      {l.dir === "in" ? "+" : "−"}
+      {fmtAmt(l.amount)}
+      <TokenDot symbol={l.symbol} />
+    </span>
+  ));
+  const iconBox = (
+    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${e.status === "error" ? "text-red-300" : TINT[e.type]}`}>
+      <Svg d={ICONS[e.type]} />
+    </span>
+  );
+  const timeCell = e.t ? (
+    <span className="inline-flex items-center gap-1.5 text-slate-300" title={new Date(e.t).toLocaleString()}>
+      <span className="text-slate-500"><ClockIcon t={e.t} /></span>
+      <span className="tabular-nums">{timeOf(e.t)}</span>
+    </span>
+  ) : (
+    <span className="text-slate-600">—</span>
+  );
+
   return (
-    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group flex items-start gap-3.5 rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${e.status === "error" ? "text-red-300" : TINT[e.type]}`}>
-        <Svg d={ICONS[e.type]} />
-      </span>
-
-      {/* left: what happened, with whom, and the transaction hash */}
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="truncate text-[15px] font-semibold">{titleOf(e)}</span>
-          {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
-          {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
-        </span>
-        {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
-        <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-          <span>Tx hash</span>
-          <span className="tabular-nums text-slate-400">{e.hash.slice(0, 8)}…{e.hash.slice(-6)}</span>
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={copied ? "Transaction hash copied" : "Copy transaction hash"}
-            title={copied ? "Copied" : "Copy hash"}
-            onClick={copyHash}
-            onKeyDown={(ev) => {
-              if (ev.key === "Enter" || ev.key === " ") copyHash(ev);
-            }}
-            className="inline-flex h-5 shrink-0 items-center justify-center rounded px-1 text-slate-500 transition hover:bg-white/[0.08] hover:text-white"
-          >
-            {copied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d="M9 9h10v10H9zM5 15V5h10" size={13} />}
+    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group block rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
+      {/* phones and tablets: icon, details and hash on the left; amounts, time and fee on the right */}
+      <div className="flex items-start gap-3.5 lg:hidden">
+        {iconBox}
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="truncate text-[15px] font-semibold">{titleOf(e)}</span>
+            {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
+            {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
+          </span>
+          {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
+          <span className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
+            <span>Tx hash</span>
+            {hashCell}
           </span>
         </span>
-      </span>
+        <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+          {amounts}
+          <span className="mt-1 text-xs">{timeCell}</span>
+          {e.fee && <span className="text-[11px] tabular-nums text-slate-600">Fee {fmtAmt(e.fee)} USDC</span>}
+        </span>
+      </div>
 
-      {/* right: the amounts, then the time, then the fee */}
-      <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-        {[...ins, ...outs].map((l, i) => (
-          <span key={i} className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums ${l.dir === "in" ? "text-emerald-300" : "text-slate-100"}`}>
-            {l.dir === "in" ? "+" : "−"}
-            {fmtAmt(l.amount)}
-            <TokenDot symbol={l.symbol} />
+      {/* wide screens: one clean table row */}
+      <div className={`hidden items-center gap-x-5 text-sm lg:grid ${DESK_COLS}`}>
+        <span className="flex min-w-0 items-center gap-3.5">
+          {iconBox}
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-semibold">{titleOf(e)}</span>
+            {who && <span className="mt-0.5 block truncate text-[13px] text-slate-400">{who}</span>}
           </span>
-        ))}
-        {e.t ? <span className="mt-1 text-xs tabular-nums text-slate-400">{timeOf(e.t)}</span> : null}
-        {e.fee && <span className="text-[11px] tabular-nums text-slate-600">Fee {fmtAmt(e.fee)} USDC</span>}
-      </span>
+        </span>
+        <span className="min-w-0 truncate">{hashCell}</span>
+        <span className="min-w-0">
+          <span className="block text-sm">{timeCell}</span>
+          {e.t ? <span className="mt-0.5 block pl-[21px] text-xs text-slate-500">{fullDate(e.t)}</span> : null}
+        </span>
+        <span><StatusText status={e.status} /></span>
+        <span className="flex flex-col items-end gap-0.5 text-right">{amounts.length ? amounts : <span className="text-slate-600">—</span>}</span>
+        <span className="text-right text-sm tabular-nums text-slate-400">{e.fee ? `${fmtAmt(e.fee)} USDC` : "—"}</span>
+      </div>
     </a>
   );
 }
@@ -341,21 +414,49 @@ const I = {
 };
 
 /* ---------- page ---------- */
-export default function ActivityPage() {
+function ActivityInner() {
+  const router = useRouter();
+  const params = useSearchParams();
   const { address, isConnected } = useAccount();
   const account = isConnected && address ? address : null;
 
-  /* any wallet can be looked up; otherwise the connected wallet is shown */
-  const [lookup, setLookup] = useState<string | null>(null);
+  /* the wallet that is shown comes from the address in the URL: /activity?address=0x...
+     (plain /activity is the first screen), so the Back button works like a normal page */
+  const rawAddress = params.get("address") ?? "";
+  const target = ADDR_RE.test(rawAddress) ? rawAddress : null;
+  const me = target ? target.toLowerCase() : "";
+  const viewingOther = !!account && !!target && target.toLowerCase() !== account.toLowerCase();
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState("");
+
+  const goTo = useCallback(
+    (addr: string, replace = false) => {
+      const url = `/activity?address=${addr}`;
+      if (replace) router.replace(url);
+      else router.push(url);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    },
+    [router]
+  );
+
+  /* the search box starts empty whenever the wallet or the shown address changes */
   useEffect(() => {
     setInput("");
     setInputError("");
-  }, [account]);
-  const target = lookup ?? account;
-  const me = target ? target.toLowerCase() : "";
-  const viewingOther = !!lookup && lookup.toLowerCase() !== (account ?? "").toLowerCase();
+  }, [account, target]);
+
+  /* opening this page with a wallet connected, or connecting a wallet here, shows that wallet (the address goes into the URL).
+     Going Back to the first screen does not do this again. */
+  const mountedAt = useRef(Date.now());
+  const prevAccount = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const prev = prevAccount.current;
+    prevAccount.current = account;
+    if (!account || target) return;
+    const justOpened = Date.now() - mountedAt.current < 2500; // the wallet reconnecting while the page opens
+    if (prev === undefined) goTo(account, true);
+    else if (!prev) goTo(account, justOpened);
+  }, [account, target, goTo]);
 
   /* everything loaded so far lives in these maps (no duplicates), newest pages first, older pages added on demand */
   const txMap = useRef<Map<string, Tx>>(new Map());
@@ -576,8 +677,7 @@ export default function ActivityPage() {
     if (!ADDR_RE.test(v)) return setInputError("Invalid wallet address.");
     setInputError("");
     setInput("");
-    setLookup(v);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    goTo(v);
   };
   const copyAddress = async () => {
     if (!target) return;
@@ -592,10 +692,10 @@ export default function ActivityPage() {
   const connect = () => window.dispatchEvent(new Event("open-wallet-modal"));
   /** Back to the first screen (the search box and the Connect wallet button). */
   const backToStart = () => {
-    setLookup(null);
     setInput("");
     setInputError("");
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    router.push("/activity");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
   const refreshCard = async () => {
     if (refreshing) return;
@@ -713,8 +813,8 @@ export default function ActivityPage() {
                   <span className="h-px flex-1 bg-white/[0.08]" />
                 </div>
 
-                <button onClick={connect} className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 text-base font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
-                  <Svg d={I.wallet} size={20} /> Connect your wallet
+                <button onClick={() => (account ? goTo(account) : connect())} className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 text-base font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
+                  <Svg d={I.wallet} size={20} /> {account ? "View my wallet" : "Connect your wallet"}
                 </button>
               </div>
             </>
@@ -738,13 +838,13 @@ export default function ActivityPage() {
                     <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
                       <Svg d={I.link} size={14} /> Explorer
                     </a>
-                    {!account && lookup && (
+                    {!account && (
                       <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
                         <Svg d={I.wallet} size={15} /> Connect wallet
                       </button>
                     )}
                     {account && viewingOther && (
-                      <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
+                      <button onClick={() => account && goTo(account)} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
                         <Svg d={I.wallet} size={15} /> My wallet
                       </button>
                     )}
@@ -753,9 +853,7 @@ export default function ActivityPage() {
                 <div className="mt-4">{searchBox(false)}</div>
               </div>
 
-              <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
-                {/* left: portfolio and counts */}
-                <div className="space-y-4">
+                <div className="mt-4 grid items-stretch gap-4 lg:grid-cols-2">
                   <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "100ms" } as CSSProperties}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -815,8 +913,7 @@ export default function ActivityPage() {
                   </div>
                 </div>
 
-                {/* right: the transactions */}
-                <div className="fade-up min-w-0 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
+                <div className="fade-up mt-4 min-w-0 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
                   <div className="px-1 pb-3">
                     <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-white/[0.1] bg-white/[0.03] p-0.5">
                       {FILTERS.map(([f, label]) => (
@@ -827,6 +924,17 @@ export default function ActivityPage() {
 
                   {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
                     <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
+                  )}
+
+                  {!first && shown.length > 0 && (
+                    <div className={`hidden items-center gap-x-5 border-b border-white/[0.06] px-3 pb-2.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid ${DESK_COLS}`}>
+                      <span>Transaction</span>
+                      <span>Tx hash</span>
+                      <span>Time</span>
+                      <span>Status</span>
+                      <span className="text-right">Amount</span>
+                      <span className="text-right">Fee</span>
+                    </div>
                   )}
 
                   {body}
@@ -851,11 +959,18 @@ export default function ActivityPage() {
                     </a>
                   </div>
                 </div>
-              </div>
             </div>
           )}
         </section>
       </div>
     </main>
+  );
+}
+
+export default function ActivityPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#010205]" />}>
+      <ActivityInner />
+    </Suspense>
   );
 }
