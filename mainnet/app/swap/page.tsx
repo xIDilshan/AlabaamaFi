@@ -308,7 +308,7 @@ const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void
     onClick={onClick}
     disabled={disabled}
     aria-label={`Choose token, now ${sym}`}
-    className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[18px]"
+    className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-base font-bold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-[18px]"
   >
     <span className="block h-9 w-9 shrink-0 sm:h-10 sm:w-10"><Logo name={sym} fluid /></span>
     {sym}
