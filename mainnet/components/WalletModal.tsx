@@ -306,6 +306,25 @@ export default function WalletModal({
     connect({ connector: walletConnectConnector }, { onSuccess: () => onClose() });
   };
 
+  /* "Browser Wallet": connect to the installed wallet that owns the browser's default connection (so its exact name and logo are known).
+     If none of them matches, the generic browser connection is used. */
+  const handleBrowserWallet = async () => {
+    if (!browserConnector) return;
+    const eth = (window as unknown as { ethereum?: unknown }).ethereum;
+    for (const c of connectors) {
+      if (c.type !== "injected" || c.id === "injected") continue;
+      try {
+        if (eth && (await c.getProvider()) === eth) {
+          handleConnect(c);
+          return;
+        }
+      } catch {
+        /* try the next one */
+      }
+    }
+    handleConnect(browserConnector);
+  };
+
   /* phones: close this window and let WalletConnect open its own window (the real WalletConnect card) */
   const openWalletConnectWindow = () => {
     if (!walletConnectConnector) return;
@@ -405,7 +424,7 @@ export default function WalletModal({
             <div className="space-y-2">
               {/* installed in this browser: the browser wallet and every other installed wallet, above the main wallets */}
               {showBrowserWallet && browserConnector && (
-                <Row name="Browser Wallet" dot disabled={isPending} onClick={() => handleConnect(browserConnector)} />
+                <Row name="Browser Wallet" dot disabled={isPending} onClick={handleBrowserWallet} />
               )}
 
               {installedOthers.map((connector) => (
