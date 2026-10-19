@@ -216,9 +216,9 @@ function HeroLogo() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[820px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_70%,transparent)] [mask-image:linear-gradient(to_bottom,#000_70%,transparent)]">
       <style>{css}</style>
-      <div className="absolute left-1/2 -top-[2%] h-[min(120vw,860px)] w-[min(120vw,860px)] -translate-x-1/2">
+      <div className="absolute left-1/2 top-0 h-[min(105vw,700px)] w-[min(105vw,700px)] -translate-x-1/2 sm:left-auto sm:-right-[12%] sm:translate-x-0 lg:-right-[3%] xl:-right-[1%]">
         <div className="absolute inset-[6%] rounded-full bg-[radial-gradient(circle,rgba(30,120,255,0.42),transparent_68%)] blur-2xl" style={{ animation: "glowPulse 8s ease-in-out infinite" }} />
-        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-30 sm:opacity-40 lg:opacity-50" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
+        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-40 sm:opacity-80 lg:opacity-90" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
           <defs>
             {LOGO_ARCS.map((a, i) => (
               <linearGradient key={i} id={`logoArc${i}`} gradientUnits="userSpaceOnUse" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}>
@@ -251,46 +251,6 @@ function HeroLogo() {
     </div>
   );
 }
-
-/* ---------- "Move through Arc" cards: frosted glass, different sizes, a small picture of what each page does ---------- */
-function BentoCard({ href, title, text, icon, className = "", children }: { href: string; title: string; text: string; icon: string; className?: string; children?: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className={`group relative flex min-h-[15rem] flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-white/[0.035] p-6 backdrop-blur-xl transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:bg-white/[0.055] hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-7 ${className}`}
-    >
-      <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-12 -right-12 text-[#2588ff]/[0.06] transition duration-500 group-hover:scale-110 group-hover:text-[#2588ff]/[0.12]">
-        <Icon d={icon} size={200} />
-      </div>
-      <div className="relative flex items-start justify-between">
-        {/* the icon is drawn as a glowing line, with no box around it */}
-        <div className="text-[#62d4ff] transition duration-500 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" }}>
-          <Icon d={icon} size={38} sw={1.5} />
-        </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-slate-400 transition duration-300 group-hover:border-[#2588ff]/60 group-hover:bg-[#2588ff]/20 group-hover:text-white">
-          <Icon d={ICON_UP_RIGHT} size={16} sw={2} />
-        </span>
-      </div>
-      <h3 className="relative mt-6 text-2xl font-semibold tracking-tight">{title}</h3>
-      <p className="relative mt-2 max-w-sm text-sm leading-6 text-slate-400">{text}</p>
-      <div className="relative mt-auto pt-6">{children}</div>
-    </Link>
-  );
-}
-
-const MiniChip = ({ sym }: { sym: Tok }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-sm font-semibold">
-    <TokenLogo sym={sym} size={22} />
-    {sym}
-  </span>
-);
-const MiniNet = ({ name }: { name: "Arc" | "Ethereum" | "Base" }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-sm font-semibold">
-    <NetBadge name={name} size={22} />
-    {name}
-  </span>
-);
 
 /* =====================================================================
    PREVIEWS: static copies of the real pages (same cards, boxes, chips, logos and numbers)
@@ -590,7 +550,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
         title={copied ? "Copied" : "Copy"}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-white/[0.08] ${copied ? "text-emerald-300" : "text-slate-400 hover:text-[#8fd4ff]"}`}
       >
-        <Icon d={copied ? "m5 12.5 4.5 4.5L19 7.5" : "M9 9h10v10H9zM5 15V5h10"} size={18} sw={copied ? 2.2 : 1.8} />
+        <Icon d={copied ? "m5 12.5 4.5 4.5L19 7.5" : "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"} size={18} sw={copied ? 2.2 : 1.8} />
       </button>
     </div>
   );
@@ -662,112 +622,66 @@ export default function Home() {
       <div className="relative z-10">
         <Header />
 
-        {/* ---------------- HERO: centered, the logo draws itself behind the headline ---------------- */}
-        <section className="relative">
-          <div className={`relative flex flex-col items-center pb-16 pt-10 text-center sm:pt-14 lg:pb-24 lg:pt-20 ${CONTAINER}`}>
-            <Reveal>
-              <span className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-xl sm:text-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
-                Live on Arc Mainnet
-              </span>
-            </Reveal>
-
-            <Reveal delay={80}>
-              <h1 className="mt-7 text-[2.9rem] font-bold leading-[1.02] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6.2rem] xl:text-[clamp(5rem,6vw,9rem)]">
-                One place.
-                <br className="sm:hidden" /> <span className={GRAD}>Every move.</span>
-              </h1>
-            </Reveal>
-
-            <Reveal delay={160}>
-              <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">A simple interface for Arc. Send, swap, bridge, and explore assets on Arc Mainnet in one place.</p>
-            </Reveal>
-
-            <Reveal delay={240}>
-              <div className="mt-9 flex flex-wrap justify-center gap-3">
-                <Link href="/swap" className={BUTTON}>Start swapping</Link>
-                <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
-              </div>
-            </Reveal>
-
-            <Reveal delay={340} className="mt-14 w-full max-w-3xl">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  ["Under 1 sec", "Final settlement"],
-                  ["USDC", "The gas token"],
-                  ["EVM", "Wallets you already use"],
-                ].map(([v, l]) => (
-                  <div key={l} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4 backdrop-blur-xl">
-                    <p className="text-2xl font-semibold tracking-tight" style={NUM}>{v}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">{l}</p>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
+        {/* ---------------- HERO: left aligned, a badge, one big line, a glowing planet at the bottom right ---------------- */}
+        <section className="relative overflow-hidden">
+          {/* the glowing planet: a big sphere with a bright rim, cut off by the bottom of the hero */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_72%,transparent)] [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
+            <div
+              className="absolute -bottom-[38vw] -right-[14vw] h-[66vw] w-[66vw] max-h-[1000px] max-w-[1000px] rounded-full"
+              style={{
+                background: "radial-gradient(circle at 38% 16%, rgba(70,150,255,0.30) 0%, rgba(20,70,200,0.22) 26%, rgba(6,20,70,0.55) 54%, rgba(2,6,24,0.95) 76%)",
+                boxShadow: "inset 0 0 90px rgba(80,160,255,0.32), 0 0 150px rgba(30,100,255,0.26)",
+                border: "1px solid rgba(90,160,255,0.38)",
+              }}
+            >
+              <div className="absolute inset-[7%] rounded-full border border-[#3b82f6]/[0.14]" />
+              <div className="absolute inset-[15%] rounded-full border border-[#3b82f6]/[0.09]" />
+              <div className="absolute inset-[24%] rounded-full border border-[#3b82f6]/[0.06]" />
+            </div>
           </div>
-        </section>
 
-        {/* ---------------- MOVE THROUGH ARC ---------------- */}
-        <section className={`pb-24 pt-6 lg:pb-32 ${CONTAINER}`}>
-          <Reveal className="text-center">
-            <p className={EYEBROW}>Everything in one place</p>
-            <h2 className={H2}>Move through <span className={GRAD}>Arc.</span></h2>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
-          </Reveal>
+          <div className={`relative z-10 flex min-h-[460px] items-center sm:min-h-[500px] lg:min-h-[560px] ${CONTAINER}`}>
+            <div className="w-full py-12 text-left lg:py-16">
+              <Reveal>
+                <span className="inline-flex items-center gap-2.5 rounded-full border border-[#3b5bdb]/60 bg-[#0b1230]/40 px-4 py-1.5 text-sm font-medium text-[#9db4ff]">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#2bd48a]" />
+                  Arc Network
+                </span>
+              </Reveal>
 
-          <div className="mx-auto mt-12 grid max-w-7xl gap-4 md:grid-cols-2 lg:grid-cols-12">
-            <Reveal className="h-full lg:col-span-5 [&>a]:h-full">
-              <BentoCard href="/send" title="Send" text="Move USDC directly to any wallet." icon={ICON_SEND}>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-sm font-semibold tabular-nums" style={NUM}>25.00</span>
-                  <MiniChip sym="USDC" />
-                  <span className="text-sm text-slate-500">to</span>
-                  <span className="text-sm tabular-nums text-slate-300" style={NUM}>0x7a3c…f91d</span>
+              <Reveal delay={90}>
+                <h1 className="mt-6 text-[2.9rem] font-bold leading-[1.04] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.8vw,9.5rem)]">
+                  <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
+                  <br className="xl:hidden" />
+                  <span className={GRAD}>Every move.</span>
+                </h1>
+              </Reveal>
+
+              <Reveal delay={180}>
+                <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
+              </Reveal>
+
+              <Reveal delay={270}>
+                <div className="mt-9 flex flex-wrap gap-3">
+                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
+                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
                 </div>
-              </BentoCard>
-            </Reveal>
-            <Reveal delay={90} className="h-full lg:col-span-7 [&>a]:h-full">
-              <BentoCard href="/swap" title="Swap" text="Exchange USDC, EURC and cirBTC on Arc." icon={ICON_SWAP}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <MiniChip sym="USDC" />
-                  <span className="text-[#55c5ff]"><Icon d={ICON_SWAP} size={16} /></span>
-                  <MiniChip sym="EURC" />
-                  <MiniChip sym="cirBTC" />
-                </div>
-              </BentoCard>
-            </Reveal>
-            <Reveal delay={180} className="h-full lg:col-span-7 [&>a]:h-full">
-              <BentoCard href="/bridge" title="Bridge" text="Move USDC between Arc and other networks." icon={ICON_BRIDGE}>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <MiniNet name="Ethereum" />
-                  <span className="text-sm text-slate-500">to</span>
-                  <MiniNet name="Arc" />
-                  <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#159fff]/10 px-2.5 py-1 text-xs font-semibold text-[#7dd3fc]"><Icon d={ICON_FAST} size={12} sw={2} />Fast</span>
-                </div>
-              </BentoCard>
-            </Reveal>
-            <Reveal delay={270} className="h-full lg:col-span-5 [&>a]:h-full">
-              <BentoCard href="/activity" title="Activity" text="Follow everything your wallet does on Arc." icon={ICON_ACTIVITY}>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between gap-3"><span className="truncate text-slate-400">Swapped USDC for EURC</span><span className="shrink-0 tabular-nums text-emerald-300">+86.41</span></div>
-                  <div className="flex items-center justify-between gap-3"><span className="truncate text-slate-400">Sent USDC</span><span className="shrink-0 tabular-nums text-slate-200">−25.00</span></div>
-                </div>
-              </BentoCard>
-            </Reveal>
+              </Reveal>
+            </div>
           </div>
         </section>
 
         {/* ---------------- SHOWCASE: one block per AlabaamaFi page, on frosted "matte" glass (the stars behind are blurred) ---------------- */}
-        <section className="px-3 pb-10 sm:px-6 lg:px-10 lg:pb-16">
-          <div className="relative mx-auto max-w-[100rem] overflow-hidden rounded-[2rem] border border-white/[0.07] bg-[#050a16]/45 backdrop-blur-2xl sm:rounded-[2.5rem]" style={{ WebkitBackdropFilter: "blur(32px)", backdropFilter: "blur(32px)" }}>
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.05] via-transparent to-white/[0.02]" />
-            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.1] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
-            <div className="relative px-4 sm:px-8 lg:px-14">
+        <section className="relative pb-10 lg:pb-16">
+          <div
+            className="relative overflow-hidden bg-[#050a16]/20 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)]"
+            style={{ WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)" }}
+          >
+            {/* a very fine grain, for the matte feel */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
+            <div className={`relative ${CONTAINER}`}>
               {SHOWCASE.map((item, i) => (
-                <div key={item.kind} className={`grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20 ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
                   <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
                     <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
                     <h2 className={H2}>{item.pre}<span className={GRAD}>{item.hi}</span>{item.post}</h2>
