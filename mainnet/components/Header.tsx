@@ -62,9 +62,9 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
    Some phones and browsers will not show text smaller than about 12px, whatever size is written in the class.
    These sizes are applied in a way that works anyway: the text is drawn at 12px and scaled to the size below.
    --------------------------------------------------------------------- */
-const DOCS_FAQ_TEXT_PX = 11; // the words Docs and FAQ in the mobile menu
-const DOCS_FAQ_ICON_PX = 12; // the small icons next to them
-const CONNECT_TEXT_PX = 13; // the word Connect on the mobile Connect button
+const DOCS_FAQ_TEXT_PX = 13; // the words Docs and FAQ in the mobile menu
+const DOCS_FAQ_ICON_PX = 13; // the small icons next to them
+const CONNECT_TEXT_PX = 14; // the word Connect on the mobile Connect button
 
 // the social links at the bottom of the mobile menu (just the logos, no circles)
 const socials = [
