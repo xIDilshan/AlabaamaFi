@@ -81,12 +81,14 @@ function Row({
   name,
   icon,
   dot,
+  installedWallet,
   disabled,
   onClick,
 }: {
   name: string;
   icon?: string;
   dot?: boolean;
+  installedWallet?: { name: string; icon?: string }; // for the Browser Wallet row: a wallet installed in this browser, shown in one of the four boxes
   disabled?: boolean;
   onClick: () => void;
 }) {
@@ -96,7 +98,7 @@ function Row({
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center">
           <div className="relative flex" style={{ width: logoSize, height: logoSize }}>
-            <WalletLogo name={name} icon={icon} size={logoSize} />
+            <WalletLogo name={name} icon={icon} installed={installedWallet} size={logoSize} />
 
             {dot && (
               <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[#040506] bg-green-500" />
@@ -198,6 +200,14 @@ export default function WalletModal({
       return connector.type === "injected";
     });
   }, [connectors, walletConnectConnector, coinbaseConnector, metaMaskConnector, binanceConnector, browserConnector]);
+
+  /* the wallet shown in one box of the Browser Wallet icon: an installed wallet that is not already one of the four usual ones, else any installed wallet */
+  const browserIconWallet = useMemo(() => {
+    const usual = ["metamask", "brave", "rabby", "phantom"];
+    const all = [...installedOthers, metaMaskConnector, binanceConnector].filter(Boolean) as ConnectorItem[];
+    const pick = all.find((c) => !usual.includes((c.name || "").toLowerCase().trim().split(/\s+/)[0])) ?? all[0];
+    return pick ? { name: pick.name, icon: pick.icon } : undefined;
+  }, [installedOthers, metaMaskConnector, binanceConnector]);
 
   const hasEthereum =
     typeof window !== "undefined" && !!(window as unknown as { ethereum?: unknown }).ethereum;
@@ -422,14 +432,14 @@ export default function WalletModal({
             <CardHeader left={<WalletGlyph />} title="Connect Wallet" onClose={onClose} />
 
             <div className="space-y-2">
-              {/* installed in this browser: the browser wallet and every other installed wallet, above the main wallets */}
-              {showBrowserWallet && browserConnector && (
-                <Row name="Browser Wallet" dot disabled={isPending} onClick={handleBrowserWallet} />
-              )}
-
+              {/* installed in this browser, above the main wallets: first every installed wallet, then "Browser Wallet" below them */}
               {installedOthers.map((connector) => (
                 <Row key={connector.uid} name={connector.name} icon={connector.icon} dot disabled={isPending} onClick={() => handleConnect(connector)} />
               ))}
+
+              {showBrowserWallet && browserConnector && (
+                <Row name="Browser Wallet" dot installedWallet={browserIconWallet} disabled={isPending} onClick={handleBrowserWallet} />
+              )}
 
               {hasInstalledGroup && <div className="!my-3 h-px bg-white/[0.07]" />}
 
