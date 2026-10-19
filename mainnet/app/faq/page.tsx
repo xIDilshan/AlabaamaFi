@@ -15,8 +15,11 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
-// Change this to your real GitHub page (the footer GitHub icon links here).
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
+
+/* footer sizes you can adjust (pixels). Text below 12px is drawn at 12px and scaled, so it really gets smaller on every phone. */
+const FOOTER_LINK_TEXT_PX = 11; // the words Docs and FAQ
+const FOOTER_SOCIAL_PX = 20; // Discord and GitHub (X is 2px smaller)
 
 /* ---------- icons ---------- */
 const Svg = ({ d, size = 20, sw = 1.8 }: { d: string; size?: number; sw?: number }) => (
@@ -250,7 +253,7 @@ export default function FaqPage() {
 
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 2xl:px-16">
           <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" />
@@ -301,10 +304,10 @@ export default function FaqPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <div className="w-full px-4 pb-24 sm:px-6 lg:px-10 2xl:px-16">
           {/* ================= SEARCH RESULTS ================= */}
           {searching && (
-            <section className="mx-auto max-w-3xl">
+            <section className="w-full">
               <p className="mb-4 px-1 text-sm text-slate-400">
                 {results.length} {results.length === 1 ? "result" : "results"} for <span className="font-semibold text-white">“{query.trim()}”</span>
               </p>
@@ -315,7 +318,7 @@ export default function FaqPage() {
                   <button onClick={() => setQuery("")} className="mt-5 rounded-full border border-white/10 bg-white/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-white/[0.09]">Browse topics</button>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="grid items-start gap-2.5 lg:grid-cols-2">
                   {results.map((f) => (
                     <Item key={f.id} id={f.id} item={f} open={openId === f.id} onToggle={() => toggle(f.id)} showCat />
                   ))}
@@ -340,7 +343,7 @@ export default function FaqPage() {
                 </nav>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{cat}</h2>
                 <p className="mt-2 text-slate-400">{CATS.find((c) => c.id === cat)?.blurb}</p>
-                <div className="mt-7 space-y-2.5">
+                <div className="mt-7 grid items-start gap-2.5 xl:grid-cols-2">
                   {inCat.map((f) => (
                     <Item key={f.id} id={f.id} item={f} open={openId === f.id} onToggle={() => toggle(f.id)} />
                   ))}
@@ -376,9 +379,9 @@ export default function FaqPage() {
                 </div>
               </section>
 
-              <section className="mx-auto mt-14 max-w-3xl sm:mt-20">
+              <section className="mt-14 sm:mt-20">
                 <h2 className="mb-5 px-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2588ff]">Popular questions</h2>
-                <div className="space-y-2.5">
+                <div className="grid items-start gap-2.5 lg:grid-cols-2">
                   {popular.map((f) => (
                     <Item key={f.id} id={f.id} item={f} open={openId === f.id} onToggle={() => toggle(f.id)} showCat />
                   ))}
@@ -388,7 +391,7 @@ export default function FaqPage() {
           )}
 
           {/* ================= CONTACT ================= */}
-          <section className="mx-auto mt-16 max-w-4xl sm:mt-24">
+          <section className="mt-16 sm:mt-24">
             <div className="text-center">
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Still need help?</h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400 sm:text-base">Our community and the docs can help with the rest.</p>
@@ -443,19 +446,19 @@ export default function FaqPage() {
 
         {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
             Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6">
+        <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
           <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
 
           <div className="order-1 flex items-center gap-1 sm:order-2">
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={18} /></a>
-            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={16} /></a>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={18} /></a>
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={FOOTER_SOCIAL_PX} /></a>
+            <a href={X_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={FOOTER_SOCIAL_PX - 2} /></a>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={FOOTER_SOCIAL_PX} /></a>
           </div>
 
           <nav aria-label="Footer" className="order-2 flex items-center sm:order-3 sm:justify-self-end">
-            <Link href="/docs" className="text-xs font-medium text-slate-300 transition hover:text-white">Docs</Link>
+            <Link href="/docs" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
             <span aria-hidden className="mx-3 h-3 w-px bg-white/25" />
-            <Link href="/faq" className="text-xs font-medium text-slate-300 transition hover:text-white">FAQ</Link>
+            <Link href="/faq" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>FAQ</span></Link>
           </nav>
         </div>
       </footer>
