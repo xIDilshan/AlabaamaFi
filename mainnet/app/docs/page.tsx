@@ -16,6 +16,8 @@ const SITE = "https://app.alabaamafi.xyz";
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const OFFSET = 170; // px: how far below the top a heading counts as "current" (the sticky header is about 110px)
+/* how wide the text column is. "max-w-none" fills the screen; use "max-w-5xl" (or max-w-4xl) if lines get too long on very wide screens */
+const ARTICLE_WIDTH = "max-w-none";
 const UPDATED = "October 15, 2026";
 
 /* ---------- icons ---------- */
@@ -986,7 +988,7 @@ export default function DocsPage() {
         </div>
 
         {/* desktop: logo on the left, search in the exact center, icons on the right */}
-        <div className="mx-auto hidden h-16 max-w-[90rem] items-center gap-4 px-6 md:grid md:grid-cols-[1fr_minmax(0,30rem)_1fr] lg:px-8">
+        <div className="hidden h-16 w-full items-center gap-4 px-6 md:grid md:grid-cols-[1fr_minmax(0,30rem)_1fr] lg:px-10 2xl:px-16">
           <Link href="/" className="flex shrink-0 items-center gap-2.5 justify-self-start" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
@@ -1022,18 +1024,11 @@ export default function DocsPage() {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-1">
-            <Link href="/faq" className={iconBtn} aria-label="FAQ" title="FAQ"><Svg d={FAQ_ICON} /></Link>
-            <a href={DISCORD_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on Discord" title="Discord"><DiscordLogo /></a>
-            <a href={X_URL} target="_blank" rel="noreferrer" className={iconBtn} aria-label="AlabaamaFi on X" title="X"><XLogo /></a>
+          <div className="flex items-center justify-end">
+            <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+              <Svg d={I.home} size={16} /> Home
+            </Link>
           </div>
-        </div>
-
-        {/* desktop: the way back to the main site (plain link with the home icon) */}
-        <div className="mx-auto hidden h-11 max-w-[90rem] items-center border-t border-white/[0.06] px-5 md:flex lg:px-7">
-          <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
-            <Svg d={I.home} size={16} /> Home
-          </Link>
         </div>
 
         {/* phones and tablets: the menu icon opens the menu; the path shows where you are */}
@@ -1050,11 +1045,11 @@ export default function DocsPage() {
       </header>
 
       {/* ================= BODY ================= */}
-      <div className="mx-auto flex max-w-[90rem] gap-0 px-4 sm:px-6 lg:px-8">
-        <aside className="sticky top-[6.9rem] hidden h-[calc(100vh-6.9rem)] w-64 shrink-0 overflow-y-auto py-8 pr-6 lg:block xl:w-72">{sideList(go)}</aside>
+      <div className="flex w-full gap-0 px-4 sm:px-6 lg:px-10 2xl:px-16">
+        <aside className="sticky top-[4.75rem] hidden h-[calc(100vh-4.75rem)] w-64 shrink-0 overflow-y-auto py-8 pr-6 lg:block xl:w-72">{sideList(go)}</aside>
 
         <main className="min-w-0 flex-1 py-8 lg:border-l lg:border-white/[0.07] lg:px-10 lg:py-10 xl:px-14">
-          <article key={current.id} className="mx-auto max-w-3xl" style={{ animation: "sectionIn .25s ease-out both" }}>
+          <article key={current.id} className={`mx-auto w-full ${ARTICLE_WIDTH}`} style={{ animation: "sectionIn .25s ease-out both" }}>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2588ff]">{current.group}</p>
             <h1 className="mt-2 text-[1.9rem] font-bold leading-tight tracking-[-0.02em] sm:text-4xl">{current.title}</h1>
             <p className="mt-3 text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">{current.lead}</p>
@@ -1100,7 +1095,7 @@ export default function DocsPage() {
           </article>
         </main>
 
-        <aside className="sticky top-[6.9rem] hidden h-[calc(100vh-6.9rem)] w-56 shrink-0 overflow-y-auto py-10 pl-2 xl:block">
+        <aside className="sticky top-[4.75rem] hidden h-[calc(100vh-4.75rem)] w-56 shrink-0 overflow-y-auto py-10 pl-2 xl:block">
           {currentSubs.length > 0 && (
             <>
               <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">On this page</p>
