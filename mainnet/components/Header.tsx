@@ -59,9 +59,9 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
 
 // the social links at the bottom of the mobile menu (just the logos, no circles)
 const socials = [
-  { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={17} /> },
-  { href: DISCORD_URL, label: "AlabaamaFi on Discord", logo: <DiscordLogo size={19} /> },
-  { href: GITHUB_URL, label: "AlabaamaFi on GitHub", logo: <GitHubLogo size={19} /> },
+  { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={19} /> },
+  { href: DISCORD_URL, label: "AlabaamaFi on Discord", logo: <DiscordLogo size={22} /> },
+  { href: GITHUB_URL, label: "AlabaamaFi on GitHub", logo: <GitHubLogo size={22} /> },
 ];
 
 const connectButton =
@@ -222,7 +222,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleWalletClick}
-              className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-xs ${connectButton}`}
+              className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[10px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-[11px] ${connectButton}`}
             >
               <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -272,7 +272,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   closeMobileMenu();
                   handleWalletClick();
                 }}
-                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-xs ${connectButton}`}
+                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[10px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-[11px] ${connectButton}`}
               >
                 <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -300,8 +300,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     }`}
                   >
                     <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 ${
-                        active ? "text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center transition-[color,transform] duration-200 ${
+                        active ? "translate-x-2 text-[#39c4ff]" : "text-white/45 group-hover:text-white/80"
                       }`}
                       style={active ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.95)) drop-shadow(0 0 14px rgba(22,136,245,0.7))" } : undefined}
                     >
@@ -327,11 +327,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={l.href}
                     href={l.href}
                     onClick={closeMobileMenu}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-[3px] text-[10px] font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
                     {l.label}
@@ -349,7 +349,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     onClick={closeMobileMenu}
                     aria-label={so.label}
                     title={so.label}
-                    className="flex h-9 w-9 items-center justify-center text-white/60 transition hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center text-white/60 transition hover:text-white"
                   >
                     {so.logo}
                   </a>
@@ -398,7 +398,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative rounded-xl px-3.5 py-3 text-sm font-bold transition-all duration-200 lg:px-4 ${
+                    style={{ fontWeight: 800 }}
+                    className={`relative rounded-xl px-3.5 py-3 text-sm font-extrabold transition-all duration-200 lg:px-4 ${
                       active ? "text-[#159fff]" : "text-white/55 hover:text-white"
                     }`}
                   >
