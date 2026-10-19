@@ -10,7 +10,7 @@ import { WalletLogo, useWalletIdentity } from "@/components/WalletLogo";
 
 const manrope = Manrope({
   subsets: ["latin"],
-  weight: "600",
+  weight: ["600", "700"],
 });
 
 // the section names use their own copy of Inter with every weight, so "bold" is always available
@@ -59,9 +59,9 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
 
 // the social links at the bottom of the mobile menu (just the logos, no circles)
 const socials = [
-  { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={18} /> },
-  { href: DISCORD_URL, label: "AlabaamaFi on Discord", logo: <DiscordLogo size={21} /> },
-  { href: GITHUB_URL, label: "AlabaamaFi on GitHub", logo: <GitHubLogo size={21} /> },
+  { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={16} /> },
+  { href: DISCORD_URL, label: "AlabaamaFi on Discord", logo: <DiscordLogo size={19} /> },
+  { href: GITHUB_URL, label: "AlabaamaFi on GitHub", logo: <GitHubLogo size={19} /> },
 ];
 
 const connectButton =
@@ -327,11 +327,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={l.href}
                     href={l.href}
                     onClick={closeMobileMenu}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9.5px] font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
                     {l.label}
@@ -349,7 +349,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     onClick={closeMobileMenu}
                     aria-label={so.label}
                     title={so.label}
-                    className="flex h-9 w-9 items-center justify-center text-white/60 transition hover:text-white"
+                    className="flex h-8 w-8 items-center justify-center text-white/60 transition hover:text-white"
                   >
                     {so.logo}
                   </a>
@@ -399,7 +399,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={item.href}
                     href={item.href}
                     style={{ fontWeight: 700 }}
-                    className={`relative rounded-xl px-3.5 py-3 text-sm font-bold transition-all duration-200 lg:px-4 ${
+                    className={`${manrope.className} relative rounded-xl px-3.5 py-3 text-sm font-bold transition-all duration-200 lg:px-4 ${
                       active ? "text-[#159fff]" : "text-white/55 hover:text-white"
                     }`}
                   >
