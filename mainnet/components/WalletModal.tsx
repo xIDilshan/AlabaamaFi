@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { useAccount, useConnect } from "wgmi";
+import { useAccount, useConnect } from "wagmi";
 import { WalletLogo } from "@/components/WalletLogo";
 
 type WalletModalProps = {
