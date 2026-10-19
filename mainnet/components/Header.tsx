@@ -4,13 +4,20 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
-import { Manrope } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import WalletModal from "@/components/WalletModal";
 import { WalletLogo, useWalletIdentity } from "@/components/WalletLogo";
 
 const manrope = Manrope({
   subsets: ["latin"],
   weight: "600",
+});
+
+// the section names use their own copy of Inter with every weight, so "bold" is always available
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 // icons are used in the mobile menu
@@ -178,7 +185,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   return (
     <>
       {/* No background, no border: only the logo, site name, sections and the wallet button show. */}
-      <header className="relative z-50">
+      <header className={`${inter.className} relative z-50`}>
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
@@ -215,7 +222,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={handleWalletClick}
-              className={`${manrope.className} flex h-10 max-w-[108px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-normal sm:max-w-none sm:px-4 sm:text-sm ${connectButton}`}
+              className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-xs ${connectButton}`}
             >
               <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -265,7 +272,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   closeMobileMenu();
                   handleWalletClick();
                 }}
-                className={`${manrope.className} flex h-10 max-w-[108px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-normal sm:max-w-none sm:px-4 sm:text-sm ${connectButton}`}
+                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-semibold tracking-normal sm:max-w-none sm:px-3.5 sm:text-xs ${connectButton}`}
               >
                 <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -303,7 +310,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       </svg>
                     </span>
 
-                    <span className={`text-sm font-semibold tracking-tight ${active ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                    <span className={`text-sm font-semibold tracking-tight transition-transform duration-200 ${active ? "translate-x-2 text-white" : "text-white/70 group-hover:text-white"}`}>
                       {item.label}
                     </span>
                   </Link>
@@ -320,11 +327,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={l.href}
                     href={l.href}
                     onClick={closeMobileMenu}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
                     {l.label}
