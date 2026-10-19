@@ -327,11 +327,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={l.href}
                     href={l.href}
                     onClick={closeMobileMenu}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[8px] font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
                     {l.label}
