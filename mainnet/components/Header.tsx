@@ -57,6 +57,15 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
+/* ---------------------------------------------------------------------
+   SIZES YOU CAN ADJUST (in pixels)
+   Some phones and browsers will not show text smaller than about 12px, whatever size is written in the class.
+   These sizes are applied in a way that works anyway: the text is drawn at 12px and scaled to the size below.
+   --------------------------------------------------------------------- */
+const DOCS_FAQ_TEXT_PX = 9; // the words Docs and FAQ in the mobile menu
+const DOCS_FAQ_ICON_PX = 10; // the small icons next to them
+const CONNECT_TEXT_PX = 9; // the word Connect on the mobile Connect button
+
 // the social links at the bottom of the mobile menu (just the logos, no circles)
 const socials = [
   { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={16} /> },
@@ -224,7 +233,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               onClick={handleWalletClick}
               className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton}`}
             >
-              <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
+              <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
               {isConnected && (
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
@@ -274,7 +283,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 }}
                 className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton}`}
               >
-                <span className="truncate">{isConnected ? mobileShortAddress : "Connect"}</span>
+                <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
                 {isConnected && (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
@@ -327,14 +336,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={l.href}
                     href={l.href}
                     onClick={closeMobileMenu}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[15px] font-semibold transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width={DOCS_FAQ_ICON_PX} height={DOCS_FAQ_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
-                    {l.label}
+                    <span style={{ fontSize: "12px", zoom: DOCS_FAQ_TEXT_PX / 12 }}>{l.label}</span>
                   </Link>
                 );
               })}
