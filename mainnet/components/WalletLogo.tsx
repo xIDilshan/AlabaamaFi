@@ -289,22 +289,35 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
 /* ---------------------------------------------------------------------
    THE BROWSER WALLET ICON
    Four wallet logos (colored icon only), each in its own small box, in a 2x2 grid.
-   To change which wallets are shown, edit the four names below.
+   The bottom right box shows ONE wallet that is installed in this browser (when there is one, even if several are installed). To change the other three, edit the names below.
    --------------------------------------------------------------------- */
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
-export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
+type InstalledWallet = { name: string; icon?: string };
+const firstWord = (n: string) => n.toLowerCase().trim().split(/\s+/)[0];
+
+/** `installed` is ONE wallet that is installed in this browser: its logo takes the fourth box (bottom right), and the other three boxes keep the usual wallets. */
+export function BrowserWalletLogo({ size = 32, className = "", installed }: { size?: number; className?: string; installed?: InstalledWallet }) {
   const gap = Math.max(2, Math.round(size * 0.06)); // the same space between the boxes sideways and up and down
   const tile = (size - gap) / 2; // four boxes of the same size
+
+  const wallets: InstalledWallet[] = [];
+  for (const n of BROWSER_WALLET_LOGOS) {
+    if (wallets.length >= (installed ? 3 : 4)) break;
+    if (installed && firstWord(installed.name) === firstWord(n)) continue; // not twice
+    wallets.push({ name: n });
+  }
+  if (installed) wallets.push(installed); // the fourth box: bottom right
+
   return (
     <span
       className={`grid shrink-0 ${className}`}
       style={{ width: size, height: size, gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", columnGap: gap, rowGap: gap }}
       aria-hidden
     >
-      {BROWSER_WALLET_LOGOS.map((n) => (
-        <span key={n} className="flex h-full w-full items-center justify-center rounded-[28%] border border-white/[0.1] bg-[#1b1e25]">
-          <WalletLogoInner name={n} size={Math.round(tile * 0.64)} plain />
+      {wallets.map((w) => (
+        <span key={w.name} className="flex h-full w-full items-center justify-center rounded-[28%] border border-white/[0.1] bg-[#1b1e25]">
+          <WalletLogoInner name={w.name} icon={w.icon} size={Math.round(tile * 0.64)} plain />
         </span>
       ))}
     </span>
@@ -312,8 +325,10 @@ export function BrowserWalletLogo({ size = 32, className = "" }: { size?: number
 }
 
 /** A wallet's logo. A "Browser Wallet" gets the four-logo icon above. */
-export function WalletLogo(props: { name: string; icon?: string; size?: number; className?: string }) {
+export function WalletLogo(props: { name: string; icon?: string; size?: number; className?: string; installed?: InstalledWallet }) {
   const n = (props.name || "").toLowerCase().trim();
-  if (n === "browser wallet" || n === "injected") return <BrowserWalletLogo size={props.size} className={props.className} />;
-  return <WalletLogoInner {...props} />;
+  if (n === "browser wallet" || n === "injected") return <BrowserWalletLogo size={props.size} className={props.className} installed={props.installed} />;
+  const { installed: _unused, ...rest } = props;
+  void _unused;
+  return <WalletLogoInner {...rest} />;
 }
