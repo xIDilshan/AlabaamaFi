@@ -64,8 +64,6 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
    --------------------------------------------------------------------- */
 const DOCS_FAQ_TEXT_PX = 13; // the words Docs and FAQ in the mobile menu
 const DOCS_FAQ_ICON_PX = 13; // the small icons next to them
-const DOCS_FAQ_TEXT_SHIFT_PX = 0; // move the words up (negative number, e.g. -0.5) or down (positive) to line them up with the icon
-const DOCS_FAQ_ICON_SHIFT_PX = 0; // move the icon up (negative) or down (positive)
 const CONNECT_TEXT_PX = 14; // the word Connect on the mobile Connect button
 
 // the social links at the bottom of the mobile menu (just the logos, no circles)
@@ -342,10 +340,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width={DOCS_FAQ_ICON_PX} height={DOCS_FAQ_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0, transform: `translateY(${DOCS_FAQ_ICON_SHIFT_PX}px)` }}>
+                    <svg width={DOCS_FAQ_ICON_PX} height={DOCS_FAQ_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d={l.icon} />
                     </svg>
-                    <span style={{ display: "block", fontSize: "12px", lineHeight: 1, zoom: DOCS_FAQ_TEXT_PX / 12, transform: `translateY(${DOCS_FAQ_TEXT_SHIFT_PX}px)` }}>{l.label}</span>
+                    <span style={{ fontSize: "12px", zoom: DOCS_FAQ_TEXT_PX / 12 }}>{l.label}</span>
                   </Link>
                 );
               })}
