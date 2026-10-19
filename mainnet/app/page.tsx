@@ -19,7 +19,19 @@ const ARC = {
   docs: "https://docs.arc.io",
 };
 
-const SOCIAL = { x: "https://x.com/Alabaama_Fi" };
+const SOCIAL = {
+  x: "https://x.com/Alabaama_Fi",
+  discord: "https://discord.gg/NBKHmUfw",
+  github: "https://github.com/xIDilshan/AlabaamaFi", // change this to your real GitHub page
+};
+
+/* footer sizes you can adjust (pixels). Text below 12px is drawn at 12px and scaled, so it really gets smaller on every phone. */
+const FOOTER_LINK_TEXT_PX = 11; // the words Docs and FAQ
+const FOOTER_SOCIAL_PX = 20; // Discord and GitHub (X is 2px smaller)
+
+/* the fine "matte" grain laid over the frosted glass behind the page sections */
+const GRAIN =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
 
 // Same edge padding as the Header, so the logo, the headline and every section line up.
 const CONTAINER = "w-full px-4 sm:px-6 md:px-7 lg:px-10 xl:px-12";
@@ -51,13 +63,6 @@ const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
 const ICON_RECEIVE = "M17 7 7 17M16 17H7V8";
 const ICON_UP_RIGHT = "M7 17 17 7M8 7h9v9";
 
-const ACTIONS = [
-  { href: "/send", title: "Send", text: "Move USDC directly to any wallet.", icon: ICON_SEND },
-  { href: "/swap", title: "Swap", text: "Exchange USDC, EURC and cirBTC on Arc.", icon: ICON_SWAP },
-  { href: "/bridge", title: "Bridge", text: "Move USDC between Arc and other networks.", icon: ICON_BRIDGE },
-  { href: "/activity", title: "Activity", text: "Follow everything your wallet does on Arc.", icon: ICON_ACTIVITY },
-];
-
 const STEPS = [
   { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
   { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
@@ -77,6 +82,22 @@ function XLogo({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function DiscordLogo({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+    </svg>
+  );
+}
+
+function GitHubLogo({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12Z" />
     </svg>
   );
 }
@@ -195,9 +216,9 @@ function HeroLogo() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[820px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_70%,transparent)] [mask-image:linear-gradient(to_bottom,#000_70%,transparent)]">
       <style>{css}</style>
-      <div className="absolute left-1/2 top-0 h-[min(105vw,700px)] w-[min(105vw,700px)] -translate-x-1/2 sm:left-auto sm:-right-[12%] sm:translate-x-0 lg:-right-[3%] xl:-right-[1%]">
+      <div className="absolute left-1/2 -top-[2%] h-[min(120vw,860px)] w-[min(120vw,860px)] -translate-x-1/2">
         <div className="absolute inset-[6%] rounded-full bg-[radial-gradient(circle,rgba(30,120,255,0.42),transparent_68%)] blur-2xl" style={{ animation: "glowPulse 8s ease-in-out infinite" }} />
-        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-40 sm:opacity-90 lg:opacity-100" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
+        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-30 sm:opacity-40 lg:opacity-50" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
           <defs>
             {LOGO_ARCS.map((a, i) => (
               <linearGradient key={i} id={`logoArc${i}`} gradientUnits="userSpaceOnUse" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}>
@@ -231,26 +252,45 @@ function HeroLogo() {
   );
 }
 
-/* ---------- action cards (same look as the cards on the other pages) ---------- */
-function ActionCard({ href, title, text, icon }: { href: string; title: string; text: string; icon: string }) {
+/* ---------- "Move through Arc" cards: frosted glass, different sizes, a small picture of what each page does ---------- */
+function BentoCard({ href, title, text, icon, className = "", children }: { href: string; title: string; text: string; icon: string; className?: string; children?: ReactNode }) {
   return (
     <Link
       href={href}
-      className="group relative flex h-full min-h-[12rem] flex-col items-center overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-6 text-center transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:items-start sm:p-7 sm:text-left"
+      className={`group relative flex min-h-[15rem] flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-white/[0.035] p-6 backdrop-blur-xl transition duration-500 hover:-translate-y-1.5 hover:border-[#2588ff]/50 hover:bg-white/[0.055] hover:shadow-[0_30px_90px_rgba(16,93,255,0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-7 ${className}`}
     >
       <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 text-[#2588ff]/[0.07] transition duration-500 group-hover:scale-110 group-hover:text-[#2588ff]/[0.14]">
-        <Icon d={icon} size={160} />
+      <div aria-hidden className="pointer-events-none absolute -bottom-12 -right-12 text-[#2588ff]/[0.06] transition duration-500 group-hover:scale-110 group-hover:text-[#2588ff]/[0.12]">
+        <Icon d={icon} size={200} />
       </div>
-      {/* the icon is drawn as a glowing line, with no box around it */}
-      <div className="relative text-[#62d4ff] transition duration-500 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" }}>
-        <Icon d={icon} size={40} sw={1.5} />
+      <div className="relative flex items-start justify-between">
+        {/* the icon is drawn as a glowing line, with no box around it */}
+        <div className="text-[#62d4ff] transition duration-500 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.95)) drop-shadow(0 0 16px rgba(22,136,245,0.7))" }}>
+          <Icon d={icon} size={38} sw={1.5} />
+        </div>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-slate-400 transition duration-300 group-hover:border-[#2588ff]/60 group-hover:bg-[#2588ff]/20 group-hover:text-white">
+          <Icon d={ICON_UP_RIGHT} size={16} sw={2} />
+        </span>
       </div>
-      <h3 className="relative mt-auto pt-9 text-2xl font-semibold tracking-tight">{title}</h3>
-      <p className="relative mt-2 text-sm leading-6 text-slate-400">{text}</p>
+      <h3 className="relative mt-6 text-2xl font-semibold tracking-tight">{title}</h3>
+      <p className="relative mt-2 max-w-sm text-sm leading-6 text-slate-400">{text}</p>
+      <div className="relative mt-auto pt-6">{children}</div>
     </Link>
   );
 }
+
+const MiniChip = ({ sym }: { sym: Tok }) => (
+  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-sm font-semibold">
+    <TokenLogo sym={sym} size={22} />
+    {sym}
+  </span>
+);
+const MiniNet = ({ name }: { name: "Arc" | "Ethereum" | "Base" }) => (
+  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-2.5 text-sm font-semibold">
+    <NetBadge name={name} size={22} />
+    {name}
+  </span>
+);
 
 /* =====================================================================
    PREVIEWS: static copies of the real pages (same cards, boxes, chips, logos and numbers)
@@ -539,13 +579,18 @@ function CopyRow({ label, value }: { label: string; value: string }) {
     }
   };
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
+    <div className="flex items-center gap-3 py-4">
       <div className="min-w-0 flex-1 text-left">
         <p className="text-xs uppercase tracking-[0.16em] text-slate-600">{label}</p>
         <p className="mt-1 break-all font-medium tabular-nums text-slate-100">{value}</p>
       </div>
-      <button onClick={copy} aria-label={`Copy ${label}`} className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-1.5 text-xs font-semibold text-[#8fd4ff] transition hover:bg-white/[0.1]">
-        {copied ? "Copied" : "Copy"}
+      <button
+        onClick={copy}
+        aria-label={copied ? `${label} copied` : `Copy ${label}`}
+        title={copied ? "Copied" : "Copy"}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-white/[0.08] ${copied ? "text-emerald-300" : "text-slate-400 hover:text-[#8fd4ff]"}`}
+      >
+        <Icon d={copied ? "m5 12.5 4.5 4.5L19 7.5" : "M9 9h10v10H9zM5 15V5h10"} size={18} sw={copied ? 2.2 : 1.8} />
       </button>
     </div>
   );
@@ -553,23 +598,18 @@ function CopyRow({ label, value }: { label: string; value: string }) {
 
 function NetworkDetails() {
   return (
-    <div className="relative mx-auto w-full max-w-xl">
-      <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem]">
-        <div className="border-b border-white/[0.06] px-4 py-5 text-left sm:px-6">
-          <p className="text-xs text-slate-500">Add it as a custom network</p>
-          <p className="mt-1 flex items-center gap-2 text-lg font-semibold">
-            <NetBadge name="Arc" size={26} />
-            Arc network details
-          </p>
-        </div>
-        <div className="divide-y divide-white/[0.06]">
-          {NETWORK_FIELDS.map(([k, v]) => (
-            <CopyRow key={k} label={k} value={v} />
-          ))}
-        </div>
-        <p className="border-t border-white/[0.06] px-4 py-4 text-left text-xs leading-5 text-slate-500 sm:px-6">Gas is paid in USDC. Finality takes under 1 second.</p>
+    <div className="mx-auto w-full max-w-xl text-left">
+      <p className="text-xs text-slate-500">Add it as a custom network</p>
+      <p className="mt-1 flex items-center gap-2 text-lg font-semibold">
+        <NetBadge name="Arc" size={26} />
+        Arc network details
+      </p>
+      <div className="mt-5 divide-y divide-white/[0.12] border-y border-white/[0.12]">
+        {NETWORK_FIELDS.map(([k, v]) => (
+          <CopyRow key={k} label={k} value={v} />
+        ))}
       </div>
+      <p className="mt-4 text-xs leading-5 text-slate-500">Gas is paid in USDC. Finality takes under 1 second.</p>
     </div>
   );
 }
@@ -622,59 +662,124 @@ export default function Home() {
       <div className="relative z-10">
         <Header />
 
-        {/* ---------------- HERO ---------------- */}
-        <section className="relative min-h-[440px] sm:min-h-[480px] lg:min-h-[540px]">
-          <div className={`relative flex min-h-[440px] items-center sm:min-h-[480px] lg:min-h-[540px] ${CONTAINER}`}>
-            <div className="relative z-10 w-full max-w-[950px] py-10 text-center sm:py-12 sm:text-left lg:py-14 xl:max-w-none">
-              <Reveal>
-                <h1 className="text-[2.75rem] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[3.5rem] md:text-7xl lg:text-[5.8rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.6vw,10rem)]">
-                  One place.{" "}
-                  <br className="xl:hidden" />
-                  <span className={GRAD}>Every move.</span>
-                </h1>
-              </Reveal>
-              <Reveal delay={120}>
-                <p className="mt-7 text-xl font-medium tracking-tight text-slate-300 sm:text-2xl">A simple interface for Arc</p>
-                <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-400 sm:mx-0 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
-              </Reveal>
-              <Reveal delay={240}>
-                <div className="mt-9 flex flex-wrap justify-center gap-3 sm:justify-start">
-                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
-                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
-                </div>
-              </Reveal>
-            </div>
+        {/* ---------------- HERO: centered, the logo draws itself behind the headline ---------------- */}
+        <section className="relative">
+          <div className={`relative flex flex-col items-center pb-16 pt-10 text-center sm:pt-14 lg:pb-24 lg:pt-20 ${CONTAINER}`}>
+            <Reveal>
+              <span className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-xl sm:text-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                Live on Arc Mainnet
+              </span>
+            </Reveal>
+
+            <Reveal delay={80}>
+              <h1 className="mt-7 text-[2.9rem] font-bold leading-[1.02] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6.2rem] xl:text-[clamp(5rem,6vw,9rem)]">
+                One place.
+                <br className="sm:hidden" /> <span className={GRAD}>Every move.</span>
+              </h1>
+            </Reveal>
+
+            <Reveal delay={160}>
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">A simple interface for Arc. Send, swap, bridge, and explore assets on Arc Mainnet in one place.</p>
+            </Reveal>
+
+            <Reveal delay={240}>
+              <div className="mt-9 flex flex-wrap justify-center gap-3">
+                <Link href="/swap" className={BUTTON}>Start swapping</Link>
+                <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
+              </div>
+            </Reveal>
+
+            <Reveal delay={340} className="mt-14 w-full max-w-3xl">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Under 1 sec", "Final settlement"],
+                  ["USDC", "The gas token"],
+                  ["EVM", "Wallets you already use"],
+                ].map(([v, l]) => (
+                  <div key={l} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4 backdrop-blur-xl">
+                    <p className="text-2xl font-semibold tracking-tight" style={NUM}>{v}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">{l}</p>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        {/* ---------------- ACTIONS ---------------- */}
-        <section className={`pb-24 pt-12 lg:pb-32 ${CONTAINER}`}>
-          <Reveal className="text-center sm:text-left">
+        {/* ---------------- MOVE THROUGH ARC ---------------- */}
+        <section className={`pb-24 pt-6 lg:pb-32 ${CONTAINER}`}>
+          <Reveal className="text-center">
             <p className={EYEBROW}>Everything in one place</p>
             <h2 className={H2}>Move through <span className={GRAD}>Arc.</span></h2>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-500 sm:mx-0">A focused interface for the actions you use most onchain.</p>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-500">A focused interface for the actions you use most onchain.</p>
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {ACTIONS.map((a, i) => (
-              <Reveal key={a.title} delay={i * 90} className="h-full [&>a]:h-full"><ActionCard {...a} /></Reveal>
-            ))}
+
+          <div className="mx-auto mt-12 grid max-w-7xl gap-4 md:grid-cols-2 lg:grid-cols-12">
+            <Reveal className="h-full lg:col-span-5 [&>a]:h-full">
+              <BentoCard href="/send" title="Send" text="Move USDC directly to any wallet." icon={ICON_SEND}>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-sm font-semibold tabular-nums" style={NUM}>25.00</span>
+                  <MiniChip sym="USDC" />
+                  <span className="text-sm text-slate-500">to</span>
+                  <span className="text-sm tabular-nums text-slate-300" style={NUM}>0x7a3c…f91d</span>
+                </div>
+              </BentoCard>
+            </Reveal>
+            <Reveal delay={90} className="h-full lg:col-span-7 [&>a]:h-full">
+              <BentoCard href="/swap" title="Swap" text="Exchange USDC, EURC and cirBTC on Arc." icon={ICON_SWAP}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <MiniChip sym="USDC" />
+                  <span className="text-[#55c5ff]"><Icon d={ICON_SWAP} size={16} /></span>
+                  <MiniChip sym="EURC" />
+                  <MiniChip sym="cirBTC" />
+                </div>
+              </BentoCard>
+            </Reveal>
+            <Reveal delay={180} className="h-full lg:col-span-7 [&>a]:h-full">
+              <BentoCard href="/bridge" title="Bridge" text="Move USDC between Arc and other networks." icon={ICON_BRIDGE}>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <MiniNet name="Ethereum" />
+                  <span className="text-sm text-slate-500">to</span>
+                  <MiniNet name="Arc" />
+                  <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#159fff]/10 px-2.5 py-1 text-xs font-semibold text-[#7dd3fc]"><Icon d={ICON_FAST} size={12} sw={2} />Fast</span>
+                </div>
+              </BentoCard>
+            </Reveal>
+            <Reveal delay={270} className="h-full lg:col-span-5 [&>a]:h-full">
+              <BentoCard href="/activity" title="Activity" text="Follow everything your wallet does on Arc." icon={ICON_ACTIVITY}>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-3"><span className="truncate text-slate-400">Swapped USDC for EURC</span><span className="shrink-0 tabular-nums text-emerald-300">+86.41</span></div>
+                  <div className="flex items-center justify-between gap-3"><span className="truncate text-slate-400">Sent USDC</span><span className="shrink-0 tabular-nums text-slate-200">−25.00</span></div>
+                </div>
+              </BentoCard>
+            </Reveal>
           </div>
         </section>
 
-        {/* ---------------- SHOWCASE: one block per AlabaamaFi page, with a copy of the real page ---------------- */}
-        <section className={`pb-10 lg:pb-16 ${CONTAINER}`}>
-          {SHOWCASE.map((item, i) => (
-            <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
-              <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
-                <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
-                <h2 className={H2}>{item.pre}<span className={GRAD}>{item.hi}</span>{item.post}</h2>
-                <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
-              </Reveal>
-              <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
-                <Preview kind={item.kind} />
-              </Reveal>
+        {/* ---------------- SHOWCASE: one block per AlabaamaFi page, on frosted "matte" glass (the stars behind are blurred) ---------------- */}
+        <section className="px-3 pb-10 sm:px-6 lg:px-10 lg:pb-16">
+          <div className="relative mx-auto max-w-[100rem] overflow-hidden rounded-[2rem] border border-white/[0.07] bg-[#050a16]/45 backdrop-blur-2xl sm:rounded-[2.5rem]" style={{ WebkitBackdropFilter: "blur(32px)", backdropFilter: "blur(32px)" }}>
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.05] via-transparent to-white/[0.02]" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.1] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
+            <div className="relative px-4 sm:px-8 lg:px-14">
+              {SHOWCASE.map((item, i) => (
+                <div key={item.kind} className={`grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20 ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                  <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
+                    <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
+                    <h2 className={H2}>{item.pre}<span className={GRAD}>{item.hi}</span>{item.post}</h2>
+                    <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
+                  </Reveal>
+                  <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
+                    <Preview kind={item.kind} />
+                  </Reveal>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </section>
 
         {/* ---------------- HOW IT WORKS ---------------- */}
@@ -760,16 +865,23 @@ export default function Home() {
           </Reveal>
         </section>
 
-        {/* ---------------- FOOTER ---------------- */}
-        <footer>
-          <div className={`flex flex-col items-center gap-5 py-8 text-center text-sm text-slate-600 sm:flex-row sm:justify-between sm:text-left ${CONTAINER}`}>
-            <p>© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
-            <nav className="flex flex-wrap items-center justify-center gap-6">
-              <Link href="/docs" className="transition hover:text-white">Docs</Link>
-              <Link href="/faq" className="transition hover:text-white">FAQ</Link>
-              <a href={SOCIAL.x} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="AlabaamaFi on X" className="transition hover:text-white">
-                <XLogo />
-              </a>
+        {/* ---------------- FOOTER (same as the FAQ page) ---------------- */}
+        <footer className="border-t border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
+          {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
+              Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
+          <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
+            <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+
+            <div className="order-1 flex items-center gap-1 sm:order-2">
+              <a href={SOCIAL.discord} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={FOOTER_SOCIAL_PX} /></a>
+              <a href={SOCIAL.x} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on X" title="X" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><XLogo size={FOOTER_SOCIAL_PX - 2} /></a>
+              <a href={SOCIAL.github} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on GitHub" title="GitHub" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><GitHubLogo size={FOOTER_SOCIAL_PX} /></a>
+            </div>
+
+            <nav aria-label="Footer" className="order-2 flex items-center sm:order-3 sm:justify-self-end">
+              <Link href="/docs" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
+              <span aria-hidden className="mx-3 h-3 w-px bg-white/25" />
+              <Link href="/faq" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>FAQ</span></Link>
             </nav>
           </div>
         </footer>
