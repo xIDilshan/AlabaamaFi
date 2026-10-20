@@ -168,9 +168,10 @@ function SpaceBackground() {
 const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
 const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
 const EARTH_START = -0.35; // which side faces you at the start (radians)
-const EARTH_RISE = 0.6; // how much of the planet shows above the bottom of the first screen (0.5 = half of it; bigger = higher)
+const EARTH_TOP_NUDGE = 0; // moves the planet down (+) or up (-), in pixels, from the line of the top of the headline. On phones the planet sits under the text.
 const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
-const SUNRISE_STRENGTH = 0.5; // how bright the light gets at its brightest (0 = none, 1 = very bright)
+const SUNRISE_STRENGTH = 0.7; // how bright the light gets at its brightest (0 = none, 1 = very bright)
+const HEADLINE_SHINE_SECONDS = 4.5; // how long the bright light takes to slide across "One place. Every move."
 const SUNRISE_DELAY_S = 1.5; // seconds after the page loads before the light starts to rise
 const SUNRISE_SECONDS = 14; // how long the light takes to rise and fade away (bigger = slower). It plays once every time the page loads.
 
@@ -294,22 +295,24 @@ function HeroEarth() {
     let h = 0;
     let dprNow = 1;
     let textBottom = 0; // where the hero text ends, counted from the top of the hero
+    let titleTop = 0; // where the headline starts, counted from the top of the hero
 
-    // finds where the hero text ends (the buttons), so on tall screens the planet can come up close under the text
-    const measureText = () => {
-      const section = canvas.closest("section") as HTMLElement | null;
-      const el = section?.querySelector("[data-hero-text]") as HTMLElement | null;
-      if (!section || !el) {
-        textBottom = 0;
-        return;
-      }
+    const offsetIn = (section: HTMLElement, el: HTMLElement) => {
       let y = 0;
       let n: HTMLElement | null = el;
       while (n && n !== section) {
         y += n.offsetTop;
         n = n.offsetParent as HTMLElement | null;
       }
-      textBottom = y + el.offsetHeight;
+      return y;
+    };
+    // finds the headline and the end of the hero text, to line the planet up with them
+    const measureText = () => {
+      const section = canvas.closest("section") as HTMLElement | null;
+      const end = section?.querySelector("[data-hero-text]") as HTMLElement | null;
+      const title = section?.querySelector("[data-hero-title]") as HTMLElement | null;
+      textBottom = section && end ? offsetIn(section, end) + end.offsetHeight : 0;
+      titleTop = section && title ? offsetIn(section, title) : 0;
     };
 
     const resize = () => {
@@ -330,19 +333,27 @@ function HeroEarth() {
       const cssW = w / dprNow;
       const heroH = h / dprNow - EARTH_EXTRA_TOP; // the canvas also covers EARTH_EXTRA_TOP above the hero
       const narrow = cssW < 640;
-      const cap = narrow ? 0.5 : EARTH_RISE;
-      const xf = narrow ? 0.18 : 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000)); // very wide screens: the planet comes in a little from the right
-      let Rc = Math.min(heroH * 0.95, cssW * (narrow ? 0.5 : 0.42), Math.max(640, cssW * 0.3));
-      // tall screens: if the text ends far above the planet, make the planet bigger and bring it up under the text
-      const wantTop = textBottom + 70;
-      if (textBottom > 0 && heroH - cap * 2 * Rc > wantTop + 80) {
-        Rc = Math.min((heroH - wantTop) / (2 * cap), cssW * 0.75);
+      let Rc: number;
+      let top: number; // the top of the planet, counted from the top of the hero
+      let xf: number; // how far the planet's center is from the right edge, in radiuses
+      if (narrow) {
+        // phones: the text uses the whole width, so the planet comes up right under the text
+        const cap = 0.5;
+        Rc = Math.min(heroH * 0.95, cssW * 0.5);
+        const wantTop = textBottom + 70;
+        if (textBottom > 0 && heroH - cap * 2 * Rc > wantTop + 80) Rc = Math.min((heroH - wantTop) / (2 * cap), cssW * 0.75);
+        Rc = Math.max(120, Math.min(Rc, (heroH - 30) / (2 * cap)));
+        top = heroH - cap * 2 * Rc;
+        xf = 0.18;
+      } else {
+        // computers and tablets: the planet is on the right, its top level with the top of the headline
+        Rc = Math.max(120, Math.min(heroH * 0.95, cssW * 0.42, Math.max(600, cssW * 0.3)));
+        top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
+        xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000)); // very wide screens: the planet comes in a little from the right
       }
-      Rc = Math.min(Rc, (heroH - 30) / (2 * cap)); // the top of the planet stays at least 30px below the top of the hero
-      Rc = Math.max(Rc, 120);
       const R = Rc * dprNow;
       const cx = (cssW - Rc * xf) * dprNow;
-      const cy = (EARTH_EXTRA_TOP + heroH - cap * 2 * Rc + Rc) * dprNow;
+      const cy = (EARTH_EXTRA_TOP + top + Rc) * dprNow;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
@@ -511,6 +522,15 @@ function HeroEarth() {
         ctx.restore();
         ctx.globalCompositeOperation = "source-over";
       }
+
+      // the lower part of the planet fades into the dark (it rises out of the dark; on tall screens it does not end in a hard round edge)
+      ctx.globalCompositeOperation = "destination-out";
+      const fadeG = ctx.createLinearGradient(0, cy + R * 0.25, 0, cy + R * 1.15);
+      fadeG.addColorStop(0, "rgba(0,0,0,0)");
+      fadeG.addColorStop(1, "rgba(0,0,0,1)");
+      ctx.fillStyle = fadeG;
+      ctx.fillRect(0, cy + R * 0.25, w, h);
+      ctx.globalCompositeOperation = "source-over";
     };
 
     let raf = 0;
@@ -546,6 +566,40 @@ function HeroEarth() {
   }, []);
 
   return <canvas ref={ref} aria-hidden className="h-full w-full" />;
+}
+
+/* A soft blur along the bottom edge of the first screen (computers), like on uniswap.org.
+   It is there before you scroll, and fades away as you scroll down. */
+function BottomBlur() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      el.style.opacity = String(Math.max(0, 1 - window.scrollY / (window.innerHeight * 0.5)));
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 hidden h-36 md:block"
+      style={{
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        background: "linear-gradient(to top, rgba(1,2,5,0.7), rgba(1,2,5,0))",
+        WebkitMaskImage: "linear-gradient(to top, #000 0%, #000 35%, transparent 100%)",
+        maskImage: "linear-gradient(to top, #000 0%, #000 35%, transparent 100%)",
+      }}
+    />
+  );
 }
 
 /* =====================================================================
@@ -904,6 +958,8 @@ export default function Home() {
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes glowPulse{0%,100%{opacity:.65}50%{opacity:1}}
         @keyframes logoSpin{to{transform:rotate(360deg)}}
+        .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:140% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
+        @keyframes heroShine{0%{background-position:140% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:-40% 0;opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-right{transform:translateX(70px)}
@@ -913,6 +969,7 @@ export default function Home() {
       `}</style>
 
       <SpaceBackground />
+      <BottomBlur />
 
       <div className="relative z-10">
         <Header />
@@ -928,10 +985,20 @@ export default function Home() {
           <div className={`relative z-10 flex min-h-[640px] items-start md:min-h-0 ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 className={`${headlineFont.className} text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
+                <h1 data-hero-title className={`${headlineFont.className} relative text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
+                  {/* a bright light that slides across the words once, while the sun comes up */}
+                  <span
+                    aria-hidden
+                    className="hero-shine pointer-events-none absolute inset-0 select-none"
+                    style={{ ["--shine-delay" as string]: `${SUNRISE_DELAY_S + SUNRISE_SECONDS * 0.3}s`, ["--shine-time" as string]: `${HEADLINE_SHINE_SECONDS}s` } as CSSProperties}
+                  >
+                    One place.{" "}
+                    <br className="xl:hidden" />
+                    Every move.
+                  </span>
                 </h1>
               </Reveal>
 
