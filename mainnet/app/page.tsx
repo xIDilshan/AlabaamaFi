@@ -172,7 +172,7 @@ const EARTH_TOP_NUDGE = 0; // moves the planet down (+) or up (-), in pixels, fr
 const EARTH_VISIBLE = 0.5; // how much of the planet's height shows above the bottom of the hero (0.5 = half of it; bigger = more of it)
 const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
 const SUNRISE_STRENGTH = 0.7; // how bright the light gets at its brightest (0 = none, 1 = very bright)
-const HEADLINE_SHINE_SECONDS = 4.5; // how long the bright light takes to slide across "One place. Every move."
+const HEADLINE_SHINE_SECONDS = 6; // how long the bright light takes to slide across "One place. Every move."
 const SUNRISE_DELAY_S = 1.5; // seconds after the page loads before the light starts to rise
 const SUNRISE_SECONDS = 14; // how long the light takes to rise and fade away (bigger = slower). It plays once every time the page loads.
 
