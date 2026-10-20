@@ -434,7 +434,9 @@ function HeroEarth() {
           [R * 0.014, 0.26],
           [R * 0.005, 0.7],
         ];
-        if ("createConicGradient" in ctx) {
+        // (checked this way so TypeScript does not treat the other branch as impossible)
+        const hasConic = typeof (ctx as unknown as { createConicGradient?: unknown }).createConicGradient === "function";
+        if (hasConic) {
           const f = Math.min(0.999, hw / Math.PI); // the lit part, as a fraction of the whole circle
           for (const [lw, al] of LAYERS) {
             const g = ctx.createConicGradient(a - hw, cx, cy);
