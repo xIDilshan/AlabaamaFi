@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
-import { Inter, Manrope, Sora } from "next/font/google";
+import { Inter, Manrope, Space_Grotesk } from "next/font/google";
 import Header from "@/components/Header";
 
 // Brand fonts. Swap Inter if your Header uses a different font. Manrope is used for numbers, like on the other pages.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
-// The font of the big headline "One place. Every move." To try another, swap Sora for another Google font (for example Outfit, Space_Grotesk or Plus_Jakarta_Sans).
-const headlineFont = Sora({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
+// The font of the big headline "One place. Every move." To try another, swap Space_Grotesk for another Google font
+// (for example Outfit, Sora, Urbanist, Syne or Plus_Jakarta_Sans) and keep the weights that font has.
+const headlineFont = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], display: "swap" });
 const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
 /* ---------- Arc mainnet ---------- */
@@ -167,6 +168,9 @@ function SpaceBackground() {
 const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
 const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
 const EARTH_START = -0.35; // which side faces you at the start (radians)
+const EARTH_RISE = 0.6; // how much of the planet shows above the bottom of the first screen (0.5 = half of it; bigger = higher)
+const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
+const SUNRISE_STRENGTH = 0.5; // how bright the light gets at its brightest (0 = none, 1 = very bright)
 const SUNRISE_DELAY_S = 1.5; // seconds after the page loads before the light starts to rise
 const SUNRISE_SECONDS = 14; // how long the light takes to rise and fade away (bigger = slower). It plays once every time the page loads.
 
@@ -288,22 +292,57 @@ function HeroEarth() {
     const sT = Math.sin(EARTH_TILT);
     let w = 0;
     let h = 0;
+    let dprNow = 1;
+    let textBottom = 0; // where the hero text ends, counted from the top of the hero
+
+    // finds where the hero text ends (the buttons), so on tall screens the planet can come up close under the text
+    const measureText = () => {
+      const section = canvas.closest("section") as HTMLElement | null;
+      const el = section?.querySelector("[data-hero-text]") as HTMLElement | null;
+      if (!section || !el) {
+        textBottom = 0;
+        return;
+      }
+      let y = 0;
+      let n: HTMLElement | null = el;
+      while (n && n !== section) {
+        y += n.offsetTop;
+        n = n.offsetParent as HTMLElement | null;
+      }
+      textBottom = y + el.offsetHeight;
+    };
 
     const resize = () => {
       const r = canvas.getBoundingClientRect();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
+      dprNow = dpr;
       w = Math.max(2, Math.round(r.width * dpr));
       h = Math.max(2, Math.round(r.height * dpr));
       canvas.width = w;
       canvas.height = h;
+      measureText();
     };
 
     const t0 = performance.now(); // the moment the page (this component) loaded
     const draw = (ms: number) => {
       const t = (ms - t0) / 1000;
-      const cx = w / 2;
-      const cy = h / 2;
-      const R = Math.min(w, h) * 0.38; // leaves room around the planet for the glow and the sunrise
+      // where the planet is: it is sized and placed from the size of the hero (not the width of the screen), so it looks right on every screen
+      const cssW = w / dprNow;
+      const heroH = h / dprNow - EARTH_EXTRA_TOP; // the canvas also covers EARTH_EXTRA_TOP above the hero
+      const narrow = cssW < 640;
+      const cap = narrow ? 0.5 : EARTH_RISE;
+      const xf = narrow ? 0.18 : 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000)); // very wide screens: the planet comes in a little from the right
+      let Rc = Math.min(heroH * 0.95, cssW * (narrow ? 0.5 : 0.42), Math.max(640, cssW * 0.3));
+      // tall screens: if the text ends far above the planet, make the planet bigger and bring it up under the text
+      const wantTop = textBottom + 70;
+      if (textBottom > 0 && heroH - cap * 2 * Rc > wantTop + 80) {
+        Rc = Math.min((heroH - wantTop) / (2 * cap), cssW * 0.75);
+      }
+      Rc = Math.min(Rc, (heroH - 30) / (2 * cap)); // the top of the planet stays at least 30px below the top of the hero
+      Rc = Math.max(Rc, 120);
+      const R = Rc * dprNow;
+      const cx = (cssW - Rc * xf) * dprNow;
+      const cy = (EARTH_EXTRA_TOP + heroH - cap * 2 * Rc + Rc) * dprNow;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
@@ -383,38 +422,63 @@ function HeroEarth() {
       const p = Math.min(1, Math.max(0, (t - SUNRISE_DELAY_S) / SUNRISE_SECONDS));
       const I = reduce ? 0.3 : Math.pow(Math.sin(Math.PI * p), 2); // 0 -> 1 -> 0, smooth
       if (I > 0.003) {
+        const K = SUNRISE_STRENGTH;
         const a = -Math.PI / 2 + (reduce ? 0 : -0.2 + 0.4 * p); // slides a little to the right while the planet turns
         const hw = 0.1 + 0.72 * I; // half the length of the lit edge (radians)
         ctx.globalCompositeOperation = "lighter";
         ctx.lineCap = "butt";
-        const M = 56;
-        for (let i = 0; i < M; i++) {
-          const u = ((i + 0.5) / M) * 2 - 1;
-          const wgt = Math.pow(1 - Math.abs(u), 2.2); // brightest in the middle, thin at the ends
-          const ang = a + u * hw;
-          const half = (hw / M) * 1.2;
-          for (const [lw, al] of [
-            [R * 0.034, 0.12],
-            [R * 0.014, 0.28],
-            [R * 0.005, 0.95],
-          ]) {
+        // the haze and the line follow the curve of the planet: thin at the ends, brightest in the middle
+        const LAYERS: [number, number][] = [
+          [R * 0.1, 0.06],
+          [R * 0.04, 0.13],
+          [R * 0.014, 0.26],
+          [R * 0.005, 0.7],
+        ];
+        if ("createConicGradient" in ctx) {
+          const f = Math.min(0.999, hw / Math.PI); // the lit part, as a fraction of the whole circle
+          for (const [lw, al] of LAYERS) {
+            const g = ctx.createConicGradient(a - hw, cx, cy);
+            const N = 24;
+            for (let k = 0; k <= N; k++) {
+              const u = (k / N) * 2 - 1;
+              const wgt = Math.pow(1 - Math.abs(u), 2.2);
+              g.addColorStop((k / N) * f, `rgba(190,228,255,${(al * wgt * I * K).toFixed(3)})`);
+            }
+            g.addColorStop(Math.min(1, f + 0.0001), "rgba(190,228,255,0)");
+            g.addColorStop(1, "rgba(190,228,255,0)");
+            ctx.strokeStyle = g;
             ctx.lineWidth = lw;
-            ctx.strokeStyle = `rgba(190,228,255,${(al * wgt * I).toFixed(3)})`;
             ctx.beginPath();
-            ctx.arc(cx, cy, R, ang - half, ang + half);
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
             ctx.stroke();
+          }
+        } else {
+          // older browsers: the same thing in small pieces
+          const M = 56;
+          for (let i = 0; i < M; i++) {
+            const u = ((i + 0.5) / M) * 2 - 1;
+            const wgt = Math.pow(1 - Math.abs(u), 2.2);
+            const ang = a + u * hw;
+            const half = hw / M;
+            for (const [lw, al] of LAYERS) {
+              ctx.lineWidth = lw;
+              ctx.strokeStyle = `rgba(190,228,255,${(al * wgt * I * K).toFixed(3)})`;
+              ctx.beginPath();
+              ctx.arc(cx, cy, R, ang - half, ang + half);
+              ctx.stroke();
+            }
           }
         }
         const gx = cx + R * Math.cos(a);
         const gy = cy + R * Math.sin(a);
-        // a wide, flat glow along the horizon
+        // a small, soft flare right at the sun
         ctx.save();
         ctx.translate(gx, gy);
-        ctx.scale(3.6, 0.5);
-        const rr = R * 0.2 * (0.55 + 0.75 * I);
+        ctx.scale(2.4, 0.38);
+        const rr = R * 0.13 * (0.55 + 0.75 * I);
         const flat = ctx.createRadialGradient(0, 0, 0, 0, 0, rr);
-        flat.addColorStop(0, `rgba(240,250,255,${(0.95 * I).toFixed(3)})`);
-        flat.addColorStop(0.22, `rgba(150,212,255,${(0.55 * I).toFixed(3)})`);
+        flat.addColorStop(0, `rgba(240,250,255,${(0.7 * I * K).toFixed(3)})`);
+        flat.addColorStop(0.3, `rgba(150,212,255,${(0.35 * I * K).toFixed(3)})`);
         flat.addColorStop(1, "rgba(60,140,255,0)");
         ctx.fillStyle = flat;
         ctx.beginPath();
@@ -422,9 +486,9 @@ function HeroEarth() {
         ctx.fill();
         ctx.restore();
         // the bright center
-        const rb = R * 0.11 * (0.5 + I);
+        const rb = R * 0.1 * (0.5 + I);
         const bloom = ctx.createRadialGradient(gx, gy, 0, gx, gy, rb);
-        bloom.addColorStop(0, `rgba(255,255,255,${(0.9 * I).toFixed(3)})`);
+        bloom.addColorStop(0, `rgba(255,255,255,${(0.9 * I * K).toFixed(3)})`);
         bloom.addColorStop(1, "rgba(150,210,255,0)");
         ctx.fillStyle = bloom;
         ctx.beginPath();
@@ -436,7 +500,7 @@ function HeroEarth() {
         ctx.scale(1, 1.8);
         const ru = R * 0.2 * (0.6 + 0.6 * I);
         const up = ctx.createRadialGradient(0, 0, 0, 0, 0, ru);
-        up.addColorStop(0, `rgba(130,200,255,${(0.32 * I).toFixed(3)})`);
+        up.addColorStop(0, `rgba(130,200,255,${(0.32 * I * K).toFixed(3)})`);
         up.addColorStop(1, "rgba(80,160,255,0)");
         ctx.fillStyle = up;
         ctx.beginPath();
@@ -464,6 +528,8 @@ function HeroEarth() {
       if (reduce) draw(0);
     });
     ro.observe(canvas);
+    document.fonts?.ready.then(measureText);
+    const tm = window.setTimeout(measureText, 800);
     // no drawing while it is off the screen
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
@@ -471,6 +537,7 @@ function HeroEarth() {
     io.observe(canvas);
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(tm);
       ro.disconnect();
       io.disconnect();
     };
@@ -848,16 +915,15 @@ export default function Home() {
       <div className="relative z-10">
         <Header />
 
-        {/* ---------------- HERO: left aligned, a badge, one big line, a glowing planet at the bottom right ---------------- */}
-        <section className="relative overflow-hidden">
-          {/* the Earth: only a part of it shows, the rest is cut off by the bottom of the hero */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_78%,transparent)] [mask-image:linear-gradient(to_bottom,#000_78%,transparent)]">
-            <div className="absolute -bottom-[64vw] -right-[52vw] h-[120vw] w-[120vw] opacity-60 sm:-bottom-[46vw] sm:-right-[34vw] sm:h-[84vw] sm:w-[84vw] sm:opacity-100">
-              <HeroEarth />
-            </div>
+        {/* ---------------- HERO: left aligned, one big line, a glowing Earth at the bottom right ----------------
+            On computers the hero fills the first screen, so nothing below it shows until you scroll. */}
+        <section className="relative md:min-h-[calc(100svh-86px)]">
+          {/* the Earth: its size and place come from the size of the hero (see HeroEarth). It starts EARTH_EXTRA_TOP above the hero, so the sunrise has room. */}
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
+            <HeroEarth />
           </div>
 
-          <div className={`relative z-10 flex min-h-[470px] items-start sm:min-h-[500px] lg:min-h-[540px] ${CONTAINER}`}>
+          <div className={`relative z-10 flex min-h-[640px] items-start md:min-h-0 ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
                 <h1 className={`${headlineFont.className} text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
@@ -873,7 +939,7 @@ export default function Home() {
               </Reveal>
 
               <Reveal delay={270}>
-                <div className="mt-9 flex flex-wrap gap-3">
+                <div data-hero-text className="mt-9 flex flex-wrap gap-3">
                   <Link href="/swap" className={BUTTON}>Start swapping</Link>
                   <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
                 </div>
