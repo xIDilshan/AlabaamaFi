@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Manrope, Sora } from "next/font/google";
 import Header from "@/components/Header";
 
 // Brand fonts. Swap Inter if your Header uses a different font. Manrope is used for numbers, like on the other pages.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
+// The font of the big headline "One place. Every move." To try another, swap Sora for another Google font (for example Outfit, Space_Grotesk or Plus_Jakarta_Sans).
+const headlineFont = Sora({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
 const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
 /* ---------- Arc mainnet ---------- */
@@ -159,12 +161,14 @@ function SpaceBackground() {
 
 /* =====================================================================
    HERO EARTH: a dotted globe seen from space. Land is made of small dots; cities glow warm like night lights.
-   It turns slowly around its vertical axis. A bright thin light runs along its top edge, and a glint glides along it.
+   It turns slowly around its vertical axis. Once, when the page loads, a sunrise comes up on its top edge: a thin line of light grows, is brightest in the middle, then fades away.
    Settings you can change:
 ===================================================================== */
 const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
 const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
 const EARTH_START = -0.35; // which side faces you at the start (radians)
+const SUNRISE_DELAY_S = 1.5; // seconds after the page loads before the light starts to rise
+const SUNRISE_SECONDS = 14; // how long the light takes to rise and fade away (bigger = slower). It plays once every time the page loads.
 
 // the land, 1 bit per degree (360 x 180), drawn from simplified continent outlines
 const EARTH_MASK =
@@ -294,11 +298,12 @@ function HeroEarth() {
       canvas.height = h;
     };
 
+    const t0 = performance.now(); // the moment the page (this component) loaded
     const draw = (ms: number) => {
-      const t = ms / 1000;
+      const t = (ms - t0) / 1000;
       const cx = w / 2;
       const cy = h / 2;
-      const R = Math.min(w, h) * 0.44;
+      const R = Math.min(w, h) * 0.38; // leaves room around the planet for the glow and the sunrise
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
@@ -362,42 +367,84 @@ function HeroEarth() {
       }
       ctx.globalAlpha = 1;
 
-      // the bright edge of the planet
+      // the edge of the planet (always a little visible, soft)
       const rim = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
-      rim.addColorStop(0, "rgba(190,225,255,0.95)");
-      rim.addColorStop(0.45, "rgba(70,140,255,0.45)");
-      rim.addColorStop(1, "rgba(40,100,255,0.10)");
+      rim.addColorStop(0, "rgba(150,200,255,0.42)");
+      rim.addColorStop(0.45, "rgba(70,140,255,0.24)");
+      rim.addColorStop(1, "rgba(40,100,255,0.08)");
       ctx.strokeStyle = rim;
-      ctx.lineWidth = Math.max(1.5, R * 0.005);
+      ctx.lineWidth = Math.max(1.2, R * 0.004);
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
-      // a line of light along the top edge, gliding slowly (like the sun on the horizon seen from space)
-      ctx.globalCompositeOperation = "lighter";
-      const a0 = -Math.PI / 2 + (reduce ? 0.1 : 0.55 * Math.sin(t * 0.19));
-      ctx.lineCap = "round";
-      for (const [lw, al] of [
-        [R * 0.034, 0.1],
-        [R * 0.016, 0.22],
-        [R * 0.006, 0.85],
-      ]) {
-        ctx.lineWidth = lw;
-        ctx.strokeStyle = `rgba(200,232,255,${al})`;
+      // THE SUNRISE: once after the page loads, light comes up on the top edge as the planet turns.
+      // The line grows from a short bright spot, is longest and brightest at the middle of the show, then shrinks and fades away.
+      const p = Math.min(1, Math.max(0, (t - SUNRISE_DELAY_S) / SUNRISE_SECONDS));
+      const I = reduce ? 0.3 : Math.pow(Math.sin(Math.PI * p), 2); // 0 -> 1 -> 0, smooth
+      if (I > 0.003) {
+        const a = -Math.PI / 2 + (reduce ? 0 : -0.2 + 0.4 * p); // slides a little to the right while the planet turns
+        const hw = 0.1 + 0.72 * I; // half the length of the lit edge (radians)
+        ctx.globalCompositeOperation = "lighter";
+        ctx.lineCap = "butt";
+        const M = 56;
+        for (let i = 0; i < M; i++) {
+          const u = ((i + 0.5) / M) * 2 - 1;
+          const wgt = Math.pow(1 - Math.abs(u), 2.2); // brightest in the middle, thin at the ends
+          const ang = a + u * hw;
+          const half = (hw / M) * 1.2;
+          for (const [lw, al] of [
+            [R * 0.034, 0.12],
+            [R * 0.014, 0.28],
+            [R * 0.005, 0.95],
+          ]) {
+            ctx.lineWidth = lw;
+            ctx.strokeStyle = `rgba(190,228,255,${(al * wgt * I).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, ang - half, ang + half);
+            ctx.stroke();
+          }
+        }
+        const gx = cx + R * Math.cos(a);
+        const gy = cy + R * Math.sin(a);
+        // a wide, flat glow along the horizon
+        ctx.save();
+        ctx.translate(gx, gy);
+        ctx.scale(3.6, 0.5);
+        const rr = R * 0.2 * (0.55 + 0.75 * I);
+        const flat = ctx.createRadialGradient(0, 0, 0, 0, 0, rr);
+        flat.addColorStop(0, `rgba(240,250,255,${(0.95 * I).toFixed(3)})`);
+        flat.addColorStop(0.22, `rgba(150,212,255,${(0.55 * I).toFixed(3)})`);
+        flat.addColorStop(1, "rgba(60,140,255,0)");
+        ctx.fillStyle = flat;
         ctx.beginPath();
-        ctx.arc(cx, cy, R, a0 - 0.34, a0 + 0.34);
-        ctx.stroke();
+        ctx.arc(0, 0, rr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // the bright center
+        const rb = R * 0.11 * (0.5 + I);
+        const bloom = ctx.createRadialGradient(gx, gy, 0, gx, gy, rb);
+        bloom.addColorStop(0, `rgba(255,255,255,${(0.9 * I).toFixed(3)})`);
+        bloom.addColorStop(1, "rgba(150,210,255,0)");
+        ctx.fillStyle = bloom;
+        ctx.beginPath();
+        ctx.arc(gx, gy, rb, 0, Math.PI * 2);
+        ctx.fill();
+        // soft light rising above the horizon
+        ctx.save();
+        ctx.translate(gx, gy);
+        ctx.scale(1, 1.8);
+        const ru = R * 0.2 * (0.6 + 0.6 * I);
+        const up = ctx.createRadialGradient(0, 0, 0, 0, 0, ru);
+        up.addColorStop(0, `rgba(130,200,255,${(0.32 * I).toFixed(3)})`);
+        up.addColorStop(1, "rgba(80,160,255,0)");
+        ctx.fillStyle = up;
+        ctx.beginPath();
+        ctx.arc(0, 0, ru, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.globalCompositeOperation = "source-over";
       }
-      const gx = cx + R * Math.cos(a0);
-      const gy = cy + R * Math.sin(a0);
-      const glint = ctx.createRadialGradient(gx, gy, 0, gx, gy, R * 0.16);
-      glint.addColorStop(0, "rgba(210,238,255,0.42)");
-      glint.addColorStop(1, "rgba(120,190,255,0)");
-      ctx.fillStyle = glint;
-      ctx.beginPath();
-      ctx.arc(gx, gy, R * 0.16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalCompositeOperation = "source-over";
     };
 
     let raf = 0;
@@ -805,15 +852,15 @@ export default function Home() {
         <section className="relative overflow-hidden">
           {/* the Earth: only a part of it shows, the rest is cut off by the bottom of the hero */}
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_78%,transparent)] [mask-image:linear-gradient(to_bottom,#000_78%,transparent)]">
-            <div className="absolute -bottom-[60vw] -right-[45vw] h-[110vw] w-[110vw] opacity-60 sm:-bottom-[42vw] sm:-right-[21vw] sm:h-[64vw] sm:w-[64vw] sm:opacity-100">
+            <div className="absolute -bottom-[64vw] -right-[52vw] h-[120vw] w-[120vw] opacity-60 sm:-bottom-[46vw] sm:-right-[34vw] sm:h-[84vw] sm:w-[84vw] sm:opacity-100">
               <HeroEarth />
             </div>
           </div>
 
-          <div className={`relative z-10 flex min-h-[460px] items-center sm:min-h-[500px] lg:min-h-[560px] ${CONTAINER}`}>
-            <div className="w-full py-12 text-left lg:py-16">
+          <div className={`relative z-10 flex min-h-[470px] items-start sm:min-h-[500px] lg:min-h-[540px] ${CONTAINER}`}>
+            <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 className="text-[2.9rem] font-bold leading-[1.04] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.8vw,9.5rem)]">
+                <h1 className={`${headlineFont.className} text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
@@ -822,6 +869,7 @@ export default function Home() {
 
               <Reveal delay={180}>
                 <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
               </Reveal>
 
               <Reveal delay={270}>
