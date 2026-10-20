@@ -169,6 +169,7 @@ const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
 const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
 const EARTH_START = -0.35; // which side faces you at the start (radians)
 const EARTH_TOP_NUDGE = 0; // moves the planet down (+) or up (-), in pixels, from the line of the top of the headline. On phones the planet sits under the text.
+const EARTH_VISIBLE = 0.6; // how much of the planet's height shows above the bottom of the first screen (0.5 = half; bigger = more of it, 1 = all of it)
 const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
 const SUNRISE_STRENGTH = 0.7; // how bright the light gets at its brightest (0 = none, 1 = very bright)
 const HEADLINE_SHINE_SECONDS = 4.5; // how long the bright light takes to slide across "One place. Every move."
@@ -296,6 +297,7 @@ function HeroEarth() {
     let dprNow = 1;
     let textBottom = 0; // where the hero text ends, counted from the top of the hero
     let titleTop = 0; // where the headline starts, counted from the top of the hero
+    let headRight = 0; // where the headline words end on the right, counted from the left of the hero
 
     const offsetIn = (section: HTMLElement, el: HTMLElement) => {
       let y = 0;
@@ -313,6 +315,13 @@ function HeroEarth() {
       const title = section?.querySelector("[data-hero-title]") as HTMLElement | null;
       textBottom = section && end ? offsetIn(section, end) + end.offsetHeight : 0;
       titleTop = section && title ? offsetIn(section, title) : 0;
+      headRight = 0;
+      if (section && title) {
+        const sr = section.getBoundingClientRect();
+        title.querySelectorAll(":scope > span:not([aria-hidden])").forEach((sp) => {
+          headRight = Math.max(headRight, sp.getBoundingClientRect().right - sr.left);
+        });
+      }
     };
 
     const resize = () => {
@@ -336,6 +345,7 @@ function HeroEarth() {
       let Rc: number;
       let top: number; // the top of the planet, counted from the top of the hero
       let xf: number; // how far the planet's center is from the right edge, in radiuses
+      let cxOverride = 0; // the planet's center, from the left (computers); 0 = use xf
       if (narrow) {
         // phones: the text uses the whole width, so the planet comes up right under the text
         const cap = 0.5;
@@ -346,13 +356,17 @@ function HeroEarth() {
         top = heroH - cap * 2 * Rc;
         xf = 0.18;
       } else {
-        // computers and tablets: the planet is on the right, its top level with the top of the headline
-        Rc = Math.max(120, Math.min(heroH * 0.95, cssW * 0.42, Math.max(600, cssW * 0.3)));
+        // computers and tablets: the planet is on the right, its top level with the top of the headline.
+        // It is big enough that the bottom of the first screen cuts it, so only its upper part shows (never the whole planet).
         top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
+        Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * 0.85));
         xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000)); // very wide screens: the planet comes in a little from the right
+        // and it sits to the right of the headline words, never over them
+        const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
+        cxOverride = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
       }
       const R = Rc * dprNow;
-      const cx = (cssW - Rc * xf) * dprNow;
+      const cx = (cxOverride || cssW - Rc * xf) * dprNow;
       const cy = (EARTH_EXTRA_TOP + top + Rc) * dprNow;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
@@ -1034,7 +1048,15 @@ export default function Home() {
                     <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
                   </Reveal>
                   <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
-                    <Preview kind={item.kind} />
+                    {/* click the picture to open that page */}
+                    <Link
+                      href={`/${item.kind}`}
+                      aria-label={`Open ${item.label}`}
+                      title={`Open ${item.label}`}
+                      className="block rounded-[2rem] outline-none transition duration-500 hover:-translate-y-1.5 focus-visible:ring-2 focus-visible:ring-[#39c4ff]"
+                    >
+                      <Preview kind={item.kind} />
+                    </Link>
                   </Reveal>
                 </div>
               ))}
