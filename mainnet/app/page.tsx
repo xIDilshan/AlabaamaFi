@@ -169,7 +169,7 @@ const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
 const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
 const EARTH_START = -0.35; // which side faces you at the start (radians)
 const EARTH_TOP_NUDGE = 0; // moves the planet down (+) or up (-), in pixels, from the line of the top of the headline. On phones the planet sits under the text.
-const EARTH_VISIBLE = 0.6; // how much of the planet's height shows above the bottom of the first screen (0.5 = half; bigger = more of it, 1 = all of it)
+const EARTH_VISIBLE = 0.5; // how much of the planet's height shows above the bottom of the hero (0.5 = half of it; bigger = more of it)
 const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
 const SUNRISE_STRENGTH = 0.7; // how bright the light gets at its brightest (0 = none, 1 = very bright)
 const HEADLINE_SHINE_SECONDS = 4.5; // how long the bright light takes to slide across "One place. Every move."
@@ -582,40 +582,6 @@ function HeroEarth() {
   return <canvas ref={ref} aria-hidden className="h-full w-full" />;
 }
 
-/* A soft blur along the bottom edge of the first screen (computers), like on uniswap.org.
-   It is there before you scroll, and fades away as you scroll down. */
-function BottomBlur() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => {
-      el.style.opacity = String(Math.max(0, 1 - window.scrollY / (window.innerHeight * 0.5)));
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-  return (
-    <div
-      ref={ref}
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 hidden h-36 md:block"
-      style={{
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-        background: "linear-gradient(to top, rgba(1,2,5,0.7), rgba(1,2,5,0))",
-        WebkitMaskImage: "linear-gradient(to top, #000 0%, #000 35%, transparent 100%)",
-        maskImage: "linear-gradient(to top, #000 0%, #000 35%, transparent 100%)",
-      }}
-    />
-  );
-}
-
 /* =====================================================================
    PREVIEWS: static copies of the real pages (same cards, boxes, chips, logos and numbers)
 ===================================================================== */
@@ -972,8 +938,8 @@ export default function Home() {
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes glowPulse{0%,100%{opacity:.65}50%{opacity:1}}
         @keyframes logoSpin{to{transform:rotate(360deg)}}
-        .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:140% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
-        @keyframes heroShine{0%{background-position:140% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:-40% 0;opacity:0}}
+        .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:-40% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
+        @keyframes heroShine{0%{background-position:-40% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:140% 0;opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-right{transform:translateX(70px)}
@@ -983,27 +949,25 @@ export default function Home() {
       `}</style>
 
       <SpaceBackground />
-      <BottomBlur />
 
       <div className="relative z-10">
         <Header />
 
-        {/* ---------------- HERO: left aligned, one big line, a glowing Earth at the bottom right ----------------
-            On computers the hero fills the first screen, so nothing below it shows until you scroll. */}
-        <section className="relative md:min-h-[calc(100svh-86px)]">
+        {/* ---------------- HERO: left aligned, one big line, a glowing Earth at the right (half of it shows) ---------------- */}
+        <section className="relative">
           {/* the Earth: its size and place come from the size of the hero (see HeroEarth). It starts EARTH_EXTRA_TOP above the hero, so the sunrise has room. */}
           <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
             <HeroEarth />
           </div>
 
-          <div className={`relative z-10 flex min-h-[640px] items-start md:min-h-0 ${CONTAINER}`}>
+          <div className={`relative z-10 flex min-h-[640px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 data-hero-title className={`${headlineFont.className} relative text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
+                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
-                  {/* a bright light that slides across the words once, while the sun comes up */}
+                  {/* a bright light that slides across the words once (from right to left), while the sun comes up */}
                   <span
                     aria-hidden
                     className="hero-shine pointer-events-none absolute inset-0 select-none"
