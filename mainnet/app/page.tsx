@@ -5,11 +5,8 @@ import Link from "next/link";
 import { Inter, Manrope, Space_Grotesk } from "next/font/google";
 import Header from "@/components/Header";
 
-// Brand fonts. Swap Inter if your Header uses a different font. Manrope is used for numbers, like on the other pages.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
-// The font of the big headline "One place. Every move." To try another, swap Space_Grotesk for another Google font
-// (for example Outfit, Sora, Urbanist, Syne or Plus_Jakarta_Sans) and keep the weights that font has.
 const headlineFont = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], display: "swap" });
 const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
@@ -25,18 +22,15 @@ const ARC = {
 const SOCIAL = {
   x: "https://x.com/Alabaama_Fi",
   discord: "https://discord.gg/NBKHmUfw",
-  github: "https://github.com/xIDilshan/AlabaamaFi", // change this to your real GitHub page
+  github: "https://github.com/xIDilshan/AlabaamaFi",
 };
 
-/* footer sizes you can adjust (pixels). Text below 12px is drawn at 12px and scaled, so it really gets smaller on every phone. */
-const FOOTER_LINK_TEXT_PX = 11; // the words Docs and FAQ
-const FOOTER_SOCIAL_PX = 20; // Discord and GitHub (X is 2px smaller)
+const FOOTER_LINK_TEXT_PX = 11;
+const FOOTER_SOCIAL_PX = 20;
 
-/* the fine "matte" grain laid over the frosted glass behind the page sections */
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
 
-// Same edge padding as the Header, so the logo, the headline and every section line up.
 const CONTAINER = "w-full px-4 sm:px-6 md:px-7 lg:px-10 xl:px-12";
 const EYEBROW = "text-sm font-medium uppercase tracking-[0.22em] text-[#4abaff]";
 const H2 = "mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl";
@@ -130,7 +124,7 @@ function Reveal({ children, delay = 0, className = "", from = "bottom" }: { chil
   );
 }
 
-/* ---------- WHOLE PAGE: dark space, gradient, stars + drifting particles (scroll with the page) ---------- */
+/* ---------- SPACE BACKGROUND ---------- */
 function SpaceBackground() {
   const { stars, dust } = useMemo(() => {
     let seed = 23;
@@ -160,27 +154,21 @@ function SpaceBackground() {
   );
 }
 
-/* =====================================================================
-   HERO EARTH: a dotted globe seen from space. Land is made of small dots; cities glow warm like night lights.
-   It turns slowly around its vertical axis. Once, when the page loads, a sunrise comes up on its top edge: a thin line of light grows, is brightest in the middle, then fades away.
-   Settings you can change:
-===================================================================== */
-const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
-const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
-const EARTH_START = -0.35; // which side faces you at the start (radians)
-const EARTH_TOP_NUDGE = 0; // moves the planet down (+) or up (-), in pixels, from the line of the top of the headline. On phones the planet sits under the text.
-const EARTH_VISIBLE = 0.5; // how much of the planet's height shows above the bottom of the hero (0.5 = half of it; bigger = more of it)
-const EARTH_EXTRA_TOP = 250; // room above the hero for the sunrise light. Must be the same number as the "-top-[250px]" in the hero.
-const SUNRISE_STRENGTH = 0.7; // how bright the light gets at its brightest (0 = none, 1 = very bright)
-const HEADLINE_SHINE_SECONDS = 6; // how long the bright light takes to slide across "One place. Every move."
-const SUNRISE_DELAY_S = 1.5; // seconds after the page loads before the light starts to rise
-const SUNRISE_SECONDS = 14; // how long the light takes to rise and fade away (bigger = slower). It plays once every time the page loads.
+/* ---------- HERO EARTH ---------- */
+const EARTH_SECONDS_PER_TURN = 120;
+const EARTH_TILT = 0.35;
+const EARTH_START = -0.35;
+const EARTH_TOP_NUDGE = 0;
+const EARTH_VISIBLE = 0.5;
+const EARTH_EXTRA_TOP = 250;
+const SUNRISE_STRENGTH = 0.7;
+const HEADLINE_SHINE_SECONDS = 6;
+const SUNRISE_DELAY_S = 1.5;
+const SUNRISE_SECONDS = 14;
 
-// the land, 1 bit per degree (360 x 180), drawn from simplified continent outlines
 const EARTH_MASK =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////AAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////AAAAAAAAAAAAAAAAAAAB/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////+AAAAAAAAAAAAAAAAAAf//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAAAAAAAAAAP///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAAAAAAAAAB//////+AAAAAAAAAAAAAAAAAAAAH8AAB/gAAH/////8AAAAAAAAAAAAAAAAP///////gAAAAAAAAAAAAAAAAAAP/+AAD//AAD/////4AAAAAAAAAAAAAAAH////////8//4AAAAAAAAH/8AAAAH//gAP//wAD/////4AAAAAAD8AAAAAAAP////////////+AAAAAAAf/////wH/+AD///4AB/////gAAAAAA//4AAAAAAP////////////////gAAD///////+AAAf///+AA////+AAAAAAH///AAAf/4f/////////////////AAH////////////////AAf///wAAAAAAP///8f//////////////////////Dwf/////////////j//wAf//+APgAAAAf///////////////////////////P8f////////////+B//4AP//gA/4AAAB////////////////////////////AAB////////////wAf/wAP/wAAf4AAAD/8//////////////////////////AAD////////////AAB/gAH/wAADgAAAP/7/////////////////////////+AAP///////////8AAABAAD/gAAAAAAAf/H/////////////////////////8AAP///////////4AAHAAAB/AAAAAAAB//H/////////////////////////AAAD///////////wAA/4AAAfAAAAAAAB//D////////////////////////8AAAA//AD///////wAAf/wAAAAAAAAAAB//h///////////////////////wAAAAAf8AA///////wAAf/4AAAAAAAAAYA7/A///////////////////8AD/wAAAAA/wAAH//////4AAf/8AAAAAAAAA8AA+A///////////////////wAB/gAAAAB/AAAB///////AA//+AAAAAAAAA8AO+H///////////////////gAA/gAAAAD4AAAAf//////8A///AAAAAAAAAeAEIH//////////////////+AAA/AAAAAAAAAAAP///////B///gAAAAAAAHGAGD////////////////////gAA+AAAAAAAAAAAP///////h///4AAAAAAAPPAf/////////////////////4AA8AAAAAAAAAAAH///////7///8AAAAAAAPfz//////////////////////4AAYAAAAAAAAAAAD///////////8AAAAAAAAf3//////////////////////8AAAAAAAAAAAAAAB///////////8AAAAAAAAY///////////////////////4AAAAAAAAAAAAAAAf//////////4AAAAAAAAD///////////////////////4AAAAAAAAAAAAAAAf/////////jgAAAAAAAAP///////////////////////4AAAAAAAAAAAAAAAP/////////AAAAAAAAAAH///////////////////////wAAAAAAAAAAAAAAAP/////////gAAAAAAAAAD///////////////////////gAAAAAAAAAAAAAAAP/////////wAAAAAAAAAB/////j//B//////////////AAAAAAAAAAAAAAAAP/////////gAAAAAAAAAB//v/+AP+B/////////////+HAAAAAAAAAAAAAAAf////////8AAAAAAAAAD//xj/8AD+A/////////////8HgAAAAAAAAAAAAAAf////////wAAAAAAAAAP/4Bw/8AB/B/////////////APgAAAAAAAAAAAAAAP////////gAAAAAAAAAH/4Aef8///h////////////8AAAAAAAAAAAAAAAAAP///////+AAAAAAAAAAH/gAPfv///j///////////v4AMAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/AADPP///h//////////+BwAMAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH/gACHP///g//////////8BwAcAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH/AAAHH///w///////////g4A4AAAAAAAAAAAAAAAD///////4AAAAAAAAAAD8f4ACB9//////////////w8B4AAAAAAAAAAAAAAAB///////wAAAAAAAAAAAx/8AAAA//////////////g4f4AAAAAAAAAAAAAAAB///////gAAAAAAAAAAB//+AAAA//////////////gB+AAAAAAAAAAAAAAAAAf//////AAAAAAAAAAAD//+AAAB//////////////ABAAAAAAAAAAAAAAAAAAH/////+AAAAAAAAAAAH///4AAB//////////////gCAAAAAAAAAAAAAAAAAAH/////8AAAAAAAAAAAP////P/D//////////////gAAAAAAAAAAAAAAAAAAAD/////4AAAAAAAAAAAP//////z//////////////wAAAAAAAAAAAAAAAAAAAB////A8AAAAAAAAAAAP//////7//P///////////wAAAAAAAAAAAAAAAAAAABv//gAcAAAAAAAAAAAf//////7//n///////////gAAAAAAAAAAAAAAAAAAAA3//AAcAAAAAAAAAAB//////////x///////////gAAAAAAAAAAAAAAAAAAAAz/+AAMAAAAAAAAAAD//////////wP//////////AAAAAAAAAAAAAAAAAAAAAZ/+AAEAAAAAAAAAAD//////////4b//////////AAAAAAAAAAAAAAAAAAAAAM/+AAAAAAAAAAAAAH///////////4Af///////+QAAAAAAAAAAAAAAAAAAAAAP+AAAAAAAAAAAAAP///////////8AH///////4gAAAAAAAAAAAAAAAAAAAAAP8AA/AAAAAAAAAAP////////f//+AD///////gAAAAAAAAAAAAAAAAAAAAAAP+AADwAAAAAAAAAf////////P//+AA//+P//8AAAAAAAAAAAAAAAAAAAAAAAP+B4B4AAAAAAAAAf////////v//+AA//4P/+AAAAAAAAAAAAAAAAAAAAAAAAD/B4ABwAAAAAAAAf////////n//8AAf/wH/+AAAAAAAAAAAAAAAAAAAAAAAAB//4AD4AAAAAAAAP////////j//4AAf/gH/+AAAAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAAAAAAAf////////z//gAAf+AD/+AAAAAAAAAAAAAAAAAAAAAAAAAH/wAAAAAAAAAAAf////////5//AAAf8ADf/AAQAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAAAAf////////8/8AAAP4AAf/gAYAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAf////////+/wAAAPwAAf/gA4AAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAf//////////AAAAHwAAP/gAcAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAf/////////wAAAAHwAAP/gAAAAAAAAAAAAAAAAAAAAAAAAAAHgBAAAAAAAAAP/////////+YAAADwAAMfAAAAAAAAAAAAAAAAAAAAAAAAAAADwH/8AAAAAAAD//////////4AAADwAAIeAAAAAAAAAAAAAAAAAAAAAAAAAAAA4f/+AAAAAAAD//////////wAAADwAAMMAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///AAAAAAAB//////////wAAABIAAMAAADAAAAAAAAAAAAAAAAAAAAAAAAAH///gAAAAAAA//////////wAAAAMAAOAAAHgAAAAAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAf/////////gAAAAMAADAAIDAAAAAAAAAAAAAAAAAAAAAAAAAA////AAAAAAAP/j///////gAAAAAABDgAeAAAAAAAAAAAAAAAAAAAAAAAAAAA////wAAAAAADAB///////AAAAAAABjwA+AAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAH/////+AAAAAAAA5wA+AAAAAAAAAAAAAAAAAAAAAAAAAAA////8AAAAAAAAAH/////8AAAAAAAA8wD8AAAAAAAAAAAAAAAAAAAAAAAAAAB////8AAAAAAAAAH/////wAAAAAAAAeQf8AAAAAAAAAAAAAAAAAAAAAAAAAAD////8AAAAAAAAAD/////gAAAAAAAAfAf88AAAAAAAAAAAAAAAAAAAAAAAAAH////8AAAAAAAAAD/////gAAAAAAAAPwf44AAAAAAAAAAAAAAAAAAAAAAAAAD/////wAAAAAAAAD/////AAAAAAAAAH4f54BAAAAAAAAAAAAAAAAAAAAAAAAD/////8AAAAAAAAB////+AAAAAAAAAD8P54AwAAAAAAAAAAAAAAAAAAAAAAAH//////4AAAAAAAB////+AAAAAAAAAB8Bx4A/+AAAAAAAAAAAAAAAAAAAAAAH//////8AAAAAAAA////8AAAAAAAAAAcAA4AP/gAAAAAAAAAAAAAAAAAAAAAH///////AAAAAAAA////8AAAAAAAAAAEAAAAD/4AAAAAAAAAAAAAAAAAAAAAD///////gAAAAAAA////4AAAAAAAAAAD4AAAB/8AAAAAAAAAAAAAAAAAAAAAD///////gAAAAAAAf///8AAAAAAAAAAD/AAAB/+AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///8AAAAAAAAAAADAAAAf+AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///8AAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAA///////gAAAAAAAf///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAAf///8AAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAf///+AQAAAAAAAAAAAAB8CAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAA////+AwAAAAAAAAAAAAD8HAAAAAAAAAAAAAAAAAAAAAAAP/////4AAAAAAAA////+BwAAAAAAAAAAABz+HgAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAA////4D4AAAAAAAAAAAD/+HwAAAAAAAAAAAAAAAAAAAAAAB/////4AAAAAAAA////AHwAAAAAAAAAAAH//HwAAAAAAAAAAAAAAAAAAAAAAA/////4AAAAAAAA///+APwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAA///+APwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAAf///APgAAAAAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAf///APgAAAAAAAAAAD////+AAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAP///APgAAAAAAAAAAf/////AAAAAAAAAAAAAAAAAAAAAAAf////gAAAAAAAAP///APAAAAAAAAAAB//////AAAAAAAAAAAAAAAAAAAAAAAf///+AAAAAAAAAH//+APAAAAAAAAAAB//////gAAAAAAAAAAAAAAAAAAAAAAf///4AAAAAAAAAH//+AOAAAAAAAAAAB//////4AAAAAAAAAAAAAAAAAAAAAAf///gAAAAAAAAAH//8AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAH//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAD//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAD//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAB//wAAAAAAAAAAAAAf/////8AAAAAAAAAAAAAAAAAAAAAA///8AAAAAAAAAAA//gAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAAAAA//AAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/+AAAAAAAAAAAAAAf/gf//wAAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/8AAAAAAAAAAAAAAf+AP//wAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAAAAAAeAAAAAAAAAAAAAAAPgAH//gAAAAAAAAAAAAAAAAAAAAAB//+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAABAAAAAAAAAAAAAAAAAAB//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/gAABgAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+AAAB8AAAAAAAAAAAAAAAAAB//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAB8AAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAADAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAHAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAOAAAAAAAAAAAAAAAAAAH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
-// big cities: [latitude, longitude, strength]. The lights gather around them.
 const EARTH_CITIES: [number, number, number][] = [
   [40.7, -74, 1],
   [34, -118.2, 0.8],
@@ -251,7 +239,6 @@ function HeroEarth() {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    // read the land mask
     const bin = atob(EARTH_MASK);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -262,7 +249,6 @@ function HeroEarth() {
       return ((bytes[i >> 3] >> (7 - (i & 7))) & 1) === 1;
     };
 
-    // one dot for every land spot, spaced evenly over the sphere
     type Dot = { lonR: number; sinLat: number; cosLat: number; light: number; lit: boolean; phase: number };
     const dots: Dot[] = [];
     let seed = 7;
@@ -295,9 +281,8 @@ function HeroEarth() {
     let w = 0;
     let h = 0;
     let dprNow = 1;
-    let textBottom = 0; // where the hero text ends, counted from the top of the hero
-    let titleTop = 0; // where the headline starts, counted from the top of the hero
-    let headRight = 0; // where the headline words end on the right, counted from the left of the hero
+    let titleTop = 0;
+    let headRight = 0;
 
     const offsetIn = (section: HTMLElement, el: HTMLElement) => {
       let y = 0;
@@ -308,12 +293,9 @@ function HeroEarth() {
       }
       return y;
     };
-    // finds the headline and the end of the hero text, to line the planet up with them
     const measureText = () => {
       const section = canvas.closest("section") as HTMLElement | null;
-      const end = section?.querySelector("[data-hero-text]") as HTMLElement | null;
       const title = section?.querySelector("[data-hero-title]") as HTMLElement | null;
-      textBottom = section && end ? offsetIn(section, end) + end.offsetHeight : 0;
       titleTop = section && title ? offsetIn(section, title) : 0;
       headRight = 0;
       if (section && title) {
@@ -335,44 +317,23 @@ function HeroEarth() {
       measureText();
     };
 
-    const t0 = performance.now(); // the moment the page (this component) loaded
+    const t0 = performance.now();
     const draw = (ms: number) => {
       const t = (ms - t0) / 1000;
-      // where the planet is: it is sized and placed from the size of the hero (not the width of the screen), so it looks right on every screen
       const cssW = w / dprNow;
-      const heroH = h / dprNow - EARTH_EXTRA_TOP; // the canvas also covers EARTH_EXTRA_TOP above the hero
-      const narrow = cssW < 640;
-      let Rc: number;
-      let top: number; // the top of the planet, counted from the top of the hero
-      let xf: number; // how far the planet's center is from the right edge, in radiuses
-      let cxOverride = 0; // the planet's center, from the left (computers); 0 = use xf
-      if (narrow) {
-        // phones: the text uses the whole width, so the planet comes up right under the text
-        const cap = 0.5;
-        Rc = Math.min(heroH * 0.95, cssW * 0.5);
-        const wantTop = textBottom + 70;
-        if (textBottom > 0 && heroH - cap * 2 * Rc > wantTop + 80) Rc = Math.min((heroH - wantTop) / (2 * cap), cssW * 0.75);
-        Rc = Math.max(120, Math.min(Rc, (heroH - 30) / (2 * cap)));
-        top = heroH - cap * 2 * Rc;
-        xf = 0.18;
-      } else {
-        // computers and tablets: the planet is on the right, its top level with the top of the headline.
-        // It is big enough that the bottom of the first screen cuts it, so only its upper part shows (never the whole planet).
-        top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
-        Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * 0.85));
-        xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000)); // very wide screens: the planet comes in a little from the right
-        // and it sits to the right of the headline words, never over them
-        const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
-        cxOverride = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
-      }
+      const heroH = h / dprNow - EARTH_EXTRA_TOP;
+      const top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
+      const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * 0.85));
+      const xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000));
+      const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
+      const cxc = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
       const R = Rc * dprNow;
-      const cx = (cxOverride || cssW - Rc * xf) * dprNow;
+      const cx = cxc * dprNow;
       const cy = (EARTH_EXTRA_TOP + top + Rc) * dprNow;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
 
-      // the soft glow around the planet (its atmosphere)
       const halo = ctx.createRadialGradient(cx, cy, R * 0.94, cx, cy, R * 1.28);
       halo.addColorStop(0, "rgba(90,170,255,0.50)");
       halo.addColorStop(0.16, "rgba(50,120,255,0.26)");
@@ -383,7 +344,6 @@ function HeroEarth() {
       ctx.arc(cx, cy, R * 1.28, 0, Math.PI * 2);
       ctx.fill();
 
-      // the dark body of the planet
       const body = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.45, R * 0.05, cx, cy, R);
       body.addColorStop(0, "#0b2160");
       body.addColorStop(0.55, "#06133c");
@@ -393,7 +353,6 @@ function HeroEarth() {
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.fill();
 
-      // the land dots and the city lights, turning around the vertical axis
       const rot = (reduce ? 0 : (t * Math.PI * 2) / EARTH_SECONDS_PER_TURN) + EARTH_START;
       const dotR = Math.max(1, R * 0.0042);
       for (const d of dots) {
@@ -403,7 +362,7 @@ function HeroEarth() {
         const z0 = d.cosLat * Math.cos(a);
         const y1 = y0 * cT - z0 * sT;
         const z1 = y0 * sT + z0 * cT;
-        if (z1 < 0.03) continue; // on the far side
+        if (z1 < 0.03) continue;
         const fade = Math.pow(z1, 0.45);
         const px = cx + R * x0;
         const py = cy - R * y1;
@@ -431,7 +390,6 @@ function HeroEarth() {
       }
       ctx.globalAlpha = 1;
 
-      // the edge of the planet (always a little visible, soft)
       const rim = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
       rim.addColorStop(0, "rgba(150,200,255,0.42)");
       rim.addColorStop(0.45, "rgba(70,140,255,0.24)");
@@ -442,27 +400,23 @@ function HeroEarth() {
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
-      // THE SUNRISE: once after the page loads, light comes up on the top edge as the planet turns.
-      // The line grows from a short bright spot, is longest and brightest at the middle of the show, then shrinks and fades away.
       const p = Math.min(1, Math.max(0, (t - SUNRISE_DELAY_S) / SUNRISE_SECONDS));
-      const I = reduce ? 0.3 : Math.pow(Math.sin(Math.PI * p), 2); // 0 -> 1 -> 0, smooth
+      const I = reduce ? 0.3 : Math.pow(Math.sin(Math.PI * p), 2);
       if (I > 0.003) {
         const K = SUNRISE_STRENGTH;
-        const a = -Math.PI / 2 + (reduce ? 0 : -0.2 + 0.4 * p); // slides a little to the right while the planet turns
-        const hw = 0.1 + 0.72 * I; // half the length of the lit edge (radians)
+        const a = -Math.PI / 2 + (reduce ? 0 : -0.2 + 0.4 * p);
+        const hw = 0.1 + 0.72 * I;
         ctx.globalCompositeOperation = "lighter";
         ctx.lineCap = "butt";
-        // the haze and the line follow the curve of the planet: thin at the ends, brightest in the middle
         const LAYERS: [number, number][] = [
           [R * 0.1, 0.06],
           [R * 0.04, 0.13],
           [R * 0.014, 0.26],
           [R * 0.005, 0.7],
         ];
-        // (checked this way so TypeScript does not treat the other branch as impossible)
         const hasConic = typeof (ctx as unknown as { createConicGradient?: unknown }).createConicGradient === "function";
         if (hasConic) {
-          const f = Math.min(0.999, hw / Math.PI); // the lit part, as a fraction of the whole circle
+          const f = Math.min(0.999, hw / Math.PI);
           for (const [lw, al] of LAYERS) {
             const g = ctx.createConicGradient(a - hw, cx, cy);
             const N = 24;
@@ -480,7 +434,6 @@ function HeroEarth() {
             ctx.stroke();
           }
         } else {
-          // older browsers: the same thing in small pieces
           const M = 56;
           for (let i = 0; i < M; i++) {
             const u = ((i + 0.5) / M) * 2 - 1;
@@ -498,7 +451,6 @@ function HeroEarth() {
         }
         const gx = cx + R * Math.cos(a);
         const gy = cy + R * Math.sin(a);
-        // a small, soft flare right at the sun
         ctx.save();
         ctx.translate(gx, gy);
         ctx.scale(2.4, 0.38);
@@ -512,7 +464,6 @@ function HeroEarth() {
         ctx.arc(0, 0, rr, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
-        // the bright center
         const rb = R * 0.1 * (0.5 + I);
         const bloom = ctx.createRadialGradient(gx, gy, 0, gx, gy, rb);
         bloom.addColorStop(0, `rgba(255,255,255,${(0.9 * I * K).toFixed(3)})`);
@@ -521,7 +472,6 @@ function HeroEarth() {
         ctx.beginPath();
         ctx.arc(gx, gy, rb, 0, Math.PI * 2);
         ctx.fill();
-        // soft light rising above the horizon
         ctx.save();
         ctx.translate(gx, gy);
         ctx.scale(1, 1.8);
@@ -537,7 +487,6 @@ function HeroEarth() {
         ctx.globalCompositeOperation = "source-over";
       }
 
-      // the lower part of the planet fades into the dark (it rises out of the dark; on tall screens it does not end in a hard round edge)
       ctx.globalCompositeOperation = "destination-out";
       const fadeG = ctx.createLinearGradient(0, cy + R * 0.25, 0, cy + R * 1.15);
       fadeG.addColorStop(0, "rgba(0,0,0,0)");
@@ -566,7 +515,6 @@ function HeroEarth() {
     ro.observe(canvas);
     document.fonts?.ready.then(measureText);
     const tm = window.setTimeout(measureText, 800);
-    // no drawing while it is off the screen
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
     });
@@ -582,9 +530,7 @@ function HeroEarth() {
   return <canvas ref={ref} aria-hidden className="h-full w-full" />;
 }
 
-/* =====================================================================
-   PREVIEWS: static copies of the real pages (same cards, boxes, chips, logos and numbers)
-===================================================================== */
+/* ---------- PREVIEWS ---------- */
 const TOKEN_SRC = { USDC: "/usdc-logo.webp", EURC: "/eurc-logo.png", cirBTC: "/cirbtc-logo.jpg" } as const;
 type Tok = keyof typeof TOKEN_SRC;
 
@@ -600,7 +546,6 @@ function TokenLogo({ sym, size = 36 }: { sym: Tok; size?: number }) {
   );
 }
 
-/** Big token chip, like on the Swap, Bridge and Send pages. */
 const Chip = ({ sym, caret = false }: { sym: Tok; caret?: boolean }) => (
   <span className="flex shrink-0 items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3.5 text-base font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-4 sm:text-[17px]">
     <TokenLogo sym={sym} />
@@ -613,7 +558,6 @@ const Chip = ({ sym, caret = false }: { sym: Tok; caret?: boolean }) => (
   </span>
 );
 
-/** Round network badge: Arc uses your logo file, Ethereum is drawn here, others a colored letter. */
 function NetBadge({ name, size = 30 }: { name: "Arc" | "Ethereum" | "Base"; size?: number }) {
   const [failed, setFailed] = useState(false);
   const badge = { width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" } as CSSProperties;
@@ -848,7 +792,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
   );
 }
 
-/* ---------- Arc network details: everything a wallet asks for when you add a custom network ---------- */
+/* ---------- Arc network details ---------- */
 const NETWORK_FIELDS: [string, string][] = [
   ["Network name", "Arc Mainnet"],
   ["RPC URL", ARC.rpc],
@@ -865,7 +809,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      /* clipboard not available */
+      setCopied(false);
     }
   };
   return (
@@ -953,21 +897,19 @@ export default function Home() {
       <div className="relative z-10">
         <Header />
 
-        {/* ---------------- HERO: left aligned, one big line, a glowing Earth at the right (half of it shows) ---------------- */}
+        {/* ---------------- HERO ---------------- */}
         <section className="relative">
-          {/* the Earth: its size and place come from the size of the hero (see HeroEarth). It starts EARTH_EXTRA_TOP above the hero, so the sunrise has room. */}
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 opacity-70 md:opacity-100 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
             <HeroEarth />
           </div>
 
-          <div className={`relative z-10 flex min-h-[640px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
+          <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
                 <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
-                  {/* a bright light that slides across the words once (from right to left), while the sun comes up */}
                   <span
                     aria-hidden
                     className="hero-shine pointer-events-none absolute inset-0 select-none"
@@ -986,7 +928,7 @@ export default function Home() {
               </Reveal>
 
               <Reveal delay={270}>
-                <div data-hero-text className="mt-9 flex flex-wrap gap-3">
+                <div className="mt-9 flex flex-wrap gap-3">
                   <Link href="/swap" className={BUTTON}>Start swapping</Link>
                   <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
                 </div>
@@ -995,13 +937,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ---------------- SHOWCASE: one block per AlabaamaFi page, on frosted "matte" glass (the stars behind are blurred) ---------------- */}
+        {/* ---------------- SHOWCASE ---------------- */}
         <section className="relative pb-10 lg:pb-16">
           <div
             className="relative overflow-hidden bg-[#050a16]/20 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)]"
             style={{ WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)" }}
           >
-            {/* a very fine grain, for the matte feel */}
             <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
             <div className={`relative ${CONTAINER}`}>
               {SHOWCASE.map((item, i) => (
@@ -1012,7 +953,6 @@ export default function Home() {
                     <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
                   </Reveal>
                   <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
-                    {/* click the picture to open that page */}
                     <Link
                       href={`/${item.kind}`}
                       aria-label={`Open ${item.label}`}
@@ -1071,7 +1011,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ---------------- WALLET SETUP: text comes in from the right, the network details from the left ---------------- */}
+        {/* ---------------- WALLET SETUP ---------------- */}
         <section className={`pb-28 lg:pb-40 ${CONTAINER}`}>
           <div className="grid items-center gap-14 lg:grid-cols-2">
             <Reveal from="left" delay={100} className="order-2 lg:order-1">
@@ -1111,10 +1051,8 @@ export default function Home() {
           </Reveal>
         </section>
 
-        {/* ---------------- FOOTER (same as the FAQ page) ---------------- */}
+        {/* ---------------- FOOTER ---------------- */}
         <footer className="border-t border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
-          {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
-              Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
           <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
             <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
 
