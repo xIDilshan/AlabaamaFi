@@ -158,98 +158,278 @@ function SpaceBackground() {
 }
 
 /* =====================================================================
-   HERO ART: glowing lines that draw the AlabaamaFi logo.
-   The shapes were traced from your logo: 4 curved blades and 16 dots.
-   Each cycle: the outlines draw, the blades fill in, the dots appear one by one, the logo holds and turns slowly, then it fades and draws again.
+   HERO EARTH: a dotted globe seen from space. Land is made of small dots; cities glow warm like night lights.
+   It turns slowly around its vertical axis. A bright thin light runs along its top edge, and a glint glides along it.
+   Settings you can change:
 ===================================================================== */
-const LOGO_ARCS = [
-  { d: "M34.8 -89.3C31.9 -89.7 22.5 -90.6 16.8 -90.4C11.2 -90.3 6.2 -89.5 1.0 -88.3C-4.2 -87.1 -9.5 -85.5 -14.6 -83.3C-19.6 -81.1 -24.8 -78.3 -29.4 -75.0C-34.0 -71.8 -38.4 -68.1 -42.3 -63.9C-46.1 -59.7 -50.3 -53.3 -52.5 -49.8C-54.8 -46.2 -55.1 -44.5 -55.8 -42.3C-56.6 -40.2 -56.9 -38.3 -57.1 -36.8C-57.3 -35.2 -57.3 -34.2 -57.0 -32.9C-56.6 -31.6 -56.2 -30.1 -55.2 -28.9C-54.3 -27.7 -52.5 -26.4 -51.4 -25.9C-50.3 -25.4 -49.5 -25.6 -48.5 -25.8C-47.6 -25.9 -46.6 -26.3 -45.8 -26.9C-45.0 -27.5 -44.6 -27.5 -43.7 -29.5C-42.7 -31.5 -41.7 -35.8 -40.1 -39.0C-38.5 -42.3 -36.7 -45.8 -34.1 -49.2C-31.6 -52.6 -27.8 -56.7 -24.8 -59.6C-21.9 -62.5 -20.2 -63.9 -16.4 -66.5C-12.6 -69.0 -6.0 -72.7 -1.9 -74.7C2.3 -76.8 4.5 -77.6 8.7 -78.9C12.9 -80.2 18.8 -81.7 23.3 -82.4C27.8 -83.2 33.6 -83.0 35.7 -83.6C37.8 -84.2 36.1 -85.3 36.0 -86.0C35.8 -86.7 34.9 -87.2 34.7 -87.7C34.5 -88.3 37.8 -88.8 34.8 -89.3Z", x1: 27.7, y1: -99.4, x2: -60.8, y2: -36.8, c1: "#003294", cm: "#0076ff", c2: "#26bcff" },
-  { d: "M27.0 -55.6C26.0 -55.1 25.3 -54.6 24.7 -53.8C24.1 -52.9 23.6 -51.8 23.4 -50.8C23.3 -49.7 23.5 -48.6 23.8 -47.6C24.2 -46.7 22.8 -46.4 25.7 -45.0C28.6 -43.7 37.2 -41.1 41.3 -39.3C45.3 -37.5 46.8 -36.4 49.8 -34.2C52.8 -32.0 56.1 -29.4 59.2 -26.1C62.4 -22.7 66.0 -18.6 68.9 -14.2C71.9 -9.9 74.7 -4.2 76.7 0.1C78.6 4.3 79.1 4.4 80.8 11.2C82.5 18.0 85.3 35.7 86.8 40.6C88.3 45.5 89.3 40.3 89.8 40.5C90.3 40.6 89.7 41.4 89.9 41.6C90.1 41.8 90.9 41.9 90.9 41.6C91.0 41.3 90.1 40.0 90.2 39.6C90.3 39.2 91.0 42.1 91.4 39.3C91.7 36.6 92.4 28.7 92.2 23.2C92.0 17.7 91.4 12.2 90.2 6.5C89.0 0.8 87.3 -5.3 85.1 -10.8C82.9 -16.3 80.1 -21.5 76.9 -26.3C73.8 -31.1 70.4 -35.5 66.2 -39.6C62.1 -43.7 55.7 -48.2 52.0 -50.8C48.2 -53.3 46.2 -53.8 43.7 -54.7C41.1 -55.7 38.9 -56.4 36.7 -56.7C34.5 -57.1 32.2 -57.1 30.5 -56.9C28.9 -56.7 28.0 -56.1 27.0 -55.6Z", x1: 35.4, y1: -61.7, x2: 103.1, y2: 32.9, c1: "#29bbff", cm: "#006bff", c2: "#003090" },
-  { d: "M-88.5 -39.2C-89.0 -39.0 -88.3 -38.5 -88.6 -38.2C-89.0 -37.9 -89.9 -39.3 -90.4 -37.6C-90.8 -36.0 -91.4 -33.1 -91.4 -28.3C-91.3 -23.6 -91.1 -15.3 -90.2 -9.4C-89.3 -3.4 -87.9 1.8 -85.8 7.3C-83.7 12.9 -80.7 19.1 -77.8 23.9C-74.9 28.8 -71.0 33.3 -68.2 36.5C-65.4 39.7 -63.6 41.1 -61.1 43.2C-58.6 45.2 -55.5 47.3 -53.0 48.9C-50.4 50.5 -48.4 51.5 -45.7 52.6C-42.9 53.7 -39.0 55.0 -36.5 55.5C-34.1 56.0 -32.5 55.8 -30.8 55.6C-29.2 55.4 -27.7 54.7 -26.7 54.2C-25.6 53.6 -25.1 53.0 -24.6 52.2C-24.0 51.4 -23.5 50.4 -23.4 49.5C-23.3 48.5 -23.6 47.2 -24.0 46.3C-24.4 45.4 -23.2 45.2 -26.0 43.9C-28.8 42.6 -36.4 40.6 -40.7 38.8C-44.9 36.9 -47.8 35.3 -51.4 32.6C-55.0 29.9 -59.4 26.0 -62.4 22.8C-65.4 19.6 -67.2 17.1 -69.5 13.5C-71.8 9.8 -74.5 5.0 -76.4 0.9C-78.3 -3.2 -79.6 -6.9 -80.9 -11.2C-82.2 -15.5 -83.5 -20.4 -84.2 -25.1C-85.0 -29.7 -84.8 -36.7 -85.5 -39.0C-86.2 -41.4 -88.0 -39.3 -88.5 -39.2Z", x1: -101.6, y1: -29.5, x2: -35.0, y2: 60.3, c1: "#002e8d", cm: "#0063fc", c2: "#009dff" },
-  { d: "M56.2 28.9C55.3 27.6 53.1 25.9 52.0 25.3C50.8 24.7 50.4 25.1 49.5 25.3C48.7 25.6 47.5 26.0 46.7 26.8C45.8 27.5 45.7 27.5 44.5 29.9C43.4 32.3 42.0 37.2 40.0 40.9C37.9 44.6 35.1 48.7 32.3 52.0C29.5 55.4 26.7 58.0 23.1 60.9C19.5 63.8 14.7 66.9 10.6 69.3C6.4 71.7 2.8 73.3 -1.7 75.0C-6.2 76.7 -11.8 78.4 -16.3 79.6C-20.7 80.7 -23.4 81.3 -28.3 81.9C-33.1 82.4 -42.5 82.0 -45.4 82.7C-48.3 83.4 -45.7 85.4 -45.5 86.0C-45.3 86.6 -44.5 86.0 -44.3 86.3C-44.0 86.5 -44.4 87.4 -44.1 87.4C-43.8 87.5 -42.8 86.6 -42.4 86.7C-42.0 86.8 -43.2 87.6 -41.5 88.0C-39.8 88.4 -37.1 89.1 -32.3 89.3C-27.4 89.4 -18.3 89.5 -12.3 88.9C-6.2 88.2 -1.7 87.3 4.1 85.4C10.0 83.6 17.3 80.4 22.7 77.6C28.1 74.7 32.9 70.9 36.3 68.3C39.6 65.7 40.7 64.4 43.0 62.0C45.2 59.6 47.9 56.5 49.8 53.7C51.8 51.0 53.4 48.1 54.7 45.6C55.9 43.2 56.7 41.1 57.2 39.0C57.8 37.0 58.0 34.9 57.8 33.2C57.6 31.5 57.2 30.2 56.2 28.9Z", x1: 61.9, y1: 37.9, x2: -37.0, y2: 99.6, c1: "#17b0ff", cm: "#006bff", c2: "#003195" },
+const EARTH_SECONDS_PER_TURN = 120; // one full turn (smaller = faster)
+const EARTH_TILT = 0.35; // how far the north pole leans toward you (radians)
+const EARTH_START = -0.35; // which side faces you at the start (radians)
+
+// the land, 1 bit per degree (360 x 180), drawn from simplified continent outlines
+const EARTH_MASK =
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////AAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////AAAAAAAAAAAAAAAAAAAB/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////+AAAAAAAAAAAAAAAAAAf//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAAAAAAAAAAP///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAAAAAAAAAB//////+AAAAAAAAAAAAAAAAAAAAH8AAB/gAAH/////8AAAAAAAAAAAAAAAAP///////gAAAAAAAAAAAAAAAAAAP/+AAD//AAD/////4AAAAAAAAAAAAAAAH////////8//4AAAAAAAAH/8AAAAH//gAP//wAD/////4AAAAAAD8AAAAAAAP////////////+AAAAAAAf/////wH/+AD///4AB/////gAAAAAA//4AAAAAAP////////////////gAAD///////+AAAf///+AA////+AAAAAAH///AAAf/4f/////////////////AAH////////////////AAf///wAAAAAAP///8f//////////////////////Dwf/////////////j//wAf//+APgAAAAf///////////////////////////P8f////////////+B//4AP//gA/4AAAB////////////////////////////AAB////////////wAf/wAP/wAAf4AAAD/8//////////////////////////AAD////////////AAB/gAH/wAADgAAAP/7/////////////////////////+AAP///////////8AAABAAD/gAAAAAAAf/H/////////////////////////8AAP///////////4AAHAAAB/AAAAAAAB//H/////////////////////////AAAD///////////wAA/4AAAfAAAAAAAB//D////////////////////////8AAAA//AD///////wAAf/wAAAAAAAAAAB//h///////////////////////wAAAAAf8AA///////wAAf/4AAAAAAAAAYA7/A///////////////////8AD/wAAAAA/wAAH//////4AAf/8AAAAAAAAA8AA+A///////////////////wAB/gAAAAB/AAAB///////AA//+AAAAAAAAA8AO+H///////////////////gAA/gAAAAD4AAAAf//////8A///AAAAAAAAAeAEIH//////////////////+AAA/AAAAAAAAAAAP///////B///gAAAAAAAHGAGD////////////////////gAA+AAAAAAAAAAAP///////h///4AAAAAAAPPAf/////////////////////4AA8AAAAAAAAAAAH///////7///8AAAAAAAPfz//////////////////////4AAYAAAAAAAAAAAD///////////8AAAAAAAAf3//////////////////////8AAAAAAAAAAAAAAB///////////8AAAAAAAAY///////////////////////4AAAAAAAAAAAAAAAf//////////4AAAAAAAAD///////////////////////4AAAAAAAAAAAAAAAf/////////jgAAAAAAAAP///////////////////////4AAAAAAAAAAAAAAAP/////////AAAAAAAAAAH///////////////////////wAAAAAAAAAAAAAAAP/////////gAAAAAAAAAD///////////////////////gAAAAAAAAAAAAAAAP/////////wAAAAAAAAAB/////j//B//////////////AAAAAAAAAAAAAAAAP/////////gAAAAAAAAAB//v/+AP+B/////////////+HAAAAAAAAAAAAAAAf////////8AAAAAAAAAD//xj/8AD+A/////////////8HgAAAAAAAAAAAAAAf////////wAAAAAAAAAP/4Bw/8AB/B/////////////APgAAAAAAAAAAAAAAP////////gAAAAAAAAAH/4Aef8///h////////////8AAAAAAAAAAAAAAAAAP///////+AAAAAAAAAAH/gAPfv///j///////////v4AMAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/AADPP///h//////////+BwAMAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH/gACHP///g//////////8BwAcAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH/AAAHH///w///////////g4A4AAAAAAAAAAAAAAAD///////4AAAAAAAAAAD8f4ACB9//////////////w8B4AAAAAAAAAAAAAAAB///////wAAAAAAAAAAAx/8AAAA//////////////g4f4AAAAAAAAAAAAAAAB///////gAAAAAAAAAAB//+AAAA//////////////gB+AAAAAAAAAAAAAAAAAf//////AAAAAAAAAAAD//+AAAB//////////////ABAAAAAAAAAAAAAAAAAAH/////+AAAAAAAAAAAH///4AAB//////////////gCAAAAAAAAAAAAAAAAAAH/////8AAAAAAAAAAAP////P/D//////////////gAAAAAAAAAAAAAAAAAAAD/////4AAAAAAAAAAAP//////z//////////////wAAAAAAAAAAAAAAAAAAAB////A8AAAAAAAAAAAP//////7//P///////////wAAAAAAAAAAAAAAAAAAABv//gAcAAAAAAAAAAAf//////7//n///////////gAAAAAAAAAAAAAAAAAAAA3//AAcAAAAAAAAAAB//////////x///////////gAAAAAAAAAAAAAAAAAAAAz/+AAMAAAAAAAAAAD//////////wP//////////AAAAAAAAAAAAAAAAAAAAAZ/+AAEAAAAAAAAAAD//////////4b//////////AAAAAAAAAAAAAAAAAAAAAM/+AAAAAAAAAAAAAH///////////4Af///////+QAAAAAAAAAAAAAAAAAAAAAP+AAAAAAAAAAAAAP///////////8AH///////4gAAAAAAAAAAAAAAAAAAAAAP8AA/AAAAAAAAAAP////////f//+AD///////gAAAAAAAAAAAAAAAAAAAAAAP+AADwAAAAAAAAAf////////P//+AA//+P//8AAAAAAAAAAAAAAAAAAAAAAAP+B4B4AAAAAAAAAf////////v//+AA//4P/+AAAAAAAAAAAAAAAAAAAAAAAAD/B4ABwAAAAAAAAf////////n//8AAf/wH/+AAAAAAAAAAAAAAAAAAAAAAAAB//4AD4AAAAAAAAP////////j//4AAf/gH/+AAAAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAAAAAAAf////////z//gAAf+AD/+AAAAAAAAAAAAAAAAAAAAAAAAAH/wAAAAAAAAAAAf////////5//AAAf8ADf/AAQAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAAAAf////////8/8AAAP4AAf/gAYAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAf////////+/wAAAPwAAf/gA4AAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAf//////////AAAAHwAAP/gAcAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAf/////////wAAAAHwAAP/gAAAAAAAAAAAAAAAAAAAAAAAAAAHgBAAAAAAAAAP/////////+YAAADwAAMfAAAAAAAAAAAAAAAAAAAAAAAAAAADwH/8AAAAAAAD//////////4AAADwAAIeAAAAAAAAAAAAAAAAAAAAAAAAAAAA4f/+AAAAAAAD//////////wAAADwAAMMAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///AAAAAAAB//////////wAAABIAAMAAADAAAAAAAAAAAAAAAAAAAAAAAAAH///gAAAAAAA//////////wAAAAMAAOAAAHgAAAAAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAf/////////gAAAAMAADAAIDAAAAAAAAAAAAAAAAAAAAAAAAAA////AAAAAAAP/j///////gAAAAAABDgAeAAAAAAAAAAAAAAAAAAAAAAAAAAA////wAAAAAADAB///////AAAAAAABjwA+AAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAH/////+AAAAAAAA5wA+AAAAAAAAAAAAAAAAAAAAAAAAAAA////8AAAAAAAAAH/////8AAAAAAAA8wD8AAAAAAAAAAAAAAAAAAAAAAAAAAB////8AAAAAAAAAH/////wAAAAAAAAeQf8AAAAAAAAAAAAAAAAAAAAAAAAAAD////8AAAAAAAAAD/////gAAAAAAAAfAf88AAAAAAAAAAAAAAAAAAAAAAAAAH////8AAAAAAAAAD/////gAAAAAAAAPwf44AAAAAAAAAAAAAAAAAAAAAAAAAD/////wAAAAAAAAD/////AAAAAAAAAH4f54BAAAAAAAAAAAAAAAAAAAAAAAAD/////8AAAAAAAAB////+AAAAAAAAAD8P54AwAAAAAAAAAAAAAAAAAAAAAAAH//////4AAAAAAAB////+AAAAAAAAAB8Bx4A/+AAAAAAAAAAAAAAAAAAAAAAH//////8AAAAAAAA////8AAAAAAAAAAcAA4AP/gAAAAAAAAAAAAAAAAAAAAAH///////AAAAAAAA////8AAAAAAAAAAEAAAAD/4AAAAAAAAAAAAAAAAAAAAAD///////gAAAAAAA////4AAAAAAAAAAD4AAAB/8AAAAAAAAAAAAAAAAAAAAAD///////gAAAAAAAf///8AAAAAAAAAAD/AAAB/+AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///8AAAAAAAAAAADAAAAf+AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///8AAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAA///////gAAAAAAAf///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAAf///8AAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAf///+AQAAAAAAAAAAAAB8CAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAA////+AwAAAAAAAAAAAAD8HAAAAAAAAAAAAAAAAAAAAAAAP/////4AAAAAAAA////+BwAAAAAAAAAAABz+HgAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAA////4D4AAAAAAAAAAAD/+HwAAAAAAAAAAAAAAAAAAAAAAB/////4AAAAAAAA////AHwAAAAAAAAAAAH//HwAAAAAAAAAAAAAAAAAAAAAAA/////4AAAAAAAA///+APwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAA///+APwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAAf///APgAAAAAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAf///APgAAAAAAAAAAD////+AAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAP///APgAAAAAAAAAAf/////AAAAAAAAAAAAAAAAAAAAAAAf////gAAAAAAAAP///APAAAAAAAAAAB//////AAAAAAAAAAAAAAAAAAAAAAAf///+AAAAAAAAAH//+APAAAAAAAAAAB//////gAAAAAAAAAAAAAAAAAAAAAAf///4AAAAAAAAAH//+AOAAAAAAAAAAB//////4AAAAAAAAAAAAAAAAAAAAAAf///gAAAAAAAAAH//8AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAH//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAD//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAD//4AAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAB//wAAAAAAAAAAAAAf/////8AAAAAAAAAAAAAAAAAAAAAA///8AAAAAAAAAAA//gAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAAAAA//AAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/+AAAAAAAAAAAAAAf/gf//wAAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/8AAAAAAAAAAAAAAf+AP//wAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAAAAAAeAAAAAAAAAAAAAAAPgAH//gAAAAAAAAAAAAAAAAAAAAAB//+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAABAAAAAAAAAAAAAAAAAAB//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/gAABgAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+AAAB8AAAAAAAAAAAAAAAAAB//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAB8AAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAADAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAHAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAOAAAAAAAAAAAAAAAAAAH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+// big cities: [latitude, longitude, strength]. The lights gather around them.
+const EARTH_CITIES: [number, number, number][] = [
+  [40.7, -74, 1],
+  [34, -118.2, 0.8],
+  [41.9, -87.6, 0.8],
+  [29.8, -95.4, 0.6],
+  [25.8, -80.2, 0.6],
+  [43.7, -79.4, 0.6],
+  [19.4, -99.1, 0.9],
+  [-23.5, -46.6, 1],
+  [-22.9, -43.2, 0.7],
+  [-34.6, -58.4, 0.8],
+  [4.7, -74.1, 0.6],
+  [-12, -77, 0.6],
+  [51.5, -0.1, 1],
+  [48.9, 2.3, 0.9],
+  [52.5, 13.4, 0.7],
+  [41.9, 12.5, 0.7],
+  [40.4, -3.7, 0.7],
+  [50.1, 8.7, 0.7],
+  [52.4, 4.9, 0.7],
+  [55.8, 37.6, 0.9],
+  [59.9, 30.3, 0.6],
+  [41, 29, 0.9],
+  [30, 31.2, 0.9],
+  [6.5, 3.4, 0.8],
+  [-26.2, 28, 0.7],
+  [-1.3, 36.8, 0.5],
+  [-4.3, 15.3, 0.5],
+  [33.6, -7.6, 0.5],
+  [35.7, 51.4, 0.8],
+  [25.2, 55.3, 0.7],
+  [24.7, 46.7, 0.6],
+  [19.1, 72.9, 1],
+  [28.6, 77.2, 1],
+  [13, 80.3, 0.7],
+  [12.9, 77.6, 0.7],
+  [22.6, 88.4, 0.8],
+  [23.8, 90.4, 0.8],
+  [24.9, 67, 0.8],
+  [31.5, 74.3, 0.7],
+  [39.9, 116.4, 1],
+  [31.2, 121.5, 1],
+  [23.1, 113.3, 0.9],
+  [22.3, 114.2, 0.8],
+  [30.6, 104, 0.7],
+  [35.7, 139.7, 1],
+  [34.7, 135.5, 0.8],
+  [37.6, 127, 0.9],
+  [13.7, 100.5, 0.8],
+  [10.8, 106.7, 0.7],
+  [21, 105.8, 0.6],
+  [14.6, 121, 0.8],
+  [-6.2, 106.8, 0.9],
+  [3.1, 101.7, 0.6],
+  [1.3, 103.8, 0.6],
+  [-33.9, 151.2, 0.8],
+  [-37.8, 145, 0.6],
+  [-31.9, 115.9, 0.4],
+  [-36.8, 174.8, 0.4],
+  [64.1, -21.9, 0.3]
 ];
 
-const LOGO_DOTS = [
-  { x: 2.0, y: -60.9, r: 8.5, c: "#0085ff" },
-  { x: 27.3, y: -69.3, r: 8.3, c: "#005beb" },
-  { x: 54.7, y: -68.6, r: 8.2, c: "#0043be" },
-  { x: 43.3, y: -21.0, r: 8.5, c: "#009cff" },
-  { x: 61.9, y: 1.2, r: 8.5, c: "#007fff" },
-  { x: 70.9, y: 29.4, r: 8.3, c: "#0057e4" },
-  { x: 70.6, y: 56.7, r: 8.2, c: "#00359f" },
-  { x: 22.1, y: 42.6, r: 8.5, c: "#0091ff" },
-  { x: 0.4, y: 59.3, r: 8.4, c: "#0077ff" },
-  { x: -28.4, y: 67.9, r: 8.3, c: "#0058e6" },
-  { x: -57.9, y: 67.4, r: 8.2, c: "#0038a4" },
-  { x: -42.6, y: 21.7, r: 8.5, c: "#0095ff" },
-  { x: -61.3, y: -0.2, r: 8.4, c: "#007dff" },
-  { x: -70.9, y: -28.0, r: 8.3, c: "#004ed3" },
-  { x: -69.5, y: -55.6, r: 8.1, c: "#00339a" },
-  { x: -20.6, y: -42.9, r: 8.5, c: "#009bff" },
-];
+function HeroEarth() {
+  const ref = useRef<HTMLCanvasElement>(null);
 
-const LOGO_CYCLE = 15; // seconds for one draw -> hold -> fade round
-const LOGO_HOLD_END = 12.4;
-const LOGO_FADE_END = 13.8;
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
 
-function logoCss(): string {
-  const D = LOGO_CYCLE;
-  const p = (s: number) => `${((s / D) * 100).toFixed(3)}%`;
-  let css = "";
-  LOGO_ARCS.forEach((_, i) => {
-    const s = 0.3 + i * 0.45;
-    css += `@keyframes arcLine${i}{0%,${p(s)}{stroke-dashoffset:1;opacity:0}${p(s + 0.05)}{opacity:1;animation-timing-function:cubic-bezier(.4,0,.2,1)}${p(s + 1.7)}{stroke-dashoffset:0;opacity:1}${p(s + 2.8)}{stroke-dashoffset:0;opacity:.35}${p(LOGO_HOLD_END)}{stroke-dashoffset:0;opacity:.35}${p(LOGO_FADE_END)}{stroke-dashoffset:0;opacity:0}${p(LOGO_FADE_END + 0.05)},100%{stroke-dashoffset:1;opacity:0}}`;
-    css += `@keyframes arcFill${i}{0%,${p(s + 1)}{opacity:0}${p(s + 2.3)}{opacity:1}${p(LOGO_HOLD_END)}{opacity:1}${p(LOGO_FADE_END)}{opacity:0}100%{opacity:0}}`;
-  });
-  LOGO_DOTS.forEach((_, k) => {
-    const s = 2 + k * 0.17;
-    css += `@keyframes dotRing${k}{0%,${p(s)}{stroke-dashoffset:1;opacity:0}${p(s + 0.04)}{opacity:1}${p(s + 0.55)}{stroke-dashoffset:0;opacity:1}${p(s + 0.9)}{stroke-dashoffset:0;opacity:0}100%{stroke-dashoffset:0;opacity:0}}`;
-    css += `@keyframes dotFill${k}{0%,${p(s + 0.3)}{opacity:0;transform:scale(.2)}${p(s + 0.75)}{opacity:1;transform:scale(1.18)}${p(s + 0.95)}{opacity:1;transform:scale(1)}${p(LOGO_HOLD_END)}{opacity:1;transform:scale(1)}${p(LOGO_FADE_END)}{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(.2)}}`;
-  });
-  return css;
-}
+    // read the land mask
+    const bin = atob(EARTH_MASK);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const isLand = (lat: number, lon: number) => {
+      const row = Math.min(179, Math.max(0, Math.floor(90 - lat)));
+      const col = Math.min(359, Math.max(0, Math.floor(lon + 180)));
+      const i = row * 360 + col;
+      return ((bytes[i >> 3] >> (7 - (i & 7))) & 1) === 1;
+    };
 
-/** Sits behind the Header and the hero (starts at the very top of the page), so there is no hard edge under the Header. */
-function HeroLogo() {
-  const css = useMemo(logoCss, []);
-  const D = LOGO_CYCLE;
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[820px] overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_70%,transparent)] [mask-image:linear-gradient(to_bottom,#000_70%,transparent)]">
-      <style>{css}</style>
-      <div className="absolute left-1/2 top-0 h-[min(105vw,700px)] w-[min(105vw,700px)] -translate-x-1/2 sm:left-auto sm:-right-[12%] sm:translate-x-0 lg:-right-[3%] xl:-right-[1%]">
-        <div className="absolute inset-[6%] rounded-full bg-[radial-gradient(circle,rgba(30,120,255,0.42),transparent_68%)] blur-2xl" style={{ animation: "glowPulse 8s ease-in-out infinite" }} />
-        <svg viewBox="-120 -120 240 240" className="relative h-full w-full opacity-40 sm:opacity-80 lg:opacity-90" style={{ filter: "drop-shadow(0 0 18px rgba(40,150,255,0.5))" }}>
-          <defs>
-            {LOGO_ARCS.map((a, i) => (
-              <linearGradient key={i} id={`logoArc${i}`} gradientUnits="userSpaceOnUse" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}>
-                <stop offset="0" stopColor={a.c1} />
-                <stop offset="0.5" stopColor={a.cm} />
-                <stop offset="1" stopColor={a.c2} />
-              </linearGradient>
-            ))}
-            <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2.2" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          <g className="logo-spin" style={{ transformOrigin: "0px 0px", animation: "logoSpin 90s linear infinite" }}>
-            {LOGO_ARCS.map((a, i) => (
-              <g key={i}>
-                <path className="logo-part" d={a.d} fill={`url(#logoArc${i})`} style={{ animation: `arcFill${i} ${D}s linear infinite` }} />
-                <path className="logo-part logo-line" d={a.d} fill="none" stroke="#8fe6ff" strokeWidth="1.3" strokeLinejoin="round" pathLength={1} strokeDasharray="1" filter="url(#logoGlow)" style={{ animation: `arcLine${i} ${D}s linear infinite` }} />
-              </g>
-            ))}
-            {LOGO_DOTS.map((d, k) => (
-              <g key={k}>
-                <circle className="logo-part" cx={d.x} cy={d.y} r={d.r} fill={d.c} style={{ transformBox: "fill-box", transformOrigin: "center", animation: `dotFill${k} ${D}s linear infinite` }} />
-                <circle className="logo-part logo-line" cx={d.x} cy={d.y} r={d.r + 1.6} fill="none" stroke="#a6ecff" strokeWidth="1.1" pathLength={1} strokeDasharray="1" filter="url(#logoGlow)" style={{ animation: `dotRing${k} ${D}s linear infinite` }} />
-              </g>
-            ))}
-          </g>
-        </svg>
-      </div>
-    </div>
-  );
+    // one dot for every land spot, spaced evenly over the sphere
+    type Dot = { lonR: number; sinLat: number; cosLat: number; light: number; lit: boolean; phase: number };
+    const dots: Dot[] = [];
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const STEP = 1.7;
+    const D2R = Math.PI / 180;
+    for (let lat = -58; lat <= 84; lat += STEP) {
+      const cl = Math.cos(lat * D2R);
+      const n = Math.max(1, Math.round((360 * cl) / STEP));
+      const off = rnd();
+      for (let j = 0; j < n; j++) {
+        const lon = -180 + ((j + off) / n) * 360;
+        if (!isLand(lat, lon)) continue;
+        let light = 0;
+        for (const [clat, clon, st] of EARTH_CITIES) {
+          let dl = Math.abs(lon - clon);
+          if (dl > 180) dl = 360 - dl;
+          const dx = dl * cl;
+          const dy = lat - clat;
+          light += st * Math.exp(-(dx * dx + dy * dy) / (2 * 4.6 * 4.6));
+        }
+        light = Math.min(1, light);
+        dots.push({ lonR: lon * D2R, sinLat: Math.sin(lat * D2R), cosLat: cl, light, lit: rnd() < Math.min(0.9, light * 1.25), phase: rnd() * 6.283 });
+      }
+    }
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cT = Math.cos(EARTH_TILT);
+    const sT = Math.sin(EARTH_TILT);
+    let w = 0;
+    let h = 0;
+
+    const resize = () => {
+      const r = canvas.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = Math.max(2, Math.round(r.width * dpr));
+      h = Math.max(2, Math.round(r.height * dpr));
+      canvas.width = w;
+      canvas.height = h;
+    };
+
+    const draw = (ms: number) => {
+      const t = ms / 1000;
+      const cx = w / 2;
+      const cy = h / 2;
+      const R = Math.min(w, h) * 0.44;
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+
+      // the soft glow around the planet (its atmosphere)
+      const halo = ctx.createRadialGradient(cx, cy, R * 0.94, cx, cy, R * 1.28);
+      halo.addColorStop(0, "rgba(90,170,255,0.50)");
+      halo.addColorStop(0.16, "rgba(50,120,255,0.26)");
+      halo.addColorStop(0.5, "rgba(30,80,220,0.09)");
+      halo.addColorStop(1, "rgba(20,60,200,0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 1.28, 0, Math.PI * 2);
+      ctx.fill();
+
+      // the dark body of the planet
+      const body = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.45, R * 0.05, cx, cy, R);
+      body.addColorStop(0, "#0b2160");
+      body.addColorStop(0.55, "#06133c");
+      body.addColorStop(1, "#02071c");
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      // the land dots and the city lights, turning around the vertical axis
+      const rot = (reduce ? 0 : (t * Math.PI * 2) / EARTH_SECONDS_PER_TURN) + EARTH_START;
+      const dotR = Math.max(1, R * 0.0042);
+      for (const d of dots) {
+        const a = d.lonR + rot;
+        const x0 = d.cosLat * Math.sin(a);
+        const y0 = d.sinLat;
+        const z0 = d.cosLat * Math.cos(a);
+        const y1 = y0 * cT - z0 * sT;
+        const z1 = y0 * sT + z0 * cT;
+        if (z1 < 0.03) continue; // on the far side
+        const fade = Math.pow(z1, 0.45);
+        const px = cx + R * x0;
+        const py = cy - R * y1;
+        const r = dotR * (0.55 + 0.6 * z1);
+        if (d.lit) {
+          const tw = reduce ? 1 : 0.8 + 0.2 * Math.sin(t * 1.6 + d.phase);
+          const al = Math.min(1, (0.4 + 0.6 * d.light) * fade) * tw;
+          ctx.globalAlpha = al * 0.1;
+          ctx.fillStyle = "#ffbe6e";
+          ctx.beginPath();
+          ctx.arc(px, py, r * 2.6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = al;
+          ctx.fillStyle = "#ffe0a8";
+          ctx.beginPath();
+          ctx.arc(px, py, r * 1.1, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.globalAlpha = 0.25 + 0.3 * fade;
+          ctx.fillStyle = "#468cff";
+          ctx.beginPath();
+          ctx.arc(px, py, r * 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // the bright edge of the planet
+      const rim = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      rim.addColorStop(0, "rgba(190,225,255,0.95)");
+      rim.addColorStop(0.45, "rgba(70,140,255,0.45)");
+      rim.addColorStop(1, "rgba(40,100,255,0.10)");
+      ctx.strokeStyle = rim;
+      ctx.lineWidth = Math.max(1.5, R * 0.005);
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // a line of light along the top edge, gliding slowly (like the sun on the horizon seen from space)
+      ctx.globalCompositeOperation = "lighter";
+      const a0 = -Math.PI / 2 + (reduce ? 0.1 : 0.55 * Math.sin(t * 0.19));
+      ctx.lineCap = "round";
+      for (const [lw, al] of [
+        [R * 0.034, 0.1],
+        [R * 0.016, 0.22],
+        [R * 0.006, 0.85],
+      ]) {
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = `rgba(200,232,255,${al})`;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, a0 - 0.34, a0 + 0.34);
+        ctx.stroke();
+      }
+      const gx = cx + R * Math.cos(a0);
+      const gy = cy + R * Math.sin(a0);
+      const glint = ctx.createRadialGradient(gx, gy, 0, gx, gy, R * 0.16);
+      glint.addColorStop(0, "rgba(210,238,255,0.42)");
+      glint.addColorStop(1, "rgba(120,190,255,0)");
+      ctx.fillStyle = glint;
+      ctx.beginPath();
+      ctx.arc(gx, gy, R * 0.16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+    };
+
+    let raf = 0;
+    let visible = true;
+    resize();
+    if (reduce) {
+      draw(0);
+    } else {
+      const loop = (ms: number) => {
+        if (visible) draw(ms);
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+    }
+    const ro = new ResizeObserver(() => {
+      resize();
+      if (reduce) draw(0);
+    });
+    ro.observe(canvas);
+    // no drawing while it is off the screen
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+    });
+    io.observe(canvas);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      io.disconnect();
+    };
+  }, []);
+
+  return <canvas ref={ref} aria-hidden className="h-full w-full" />;
 }
 
 /* =====================================================================
@@ -617,40 +797,23 @@ export default function Home() {
       `}</style>
 
       <SpaceBackground />
-      <HeroLogo />
 
       <div className="relative z-10">
         <Header />
 
         {/* ---------------- HERO: left aligned, a badge, one big line, a glowing planet at the bottom right ---------------- */}
         <section className="relative overflow-hidden">
-          {/* the glowing planet: a big sphere with a bright rim, cut off by the bottom of the hero */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_72%,transparent)] [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
-            <div
-              className="absolute -bottom-[38vw] -right-[14vw] h-[66vw] w-[66vw] max-h-[1000px] max-w-[1000px] rounded-full"
-              style={{
-                background: "radial-gradient(circle at 38% 16%, rgba(70,150,255,0.30) 0%, rgba(20,70,200,0.22) 26%, rgba(6,20,70,0.55) 54%, rgba(2,6,24,0.95) 76%)",
-                boxShadow: "inset 0 0 90px rgba(80,160,255,0.32), 0 0 150px rgba(30,100,255,0.26)",
-                border: "1px solid rgba(90,160,255,0.38)",
-              }}
-            >
-              <div className="absolute inset-[7%] rounded-full border border-[#3b82f6]/[0.14]" />
-              <div className="absolute inset-[15%] rounded-full border border-[#3b82f6]/[0.09]" />
-              <div className="absolute inset-[24%] rounded-full border border-[#3b82f6]/[0.06]" />
+          {/* the Earth: only a part of it shows, the rest is cut off by the bottom of the hero */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-0 [-webkit-mask-image:linear-gradient(to_bottom,#000_78%,transparent)] [mask-image:linear-gradient(to_bottom,#000_78%,transparent)]">
+            <div className="absolute -bottom-[60vw] -right-[45vw] h-[110vw] w-[110vw] opacity-60 sm:-bottom-[42vw] sm:-right-[21vw] sm:h-[64vw] sm:w-[64vw] sm:opacity-100">
+              <HeroEarth />
             </div>
           </div>
 
           <div className={`relative z-10 flex min-h-[460px] items-center sm:min-h-[500px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full py-12 text-left lg:py-16">
               <Reveal>
-                <span className="inline-flex items-center gap-2.5 rounded-full border border-[#3b5bdb]/60 bg-[#0b1230]/40 px-4 py-1.5 text-sm font-medium text-[#9db4ff]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#2bd48a]" />
-                  Arc Network
-                </span>
-              </Reveal>
-
-              <Reveal delay={90}>
-                <h1 className="mt-6 text-[2.9rem] font-bold leading-[1.04] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.8vw,9.5rem)]">
+                <h1 className="text-[2.9rem] font-bold leading-[1.04] tracking-[-0.04em] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] xl:whitespace-nowrap xl:text-[clamp(4.5rem,5.8vw,9.5rem)]">
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
