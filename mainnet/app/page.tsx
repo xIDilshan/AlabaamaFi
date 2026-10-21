@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
-import { Inter, Manrope, Space_Grotesk } from "next/font/google";
+import { Inter, Manrope, Outfit } from "next/font/google";
 import Header from "@/components/Header";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
-const headlineFont = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], display: "swap" });
+const headlineFont = Outfit({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
 const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
 /* ---------- Arc mainnet ---------- */
@@ -163,7 +163,7 @@ const EARTH_VISIBLE = 0.5;
 const EARTH_EXTRA_TOP = 250;
 const SUNRISE_STRENGTH = 0.7;
 const HEADLINE_SHINE_SECONDS = 6;
-const SUNRISE_DELAY_S = 1.5;
+const SUNRISE_DELAY_S = 1;
 const SUNRISE_SECONDS = 14;
 
 const EARTH_MASK =
@@ -323,7 +323,7 @@ function HeroEarth() {
       const cssW = w / dprNow;
       const heroH = h / dprNow - EARTH_EXTRA_TOP;
       const top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
-      const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * 0.85));
+      const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * (cssW < 640 ? 0.7 : 0.85)));
       const xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000));
       const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
       const cxc = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
@@ -906,7 +906,7 @@ export default function Home() {
           <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.6rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
+                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.9rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
