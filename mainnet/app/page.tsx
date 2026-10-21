@@ -323,7 +323,7 @@ function HeroEarth() {
       const cssW = w / dprNow;
       const heroH = h / dprNow - EARTH_EXTRA_TOP;
       const top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
-      const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * (cssW < 640 ? 0.7 : 0.85)));
+      const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * (cssW < 640 ? 0.6 : 0.85)));
       const xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000));
       const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
       const cxc = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
@@ -906,14 +906,14 @@ export default function Home() {
           <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.5rem] font-normal leading-[1.1] tracking-normal [font-synthesis:none] sm:text-[3.2rem] md:text-[3.8rem] lg:text-[4.6rem] xl:whitespace-nowrap xl:text-[clamp(3rem,3.7vw,6.4rem)]`}>
+                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.8rem] font-normal leading-[1.1] tracking-normal [font-synthesis:none] sm:text-[3.5rem] md:text-[4.2rem] lg:text-[5rem] xl:whitespace-nowrap xl:text-[clamp(3.3rem,4vw,7rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
                   <span
                     aria-hidden
                     className="hero-shine pointer-events-none absolute inset-0 select-none"
-                    style={{ ["--shine-delay" as string]: `${SUNRISE_DELAY_S + SUNRISE_SECONDS * 0.3}s`, ["--shine-time" as string]: `${HEADLINE_SHINE_SECONDS}s` } as CSSProperties}
+                    style={{ ["--shine-delay" as string]: `${SUNRISE_DELAY_S + SUNRISE_SECONDS * 0.3 + 0.5}s`, ["--shine-time" as string]: `${HEADLINE_SHINE_SECONDS}s` } as CSSProperties}
                   >
                     One place.{" "}
                     <br className="xl:hidden" />
