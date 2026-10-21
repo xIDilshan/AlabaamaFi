@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
-import { Inter, Manrope, Outfit } from "next/font/google";
+import { Inter, Manrope, Audiowide } from "next/font/google";
 import Header from "@/components/Header";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
-const headlineFont = Outfit({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
+const headlineFont = Audiowide({ subsets: ["latin"], weight: "400", display: "swap" });
 const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
 /* ---------- Arc mainnet ---------- */
@@ -163,7 +163,7 @@ const EARTH_VISIBLE = 0.5;
 const EARTH_EXTRA_TOP = 250;
 const SUNRISE_STRENGTH = 0.7;
 const HEADLINE_SHINE_SECONDS = 6;
-const SUNRISE_DELAY_S = 1;
+const SUNRISE_DELAY_S = 1.5;
 const SUNRISE_SECONDS = 14;
 
 const EARTH_MASK =
@@ -906,7 +906,7 @@ export default function Home() {
           <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
             <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
               <Reveal>
-                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.9rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[3.6rem] md:text-[4.4rem] lg:text-[5.2rem] xl:whitespace-nowrap xl:text-[clamp(3.8rem,4.7vw,8rem)]`}>
+                <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.5rem] font-normal leading-[1.1] tracking-normal [font-synthesis:none] sm:text-[3.2rem] md:text-[3.8rem] lg:text-[4.6rem] xl:whitespace-nowrap xl:text-[clamp(3rem,3.7vw,6.4rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
                   <br className="xl:hidden" />
                   <span className={GRAD}>Every move.</span>
