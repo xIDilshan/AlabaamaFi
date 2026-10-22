@@ -5,7 +5,6 @@ import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
 
-// Same fonts as the Send page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
 
@@ -17,10 +16,8 @@ const ARC = {
   explorer: "https://explorer.arc.io",
 };
 
-// Name of Arc mainnet inside Circle's App Kit.
 const KIT_CHAIN = "Arc";
 
-// The App Kit reads gas prices and balances through these. Your wallet goes first, then Arc's public endpoints (all from docs.arc.io).
 const ARC_RPCS = [
   "https://rpc.mainnet.arc.io",
   "https://rpc.blockdaemon.mainnet.arc.io",
@@ -28,7 +25,6 @@ const ARC_RPCS = [
   "https://rpc.quicknode.mainnet.arc.io",
 ];
 
-/* Tokens Arc can swap (docs.arc.io/arc/references/contract-addresses). cirBTC uses 8 decimals, the others 6. */
 type Sym = "USDC" | "EURC" | "cirBTC";
 const SYMS: Sym[] = ["USDC", "EURC", "cirBTC"];
 const TOKENS: Record<Sym, { name: string; address: string; decimals: number }> = {
@@ -38,13 +34,10 @@ const TOKENS: Record<Sym, { name: string; address: string; decimals: number }> =
 };
 
 /* ---------- safety limits ---------- */
-const PRICE_DRIFT = 0.005; // if the fresh price is >0.5% worse than the one shown, stop and ask again
-const SWAP_GAS_ESTIMATE = 300000; // typical gas for a swap, used only for the "Network fee" estimate
-const FEE_FLOOR = BigInt("20000000000"); // Arc minimum gas price (20 gwei)
+const PRICE_DRIFT = 0.005;
+const SWAP_GAS_ESTIMATE = 300000;
+const FEE_FLOOR = BigInt("20000000000");
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
-
-// Desktop layout (chart, side-by-side) starts at 900px so "desktop site" mode on a phone already gets it.
-// Phones always show the page at 100%. Desktop-size screens show it at 90% (the [zoom:0.9] class on the <section> below).
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -54,7 +47,7 @@ const BUTTON =
 const SECONDARY_BUTTON =
   "inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-6 py-3.5 text-[15px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] sm:px-7 sm:py-4 sm:text-base";
 
-/* ---------- number helpers (BigInt() calls instead of 1n literals, so any TS target works) ---------- */
+/* ---------- number helpers ---------- */
 const ZERO = BigInt(0);
 const pow10 = (n: number) => BigInt("1" + "0".repeat(n));
 
@@ -74,7 +67,6 @@ function formatUnits(value: bigint, dec: number, minFrac = 2): string {
   return frac ? `${whole}.${frac}` : whole;
 }
 
-/** "12.3456789" -> "12.345678" (up to `dec` decimals, at least 2) */
 function tidy(value: string, dec: number): string {
   const [w = "0", f = ""] = value.split(".");
   let frac = f.slice(0, dec).replace(/0+$/, "");
@@ -110,7 +102,6 @@ const pad32 = (hex: string) => hex.replace(/^0x/, "").toLowerCase().padStart(64,
 const chainNum = (id: unknown) => (typeof id === "string" ? (id.startsWith("0x") ? parseInt(id, 16) : parseInt(id, 10)) : typeof id === "number" ? id : NaN);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Only trust explorer links that point at Arc's explorers; otherwise build our own from the tx hash. */
 function safeExplorerUrl(url: string | undefined, hash: string) {
   try {
     if (url) {
@@ -118,12 +109,12 @@ function safeExplorerUrl(url: string | undefined, hash: string) {
       if (u.protocol === "https:" && /(^|\.)(arcscan\.app|arc\.io|arc\.network)$/i.test(u.hostname)) return u.toString();
     }
   } catch {
-    /* fall through */
+    return `${ARC.explorer}/tx/${hash}`;
   }
   return `${ARC.explorer}/tx/${hash}`;
 }
 
-/* ---------- wallet provider + Circle App Kit (loaded only in the browser, only when needed) ---------- */
+/* ---------- wallet provider and Circle App Kit ---------- */
 type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, handler: (arg: unknown) => void) => void;
@@ -148,7 +139,6 @@ type Market = Partial<Record<Sym, MarketRow | null>>;
 type SwapRecord = { id: string; t: number; from: Sym; to: Sym; paid: string; got: string; url: string };
 type Slip = { mode: "auto" | "custom"; custom: string };
 
-/** Auto slippage: tight for the two stablecoins, a bit wider whenever cirBTC is involved. */
 const autoBps = (a: Sym, b: Sym) => (a === "cirBTC" || b === "cirBTC" ? 100 : 50);
 const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
 
@@ -188,8 +178,6 @@ const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: 
 
 const Spinner = () => <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />;
 
-/** The swap icon assembling itself: the top arrow slides in from the right, the bottom one from the left,
-    until the two sit one above the other. Then it repeats. */
 const SwapArrows = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ overflow: "visible" }}>
     <g style={{ animation: "arrowSlideA 1.5s ease-out infinite" }}>
@@ -201,7 +189,6 @@ const SwapArrows = ({ size = 22 }: { size?: number }) => (
   </svg>
 );
 
-/** Chevron pointing down / left / right. */
 const Chevron = ({ dir = "down", size = 14 }: { dir?: "down" | "left" | "right"; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d={dir === "down" ? "m6 9 6 6 6-6" : dir === "left" ? "m15 6-6 6 6 6" : "m9 6 6 6-6 6"} />
@@ -252,11 +239,9 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
   );
 }
 
-/* ---------- logos ----------
-   Files in mainnet/public/: arc-logo.png, usdc-logo.webp, eurc-logo.png, cirbtc-logo.jpg. If one is missing, a drawing is shown. */
+/* ---------- logos ---------- */
 const LOGO_SRC: Record<string, string> = { Arc: "/arc-logo.png", USDC: "/usdc-logo.webp", EURC: "/eurc-logo.png", cirBTC: "/cirbtc-logo.jpg" };
 
-/** `fluid` makes the logo fill its parent, so the parent's size classes (h-7 sm:h-9 ...) decide how big it is. */
 function Logo({ name, size = 24, fluid = false }: { name: "Arc" | Sym; size?: number; fluid?: boolean }) {
   const [failed, setFailed] = useState(false);
   const dim = fluid ? "100%" : size;
@@ -300,9 +285,8 @@ function Logo({ name, size = 24, fluid = false }: { name: "Arc" | Sym; size?: nu
   );
 }
 
-/* big clickable token (opens the token list) */
+/* ---------- token button ---------- */
 const TokenButton = ({ sym, onClick, disabled }: { sym: Sym; onClick: () => void; disabled?: boolean }) => (
-  /* like the "USDC" chip on the Bridge page, but the name is bold (700), and the logo keeps its larger 40px size on wider screens, so the name is 18px there to stay in proportion */
   <button
     type="button"
     onClick={onClick}
@@ -332,8 +316,7 @@ const ChangeBadge = ({ value }: { value: number }) => {
   );
 };
 
-/* mobile only: thin card under "You receive". Logo, price, change, MCap and 24h Vol are lined up with the logo;
-   MCap and 24h Vol have their label above the value. They only wrap onto a second line when there is not enough room. Tap to open the token chart. */
+/* ---------- market card (phones) ---------- */
 function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow | null | undefined; failed: boolean; onOpen: () => void }) {
   const stat = (label: string, value: number | null, hide = "") => (
     <span className={`flex flex-col leading-tight ${hide}`}>
@@ -364,7 +347,7 @@ function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow 
   );
 }
 
-/* mobile only: opens in front of the swap card with the token's chart. Left arrow goes back. */
+/* ---------- token chart view (phones) ---------- */
 function MarketDetail({ sym, market, onBack }: { sym: Sym; market: Market; onBack: () => void }) {
   return (
     <div className="absolute inset-0 z-20 overflow-y-auto rounded-[1.75rem] bg-[#070d1a] p-4 [scrollbar-width:none] sm:rounded-[2rem] sm:p-5 min-[900px]:hidden [&::-webkit-scrollbar]:hidden">
@@ -385,12 +368,11 @@ function MarketDetail({ sym, market, onBack }: { sym: Sym; market: Market; onBac
   );
 }
 
-/* price chart: on the left of the swap card (desktop) and inside the mobile token view */
+/* ---------- price chart ---------- */
 const RANGES = ["1H", "4H", "1D", "7D", "1M", "3M", "1Y"] as const;
 type Range = (typeof RANGES)[number];
-type Candle = [number, number, number, number, number]; // time, open, high, low, close
+type Candle = [number, number, number, number, number];
 
-/** Candles from a price line: each candle goes from the previous price to this one. */
 function pointsToCandles(pts: [number, number][]): Candle[] {
   const out: Candle[] = [];
   for (let i = 1; i < pts.length; i++) {
@@ -438,7 +420,6 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
     };
   }, [sym, range, kind]);
 
-  // works with either answer shape, so a price line can always be drawn as candles and the other way round
   const pts: [number, number][] = kind === "line" ? data?.points ?? (data?.candles ? data.candles.map((c) => [c[0], c[4]] as [number, number]) : []) : [];
   const candles: Candle[] = kind === "candle" ? data?.candles ?? (data?.points ? pointsToCandles(data.points) : []) : [];
   const n = kind === "candle" ? candles.length : pts.length;
@@ -583,10 +564,7 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
   );
 }
 
-/* Pill on the top edge of the swap card: half of it sticks out above the card, half sits inside.
-   It appears when you confirm the swap in your wallet:
-   a round badge with the swap icon -> unfolds to show "Swapping" -> folds back -> check mark -> unfolds to show "Swap succeeded".
-   Plain dark card; only the icon is colored. The text part is exactly as wide as its text. */
+/* ---------- status pill ---------- */
 function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: string }) {
   const isDone = stage === "done-circle" || stage === "done-open";
   const open = stage === "swap-open" || stage === "done-open";
@@ -622,7 +600,6 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
   );
 }
 
-/** Turns a wallet / SDK error into a short message for the screen. */
 function explain(e: unknown, fallback: string): string {
   const err = e as { code?: number | string; message?: string };
   const msg = err?.message ?? "";
@@ -651,7 +628,6 @@ type ModalKind = null | "from" | "to" | "settings" | "history";
 type PillStage = null | "swap-circle" | "swap-open" | "swap-fold" | "done-circle" | "done-open";
 
 export default function SwapPage() {
-  // Same wallet state as the header (wagmi).
   const { address, isConnected, connector } = useAccount();
   const account = isConnected && address ? address : null;
 
@@ -687,7 +663,6 @@ export default function SwapPage() {
   const adapterRef = useRef<unknown>(null);
   const swapLock = useRef(false);
 
-  /* the pill: circle -> unfolds to "Swapping" -> folds -> check mark circle -> unfolds to "Swap succeeded" */
   const pillRef = useRef<PillStage>(null);
   const pillTimers = useRef<number[]>([]);
   const confirmRef = useRef<(() => void) | null>(null);
@@ -722,13 +697,12 @@ export default function SwapPage() {
   };
   useEffect(() => () => pillTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
-  /* settings are remembered on this device */
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem("alabaamafi:slippage");
       if (raw) setSlip(JSON.parse(raw) as Slip);
     } catch {
-      /* ignore */
+      setSlip({ mode: "auto", custom: "1" });
     }
   }, []);
   const saveSlip = (s: Slip) => {
@@ -736,7 +710,7 @@ export default function SwapPage() {
     try {
       window.localStorage.setItem("alabaamafi:slippage", JSON.stringify(s));
     } catch {
-      /* ignore */
+      return;
     }
   };
 
@@ -744,7 +718,6 @@ export default function SwapPage() {
   const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
   const slippageBps = slip.mode === "custom" && customValid ? Math.round(customPct * 100) : autoBps(from, to);
 
-  /* swap history (this device) */
   const historyKey = account ? `alabaamafi:swaps:${account.toLowerCase()}` : null;
   useEffect(() => {
     if (!historyKey) return setHistory([]);
@@ -756,8 +729,6 @@ export default function SwapPage() {
     }
   }, [historyKey]);
 
-
-  /* market prices, refreshed every minute */
   useEffect(() => {
     let live = true;
     const load = async () => {
@@ -781,7 +752,6 @@ export default function SwapPage() {
     };
   }, []);
 
-  /* the connected wallet's own provider */
   useEffect(() => {
     let live = true;
     setProvider(undefined);
@@ -791,7 +761,6 @@ export default function SwapPage() {
     return () => { live = false; };
   }, [connector]);
 
-  /* which network the wallet is on */
   useEffect(() => {
     if (!provider) return;
     const checkChain = (id: unknown) => setChainOk(Number.isNaN(chainNum(id)) ? null : chainNum(id) === ARC.chainId);
@@ -800,7 +769,6 @@ export default function SwapPage() {
     return () => provider.removeListener?.("chainChanged", checkChain);
   }, [provider]);
 
-  /* a new wallet or account needs a fresh adapter */
   useEffect(() => {
     adapterRef.current = null;
   }, [provider, account]);
@@ -813,7 +781,6 @@ export default function SwapPage() {
     return kitRef.current;
   };
 
-  /* Adapter for the connected wallet. Reads go through your wallet first, then Arc's public RPCs. */
   const getAdapter = async (): Promise<unknown> => {
     if (!adapterRef.current) {
       const { ViemAdapter } = await import("@circle-fin/adapter-viem-v2");
@@ -821,13 +788,11 @@ export default function SwapPage() {
       const kit = await getKit();
       const supportedChains = ((await kit.getSupportedChains()) as { type: string }[]).filter((c) => c.type === "evm");
       const walletTransport = () => custom(provider as never);
-      // The wallet client reports when you confirm the swap transaction in your wallet, so the pill can appear at that moment.
       const raw = provider as Eip1193;
       const watched = {
         request: async (args: { method: string; params?: unknown[] }) => {
           const result = await raw.request(args);
           if (args.method === "eth_sendTransaction") {
-            // a token approval (0x095ea7b3) is not the swap itself; the first other transaction is
             const tx = (args.params?.[0] ?? {}) as { data?: string; input?: string };
             const data = (tx.data ?? tx.input ?? "").toLowerCase();
             if (!data.startsWith("0x095ea7b3")) confirmRef.current?.();
@@ -853,7 +818,6 @@ export default function SwapPage() {
     return adapterRef.current;
   };
 
-  /* balances (ERC-20 face of each token) */
   const readBalance = useCallback(
     async (sym: Sym): Promise<bigint | null> => {
       if (!provider || !account) return null;
@@ -877,7 +841,7 @@ export default function SwapPage() {
     loadBalances();
   }, [loadBalances]);
 
-  /* derived */
+  /* ---------- derived values ---------- */
   const fromDec = TOKENS[from].decimals;
   const toDec = TOKENS[to].decimals;
   const units = parseUnits(amount, fromDec);
@@ -886,7 +850,6 @@ export default function SwapPage() {
   const busy = phase === "swapping";
   const ready = !!account && chainOk === true;
 
-  /* live price (Circle swap service), 0.5s after you stop typing */
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
@@ -919,7 +882,6 @@ export default function SwapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, from, to, cleanAmount, slippageBps, provider, account]);
 
-  /* rough network fee: current gas price x a typical swap's gas (paid in USDC) */
   useEffect(() => {
     setNetFee(null);
     if (!provider || !quote) return;
@@ -938,17 +900,15 @@ export default function SwapPage() {
     };
   }, [provider, quote]);
 
-  /* dollar values under each amount */
   const priceOf = (s: Sym): number | null => market[s]?.price ?? (s === "USDC" ? 1 : null);
   const payNum = cleanAmount && Number(cleanAmount) > 0 ? Number(cleanAmount) : 0;
   const getNum = quote ? Number(quote.out) : 0;
   const payUsd = priceOf(from) !== null ? payNum * (priceOf(from) as number) : null;
   const getUsd = priceOf(to) !== null ? getNum * (priceOf(to) as number) : null;
 
-  /* USDC kept back for the network fee: 1.5x the estimated fee (at least 0.01 USDC, or 0.02 while there is no estimate yet) */
   const gasReserve = netFee !== null ? BigInt(Math.max(10000, Math.ceil(netFee * 1.5 * 1e6))) : BigInt(20000);
 
-  /* validation */
+  /* ---------- validation ---------- */
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (!amount) return { text: "Enter an amount", hard: false };
     if (units === null) return { text: `Use up to ${fromDec} decimal places`, hard: true };
@@ -958,7 +918,7 @@ export default function SwapPage() {
     return null;
   }, [amount, units, balance, from, fromDec, gasReserve]);
 
-  /* actions */
+  /* ---------- actions ---------- */
   const switchToArc = async () => {
     if (!provider) return;
     try {
@@ -983,12 +943,11 @@ export default function SwapPage() {
     if (busy) return;
     setFrom(to);
     setTo(from);
-    setAmount(""); // clear the amount when the tokens are flipped
+    setAmount("");
     setFlips((n) => n + 1);
     setMessage("");
   };
 
-  /* choose a token on either side; picking the token that's on the other side swaps them */
   const pick = (side: "from" | "to", sym: Sym) => {
     let nf = from;
     let nt = to;
@@ -1015,14 +974,14 @@ export default function SwapPage() {
     setAmount(formatUnits(v, fromDec, 0).replace(/,/g, ""));
   };
 
-  /** Waits for the swap transaction to be mined. Returns null if it isn't confirmed within about a minute. */
   const waitForReceipt = async (hash: string): Promise<{ status?: string } | null> => {
     for (let i = 0; i < 60; i++) {
       try {
         const r = (await provider?.request({ method: "eth_getTransactionReceipt", params: [hash] })) as { status?: string } | null;
         if (r) return r;
       } catch {
-        /* keep polling */
+        await sleep(1000);
+        continue;
       }
       await sleep(1000);
     }
@@ -1030,7 +989,7 @@ export default function SwapPage() {
   };
 
   const swap = async () => {
-    if (swapLock.current || !provider || !account || problem || !quote) return; // lock stops double taps
+    if (swapLock.current || !provider || !account || problem || !quote) return;
     swapLock.current = true;
     setPhase("swapping");
     hidePill();
@@ -1039,7 +998,6 @@ export default function SwapPage() {
     };
     setMessage("");
     try {
-      /* 1. check the wallet right before sending */
       if (chainNum(await provider.request({ method: "eth_chainId" })) !== ARC.chainId) throw new Error("WRONG_NETWORK");
       const accts = (await provider.request({ method: "eth_accounts" })) as string[];
       if (!accts?.[0] || accts[0].toLowerCase() !== account.toLowerCase()) throw new Error("ACCOUNT_CHANGED");
@@ -1047,7 +1005,6 @@ export default function SwapPage() {
       const balNow = await readBalance(from);
       if (balNow !== null && units > balNow) throw new Error("NO_BALANCE");
 
-      /* 2. get a fresh price; if it got worse than what the user saw, stop and show the new one */
       const kit = await getKit();
       const adapter = await getAdapter();
       const params: SwapArgs = { from: { adapter, chain: KIT_CHAIN }, tokenIn: from, tokenOut: to, amountIn: cleanAmount, config: { slippageBps } };
@@ -1060,17 +1017,14 @@ export default function SwapPage() {
         throw new Error("PRICE_CHANGED");
       }
 
-      /* 3. swap. The minimum received (slippage) is enforced by the swap itself. */
       const before = await readBalance(to);
       const result = await kit.swap(params);
 
-      /* 4. check what came back */
       if (!TX_HASH_RE.test(result.txHash ?? "")) throw new Error("BAD_TX");
       const url = safeExplorerUrl(result.explorerUrl, result.txHash);
       const st = result.progress?.status;
       if (st === "FAILED" || st === "NOT_FOUND") throw new Error("SWAP_FAILED");
 
-      /* 5. confirm on-chain */
       const receipt = await waitForReceipt(result.txHash);
       if (receipt === null) {
         hidePill();
@@ -1082,7 +1036,6 @@ export default function SwapPage() {
       }
       if (receipt.status !== "0x1") throw new Error("TX_REVERTED");
 
-      /* 6. compare what you actually received with the minimum */
       let got = tidy(result.amountOut ?? quote.out, toDec);
       let warn = "";
       const after = await readBalance(to);
@@ -1107,7 +1060,7 @@ export default function SwapPage() {
         try {
           window.localStorage.setItem(historyKey, JSON.stringify(next));
         } catch {
-          /* ignore */
+          return;
         }
       }
     } catch (e) {
@@ -1120,7 +1073,7 @@ export default function SwapPage() {
     }
   };
 
-  /* main button */
+  /* ---------- main button ---------- */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
   if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
@@ -1153,9 +1106,8 @@ export default function SwapPage() {
       <div className="relative z-10">
         <Header />
 
-        {/* phones: normal size. Screens 900px+ wide: content at 90%, so 100% browser zoom looks like 90% did. Delete min-[900px]:[zoom:0.9] to turn this off. */}
         <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
-          {/* title */}
+          {/* ---------- TITLE ---------- */}
           <div className="fade-up mx-auto max-w-2xl text-center">
             <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
               Swap <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">Tokens</span>
@@ -1163,7 +1115,7 @@ export default function SwapPage() {
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-slate-400 sm:mt-4 sm:text-lg sm:leading-7">Swap USDC, EURC and cirBTC on Arc.</p>
           </div>
 
-          {/* chart on the left (desktop only) + swap card */}
+          {/* ---------- CHART AND SWAP CARD ---------- */}
           <div className={`mx-auto mt-10 flex w-full items-start justify-center gap-6 sm:mt-12 ${showChart ? "max-w-lg min-[900px]:max-w-[1240px]" : "max-w-lg"}`}>
             {showChart && (
               <div className="hidden min-w-0 flex-1 min-[900px]:block">
@@ -1198,7 +1150,7 @@ export default function SwapPage() {
                 </div>
 
                 <div className="mt-4 sm:mt-5">
-                  {/* you pay */}
+                  {/* ---------- YOU PAY ---------- */}
                   <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
                     <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                       <span>You pay</span>
@@ -1230,7 +1182,7 @@ export default function SwapPage() {
                     </div>
                   </div>
 
-                  {/* flip */}
+                  {/* ---------- FLIP ---------- */}
                   <div className="relative z-10 -my-3 flex justify-center">
                     <button
                       type="button"
@@ -1245,7 +1197,7 @@ export default function SwapPage() {
                     </button>
                   </div>
 
-                  {/* you receive */}
+                  {/* ---------- YOU RECEIVE ---------- */}
                   <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 sm:p-4">
                     <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                       <span>You receive</span>
@@ -1268,7 +1220,7 @@ export default function SwapPage() {
                   <MarketCompact sym={to} row={market[to]} failed={marketFailed} onOpen={() => setMarketOpen(true)} />
                 </div>
 
-                {/* price info, shown once there's a quote */}
+                {/* ---------- PRICE INFO ---------- */}
                 {quote && (
                   <dl className="mt-4 space-y-2 px-1 text-[13px] sm:mt-5 sm:text-sm">
                     {rate !== null && (
@@ -1296,7 +1248,7 @@ export default function SwapPage() {
                   {action.label}
                 </button>
 
-                {/* hints / errors */}
+                {/* ---------- HINTS AND ERRORS ---------- */}
                 <div className="mt-3 min-h-5 text-center text-sm" role="status">
                   {phase === "failed" && message ? (
                     <span className="text-red-300">{message}</span>
@@ -1320,13 +1272,13 @@ export default function SwapPage() {
                   <button onClick={() => { setPhase("idle"); setMessage(""); }} className={`${SECONDARY_BUTTON} mt-3`}>Try again</button>
                 )}
 
-                {/* mobile market view, in front of the card */}
+                {/* ---------- MOBILE MARKET VIEW ---------- */}
                 {marketOpen && <MarketDetail sym={to} market={market} onBack={() => setMarketOpen(false)} />}
               </div>
             </div>
           </div>
 
-          {/* reassurance */}
+          {/* ---------- REASSURANCE ---------- */}
           <ul className="fade-up mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500" style={{ "--delay": "300ms" } as CSSProperties}>
             <li>Fees paid in USDC</li>
             <li>Final in under a second</li>
