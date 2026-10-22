@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 const EXPLORER = "https://explorer.arc.io";
-const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
+const CONTAINER = "w-full px-4 sm:px-8 lg:px-10 2xl:px-16";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
 const MIN_VISIBLE = 8; // keep loading older pages until at least this many rows can be shown
@@ -468,7 +468,32 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4abaff]">{children}</p>
   </div>
 );
-const GRAD_TEXT = "bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent";
+const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
+
+/** A donut chart of how the wallet's value is split. The biggest holding is written in the middle. */
+function Donut({ parts, topPct, topSym, loading, size = 156 }: { parts: { color: string; value: number }[]; topPct: string; topSym: string; loading: boolean; size?: number }) {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const total = parts.reduce((a, p) => a + p.value, 0);
+  const live = parts.filter((p) => p.value > 0);
+  const gap = live.length > 1 ? 2.5 : 0;
+  let offset = 0;
+  return (
+    <svg width={size} height={size} viewBox="0 0 140 140" role="img" aria-label="How the wallet value is split between the tokens" className={loading ? "animate-pulse" : ""}>
+      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="16" />
+      {!loading &&
+        total > 0 &&
+        live.map((p, i) => {
+          const len = (p.value / total) * c;
+          const seg = <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={p.color} strokeWidth="16" strokeDasharray={`${Math.max(len - gap, 0.5)} ${c}`} strokeDashoffset={-offset} transform="rotate(-90 70 70)" />;
+          offset += len;
+          return seg;
+        })}
+      <text x="70" y="69" textAnchor="middle" fill="#ffffff" fontSize="22" fontWeight="700">{loading ? "" : topPct}</text>
+      <text x="70" y="87" textAnchor="middle" fill="#94a3b8" fontSize="10" letterSpacing="1.2">{loading ? "" : topSym}</text>
+    </svg>
+  );
+}
 const I = {
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35",
   wallet: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01",
@@ -936,7 +961,7 @@ function ActivityInner() {
             </>
           ) : (
             /* ================= A WALLET IS SHOWN ================= */
-            <div className="mx-auto w-full max-w-[90rem]">
+            <div className="w-full">
               {/* who is shown, and the search */}
               <div className="fade-up relative z-20 border-b border-white/[0.08] pb-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -973,13 +998,13 @@ function ActivityInner() {
               </div>
 
               {/* portfolio and transactions side by side, split by a line */}
-              <div className="grid border-b border-white/[0.08] lg:grid-cols-2 lg:divide-x lg:divide-white/[0.08]">
+              <div className="grid lg:grid-cols-2 lg:divide-x lg:divide-white/[0.08]">
                 <section className="fade-up py-8 lg:pr-10" style={{ "--delay": "100ms" } as CSSProperties}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
-                      <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
-                        {loadingInfo ? <span className="inline-block h-10 w-44 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? <span className={GRAD_TEXT}>{fmtUsd(totalUsd)}</span> : "—"}
+                      <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight text-white sm:text-5xl">
+                        {loadingInfo ? <span className="inline-block h-10 w-44 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
                       </p>
                       <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                     </div>
@@ -988,41 +1013,53 @@ function ActivityInner() {
                     </button>
                   </div>
 
-                  {/* how the value is split */}
-                  <div className="mt-6 flex h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
-                    {!loadingInfo && haveUsd && totalUsd > 0 && rows.map((r) => (r.usd && r.usd > 0 ? <span key={r.sym} style={{ width: `${Math.max((r.usd / totalUsd) * 100, 2)}%`, background: r.color }} /> : null))}
+                  {/* the donut chart (how the value is split) next to the tokens, with the share of each */}
+                  <div className="mt-6 grid items-center gap-6 border-t border-white/[0.08] pt-6 sm:grid-cols-[auto_minmax(0,1fr)]">
+                    <div className="mx-auto">
+                      <Donut
+                        parts={rows.map((r) => ({ color: r.color, value: r.usd ?? 0 }))}
+                        topPct={totalUsd > 0 ? fmtPct((Math.max(...rows.map((r) => r.usd ?? 0)) / totalUsd) * 100) : "—"}
+                        topSym={totalUsd > 0 ? (rows.find((r) => r.usd === Math.max(...rows.map((x) => x.usd ?? 0)))?.sym ?? "") : ""}
+                        loading={loadingInfo}
+                      />
+                    </div>
+                    <ul className="divide-y divide-white/[0.06]">
+                      {rows.map((r) => {
+                        const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
+                        return (
+                          <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                            <TokenDot symbol={r.sym} size={38} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="text-[15px] font-semibold">{r.sym}</span>
+                                <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
+                                {!loadingInfo && pct !== null && <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-slate-200">{fmtPct(pct)}</span>}
+                              </span>
+                              <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                            </span>
+                            <span className="text-right">
+                              <span className="block text-[15px] font-semibold tabular-nums">
+                                {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
+                              </span>
+                              <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
-
-                  <ul className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.08]">
-                    {rows.map((r) => (
-                      <li key={r.sym} className="flex items-center gap-3.5 py-4">
-                        <TokenDot symbol={r.sym} size={38} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <span className="text-[15px] font-semibold">{r.sym}</span>
-                            <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
-                          </span>
-                          <span className="block truncate text-xs text-slate-500">{r.name}</span>
-                        </span>
-                        <span className="text-right">
-                          <span className="block text-[15px] font-semibold tabular-nums">
-                            {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
-                          </span>
-                          <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
                   {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
                 </section>
 
                 <section className="fade-up border-t border-white/[0.08] py-8 lg:border-t-0 lg:pl-10" style={{ "--delay": "180ms" } as CSSProperties}>
                   <SectionTitle icon={I.history}>Transactions</SectionTitle>
-                  <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">{loadingInfo && totalTx === null ? <span className="inline-block h-10 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : <span className={GRAD_TEXT}>{fmtInt(totalTx)}</span>}</p>
+                  <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight text-white sm:text-5xl">{loadingInfo && totalTx === null ? <span className="inline-block h-10 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
                   <p className="mt-1.5 text-xs text-slate-500">Total on Arc mainnet</p>
 
-                  <div className="mt-6 border-t border-white/[0.08]">
-                    <dl className="divide-y divide-white/[0.06] text-sm">
+                  {/* group 1: the two totals from the chain and the explorer */}
+                  <div className="mt-6 border-t border-white/[0.08] pt-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">On-chain totals</p>
+                    <dl className="mt-2 divide-y divide-white/[0.06] text-sm">
                       <div className="flex items-center justify-between gap-3 py-3.5">
                         <dt className="text-slate-400">Sent by this wallet</dt>
                         <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
@@ -1032,9 +1069,12 @@ function ActivityInner() {
                         <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
                       </div>
                     </dl>
+                  </div>
 
-                    {/* how many of each kind of activity (counted from the activity list) */}
-                    <dl className="divide-y divide-white/[0.06] border-t border-white/[0.08] text-sm">
+                  {/* group 2: how many of each kind of activity (counted from the activity list) */}
+                  <div className="mt-6 border-t border-white/[0.08] pt-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Activity by type</p>
+                    <dl className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-white/[0.08] sm:grid-cols-5">
                       {(
                         [
                           ["Sent", typeCounts.send],
@@ -1044,19 +1084,19 @@ function ActivityInner() {
                           ["Contracts", typeCounts.contract],
                         ] as [string, number][]
                       ).map(([label, n]) => (
-                        <div key={label} className="flex items-center justify-between gap-3 py-3.5">
-                          <dt className="text-slate-400">{label}</dt>
-                          <dd className="font-semibold tabular-nums">{first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
+                        <div key={label} className="flex flex-col-reverse items-center bg-[#030812] px-2 py-4 text-center">
+                          <dt className="mt-1.5 text-xs text-slate-400">{label}</dt>
+                          <dd className="text-xl font-bold tabular-nums text-white">{first ? <span className="inline-block h-5 w-8 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
                         </div>
                       ))}
                     </dl>
+                    {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
                   </div>
-                  {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
                 </section>
               </div>
 
               {/* the activity list: filters, a table on wide screens, rows split by thin lines */}
-              <section className="fade-up min-w-0 pt-8" style={{ "--delay": "260ms" } as CSSProperties}>
+              <section className="fade-up mt-4 min-w-0 rounded-[1.75rem] border border-white/[0.1] bg-[#050a16]/85 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:rounded-[2rem] sm:p-6" style={{ "--delay": "260ms" } as CSSProperties}>
                 <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
                   <SectionTitle icon={I.list}>Activity</SectionTitle>
                   <div className="inline-flex max-w-full gap-1 overflow-x-auto">
