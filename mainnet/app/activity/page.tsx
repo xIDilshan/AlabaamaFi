@@ -13,6 +13,7 @@ const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
 const MIN_VISIBLE = 8; // keep loading older pages until at least this many rows can be shown
+const AUTO_LOAD_LIMIT = 600; // older history is loaded in the background up to about this many items, so the counts are complete for most wallets
 const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"; // copy icon with rounded corners
 const BTN_TEXT_PX = 11; // text of the small buttons next to the address
 const BTN_ICON_PX = 13; // their icons
@@ -133,7 +134,7 @@ function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
     else if (outs.length && !ins.length) type = "send";
     else if (ins.length && !outs.length) type = "receive";
     else if (outs.length && ins.length) type = "send";
-    if (type === "contract" && !w.method && !w.legs.length) continue;
+    if (type === "contract" && !w.method && !w.legs.length && w.nFrom !== me) continue; // only skip empty calls that someone else sent to this wallet
     out.push({ hash: w.hash, t: w.t, status: w.status, type, legs: w.legs, peer: w.peer ?? (type === "contract" && w.nTo && w.nTo !== me ? w.nTo : undefined), fee: w.fee, method: w.method });
   }
   return out.sort((a, b) => b.t - a.t);
@@ -155,10 +156,13 @@ function titleOf(e: Ev): string {
       return "Bridge in";
     default: {
       const m = (e.method ?? "").trim();
-      if (/approve|allowance|setapprovalforall|0x095ea7b3/i.test(m)) {
-        const tk = e.peer ? KNOWN_TOKENS[e.peer.toLowerCase()] : undefined;
-        return tk ? `Approved ${tk}` : "Approval";
-      }
+      const tk = e.peer ? KNOWN_TOKENS[e.peer.toLowerCase()] : undefined;
+      const t = tk ? ` ${tk}` : "";
+      if (/^increaseallowance|0x39509351/i.test(m)) return `Increased allowance${t}`;
+      if (/^decreaseallowance|0xa457c2d7/i.test(m)) return `Decreased allowance${t}`;
+      if (/^setapprovalforall|0xa22cb465/i.test(m)) return "Approval for all";
+      if (/^permit|0xd505accf/i.test(m)) return `Permit${t}`;
+      if (/^approve|0x095ea7b3/i.test(m)) return tk ? `Approved ${tk}` : "Approval";
       return m ? `Contract: ${m}` : "Contract interaction";
     }
   }
@@ -474,7 +478,7 @@ const I = {
 function ActivityInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, status } = useAccount();
   const account = isConnected && address ? address : null;
 
   /* the wallet that is shown comes from the address in the URL: /activity?address=0x...
@@ -514,6 +518,21 @@ function ActivityInner() {
     if (prev === undefined) goTo(account, true);
     else if (!prev) goTo(account, justOpened);
   }, [account, target, goTo]);
+
+  /* when the connected wallet is disconnected while its own activity is shown, go back to the main Activity page */
+  const wasConnected = useRef<string | null>(null);
+  useEffect(() => {
+    if (status === "connected" && address) {
+      wasConnected.current = address.toLowerCase();
+    } else if (status === "disconnected" && wasConnected.current) {
+      const was = wasConnected.current;
+      wasConnected.current = null;
+      if (target && target.toLowerCase() === was) {
+        router.replace("/activity");
+        if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+      }
+    }
+  }, [status, address, target, router]);
 
   /* everything loaded so far lives in these maps (no duplicates), newest pages first, older pages added on demand */
   const txMap = useRef<Map<string, Tx>>(new Map());
@@ -692,7 +711,7 @@ function ActivityInner() {
   /* keep loading older pages while the list is short, and whenever you scroll to the bottom */
   useEffect(() => {
     if (!target || first || done || loadingMore || error || failsRef.current > 0) return;
-    if (shown.length < MIN_VISIBLE) loadMore();
+    if (shown.length < MIN_VISIBLE || txMap.current.size + trMap.current.size < AUTO_LOAD_LIMIT) loadMore();
   }, [target, first, done, loadingMore, error, shown.length, loadMore, version]);
   useEffect(() => {
     const el = sentinel.current;
@@ -703,6 +722,18 @@ function ActivityInner() {
     io.observe(el);
     return () => io.disconnect();
   }, [target, done, error, loadMore, shown.length]);
+
+  const typeCounts = useMemo(() => {
+    const c = { send: 0, receive: 0, swap: 0, bridge: 0, contract: 0 };
+    for (const e of events) {
+      if (e.type === "send") c.send++;
+      else if (e.type === "receive") c.receive++;
+      else if (e.type === "swap") c.swap++;
+      else if (e.type.startsWith("bridge")) c.bridge++;
+      else c.contract++;
+    }
+    return c;
+  }, [events]);
 
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
@@ -988,6 +1019,25 @@ function ActivityInner() {
                         <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
                       </div>
                     </dl>
+
+                    {/* how many of each kind of activity (counted from the activity list) */}
+                    <dl className="mt-5 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
+                      {(
+                        [
+                          ["Sent", typeCounts.send],
+                          ["Received", typeCounts.receive],
+                          ["Swaps", typeCounts.swap],
+                          ["Bridges", typeCounts.bridge],
+                          ["Contracts", typeCounts.contract],
+                        ] as [string, number][]
+                      ).map(([label, n]) => (
+                        <div key={label} className="flex items-center justify-between gap-3">
+                          <dt className="text-slate-400">{label}</dt>
+                          <dd className="font-semibold tabular-nums">{first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
                   </div>
                 </div>
 
