@@ -9,21 +9,21 @@ import Header from "@/components/Header";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 const EXPLORER = "https://explorer.arc.io";
-const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
+const CONTAINER = "w-full px-4 sm:px-8 lg:px-10 2xl:px-16";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
-const MIN_VISIBLE = 8; // keep loading older pages until at least this many rows can be shown
-const AUTO_LOAD_LIMIT = 600; // older history is loaded in the background up to about this many items, so the counts are complete for most wallets
-const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"; // copy icon with rounded corners
-const BTN_TEXT_PX = 11; // text of the small buttons next to the address
-const BTN_ICON_PX = 13; // their icons
+const MIN_VISIBLE = 8;
+const AUTO_LOAD_LIMIT = 600;
+const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2";
+const BTN_TEXT_PX = 11;
+const BTN_ICON_PX = 13;
 const KNOWN_TOKENS: Record<string, string> = {
   "0x3600000000000000000000000000000000000000": "USDC",
   "0xbef5f6d51cb62b58e6a8f77868681825c6fe21c1": "EURC",
   "0x171a4217b86a807a64eb94757db6849fb4bdbaa0": "cirBTC",
 };
 
-/* ---------- raw data from /api/activity (all of this wallet's history on Arc mainnet) ---------- */
+/* ---------- raw data ---------- */
 type Tx = { hash: string; t: number; status: "ok" | "error" | "pending"; method: string | null; from: string; to: string; value: string; fee: string | null };
 type Tr = { key: string; hash: string; t: number; symbol: string; amount: string; from: string; to: string; token: string };
 type Cursor = Record<string, string | number>;
@@ -63,7 +63,6 @@ function dayLabel(t: number) {
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
 }
 
-/** "1000000000000000000" with 18 decimals -> "1" (no floating point) */
 function toDecimal(raw: string, decimals: number): string {
   if (!/^\d+$/.test(raw)) return "0";
   const s = raw.replace(/^0+/, "") || "0";
@@ -74,7 +73,6 @@ function toDecimal(raw: string, decimals: number): string {
   return frac ? `${whole}.${frac}` : whole;
 }
 
-/** Turns the raw transactions + token transfers into sends, receives, swaps and bridges. Works on everything loaded so far. */
 function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
   type Work = { hash: string; t: number; status: Ev["status"]; method?: string; fee?: string; nFrom: string; nTo: string; nValue: string; legs: Leg[]; peer?: string; minted: boolean; usdcKeys: Set<string> };
   const map = new Map<string, Work>();
@@ -107,7 +105,6 @@ function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
     if (dir === "in" && tr.from === ZERO) w.minted = true;
     if (tr.token === USDC_ERC20) w.usdcKeys.add(`${dir}:${tr.amount}`);
   }
-  /* plain USDC transfers (Arc's gas coin) that have no token-transfer record */
   for (const w of map.values()) {
     if (!/^[1-9]\d*$/.test(w.nValue)) continue;
     const amount = toDecimal(w.nValue, 18);
@@ -122,7 +119,7 @@ function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
 
   const out: Ev[] = [];
   for (const w of map.values()) {
-    if (horizon && w.t < horizon) continue; // older pages aren't fully loaded yet
+    if (horizon && w.t < horizon) continue;
     const outs = w.legs.filter((l) => l.dir === "out");
     const ins = w.legs.filter((l) => l.dir === "in");
     const m = (w.method ?? "").toLowerCase();
@@ -134,7 +131,7 @@ function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
     else if (outs.length && !ins.length) type = "send";
     else if (ins.length && !outs.length) type = "receive";
     else if (outs.length && ins.length) type = "send";
-    if (type === "contract" && !w.method && !w.legs.length && w.nFrom !== me) continue; // only skip empty calls that someone else sent to this wallet
+    if (type === "contract" && !w.method && !w.legs.length && w.nFrom !== me) continue;
     out.push({ hash: w.hash, t: w.t, status: w.status, type, legs: w.legs, peer: w.peer ?? (type === "contract" && w.nTo && w.nTo !== me ? w.nTo : undefined), fee: w.fee, method: w.method });
   }
   return out.sort((a, b) => b.t - a.t);
@@ -201,7 +198,6 @@ const Svg = ({ d, size = 20 }: { d: string; size?: number }) => (
   </svg>
 );
 
-/* text of the small buttons: drawn at 12px and scaled, so it really gets smaller on every phone */
 const BtnText = ({ children }: { children: ReactNode }) => <span style={{ fontSize: "12px", lineHeight: 1, zoom: BTN_TEXT_PX / 12 }}>{children}</span>;
 
 function SpaceBackground() {
@@ -215,7 +211,7 @@ function SpaceBackground() {
     };
   }, []);
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden">
       <div className="absolute -inset-6 blur-[3px]">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
         <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
@@ -245,17 +241,14 @@ function TokenDot({ symbol, size = 16 }: { symbol: string; size?: number }) {
   );
 }
 
-/* the columns of the wide-screen table (the header above the list uses the same ones) */
-/* long texts (like "Swapped EURC for USDC") slide sideways, with no scroll bar, instead of being cut off */
 const SLIDE = "block max-w-full overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const DESK_COLS = "lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]";
 
-/** A small clock whose hands show the real time of the transaction (the same time that is written next to it, in your time zone). */
 function ClockIcon({ t, size = 15 }: { t: number; size?: number }) {
   const d = new Date(t);
   const minutes = d.getMinutes();
-  const hourDeg = ((d.getHours() % 12) + minutes / 60) * 30; // 360° / 12 hours
-  const minuteDeg = minutes * 6; // 360° / 60 minutes
+  const hourDeg = ((d.getHours() % 12) + minutes / 60) * 30;
+  const minuteDeg = minutes * 6;
   const tip = (deg: number, len: number) => {
     const r = (deg * Math.PI) / 180;
     return { x: 12 + len * Math.sin(r), y: 12 - len * Math.cos(r) };
@@ -291,7 +284,7 @@ function Row({ e }: { e: Ev }) {
   const [peerCopied, setPeerCopied] = useState(false);
   const canCopyPeer = !!e.peer && e.peer !== ZERO && who.includes(short(e.peer));
   const copyPeer = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
-    ev.preventDefault(); // the row is a link to the explorer; copying must not open it
+    ev.preventDefault();
     ev.stopPropagation();
     if (!e.peer) return;
     try {
@@ -299,7 +292,7 @@ function Row({ e }: { e: Ev }) {
       setPeerCopied(true);
       setTimeout(() => setPeerCopied(false), 1500);
     } catch {
-      /* clipboard blocked */
+      setPeerCopied(false);
     }
   };
   const peerBtn = canCopyPeer ? (
@@ -324,14 +317,14 @@ function Row({ e }: { e: Ev }) {
     </span>
   ) : null;
   const copyHash = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
-    ev.preventDefault(); // the row is a link to the explorer; copying must not open it
+    ev.preventDefault();
     ev.stopPropagation();
     try {
       await navigator.clipboard.writeText(e.hash);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked */
+      setCopied(false);
     }
   };
   const hashCell = (
@@ -360,8 +353,8 @@ function Row({ e }: { e: Ev }) {
     </span>
   ));
   const iconBox = (
-    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${e.status === "error" ? "text-red-300" : TINT[e.type]}`}>
-      <Svg d={ICONS[e.type]} />
+    <span className={`flex h-10 w-10 shrink-0 items-center justify-center ${e.status === "error" ? "text-red-300" : TINT[e.type]}`} style={{ filter: "drop-shadow(0 0 5px currentColor)" }}>
+      <Svg d={ICONS[e.type]} size={22} />
     </span>
   );
   const timeCell = e.t ? (
@@ -374,8 +367,8 @@ function Row({ e }: { e: Ev }) {
   );
 
   return (
-    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group block rounded-2xl px-3 py-3.5 transition hover:bg-white/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
-      {/* phones and tablets: icon, details and hash on the left; amounts, time and fee on the right */}
+    <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group block px-2 py-4 transition hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
+      {/* ---------- phones and tablets ---------- */}
       <div className="flex items-start gap-3.5 lg:hidden">
         {iconBox}
         <span className="min-w-0 flex-1">
@@ -397,7 +390,7 @@ function Row({ e }: { e: Ev }) {
         </span>
       </div>
 
-      {/* wide screens: one clean table row */}
+      {/* ---------- wide screens ---------- */}
       <div className={`hidden items-center gap-x-5 text-sm lg:grid ${DESK_COLS}`}>
         <span className="flex min-w-0 items-center gap-3.5">
           {iconBox}
@@ -454,14 +447,26 @@ const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", cur
 const fmtInt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
 const hue = (a: string) => parseInt(a.slice(2, 8), 16) % 360;
 
-/** An icon drawn as a glowing line (no box around it). */
 const GlowIcon = ({ d, size = 28 }: { d: string; size?: number }) => (
-  <span className="inline-flex text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" }}>
+  <span className="inline-flex text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 3px rgba(57,196,255,0.4))" }}>
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />
     </svg>
   </span>
 );
+const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode }) => (
+  <div className="flex items-center gap-2.5">
+    <GlowIcon d={icon} size={20} />
+    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4abaff]">{children}</p>
+  </div>
+);
+const GRAIN =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+const MATTE_CARD = "relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#08111f]/55 p-5 backdrop-blur-[6px] sm:p-6";
+const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />;
+const SepLine = () => <div aria-hidden className="h-px w-full bg-white/[0.06]" />;
+const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
+
 const I = {
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35",
   wallet: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01",
@@ -472,6 +477,7 @@ const I = {
   link: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   back: "M19 12H5M12 19l-7-7 7-7",
   refresh: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
 };
 
 /* ---------- page ---------- */
@@ -481,8 +487,6 @@ function ActivityInner() {
   const { address, isConnected, status } = useAccount();
   const account = isConnected && address ? address : null;
 
-  /* the wallet that is shown comes from the address in the URL: /activity?address=0x...
-     (plain /activity is the first screen), so the Back button works like a normal page */
   const rawAddress = params.get("address") ?? "";
   const target = ADDR_RE.test(rawAddress) ? rawAddress : null;
   const me = target ? target.toLowerCase() : "";
@@ -500,26 +504,22 @@ function ActivityInner() {
     [router]
   );
 
-  /* the search box starts empty whenever the wallet or the shown address changes */
   useEffect(() => {
     setInput("");
     setInputError("");
   }, [account, target]);
 
-  /* opening this page with a wallet connected, or connecting a wallet here, shows that wallet (the address goes into the URL).
-     Going Back to the first screen does not do this again. */
   const mountedAt = useRef(Date.now());
   const prevAccount = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const prev = prevAccount.current;
     prevAccount.current = account;
     if (!account || target) return;
-    const justOpened = Date.now() - mountedAt.current < 2500; // the wallet reconnecting while the page opens
+    const justOpened = Date.now() - mountedAt.current < 2500;
     if (prev === undefined) goTo(account, true);
     else if (!prev) goTo(account, justOpened);
   }, [account, target, goTo]);
 
-  /* when the connected wallet is disconnected while its own activity is shown, go back to the main Activity page */
   const wasConnected = useRef<string | null>(null);
   useEffect(() => {
     if (status === "connected" && address) {
@@ -534,15 +534,14 @@ function ActivityInner() {
     }
   }, [status, address, target, router]);
 
-  /* everything loaded so far lives in these maps (no duplicates), newest pages first, older pages added on demand */
   const txMap = useRef<Map<string, Tx>>(new Map());
   const trMap = useRef<Map<string, Tr>>(new Map());
-  const txCursor = useRef<Cursor | null>(null); // null = that feed is finished
+  const txCursor = useRef<Cursor | null>(null);
   const trCursor = useRef<Cursor | null>(null);
   const busyRef = useRef(false);
   const failsRef = useRef(0);
   const [version, setVersion] = useState(0);
-  const [first, setFirst] = useState(true); // the first page hasn't arrived yet
+  const [first, setFirst] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [txDone, setTxDone] = useState(false);
   const [trDone, setTrDone] = useState(false);
@@ -551,7 +550,6 @@ function ActivityInner() {
   const [updated, setUpdated] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
 
-  /* portfolio + counts + prices */
   const [info, setInfo] = useState<Info | null>(null);
   const [infoFailed, setInfoFailed] = useState(false);
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -563,7 +561,6 @@ function ActivityInner() {
     for (const x of j.transfers ?? []) trMap.current.set(x.key, x);
   };
 
-  /** Newest page of both feeds. Called on load and every 30 seconds; it only adds what's new. */
   const loadNewest = useCallback(
     async (initial: boolean) => {
       if (!target || busyRef.current) return;
@@ -593,7 +590,6 @@ function ActivityInner() {
     [target]
   );
 
-  /** One older page of both feeds. */
   const loadMore = useCallback(async () => {
     if (!target || busyRef.current || (!txCursor.current && !trCursor.current)) return;
     busyRef.current = true;
@@ -622,7 +618,6 @@ function ActivityInner() {
     }
   }, [target]);
 
-  /* a new wallet starts from scratch; then new activity is checked for every 30 seconds and when the tab is shown again */
   useEffect(() => {
     txMap.current = new Map();
     trMap.current = new Map();
@@ -646,7 +641,6 @@ function ActivityInner() {
     };
   }, [target, loadNewest]);
 
-  /* the portfolio: balances and counts, refreshed every minute */
   const loadInfo = useCallback(async () => {
     if (!target) return;
     try {
@@ -667,7 +661,6 @@ function ActivityInner() {
     return () => clearInterval(id);
   }, [target, loadInfo]);
 
-  /* dollar prices (optional: if they can't load, USDC counts as $1 and the others show no dollar value) */
   useEffect(() => {
     let live = true;
     const load = async () => {
@@ -679,7 +672,7 @@ function ActivityInner() {
         for (const k of ["USDC", "EURC", "cirBTC"]) if (typeof j.prices?.[k]?.price === "number") p[k] = j.prices[k]!.price as number;
         if (live) setPrices(p);
       } catch {
-        /* optional */
+        return;
       }
     };
     load();
@@ -690,7 +683,6 @@ function ActivityInner() {
     };
   }, []);
 
-  /* "complete up to here": a row is only shown once BOTH feeds have loaded back to its time, so swaps and bridges are never half-built */
   const done = txDone && trDone;
   const horizon = useMemo(() => {
     void version;
@@ -708,7 +700,6 @@ function ActivityInner() {
 
   const shown = useMemo(() => events.filter((e) => (filter === "all" ? true : filter === "bridge" ? e.type.startsWith("bridge") : e.type === filter)), [events, filter]);
 
-  /* keep loading older pages while the list is short, and whenever you scroll to the bottom */
   useEffect(() => {
     if (!target || first || done || loadingMore || error || failsRef.current > 0) return;
     if (shown.length < MIN_VISIBLE || txMap.current.size + trMap.current.size < AUTO_LOAD_LIMIT) loadMore();
@@ -774,11 +765,10 @@ function ActivityInner() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked */
+      setCopied(false);
     }
   };
   const connect = () => window.dispatchEvent(new Event("open-wallet-modal"));
-  /** Back to the first screen (the search box and the Connect wallet button). */
   const backToStart = () => {
     setInput("");
     setInputError("");
@@ -796,7 +786,6 @@ function ActivityInner() {
   };
   const loadingInfo = (info === null && !infoFailed) || refreshing;
 
-  /* the search box (used on the landing screen and at the top of the dashboard). Enter searches; a pasted address shows under the bar like in an explorer. */
   const searchBox = (big: boolean) => {
     const typed = input.trim();
     const found = ADDR_RE.test(typed);
@@ -871,10 +860,12 @@ function ActivityInner() {
       <div>
         {groups.map((g) => (
           <section key={g.day} className="mb-2">
-            <h3 className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{g.day}</h3>
-            {g.items.map((e) => (
-              <Row key={`${e.hash}-${e.type}`} e={e} />
-            ))}
+            <h3 className="border-b border-white/[0.08] px-2 pb-2 pt-6 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{g.day}</h3>
+            <div className="divide-y divide-white/[0.05]">
+              {g.items.map((e) => (
+                <Row key={`${e.hash}-${e.type}`} e={e} />
+              ))}
+            </div>
           </section>
         ))}
       </div>
@@ -926,15 +917,15 @@ function ActivityInner() {
             </>
           ) : (
             /* ================= A WALLET IS SHOWN ================= */
-            <div className="mx-auto w-full max-w-[90rem]">
-              {/* who is shown, and the search */}
-              <div className="fade-up relative z-20 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 backdrop-blur-xl sm:p-5">
+            <div className="w-full">
+              {/* ---------- WALLET AND SEARCH ---------- */}
+              <div className="fade-up relative z-20">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
                     <div className="min-w-0">
-                      <p className="text-xs text-slate-500">{!account ? "Wallet address" : viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
-                      <p className="mt-0.5 break-all text-base font-bold leading-snug tracking-tight sm:text-lg" title={target}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{!account ? "Wallet address" : viewingOther ? "Viewing another wallet" : "Your wallet"}</p>
+                      <p className="mt-1 break-all text-lg font-bold leading-snug tracking-tight sm:text-xl" title={target}>
                         <span className="xl:hidden">{target.slice(0, 12)}…{target.slice(-8)}</span>
                         <span className="hidden xl:inline">{target}</span>
                       </p>
@@ -959,37 +950,55 @@ function ActivityInner() {
                     )}
                   </div>
                 </div>
-                <div className="mt-4">{searchBox(false)}</div>
+                <div className="mt-5">{searchBox(false)}</div>
               </div>
 
-                <div className="mt-4 grid items-stretch gap-4 lg:grid-cols-2">
-                  <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "100ms" } as CSSProperties}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Portfolio</p>
-                        <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
-                          {loadingInfo ? <span className="inline-block h-9 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-                      </div>
-                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh portfolio" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
-                        <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
-                      </button>
+              {/* ---------- PORTFOLIO AND TRANSACTIONS ---------- */}
+              <div className="mt-6 grid items-stretch gap-4 lg:grid-cols-2">
+                <section className={`fade-up ${MATTE_CARD}`} style={{ "--delay": "100ms" } as CSSProperties}>
+                  <Grain />
+                  <div className="relative">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
+                      <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">
+                        {loadingInfo ? <span className="inline-block h-8 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                      </p>
+                      <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                     </div>
+                    <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh portfolio" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                      <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
+                    </button>
+                  </div>
 
-                    {/* how the value is split */}
-                    <div className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
-                      {!loadingInfo && haveUsd && totalUsd > 0 && rows.map((r) => (r.usd && r.usd > 0 ? <span key={r.sym} style={{ width: `${Math.max((r.usd / totalUsd) * 100, 2)}%`, background: r.color }} /> : null))}
+                  <div className="mt-5" role="img" aria-label="How the wallet value is split between the coins">
+                    <div className={`flex h-7 w-full gap-0.5 ${loadingInfo ? "animate-pulse" : ""}`}>
+                      {(() => {
+                        const live = rows.filter((r) => (r.usd ?? 0) > 0);
+                        if (loadingInfo || totalUsd <= 0 || live.length === 0) return <span className="h-full w-full rounded-md bg-white/[0.07]" />;
+                        return live.map((r, i) => (
+                          <span
+                            key={r.sym}
+                            title={`${r.sym} ${fmtPct(((r.usd ?? 0) / totalUsd) * 100)}`}
+                            className={`h-full ${i === 0 ? "rounded-l-md" : ""} ${i === live.length - 1 ? "rounded-r-md" : ""}`}
+                            style={{ flex: `${r.usd} 1 0%`, minWidth: 4, background: r.color }}
+                          />
+                        ));
+                      })()}
                     </div>
+                  </div>
 
-                    <ul className="mt-4 divide-y divide-white/[0.06]">
-                      {rows.map((r) => (
+                  <ul className="mt-4 divide-y divide-white/[0.06]">
+                    {rows.map((r) => {
+                      const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
+                      return (
                         <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
                           <TokenDot symbol={r.sym} size={38} />
                           <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2">
+                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="text-[15px] font-semibold">{r.sym}</span>
-                              <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
+                              {!loadingInfo && pct !== null && <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-white">{fmtPct(pct)}</span>}
                             </span>
                             <span className="block truncate text-xs text-slate-500">{r.name}</span>
                           </span>
@@ -1000,93 +1009,101 @@ function ActivityInner() {
                             <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
                           </span>
                         </li>
-                      ))}
-                    </ul>
-                    {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                      );
+                    })}
+                  </ul>
+                  {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
                   </div>
+                </section>
 
-                  <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-5 backdrop-blur-xl sm:p-6" style={{ "--delay": "180ms" } as CSSProperties}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2588ff]">Transactions</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{loadingInfo && totalTx === null ? <span className="inline-block h-9 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
-                    <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
-                    <dl className="mt-6 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-slate-400">Sent by this wallet</dt>
-                        <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-slate-400">Token transfers</dt>
-                        <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
-                      </div>
-                    </dl>
+                <section className={`fade-up ${MATTE_CARD}`} style={{ "--delay": "180ms" } as CSSProperties}>
+                  <Grain />
+                  <div className="relative">
+                  <SectionTitle icon={I.history}>Transactions</SectionTitle>
+                  <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">{loadingInfo && totalTx === null ? <span className="inline-block h-8 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
+                  <p className="mt-1.5 text-xs text-slate-500">Total on Arc mainnet</p>
 
-                    {/* how many of each kind of activity (counted from the activity list) */}
-                    <dl className="mt-5 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
-                      {(
-                        [
-                          ["Sent", typeCounts.send],
-                          ["Received", typeCounts.receive],
-                          ["Swaps", typeCounts.swap],
-                          ["Bridges", typeCounts.bridge],
-                          ["Contracts", typeCounts.contract],
-                        ] as [string, number][]
-                      ).map(([label, n]) => (
-                        <div key={label} className="flex items-center justify-between gap-3">
-                          <dt className="text-slate-400">{label}</dt>
-                          <dd className="font-semibold tabular-nums">{first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
+                  <dl className="mt-6 space-y-3.5 border-t border-white/[0.06] pt-5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-slate-400">Sent by this wallet</dt>
+                      <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-slate-400">Token transfers</dt>
+                      <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-5"><SepLine /></div>
+
+                  <dl className="mt-5 space-y-3.5 text-sm">
+                    {(
+                      [
+                        ["Sent", typeCounts.send],
+                        ["Received", typeCounts.receive],
+                        ["Swaps", typeCounts.swap],
+                        ["Bridges", typeCounts.bridge],
+                        ["Contracts", typeCounts.contract],
+                      ] as [string, number][]
+                    ).map(([label, n]) => (
+                      <div key={label} className="flex items-center justify-between gap-3">
+                        <dt className="text-slate-400">{label}</dt>
+                        <dd className="font-semibold tabular-nums">{first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
+                  </div>
+                </section>
+              </div>
+
+              {/* ---------- ACTIVITY LIST ---------- */}
+              <section className="fade-up mt-4 min-w-0 rounded-[1.75rem] border border-white/[0.1] bg-[#050a16]/85 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:rounded-[2rem] sm:p-6" style={{ "--delay": "260ms" } as CSSProperties}>
+                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
+                  <SectionTitle icon={I.list}>Activity</SectionTitle>
+                  <div className="inline-flex max-w-full gap-1 overflow-x-auto">
+                    {FILTERS.map(([f, label]) => (
+                      <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
+                    ))}
                   </div>
                 </div>
 
-                <div className="fade-up mt-4 min-w-0 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5" style={{ "--delay": "260ms" } as CSSProperties}>
-                  <div className="px-1 pb-3">
-                    <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-white/[0.1] bg-white/[0.03] p-0.5">
-                      {FILTERS.map(([f, label]) => (
-                        <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
-                      ))}
-                    </div>
+                {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
+                  <p className="mb-3 border-l-2 border-amber-400/60 py-1.5 pl-3 text-xs leading-5 text-amber-200">{error}</p>
+                )}
+
+                {!first && shown.length > 0 && (
+                  <div className={`hidden items-center gap-x-5 border-y border-white/[0.08] px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid ${DESK_COLS}`}>
+                    <span>Transaction</span>
+                    <span>Tx hash</span>
+                    <span>Time</span>
+                    <span>Status</span>
+                    <span className="text-right">Amount</span>
+                    <span className="text-right">Fee</span>
                   </div>
+                )}
 
-                  {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
-                    <p className="mx-1 mb-2 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200">{error}</p>
-                  )}
+                {body}
 
-                  {!first && shown.length > 0 && (
-                    <div className={`hidden items-center gap-x-5 border-b border-white/[0.06] px-3 pb-2.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid ${DESK_COLS}`}>
-                      <span>Transaction</span>
-                      <span>Tx hash</span>
-                      <span>Time</span>
-                      <span>Status</span>
-                      <span className="text-right">Amount</span>
-                      <span className="text-right">Fee</span>
-                    </div>
-                  )}
-
-                  {body}
-
-                  {/* older history loads as you scroll; this button is the backup */}
-                  {!first && shown.length > 0 && (
-                    <div ref={sentinel} className="px-3 pb-1 pt-4 text-center">
-                      {done ? (
-                        <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
-                      ) : (
-                        <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
-                          {loadingMore ? "Loading older activity…" : "Load more"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-4 text-xs text-slate-500">
-                    <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
-                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
-                      See everything on the explorer
-                    </a>
+                {!first && shown.length > 0 && (
+                  <div ref={sentinel} className="px-3 pb-1 pt-6 text-center">
+                    {done ? (
+                      <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
+                    ) : (
+                      <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
+                        {loadingMore ? "Loading older activity…" : "Load more"}
+                      </button>
+                    )}
                   </div>
+                )}
+
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.08] px-2 pt-4 text-xs text-slate-500">
+                  <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
+                  <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
+                    See everything on the explorer
+                  </a>
                 </div>
+              </section>
             </div>
           )}
         </section>
