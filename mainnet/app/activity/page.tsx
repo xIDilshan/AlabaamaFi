@@ -462,7 +462,7 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
 );
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
-const MATTE_CARD = "relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#08111f]/55 p-5 backdrop-blur-[6px] sm:p-6";
+const MATTE_CARD = "relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#08111f]/55 p-5 backdrop-blur-[6px] sm:p-6";
 const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />;
 const SepLine = () => <div aria-hidden className="h-px w-full bg-white/[0.06]" />;
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
@@ -957,7 +957,7 @@ function ActivityInner() {
               <div className="mt-6 grid items-stretch gap-4 lg:grid-cols-2">
                 <section className={`fade-up ${MATTE_CARD}`} style={{ "--delay": "100ms" } as CSSProperties}>
                   <Grain />
-                  <div className="relative">
+                  <div className="relative flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
@@ -988,11 +988,11 @@ function ActivityInner() {
                     </div>
                   </div>
 
-                  <ul className="mt-4 divide-y divide-white/[0.06]">
+                  <ul className="mt-4 flex flex-1 flex-col divide-y divide-white/[0.06]">
                     {rows.map((r) => {
                       const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
                       return (
-                        <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                        <li key={r.sym} className="flex flex-1 items-center gap-3.5 py-3.5">
                           <TokenDot symbol={r.sym} size={38} />
                           <span className="min-w-0 flex-1">
                             <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1018,7 +1018,7 @@ function ActivityInner() {
 
                 <section className={`fade-up ${MATTE_CARD}`} style={{ "--delay": "180ms" } as CSSProperties}>
                   <Grain />
-                  <div className="relative">
+                  <div className="relative flex flex-1 flex-col">
                   <SectionTitle icon={I.history}>Transactions</SectionTitle>
                   <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">{loadingInfo && totalTx === null ? <span className="inline-block h-8 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
                   <p className="mt-1.5 text-xs text-slate-500">Total on Arc mainnet</p>
