@@ -215,10 +215,11 @@ function SpaceBackground() {
     };
   }, []);
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="absolute -inset-6 blur-[3px]">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
-        <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#040c1f_0%,#05142e_35%,#031126_65%,#010307_100%)]" />
+        <div className="absolute -right-[18vw] top-[2%] h-[42vw] w-[42vw] rounded-full bg-[radial-gradient(circle,rgba(56,160,255,0.2),transparent_68%)] blur-3xl" />
+        <div className="absolute left-1/2 -top-[10%] h-[60vw] w-[60vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(30,125,255,0.34),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
         <div className="absolute -left-[25vw] top-[45%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
         {stars.map((s) => (
           <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
@@ -468,11 +469,14 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4abaff]">{children}</p>
   </div>
 );
+const GlowLine = () => (
+  <div aria-hidden className="relative my-1 h-px w-full bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent shadow-[0_0_10px_1px_rgba(57,196,255,0.6)]" />
+);
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
 
-/** A donut chart of how the wallet's value is split. The biggest holding is written in the middle. */
-function Donut({ parts, topPct, topSym, loading, size = 156 }: { parts: { color: string; value: number }[]; topPct: string; topSym: string; loading: boolean; size?: number }) {
-  const r = 52;
+/** A donut chart of how the wallet's value is split. 100% (the whole wallet) is written in the middle. */
+function Donut({ parts, center, sub, loading, size = 168 }: { parts: { color: string; value: number }[]; center: string; sub: string; loading: boolean; size?: number }) {
+  const r = 54;
   const c = 2 * Math.PI * r;
   const total = parts.reduce((a, p) => a + p.value, 0);
   const live = parts.filter((p) => p.value > 0);
@@ -480,17 +484,17 @@ function Donut({ parts, topPct, topSym, loading, size = 156 }: { parts: { color:
   let offset = 0;
   return (
     <svg width={size} height={size} viewBox="0 0 140 140" role="img" aria-label="How the wallet value is split between the tokens" className={loading ? "animate-pulse" : ""}>
-      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="16" />
+      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="15" />
       {!loading &&
         total > 0 &&
         live.map((p, i) => {
           const len = (p.value / total) * c;
-          const seg = <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={p.color} strokeWidth="16" strokeDasharray={`${Math.max(len - gap, 0.5)} ${c}`} strokeDashoffset={-offset} transform="rotate(-90 70 70)" />;
+          const seg = <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={p.color} strokeWidth="15" strokeDasharray={`${Math.max(len - gap, 0.5)} ${c}`} strokeDashoffset={-offset} transform="rotate(-90 70 70)" />;
           offset += len;
           return seg;
         })}
-      <text x="70" y="69" textAnchor="middle" fill="#ffffff" fontSize="22" fontWeight="700">{loading ? "" : topPct}</text>
-      <text x="70" y="87" textAnchor="middle" fill="#94a3b8" fontSize="10" letterSpacing="1.2">{loading ? "" : topSym}</text>
+      <text x="70" y="71" textAnchor="middle" fill="#ffffff" fontSize="23" fontWeight="700">{loading ? "" : center}</text>
+      <text x="70" y="88" textAnchor="middle" fill="#94a3b8" fontSize="9.5" letterSpacing="1.2">{loading ? "" : sub}</text>
     </svg>
   );
 }
@@ -1013,39 +1017,43 @@ function ActivityInner() {
                     </button>
                   </div>
 
-                  {/* the donut chart (how the value is split) next to the tokens, with the share of each */}
-                  <div className="mt-6 grid items-center gap-6 border-t border-white/[0.08] pt-6 sm:grid-cols-[auto_minmax(0,1fr)]">
-                    <div className="mx-auto">
-                      <Donut
-                        parts={rows.map((r) => ({ color: r.color, value: r.usd ?? 0 }))}
-                        topPct={totalUsd > 0 ? fmtPct((Math.max(...rows.map((r) => r.usd ?? 0)) / totalUsd) * 100) : "—"}
-                        topSym={totalUsd > 0 ? (rows.find((r) => r.usd === Math.max(...rows.map((x) => x.usd ?? 0)))?.sym ?? "") : ""}
-                        loading={loadingInfo}
-                      />
+                  {/* the donut chart with the dot and share of each coin on its right */}
+                  <div className="mt-6 border-t border-white/[0.08] pt-6">
+                    <div className="flex items-center justify-center gap-8 sm:justify-start sm:gap-12">
+                      <Donut parts={rows.map((r) => ({ color: r.color, value: r.usd ?? 0 }))} center={totalUsd > 0 ? "100%" : "—"} sub="PORTFOLIO" loading={loadingInfo} />
+                      <ul className="space-y-4">
+                        {rows.map((r) => {
+                          const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
+                          return (
+                            <li key={r.sym} className="flex items-center gap-3">
+                              <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden />
+                              <span className="text-2xl font-bold tabular-nums leading-none text-white">{loadingInfo ? <span className="inline-block h-6 w-16 animate-pulse rounded bg-white/[0.07]" /> : pct !== null ? fmtPct(pct) : "—"}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    <ul className="divide-y divide-white/[0.06]">
-                      {rows.map((r) => {
-                        const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
-                        return (
-                          <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
-                            <TokenDot symbol={r.sym} size={38} />
-                            <span className="min-w-0 flex-1">
-                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                <span className="text-[15px] font-semibold">{r.sym}</span>
-                                <span className="h-2 w-2 rounded-full" style={{ background: r.color }} aria-hidden />
-                                {!loadingInfo && pct !== null && <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-slate-200">{fmtPct(pct)}</span>}
-                              </span>
-                              <span className="block truncate text-xs text-slate-500">{r.name}</span>
+
+                    {/* under them: the coin logo, its dot and its value */}
+                    <ul className="mt-6 divide-y divide-white/[0.06] border-t border-white/[0.08]">
+                      {rows.map((r) => (
+                        <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                          <TokenDot symbol={r.sym} size={38} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="text-[15px] font-semibold">{r.sym}</span>
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
                             </span>
-                            <span className="text-right">
-                              <span className="block text-[15px] font-semibold tabular-nums">
-                                {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
-                              </span>
-                              <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
+                            <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                          </span>
+                          <span className="text-right">
+                            <span className="block text-[15px] font-semibold tabular-nums">
+                              {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
                             </span>
-                          </li>
-                        );
-                      })}
+                            <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
+                          </span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                   {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
@@ -1056,10 +1064,8 @@ function ActivityInner() {
                   <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight text-white sm:text-5xl">{loadingInfo && totalTx === null ? <span className="inline-block h-10 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
                   <p className="mt-1.5 text-xs text-slate-500">Total on Arc mainnet</p>
 
-                  {/* group 1: the two totals from the chain and the explorer */}
-                  <div className="mt-6 border-t border-white/[0.08] pt-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">On-chain totals</p>
-                    <dl className="mt-2 divide-y divide-white/[0.06] text-sm">
+                  <div className="mt-6 border-t border-white/[0.08]">
+                    <dl className="divide-y divide-white/[0.06] text-sm">
                       <div className="flex items-center justify-between gap-3 py-3.5">
                         <dt className="text-slate-400">Sent by this wallet</dt>
                         <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
@@ -1069,12 +1075,12 @@ function ActivityInner() {
                         <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
                       </div>
                     </dl>
-                  </div>
 
-                  {/* group 2: how many of each kind of activity (counted from the activity list) */}
-                  <div className="mt-6 border-t border-white/[0.08] pt-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Activity by type</p>
-                    <dl className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-white/[0.08] sm:grid-cols-5">
+                    {/* the glowing line between the two totals and the counts by type */}
+                    <div className="py-1.5"><GlowLine /></div>
+
+                    {/* how many of each kind of activity (counted from the activity list) */}
+                    <dl className="divide-y divide-white/[0.06] text-sm">
                       {(
                         [
                           ["Sent", typeCounts.send],
@@ -1084,14 +1090,14 @@ function ActivityInner() {
                           ["Contracts", typeCounts.contract],
                         ] as [string, number][]
                       ).map(([label, n]) => (
-                        <div key={label} className="flex flex-col-reverse items-center bg-[#030812] px-2 py-4 text-center">
-                          <dt className="mt-1.5 text-xs text-slate-400">{label}</dt>
-                          <dd className="text-xl font-bold tabular-nums text-white">{first ? <span className="inline-block h-5 w-8 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
+                        <div key={label} className="flex items-center justify-between gap-3 py-3.5">
+                          <dt className="text-slate-400">{label}</dt>
+                          <dd className="font-semibold tabular-nums">{first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(n)}${done ? "" : "+"}`}</dd>
                         </div>
                       ))}
                     </dl>
-                    {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
                   </div>
+                  {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-600">Still counting older activity…</p>}
                 </section>
               </div>
 
