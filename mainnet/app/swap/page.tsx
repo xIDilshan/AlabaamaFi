@@ -335,8 +335,8 @@ const ChangeBadge = ({ value }: { value: number }) => {
 /* mobile only: thin card under "You receive". Logo, price, change, MCap and 24h Vol are lined up with the logo;
    MCap and 24h Vol have their label above the value. They only wrap onto a second line when there is not enough room. Tap to open the token chart. */
 function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow | null | undefined; failed: boolean; onOpen: () => void }) {
-  const stat = (label: string, value: number | null) => (
-    <span className="flex flex-col leading-tight">
+  const stat = (label: string, value: number | null, hide = "") => (
+    <span className={`flex flex-col leading-tight ${hide}`}>
       <span className="text-[10px] text-slate-500">{label}</span>
       <span className="whitespace-nowrap text-[11px] font-semibold text-slate-300">{fmtCompact(value)}</span>
     </span>
@@ -353,7 +353,7 @@ function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow 
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 tabular-nums">
           <span className="whitespace-nowrap text-sm font-semibold">{fmtPrice(row.price)}</span>
           {row.change24h !== null && <ChangeBadge value={row.change24h} />}
-          {stat("MCap", row.marketCap)}
+          {stat("MCap", row.marketCap, "max-[439px]:hidden")}
           {stat("24h Vol", row.volume24h)}
         </span>
       ) : (
@@ -367,7 +367,7 @@ function MarketCompact({ sym, row, failed, onOpen }: { sym: Sym; row: MarketRow 
 /* mobile only: opens in front of the swap card with the token's chart. Left arrow goes back. */
 function MarketDetail({ sym, market, onBack }: { sym: Sym; market: Market; onBack: () => void }) {
   return (
-    <div className="absolute inset-0 z-20 overflow-y-auto rounded-[1.75rem] bg-[#070d1a] p-4 sm:rounded-[2rem] sm:p-5 min-[900px]:hidden">
+    <div className="absolute inset-0 z-20 overflow-y-auto rounded-[1.75rem] bg-[#070d1a] p-4 [scrollbar-width:none] sm:rounded-[2rem] sm:p-5 min-[900px]:hidden [&::-webkit-scrollbar]:hidden">
       <div className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back to swap" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.07] hover:text-white">
           <Chevron dir="left" size={20} />
