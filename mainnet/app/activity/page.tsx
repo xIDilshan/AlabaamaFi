@@ -215,11 +215,10 @@ function SpaceBackground() {
     };
   }, []);
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden">
       <div className="absolute -inset-6 blur-[3px]">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#040c1f_0%,#05142e_35%,#031126_65%,#010307_100%)]" />
-        <div className="absolute -right-[18vw] top-[2%] h-[42vw] w-[42vw] rounded-full bg-[radial-gradient(circle,rgba(56,160,255,0.2),transparent_68%)] blur-3xl" />
-        <div className="absolute left-1/2 -top-[10%] h-[60vw] w-[60vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(30,125,255,0.34),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
+        <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
         <div className="absolute -left-[25vw] top-[45%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
         {stars.map((s) => (
           <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
@@ -469,13 +468,11 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4abaff]">{children}</p>
   </div>
 );
-const GlowLine = () => (
-  <div aria-hidden className="relative my-1 h-px w-full bg-gradient-to-r from-transparent via-[#39c4ff] to-transparent shadow-[0_0_10px_1px_rgba(57,196,255,0.6)]" />
-);
+const SepLine = () => <div aria-hidden className="h-px w-full bg-[#39c4ff]/50" />;
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
 
 /** A donut chart of how the wallet's value is split. 100% (the whole wallet) is written in the middle. */
-function Donut({ parts, center, sub, loading, size = 168 }: { parts: { color: string; value: number }[]; center: string; sub: string; loading: boolean; size?: number }) {
+function Donut({ parts, center, sub, loading, size = 224 }: { parts: { color: string; value: number }[]; center: string; sub: string; loading: boolean; size?: number }) {
   const r = 54;
   const c = 2 * Math.PI * r;
   const total = parts.reduce((a, p) => a + p.value, 0);
@@ -967,7 +964,7 @@ function ActivityInner() {
             /* ================= A WALLET IS SHOWN ================= */
             <div className="w-full">
               {/* who is shown, and the search */}
-              <div className="fade-up relative z-20 border-b border-white/[0.08] pb-6">
+              <div className="fade-up relative z-20">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
@@ -1002,8 +999,8 @@ function ActivityInner() {
               </div>
 
               {/* portfolio and transactions side by side, split by a line */}
-              <div className="grid lg:grid-cols-2 lg:divide-x lg:divide-white/[0.08]">
-                <section className="fade-up py-8 lg:pr-10" style={{ "--delay": "100ms" } as CSSProperties}>
+              <div className="mt-6 grid items-stretch gap-4 lg:grid-cols-2">
+                <section className="fade-up rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-5 sm:p-6" style={{ "--delay": "100ms" } as CSSProperties}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
@@ -1017,49 +1014,41 @@ function ActivityInner() {
                     </button>
                   </div>
 
-                  {/* the donut chart with the dot and share of each coin on its right */}
+                  {/* the donut chart (100% in the middle); the share of each coin is in its row below */}
                   <div className="mt-6 border-t border-white/[0.08] pt-6">
-                    <div className="flex items-center justify-center gap-8 sm:justify-start sm:gap-12">
+                    <div className="flex justify-center">
                       <Donut parts={rows.map((r) => ({ color: r.color, value: r.usd ?? 0 }))} center={totalUsd > 0 ? "100%" : "—"} sub="PORTFOLIO" loading={loadingInfo} />
-                      <ul className="space-y-4">
-                        {rows.map((r) => {
-                          const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
-                          return (
-                            <li key={r.sym} className="flex items-center gap-3">
-                              <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden />
-                              <span className="text-2xl font-bold tabular-nums leading-none text-white">{loadingInfo ? <span className="inline-block h-6 w-16 animate-pulse rounded bg-white/[0.07]" /> : pct !== null ? fmtPct(pct) : "—"}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
                     </div>
 
-                    {/* under them: the coin logo, its dot and its value */}
                     <ul className="mt-6 divide-y divide-white/[0.06] border-t border-white/[0.08]">
-                      {rows.map((r) => (
-                        <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
-                          <TokenDot symbol={r.sym} size={38} />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2">
-                              <span className="text-[15px] font-semibold">{r.sym}</span>
-                              <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
+                      {rows.map((r) => {
+                        const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
+                        return (
+                          <li key={r.sym} className="flex items-center gap-3.5 py-3.5">
+                            <TokenDot symbol={r.sym} size={38} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="text-[15px] font-semibold">{r.sym}</span>
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
+                                {!loadingInfo && pct !== null && <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-white">{fmtPct(pct)}</span>}
+                              </span>
+                              <span className="block truncate text-xs text-slate-500">{r.name}</span>
                             </span>
-                            <span className="block truncate text-xs text-slate-500">{r.name}</span>
-                          </span>
-                          <span className="text-right">
-                            <span className="block text-[15px] font-semibold tabular-nums">
-                              {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
+                            <span className="text-right">
+                              <span className="block text-[15px] font-semibold tabular-nums">
+                                {loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount)}
+                              </span>
+                              <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
                             </span>
-                            <span className="block text-xs tabular-nums text-slate-500">{loadingInfo ? <span className="mt-1 inline-block h-3 w-12 animate-pulse rounded bg-white/[0.05]" /> : r.usd !== null ? fmtUsd(r.usd) : ""}</span>
-                          </span>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                   {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
                 </section>
 
-                <section className="fade-up border-t border-white/[0.08] py-8 lg:border-t-0 lg:pl-10" style={{ "--delay": "180ms" } as CSSProperties}>
+                <section className="fade-up rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-5 sm:p-6" style={{ "--delay": "180ms" } as CSSProperties}>
                   <SectionTitle icon={I.history}>Transactions</SectionTitle>
                   <p className="mt-3 text-4xl font-bold tabular-nums tracking-tight text-white sm:text-5xl">{loadingInfo && totalTx === null ? <span className="inline-block h-10 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}</p>
                   <p className="mt-1.5 text-xs text-slate-500">Total on Arc mainnet</p>
@@ -1076,8 +1065,8 @@ function ActivityInner() {
                       </div>
                     </dl>
 
-                    {/* the glowing line between the two totals and the counts by type */}
-                    <div className="py-1.5"><GlowLine /></div>
+                    {/* the line between the two totals and the counts by type */}
+                    <div className="py-1.5"><SepLine /></div>
 
                     {/* how many of each kind of activity (counted from the activity list) */}
                     <dl className="divide-y divide-white/[0.06] text-sm">
