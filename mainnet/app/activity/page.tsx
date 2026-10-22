@@ -13,6 +13,14 @@ const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
 const MIN_VISIBLE = 8; // keep loading older pages until at least this many rows can be shown
+const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"; // copy icon with rounded corners
+const BTN_TEXT_PX = 11; // text of the small buttons next to the address
+const BTN_ICON_PX = 13; // their icons
+const KNOWN_TOKENS: Record<string, string> = {
+  "0x3600000000000000000000000000000000000000": "USDC",
+  "0xbef5f6d51cb62b58e6a8f77868681825c6fe21c1": "EURC",
+  "0x171a4217b86a807a64eb94757db6849fb4bdbaa0": "cirBTC",
+};
 
 /* ---------- raw data from /api/activity (all of this wallet's history on Arc mainnet) ---------- */
 type Tx = { hash: string; t: number; status: "ok" | "error" | "pending"; method: string | null; from: string; to: string; value: string; fee: string | null };
@@ -24,13 +32,14 @@ type Leg = { symbol: string; amount: string; dir: "in" | "out" };
 type EvType = "send" | "receive" | "swap" | "bridge-out" | "bridge-in" | "contract";
 type Ev = { hash: string; t: number; status: "ok" | "error" | "pending"; type: EvType; legs: Leg[]; peer?: string; fee?: string; method?: string };
 
-type Filter = "all" | "send" | "receive" | "swap" | "bridge";
+type Filter = "all" | "send" | "receive" | "swap" | "bridge" | "contract";
 const FILTERS: [Filter, string][] = [
   ["all", "All"],
   ["send", "Sent"],
   ["receive", "Received"],
   ["swap", "Swaps"],
   ["bridge", "Bridges"],
+  ["contract", "Contracts"],
 ];
 
 /* ---------- helpers ---------- */
@@ -125,7 +134,7 @@ function buildEvents(txs: Tx[], trs: Tr[], me: string, horizon: number): Ev[] {
     else if (ins.length && !outs.length) type = "receive";
     else if (outs.length && ins.length) type = "send";
     if (type === "contract" && !w.method && !w.legs.length) continue;
-    out.push({ hash: w.hash, t: w.t, status: w.status, type, legs: w.legs, peer: w.peer, fee: w.fee, method: w.method });
+    out.push({ hash: w.hash, t: w.t, status: w.status, type, legs: w.legs, peer: w.peer ?? (type === "contract" && w.nTo && w.nTo !== me ? w.nTo : undefined), fee: w.fee, method: w.method });
   }
   return out.sort((a, b) => b.t - a.t);
 }
@@ -144,8 +153,14 @@ function titleOf(e: Ev): string {
       return "Bridge out";
     case "bridge-in":
       return "Bridge in";
-    default:
-      return e.method ? `Contract: ${e.method}` : "Contract interaction";
+    default: {
+      const m = (e.method ?? "").trim();
+      if (/approve|allowance|setapprovalforall|0x095ea7b3/i.test(m)) {
+        const tk = e.peer ? KNOWN_TOKENS[e.peer.toLowerCase()] : undefined;
+        return tk ? `Approved ${tk}` : "Approval";
+      }
+      return m ? `Contract: ${m}` : "Contract interaction";
+    }
   }
 }
 function subtitleOf(e: Ev): string {
@@ -153,6 +168,7 @@ function subtitleOf(e: Ev): string {
   if (e.type === "receive" && e.peer) return e.peer === ZERO ? "Minted" : `From ${short(e.peer)}`;
   if (e.type === "bridge-in") return e.peer && e.peer !== ZERO ? `From ${short(e.peer)}` : "USDC delivered to Arc";
   if (e.type === "bridge-out" && e.peer) return `Via ${short(e.peer)}`;
+  if (e.type === "contract" && e.peer) return `Contract ${short(e.peer)}`;
   return "";
 }
 
@@ -180,6 +196,9 @@ const Svg = ({ d, size = 20 }: { d: string; size?: number }) => (
     <path d={d} />
   </svg>
 );
+
+/* text of the small buttons: drawn at 12px and scaled, so it really gets smaller on every phone */
+const BtnText = ({ children }: { children: ReactNode }) => <span style={{ fontSize: "12px", lineHeight: 1, zoom: BTN_TEXT_PX / 12 }}>{children}</span>;
 
 function SpaceBackground() {
   const { stars, dust } = useMemo(() => {
@@ -265,6 +284,41 @@ function Row({ e }: { e: Ev }) {
   const outs = e.legs.filter((l) => l.dir === "out");
   const ins = e.legs.filter((l) => l.dir === "in");
   const who = subtitleOf(e);
+  const [peerCopied, setPeerCopied] = useState(false);
+  const canCopyPeer = !!e.peer && e.peer !== ZERO && who.includes(short(e.peer));
+  const copyPeer = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
+    ev.preventDefault(); // the row is a link to the explorer; copying must not open it
+    ev.stopPropagation();
+    if (!e.peer) return;
+    try {
+      await navigator.clipboard.writeText(e.peer);
+      setPeerCopied(true);
+      setTimeout(() => setPeerCopied(false), 1500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
+  const peerBtn = canCopyPeer ? (
+    <span
+      role="button"
+      tabIndex={0}
+      aria-label={peerCopied ? "Address copied" : "Copy address"}
+      title={peerCopied ? "Copied" : "Copy address"}
+      onClick={copyPeer}
+      onKeyDown={(ev) => {
+        if (ev.key === "Enter" || ev.key === " ") copyPeer(ev);
+      }}
+      className="inline-flex h-5 shrink-0 items-center justify-center rounded px-1 text-slate-500 transition hover:bg-white/[0.08] hover:text-white"
+    >
+      {peerCopied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d={COPY_ICON} size={13} />}
+    </span>
+  ) : null;
+  const whoLine = who ? (
+    <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+      <span className={`${SLIDE} min-w-0 text-[13px] text-slate-400`} title={who}>{who}</span>
+      {peerBtn}
+    </span>
+  ) : null;
   const copyHash = async (ev: { preventDefault: () => void; stopPropagation: () => void }) => {
     ev.preventDefault(); // the row is a link to the explorer; copying must not open it
     ev.stopPropagation();
@@ -290,7 +344,7 @@ function Row({ e }: { e: Ev }) {
         }}
         className="inline-flex h-5 shrink-0 items-center justify-center rounded px-1 text-slate-500 transition hover:bg-white/[0.08] hover:text-white"
       >
-        {copied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d="M9 9h10v10H9zM5 15V5h10" size={13} />}
+        {copied ? <span className="text-[11px] font-semibold text-emerald-300">Copied</span> : <Svg d={COPY_ICON} size={13} />}
       </span>
     </span>
   );
@@ -326,7 +380,7 @@ function Row({ e }: { e: Ev }) {
             {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
             {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
           </span>
-          {who && <span className={`${SLIDE} mt-0.5 text-[13px] text-slate-400`} title={who}>{who}</span>}
+          {whoLine}
           <span className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
             <span>Tx hash</span>
             {hashCell}
@@ -345,7 +399,7 @@ function Row({ e }: { e: Ev }) {
           {iconBox}
           <span className="min-w-0">
             <span className={`${SLIDE} text-[15px] font-semibold`} title={titleOf(e)}>{titleOf(e)}</span>
-            {who && <span className={`${SLIDE} mt-0.5 text-[13px] text-slate-400`} title={who}>{who}</span>}
+            {whoLine}
           </span>
         </span>
         <span className="min-w-0 truncate">{hashCell}</span>
@@ -387,9 +441,9 @@ const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: ()
 /* ---------- portfolio ---------- */
 type Info = { balances: Record<string, string> | null; txCount: number | null; transfersCount: number | null; sent: number | null };
 const PORTFOLIO = [
-  { sym: "USDC", name: "USD Coin", dec: 6, color: "#26bcff" },
-  { sym: "EURC", name: "Euro Coin", dec: 6, color: "#0076ff" },
-  { sym: "cirBTC", name: "Circle Wrapped Bitcoin", dec: 8, color: "#0043be" },
+  { sym: "USDC", name: "USD Coin", dec: 6, color: "#0076ff" },
+  { sym: "EURC", name: "Euro Coin", dec: 6, color: "#0043be" },
+  { sym: "cirBTC", name: "Circle Wrapped Bitcoin", dec: 8, color: "#9a73ff" },
 ];
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -409,7 +463,8 @@ const I = {
   wallet: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01",
   pie: "M21 12A9 9 0 1 1 12 3v9h9ZM15 3.5A9 9 0 0 1 20.5 9H15V3.5Z",
   history: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4",
-  copy: "M9 9h10v10H9zM5 15V5h10",
+  copy: COPY_ICON,
+  arrow: "M5 12h14M13 6l6 6-6 6",
   link: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   back: "M19 12H5M12 19l-7-7 7-7",
   refresh: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5",
@@ -710,35 +765,53 @@ function ActivityInner() {
   };
   const loadingInfo = (info === null && !infoFailed) || refreshing;
 
-  /* the search box (used on the landing screen and at the top of the dashboard) */
-  const searchBox = (big: boolean) => (
-    <div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submitLookup(input);
-        }}
-        className={`flex items-center gap-2 rounded-full border bg-[#0a1018] pl-4 pr-1.5 transition focus-within:border-[#2588ff]/60 ${inputError ? "border-red-400/50" : "border-white/[0.1]"} ${big ? "py-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]" : "py-1"}`}
-      >
-        <span className="shrink-0 text-slate-500"><Svg d={I.search} size={18} /></span>
-        <input
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            setInputError("");
+  /* the search box (used on the landing screen and at the top of the dashboard). Enter searches; a pasted address shows under the bar like in an explorer. */
+  const searchBox = (big: boolean) => {
+    const typed = input.trim();
+    const found = ADDR_RE.test(typed);
+    return (
+      <div className="relative">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitLookup(input);
           }}
-          placeholder={big ? "Paste any wallet address (0x…)" : "Search another wallet (0x…)"}
-          aria-label="Wallet address to search"
-          spellCheck={false}
-          autoComplete="off"
-          autoCapitalize="off"
-          className={`min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600 ${big ? "py-2.5 text-[15px]" : "py-2 text-sm"}`}
-        />
-        <button type="submit" className={`shrink-0 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] font-bold text-white transition hover:brightness-110 ${big ? "px-5 py-2.5 text-sm" : "px-4 py-2 text-xs"}`}>Search</button>
-      </form>
-      {inputError && <p className="mt-2 px-4 text-xs text-red-300">{inputError}</p>}
-    </div>
-  );
+          className={`flex items-center gap-2 rounded-full border bg-[#0a1018] px-4 transition focus-within:border-[#2588ff]/60 ${inputError ? "border-red-400/50" : "border-white/[0.1]"} ${big ? "py-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]" : "py-1"}`}
+        >
+          <span className="shrink-0 text-slate-500"><Svg d={I.search} size={18} /></span>
+          <input
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setInputError("");
+            }}
+            placeholder={big ? "Paste any wallet address (0x…)" : "Search another wallet (0x…)"}
+            aria-label="Wallet address to search"
+            enterKeyHint="search"
+            spellCheck={false}
+            autoComplete="off"
+            autoCapitalize="off"
+            className={`min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600 ${big ? "py-2.5 text-[15px]" : "py-2 text-sm"}`}
+          />
+        </form>
+        {inputError && <p className="mt-2 px-4 text-xs text-red-300">{inputError}</p>}
+        {found && (
+          <button
+            type="button"
+            onClick={() => submitLookup(typed)}
+            className="absolute inset-x-0 top-full z-30 mt-2 flex w-full items-center gap-3 rounded-2xl border border-white/[0.1] bg-[#0a1018] px-3.5 py-3 text-left shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition hover:border-[#2588ff]/50 hover:bg-[#0d1522]"
+          >
+            <span className="h-9 w-9 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(typed)} 85% 60%), hsl(${(hue(typed) + 60) % 360} 80% 38%))` }} aria-hidden />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] uppercase tracking-[0.14em] text-slate-500">Wallet address</span>
+              <span className="mt-0.5 block break-all text-sm font-semibold tabular-nums text-white">{typed}</span>
+            </span>
+            <span className="shrink-0 text-slate-500"><Svg d={I.arrow} size={18} /></span>
+          </button>
+        )}
+      </div>
+    );
+  };
 
   /* ----- the activity list ----- */
   let body: ReactNode;
@@ -824,7 +897,7 @@ function ActivityInner() {
             /* ================= A WALLET IS SHOWN ================= */
             <div className="mx-auto w-full max-w-[90rem]">
               {/* who is shown, and the search */}
-              <div className="fade-up rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 backdrop-blur-xl sm:p-5">
+              <div className="fade-up relative z-20 rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 backdrop-blur-xl sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span className="h-12 w-12 shrink-0 rounded-full border border-white/10" style={{ background: `linear-gradient(135deg, hsl(${hue(target)} 85% 60%), hsl(${(hue(target) + 60) % 360} 80% 38%))` }} aria-hidden />
@@ -836,21 +909,21 @@ function ActivityInner() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button onClick={copyAddress} className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
-                      <Svg d={I.copy} size={14} /> {copied ? "Copied" : "Copy"}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button onClick={copyAddress} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-3 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                      <Svg d={I.copy} size={BTN_ICON_PX} /> <BtnText>{copied ? "Copied" : "Copy"}</BtnText>
                     </button>
-                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]">
-                      <Svg d={I.link} size={14} /> Explorer
+                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-3 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                      <Svg d={I.link} size={BTN_ICON_PX} /> <BtnText>Explorer</BtnText>
                     </a>
                     {!account && (
-                      <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
-                        <Svg d={I.wallet} size={15} /> Connect wallet
+                      <button onClick={backToStart} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3 font-bold text-white transition hover:brightness-110">
+                        <Svg d={I.wallet} size={BTN_ICON_PX} /> <BtnText>Connect wallet</BtnText>
                       </button>
                     )}
                     {account && viewingOther && (
-                      <button onClick={() => account && goTo(account)} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 text-xs font-bold text-white transition hover:brightness-110">
-                        <Svg d={I.wallet} size={15} /> My wallet
+                      <button onClick={() => account && goTo(account)} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3 font-bold text-white transition hover:brightness-110">
+                        <Svg d={I.wallet} size={BTN_ICON_PX} /> <BtnText>My wallet</BtnText>
                       </button>
                     )}
                   </div>
