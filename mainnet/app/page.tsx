@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { Inter, Manrope, Audiowide } from "next/font/google";
 import Header from "@/components/Header";
@@ -51,15 +51,11 @@ const FEATURES = [
   { number: "04", title: "Built for finance", text: "A network designed around payments, stablecoins, FX, lending, and tokenized assets." },
 ];
 
-const ICON_SEND = "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z";
-const ICON_SWAP = "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4";
-const ICON_BRIDGE = "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71";
 const ICON_ACTIVITY = "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4";
+const ICON_PIE = "M21 12A9 9 0 1 1 12 3v9h9ZM15 3.5A9 9 0 0 1 20.5 9H15V3.5Z";
 const ICON_CHART = "M3 3v18h18M7 15l4-4 3 3 5-6";
 const ICON_SETTINGS = "M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z";
 const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
-const ICON_RECEIVE = "M17 7 7 17M16 17H7V8";
-const ICON_UP_RIGHT = "M7 17 17 7M8 7h9v9";
 
 const STEPS = [
   { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
@@ -559,36 +555,111 @@ const Chip = ({ sym, caret = false }: { sym: Tok; caret?: boolean }) => (
   </span>
 );
 
-function NetBadge({ name, size = 30 }: { name: "Arc" | "Ethereum" | "Base"; size?: number }) {
+function NetBadge({ size = 30 }: { size?: number }) {
   const [failed, setFailed] = useState(false);
   const badge = { width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" } as CSSProperties;
-  if (name === "Arc" && !failed)
+  if (failed)
     return (
-      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
+      <span className="flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: "#12b9ff", fontSize: size * 0.45 }}>
+        A
       </span>
     );
-  if (name === "Ethereum")
-    return (
-      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge} aria-label="Ethereum">
-        <svg width={size * 0.56} height={size * 0.56} viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#8fa2f5" d="M12.056 0 4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
-          <path fill="#627eea" d="M11.944 17.97 4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003z" />
-        </svg>
-      </span>
-    );
-  const color = name === "Base" ? "#0052FF" : "#12b9ff";
   return (
-    <span className="flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: color, fontSize: size * 0.45 }}>
-      {name[0]}
+    <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
     </span>
   );
 }
 
-const NetChip = ({ name }: { name: "Arc" | "Ethereum" | "Base" }) => (
+type NetIconComp = ComponentType<Record<string, unknown>>;
+let networkIconPromise: Promise<NetIconComp | null> | null = null;
+const loadNetworkIcon = () => {
+  if (!networkIconPromise) {
+    networkIconPromise = import("@web3icons/react/dynamic")
+      .then((m) => (m as unknown as { NetworkIcon: NetIconComp }).NetworkIcon)
+      .catch(() => null);
+  }
+  return networkIconPromise;
+};
+
+const BRIDGE_CHAINS = {
+  Arc: { label: "Arc", chainId: 5042, icons: ["arc", "arc-network", "circle-arc"], white: true, color: "#12b9ff" },
+  Ethereum: { label: "Ethereum", chainId: 1, icons: ["ethereum"], white: false, color: "#627EEA" },
+} as const;
+type BridgeChain = keyof typeof BRIDGE_CHAINS;
+
+function ChainBadge({ name, size = 30 }: { name: BridgeChain; size?: number }) {
+  const view = BRIDGE_CHAINS[name];
+  const [NetIcon, setNetIcon] = useState<NetIconComp | null>(null);
+  const [idx, setIdx] = useState(0);
+  const [hasSvg, setHasSvg] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+  const holder = useRef<HTMLSpanElement>(null);
+  const attempts = [...view.icons, "#chainId"];
+  const gaveUp = !!NetIcon && idx >= attempts.length;
+
+  useEffect(() => {
+    let live = true;
+    loadNetworkIcon().then((c) => {
+      if (live && c) setNetIcon(() => c);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = holder.current;
+    if (!NetIcon || !el) return;
+    const check = () => setHasSvg(!!el.querySelector("svg"));
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(el, { childList: true, subtree: true });
+    const t = setTimeout(() => {
+      if (!el.querySelector("svg")) setIdx((i) => i + 1);
+    }, 700);
+    return () => {
+      mo.disconnect();
+      clearTimeout(t);
+    };
+  }, [NetIcon, idx]);
+
+  const attempt = attempts[idx];
+  return (
+    <span
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full"
+      style={{ width: size, height: size, background: hasSvg ? "#101827" : name === "Arc" && !imgFailed ? "transparent" : view.color, border: hasSvg ? "1px solid rgba(255,255,255,0.12)" : "none" }}
+      aria-label={view.label}
+    >
+      {!hasSvg &&
+        (name === "Arc" && !imgFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
+        ) : (
+          <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{view.label[0]}</span>
+        ))}
+      {NetIcon && !gaveUp && attempt && (
+        <span
+          ref={holder}
+          key={attempt}
+          className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full"
+          style={{ padding: hasSvg ? size * 0.15 : 0, opacity: hasSvg ? 1 : 0, color: view.white ? "#ffffff" : undefined }}
+        >
+          {attempt === "#chainId" ? (
+            <NetIcon chainId={view.chainId} variant={view.white ? "mono" : "branded"} size={Math.round(size * 0.7)} />
+          ) : (
+            <NetIcon id={attempt} variant={view.white ? "mono" : "branded"} size={Math.round(size * 0.7)} />
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+const NetChip = ({ name }: { name: BridgeChain }) => (
   <span className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base">
-    <NetBadge name={name} />
+    <ChainBadge name={name} />
     {name}
     <span className="text-slate-400"><Icon d="m6 9 6 6 6-6" size={14} /></span>
   </span>
@@ -685,7 +756,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
           <div>
             <p className="text-xs text-slate-500">Network</p>
-            <p className="mt-1 flex items-center gap-2 text-sm font-medium"><NetBadge name="Arc" size={20} />Arc Mainnet</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-medium"><NetBadge size={20} />Arc Mainnet</p>
           </div>
           <div className="flex items-center gap-1"><IconDot d={ICON_ACTIVITY} /><IconDot d={ICON_CHART} /><IconDot d={ICON_SETTINGS} /></div>
         </div>
@@ -723,7 +794,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
           <div>
             <p className="text-xs text-slate-500">Route</p>
-            <p className="mt-1.5 flex items-center gap-2 text-sm font-medium"><NetBadge name="Ethereum" size={20} />Ethereum <span className="text-slate-500">to</span> <NetBadge name="Arc" size={20} />Arc</p>
+            <p className="mt-1.5 flex items-center gap-2 text-sm font-medium"><ChainBadge name="Ethereum" size={20} />Ethereum <span className="text-slate-500">to</span> <ChainBadge name="Arc" size={20} />Arc</p>
           </div>
           <div className="flex items-center gap-1"><IconDot d={ICON_ACTIVITY} /><IconDot d={ICON_SETTINGS} /><IconDot d={ICON_FAST} glow /></div>
         </div>
@@ -756,42 +827,78 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
     );
 
   /* ---- Activity page ---- */
-  const feed: { icon: string; tint: string; title: string; sub: string; legs: { v: string; sym: Tok; in: boolean }[] }[] = [
-    { icon: ICON_SWAP, tint: "text-[#7dd3fc]", title: "Swapped USDC for EURC", sub: "2:14 PM", legs: [{ v: "+86.41", sym: "EURC", in: true }, { v: "−100.00", sym: "USDC", in: false }] },
-    { icon: ICON_UP_RIGHT, tint: "text-slate-200", title: "Sent USDC", sub: "To 0x7a3c…f91d · 11:02 AM", legs: [{ v: "−25.00", sym: "USDC", in: false }] },
-    { icon: ICON_BRIDGE, tint: "text-[#8fb4ff]", title: "Bridge in", sub: "USDC delivered to Arc · Yesterday", legs: [{ v: "+99.78", sym: "USDC", in: true }] },
-    { icon: ICON_RECEIVE, tint: "text-emerald-300", title: "Received EURC", sub: "From 0x91be…02a7 · Yesterday", legs: [{ v: "+40.00", sym: "EURC", in: true }] },
+  const coins: { sym: Tok; name: string; color: string; pct: string; amount: string; usd: string }[] = [
+    { sym: "USDC", name: "USD Coin", color: "#0076ff", pct: "81.4%", amount: "1.2662", usd: "$1.27" },
+    { sym: "EURC", name: "Euro Coin", color: "#0043be", pct: "12.3%", amount: "0.170849", usd: "$0.19" },
+    { sym: "cirBTC", name: "Circle Wrapped Bitcoin", color: "#9a73ff", pct: "6.3%", amount: "0.0000012", usd: "$0.10" },
   ];
   return (
     <Shell>
-      <div className="flex gap-2 overflow-hidden pb-3">
-        {["All", "Sent", "Received", "Swaps", "Bridges"].map((f, i) => (
-          <span key={f} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${i === 0 ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "bg-white/[0.05] text-slate-400"}`}>{f}</span>
-        ))}
+      <div className="flex items-center gap-3">
+        <span className="h-10 w-10 shrink-0 rounded-full border border-white/10" style={{ background: "linear-gradient(135deg, hsl(157 85% 60%), hsl(217 80% 38%))" }} aria-hidden />
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Your wallet</p>
+          <p className="mt-0.5 truncate text-base font-bold tracking-tight">0x441cb57e18…67d63e2a</p>
+        </div>
       </div>
-      <p className="px-2 pb-1 pt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Today</p>
-      <div>
-        {feed.map((r) => (
-          <div key={r.title} className="flex items-center gap-3.5 rounded-2xl px-2 py-3">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] ${r.tint}`}><Icon d={r.icon} /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[15px] font-semibold">{r.title}</span>
-              <span className="mt-0.5 block truncate text-xs text-slate-500">{r.sub}</span>
-            </span>
-            <span className="flex shrink-0 flex-col items-end gap-0.5">
-              {r.legs.map((l) => (
-                <span key={l.v + l.sym} className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums ${l.in ? "text-emerald-300" : "text-slate-100"}`}>
-                  {l.v}
-                  <TokenLogo sym={l.sym} size={16} />
+
+      <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#08111f]/55 p-4 sm:p-5">
+        <GlowTitle d={ICON_PIE}>Portfolio</GlowTitle>
+        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight">$1.55</p>
+        <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+        <div className="mt-4 flex h-6 w-full gap-0.5">
+          {coins.map((c, i) => (
+            <span key={c.sym} className={`h-full ${i === 0 ? "rounded-l-md" : ""} ${i === coins.length - 1 ? "rounded-r-md" : ""}`} style={{ flex: `${parseFloat(c.pct)} 1 0%`, minWidth: 4, background: c.color }} />
+          ))}
+        </div>
+        <ul className="mt-2 divide-y divide-white/[0.06]">
+          {coins.map((c) => (
+            <li key={c.sym} className="flex items-center gap-3 py-2.5">
+              <TokenLogo sym={c.sym} size={32} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{c.sym}</span>
+                  <span className="h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
+                  <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold tabular-nums">{c.pct}</span>
                 </span>
-              ))}
-            </span>
+                <span className="block truncate text-[11px] text-slate-500">{c.name}</span>
+              </span>
+              <span className="text-right">
+                <span className="block text-sm font-semibold tabular-nums">{c.amount}</span>
+                <span className="block text-[11px] tabular-nums text-slate-500">{c.usd}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-[#08111f]/55 p-4 sm:p-5">
+        <GlowTitle d={ICON_ACTIVITY}>Transactions</GlowTitle>
+        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight">61</p>
+        <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
+        <dl className="mt-4 space-y-3 border-t border-white/[0.06] pt-4 text-[13px]">
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-slate-400">Sent by this wallet</dt>
+            <dd className="font-semibold tabular-nums">59</dd>
           </div>
-        ))}
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-slate-400">Token transfers</dt>
+            <dd className="font-semibold tabular-nums">89</dd>
+          </div>
+        </dl>
       </div>
     </Shell>
   );
 }
+
+const GlowTitle = ({ d, children }: { d: string; children: ReactNode }) => (
+  <div className="flex items-center gap-2.5">
+    <span className="inline-flex text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 3px rgba(57,196,255,0.4))" }}>
+      <Icon d={d} size={20} sw={1.6} />
+    </span>
+    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4abaff]">{children}</p>
+  </div>
+);
 
 /* ---------- Arc network details ---------- */
 const NETWORK_FIELDS: [string, string][] = [
@@ -836,7 +943,7 @@ function NetworkDetails() {
     <div className="mx-auto w-full max-w-xl text-left">
       <p className="text-xs text-slate-500">Add it as a custom network</p>
       <p className="mt-1 flex items-center gap-2 text-lg font-semibold">
-        <NetBadge name="Arc" size={26} />
+        <NetBadge size={26} />
         Arc network details
       </p>
       <div className="mt-5 divide-y divide-white/[0.12] border-y border-white/[0.12]">
@@ -945,15 +1052,15 @@ export default function Home() {
             type="button"
             onClick={scrollToShowcase}
             aria-label="Scroll down to explore"
-            className="absolute -bottom-8 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center rounded-full px-3 py-2 text-[#8fd4ff] transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] xl:flex"
+            className="absolute -bottom-16 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center rounded-full px-3 py-2 text-[#8fd4ff] transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] xl:flex"
             style={{ filter: "drop-shadow(0 0 4px rgba(57,196,255,0.5))" }}
           >
-            <span className="cue-arrow"><Icon d="m6 9 6 6 6-6" size={24} sw={2.4} /></span>
+            <span className="cue-arrow"><Icon d="m5 9 7 6 7-6" size={34} sw={2} /></span>
           </button>
         </section>
 
         {/* ---------------- SHOWCASE ---------------- */}
-        <section id="showcase" className="relative pb-10 xl:mt-14 lg:pb-16">
+        <section id="showcase" className="relative pb-10 xl:mt-20 lg:pb-16">
           <div
             className="relative overflow-hidden bg-[#050a16]/20 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)]"
             style={{ WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)" }}
