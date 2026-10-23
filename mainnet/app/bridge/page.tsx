@@ -9,12 +9,8 @@ import Header from "@/components/Header";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
 
-/* =====================================================================
-   NETWORKS
-   Only the networks that bridge.usdc.com lists (EVM ones). Their USDC address, gas coin and explorer come from
-   Circle's App Kit (kit.getSupportedChains("bridge")). The table below is a fallback plus colors, logos and timing.
-===================================================================== */
-type ChainKey = string; // the name App Kit uses: "Arc", "Ethereum", "Base", "Optimism", "World_Chain", ...
+/* ---------- networks ---------- */
+type ChainKey = string;
 type ChainDef = {
   type?: string;
   chain: string;
@@ -34,11 +30,11 @@ type ChainView = {
   usdc: string;
   gas: string;
   color: string;
-  icons: string[]; // network ids to try in @web3icons/react
-  white: boolean; // dark logos are shown in white
+  icons: string[];
+  white: boolean;
   rpcs: string[];
   explorer: (hash: string) => string;
-  lifi?: boolean; // bridged by LI.FI instead of Circle
+  lifi?: boolean;
 };
 
 type Fallback = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icons: string[] };
@@ -53,23 +49,17 @@ const FALLBACK: Record<string, Fallback> = {
   Unichain: { label: "Unichain", chainId: 130, usdc: "0x078D782b760474a361dDA0AF3839290b0EF57AD6", explorer: "https://uniscan.xyz", color: "#F50DB4", gas: "ETH", icons: ["unichain"] },
   Linea: { label: "Linea", chainId: 59144, usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", explorer: "https://lineascan.build", color: "#3ABFE5", gas: "ETH", icons: ["linea"] },
 };
-// logo ids for the other networks (if an id isn't in the logo package, a colored letter is shown instead)
 const ICON_GUESS: Record<string, string[]> = { World_Chain: ["world"], Sonic: ["sonic"], Sei: ["sei-network"], Ink: ["ink"], Plume: ["plume"], Monad: ["monad"], HyperEVM: ["hyper-evm"], XDC: ["xdc"], Codex: ["codex"] };
-const WHITE_LOGOS = new Set(["arc", "linea", "sonic", "worldchain"]); // these logos are dark, so they're drawn in white (compared without spaces/underscores)
+const WHITE_LOGOS = new Set(["arc", "linea", "sonic", "worldchain"]);
 
-/* The networks listed on bridge.usdc.com (Solana is not EVM, so it isn't here). */
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
 const ICON_GUESS_N: Record<string, string[]> = Object.fromEntries(Object.entries(ICON_GUESS).map(([k, v]) => [norm(k), v]));
 const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea", "Robinhood"];
-const ROBINHOOD_KEY = "Robinhood"; // not on Circle's list: routes to or from it are bridged by LI.FI
+const ROBINHOOD_KEY = "Robinhood";
 
-/* Networks where Circle's Forwarding Service delivers the USDC, so there is NO wallet transaction on the receiving network
-   (developers.circle.com/cctp/concepts/supported-chains-and-domains). Codex, Plume and XDC aren't on that list. */
 const FORWARDER_DEST = ["Arc", "Arbitrum", "Avalanche", "Base", "Ethereum", "HyperEVM", "Ink", "Linea", "Monad", "Optimism", "Polygon", "Sei", "Sonic", "Unichain", "World_Chain"];
 
-/* Circle's published attestation times by source network (developers.circle.com/cctp/concepts/finality-and-block-confirmations).
-   Fast Transfer exists only on some source networks; on the others the standard transfer is already fast. */
 const FAST_SOURCES = ["Arbitrum", "Base", "Codex", "Edge", "Ethereum", "Ink", "Linea", "Morph", "Optimism", "Plume", "Unichain", "World_Chain", "X_Layer"];
 const STANDARD_TIME: Record<string, string> = {
   Arc: "~1 sec",
@@ -87,7 +77,6 @@ const STANDARD_TIME: Record<string, string> = {
 };
 const fastTime = (key: string) => (key === "Ethereum" ? "~20 sec" : "~8 sec");
 
-// "/api/arc-rpc" is your own read-only relay (app/api/arc-rpc/route.ts); the others are Arc's public endpoints.
 const ARC_RPCS = [
   "/api/arc-rpc",
   "https://rpc.mainnet.arc.io",
@@ -97,13 +86,13 @@ const ARC_RPCS = [
 ];
 
 /* ---------- safety limits ---------- */
-const DECIMALS = 6; // USDC has 6 decimals on every network here
-const ARC_GAS_RESERVE = BigInt(20000); // keep ~0.02 USDC for gas when bridging out of Arc
+const DECIMALS = 6;
+const ARC_GAS_RESERVE = BigInt(20000);
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
-const AUTO_SLIPPAGE = 0.5; // percent
+const AUTO_SLIPPAGE = 0.5;
 const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
-const FALLBACK_GAS_UNITS = 230000; // approve + burn, only used if the kit gives no gas number
+const FALLBACK_GAS_UNITS = 230000;
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -215,13 +204,11 @@ function SpaceBackground() {
   );
 }
 
-// The LI.FI widget is heavy and only works in the browser, so it is loaded on the client only, and only when Robinhood Chain is picked (components/LifiWidget.tsx).
 const LifiWidget = dynamic(() => import("@/components/LifiWidget"), {
   ssr: false,
   loading: () => <div className="h-[520px] w-full animate-pulse rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03]" aria-label="Loading the bridge" />,
 });
 
-/** Centered popup. `wide` makes it wider (the network list). Closes with Escape or by tapping the dark area. */
 function Modal({ open, onClose, title, children, wide = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
   useEffect(() => {
     if (!open) return;
@@ -246,7 +233,6 @@ function Modal({ open, onClose, title, children, wide = false }: { open: boolean
   );
 }
 
-/** The bridge result card. Dims the page. Pops up in the middle on desktop and slides up from the bottom on phones. */
 function Popup({ children, onClose, label }: { children: ReactNode; onClose?: () => void; label: string }) {
   return (
     <div className="fixed inset-0 z-[96] flex items-end justify-center sm:items-center sm:px-4" role="dialog" aria-modal="true" aria-label={label}>
@@ -283,7 +269,6 @@ const Pill = ({ onClick, children, disabled }: { onClick: () => void; children: 
 /* ---------- logos ---------- */
 type IconComp = ComponentType<Record<string, unknown>>;
 let networkIconPromise: Promise<IconComp | null> | null = null;
-/** Network logos come from @web3icons/react (loaded only when needed). */
 const loadNetworkIcon = () => {
   if (!networkIconPromise) {
     networkIconPromise = import("@web3icons/react/dynamic")
@@ -293,7 +278,6 @@ const loadNetworkIcon = () => {
   return networkIconPromise;
 };
 
-/** Simple globe drawing, used for World Chain if the logo package has no logo for it. */
 const GlobeMark = ({ size }: { size: number }) => (
   <svg width={size * 0.66} height={size * 0.66} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
     <circle cx="12" cy="12" r="9" />
@@ -302,9 +286,6 @@ const GlobeMark = ({ size }: { size: number }) => (
   </svg>
 );
 
-/** Round logo for a network, from @web3icons/react (Arc too). The logo sits inside a round badge at 70% size, so it is never cropped.
-    Dark logos (Linea, Sonic) are drawn in white. Every known logo id is tried, then the chain id. If nothing is found,
-    Arc uses your own logo file, World Chain a globe, and the others a colored letter. */
 function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: number }) {
   const [Icon, setIcon] = useState<IconComp | null>(null);
   const [idx, setIdx] = useState(0);
@@ -325,7 +306,6 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
     };
   }, [view?.icons.length, view?.key]);
 
-  /* if a logo id isn't in the package nothing is drawn; then the next one is tried */
   useEffect(() => {
     const el = holder.current;
     if (!Icon || !el) return;
@@ -394,12 +374,11 @@ function UsdcLogo({ size = 36 }: { size?: number }) {
   );
 }
 
-/** Network chip. Every network is clickable, Arc too. */
 function ChainButton({ view, onClick, disabled }: { view: ChainView | undefined; onClick: () => void; disabled?: boolean }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={`Choose network, now ${view?.label ?? ""}`} className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base">
       <ChainLogo view={view} size={30} />
-      <span>{view?.label ?? "Select"}</span>
+      <span className="font-bold">{view?.label ?? "Select"}</span>
       <span className="text-slate-400"><Chevron /></span>
     </button>
   );
@@ -413,7 +392,6 @@ const STEP_LABEL = (key: StepKey, fromLabel: string, toLabel: string, forwarder:
     mint: forwarder ? `Circle delivers USDC on ${toLabel}` : `Receive USDC on ${toLabel}`,
   })[key];
 
-/** The route as a road: circles joined by a glowing line. The line lights up as each step finishes. */
 function Road({ steps, phase, fromLabel, toLabel, forwarder }: { steps: StepRow[]; phase: Phase; fromLabel: string; toLabel: string; forwarder: boolean }) {
   const sub = (s: StepRow): string => {
     if (s.state === "done") return "Done";
@@ -467,7 +445,6 @@ function Road({ steps, phase, fromLabel, toLabel, forwarder }: { steps: StepRow[
   );
 }
 
-/** Turns wallet / SDK / network errors into a short, clear message. */
 function explain(e: unknown, fallback: string, gasCoin = "gas coin"): string {
   const err = e as { code?: number | string; message?: string; shortMessage?: string; details?: string; cause?: { code?: number | string; message?: string } };
   const msg = `${err?.shortMessage ?? ""} ${err?.message ?? ""} ${err?.details ?? ""} ${err?.cause?.message ?? ""}`;
@@ -514,12 +491,10 @@ export default function BridgePage() {
   const [fast, setFast] = useState(true);
   const [slip, setSlip] = useState<Slip>({ mode: "auto", custom: "1" });
 
-  /* send to another wallet address */
   const [useOther, setUseOther] = useState(false);
   const [otherAddr, setOtherAddr] = useState("");
   const [otherChecked, setOtherChecked] = useState(false);
 
-  /* balances are stored per wallet + network, so a late answer for another network can never show up here */
   const [bals, setBals] = useState<Record<string, bigint | null>>({});
   const [refreshTick, setRefreshTick] = useState(0);
   const [native, setNative] = useState<Record<string, number>>({});
@@ -553,7 +528,7 @@ export default function BridgePage() {
   const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
   const slipPct = slip.mode === "custom" && customValid ? customPct : AUTO_SLIPPAGE;
 
-  /* ----- network list: only the networks on bridge.usdc.com, from Circle's own list with a built-in fallback ----- */
+  /* ----- network list ----- */
   const views = useMemo(() => {
     const out: Record<string, ChainView> = {};
     const add = (key: string, def?: ChainDef) => {
@@ -582,7 +557,7 @@ export default function BridgePage() {
       key: ROBINHOOD_KEY,
       label: "Robinhood Chain",
       chainId: 4663,
-      usdc: "", // Circle has no USDC bridge to this network
+      usdc: "",
       gas: "ETH",
       color: "#00C805",
       icons: ["robinhood-chain", "robinhood"],
@@ -600,26 +575,22 @@ export default function BridgePage() {
   const fromView = views[fromKey];
   const toView = views[toKey];
   const txUrl = (key: ChainKey, hash: string) => views[key]?.explorer(hash) ?? "#";
-  const lifiMode = !!fromView?.lifi || !!toView?.lifi; // Robinhood Chain on either side: LI.FI does the bridging
+  const lifiMode = !!fromView?.lifi || !!toView?.lifi;
 
-  /* Fast only exists on some source networks; elsewhere the standard transfer is already fast */
   const canFast = FAST_SOURCES.includes(fromKey);
   const useFast = fast && canFast;
   const speed: "FAST" | "SLOW" = useFast ? "FAST" : "SLOW";
 
-  /* Circle's Forwarding Service delivers the USDC, so there is no wallet transaction on the receiving network */
   const routeKey = `${fromKey}>${toKey}`;
   const defTo = defs.find((d) => d.chain === toKey)?.forwarderSupported?.destination;
   const forwarder = (FORWARDER_DEST.includes(toKey) || defTo === true) && !fwdBlocked[routeKey];
 
-  /* where the USDC goes: your own address, or another address you choose */
   const otherTrim = otherAddr.trim();
   const otherIsToken = list.some((k) => !!views[k]?.usdc && views[k].usdc.toLowerCase() === otherTrim.toLowerCase());
   const otherValid = useOther && ADDR_RE.test(otherTrim) && !/^0x0{40}$/i.test(otherTrim) && !otherIsToken;
   const recipient = useOther && otherValid ? otherTrim : account ?? "";
   const customRecipient = useOther && otherValid && otherTrim.toLowerCase() !== (account ?? "").toLowerCase();
 
-  /* settings (Fast on/off, slippage) are remembered on this device */
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem("alabaamafi:bridge-settings");
@@ -629,7 +600,7 @@ export default function BridgePage() {
         if (j.slip) setSlip(j.slip);
       }
     } catch {
-      /* ignore */
+      return;
     }
   }, []);
   const saveSettings = (next: { fast?: boolean; slip?: Slip }) => {
@@ -640,11 +611,10 @@ export default function BridgePage() {
     try {
       window.localStorage.setItem("alabaamafi:bridge-settings", JSON.stringify({ fast: f, slip: s }));
     } catch {
-      /* ignore */
+      return;
     }
   };
 
-  /* the connected wallet's own provider and the network it is on */
   useEffect(() => {
     let live = true;
     setProvider(undefined);
@@ -664,7 +634,6 @@ export default function BridgePage() {
     return () => provider.removeListener?.("chainChanged", read);
   }, [provider]);
 
-  /* new wallet or account: fresh adapter and read clients */
   useEffect(() => {
     adapterRef.current = null;
     clientsRef.current = {};
@@ -678,7 +647,6 @@ export default function BridgePage() {
     return kitRef.current;
   };
 
-  /* load Circle's list of bridgeable networks */
   useEffect(() => {
     let live = true;
     getKit()
@@ -692,7 +660,6 @@ export default function BridgePage() {
     };
   }, []);
 
-  /* gas coin prices (for the "$" next to the gas fee) */
   useEffect(() => {
     let live = true;
     const load = async () => {
@@ -702,7 +669,7 @@ export default function BridgePage() {
         const j = (await r.json()) as { native?: Record<string, number> };
         if (live) setNative(j.native ?? {});
       } catch {
-        /* the $ value is optional */
+        return;
       }
     };
     load();
@@ -713,7 +680,6 @@ export default function BridgePage() {
     };
   }, []);
 
-  /* history (this device) */
   const historyKey = account ? `alabaamafi:bridges:${account.toLowerCase()}` : null;
   useEffect(() => {
     if (!historyKey) return setHistory([]);
@@ -725,7 +691,6 @@ export default function BridgePage() {
     }
   }, [historyKey]);
 
-  /* A wallet transport that only answers when the wallet is on the right network; otherwise public RPCs take over. */
   const guardedWallet = useCallback(
     async (chainId: number) => {
       const { custom } = await import("viem");
@@ -741,7 +706,6 @@ export default function BridgePage() {
     [provider]
   );
 
-  /* read-only client for any network (balances, gas). Works whatever network the wallet is on. */
   const getClient = useCallback(
     async (key: ChainKey): Promise<ReadClient> => {
       const cached = clientsRef.current[key];
@@ -773,7 +737,6 @@ export default function BridgePage() {
     [getClient, views]
   );
 
-  /* balances: USDC on both networks, plus the gas coin on the source network. Answers for old networks are ignored. */
   const bk = (k: ChainKey) => (account ? `${account.toLowerCase()}:${k}` : "");
   const loadOne = useCallback(
     async (k: ChainKey, live: () => boolean) => {
@@ -802,11 +765,11 @@ export default function BridgePage() {
     loadOne(toKey, live);
     (async () => {
       try {
-        if (fromKey === "Arc") return; // Arc pays gas in USDC
+        if (fromKey === "Arc") return;
         const v = await (await getClient(fromKey)).getBalance({ address: account });
         if (alive) setBals((p) => ({ ...p, [`${account.toLowerCase()}:${fromKey}:gas`]: v }));
       } catch {
-        /* keep unknown */
+        return;
       }
     })();
     return () => {
@@ -814,7 +777,6 @@ export default function BridgePage() {
     };
   }, [account, fromKey, toKey, loadOne, getClient, refreshTick, provider, views, lifiMode]);
 
-  /* when a network list is open, load the wallet's USDC on every network (shown next to each network) */
   useEffect(() => {
     if (!account || (modal !== "from" && modal !== "to")) return;
     let alive = true;
@@ -831,7 +793,6 @@ export default function BridgePage() {
   const destBalance = bals[bk(toKey)] ?? null;
   const gasBalance = fromKey === "Arc" ? balance : bals[`${bk(fromKey)}:gas`] ?? null;
 
-  /* Adapter for the connected wallet. It only ever touches the SOURCE network (the forwarder handles the destination). */
   const getAdapter = async (): Promise<unknown> => {
     if (!adapterRef.current) {
       const { ViemAdapter } = await import("@circle-fin/adapter-viem-v2");
@@ -867,7 +828,7 @@ export default function BridgePage() {
               ]),
             }),
           getWalletClient: async ({ chain }: { chain: KitChain }) => {
-            if (executingRef.current) await ensureWalletChain(chain); // never switches networks while only getting a quote
+            if (executingRef.current) await ensureWalletChain(chain);
             return createWalletClient({ account: account as `0x${string}`, chain: chain as never, transport: custom(provider as never) });
           },
         } as never,
@@ -877,11 +838,10 @@ export default function BridgePage() {
     return adapterRef.current;
   };
 
-  /** Where the USDC goes. With the forwarder, Circle mints it on the receiving network: no wallet prompt there. */
   const destination = (adapter: unknown, to: string): Dest =>
     forwarder ? { recipientAddress: to, chain: toKey, useForwarder: true } : to.toLowerCase() === (account ?? "").toLowerCase() ? { adapter, chain: toKey } : { adapter, chain: toKey, recipientAddress: to };
 
-  /* derived */
+  /* ---------- derived values ---------- */
   const units = parseUnits6(amount);
   const cleanAmount = amount.endsWith(".") ? amount.slice(0, -1) : amount;
   const amountNum = cleanAmount && Number(cleanAmount) > 0 ? Number(cleanAmount) : 0;
@@ -889,7 +849,6 @@ export default function BridgePage() {
   const ready = !!account;
   const wrongNetwork = ready && walletChain !== null && !!fromView && walletChain !== fromView.chainId;
 
-  /* quote: fees, gas, and what you receive (0.6s after you stop typing). Works whatever network the wallet is on. */
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
@@ -904,7 +863,6 @@ export default function BridgePage() {
         try {
           est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: destination(adapter, recipient), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
         } catch (e) {
-          /* if the SDK doesn't support the forwarder for this route, fall back to the normal flow for it */
           if (forwarder && /forward|relay|unsupported|not supported/i.test((e as Error)?.message ?? "")) {
             if (live) setFwdBlocked((p) => ({ ...p, [routeKey]: true }));
             return;
@@ -912,7 +870,6 @@ export default function BridgePage() {
           throw e;
         }
 
-        /* fees: delivery (Circle forwarder) and bridge / Fast fee */
         const fees = Array.isArray(est?.fees) ? est.fees : null;
         let bridgeFee: number | null = null;
         let deliveryFee = 0;
@@ -930,7 +887,6 @@ export default function BridgePage() {
             }
           }
         }
-        /* gas: the kit lists it separately (approve, burn and, without the forwarder, mint) */
         const gasItems = Array.isArray(est?.gasFees) ? est.gasFees : [];
         for (const g of gasItems) {
           const amt = Number(g.fees?.fee ?? g.fee ?? g.amount);
@@ -939,7 +895,6 @@ export default function BridgePage() {
           const tok = (g.token && g.token.toUpperCase() !== "NATIVE" ? g.token : chainSym).toUpperCase();
           gas.push({ amount: amt, token: tok });
         }
-        /* fallback when the kit gave no gas number: current gas price x a typical approve + burn */
         let gasApprox = false;
         if (!gas.length) {
           try {
@@ -947,7 +902,7 @@ export default function BridgePage() {
             gas.push({ amount: (Number(price) * FALLBACK_GAS_UNITS) / 1e18, token: fromView.gas || "ETH" });
             gasApprox = true;
           } catch {
-            /* leave empty */
+            gasApprox = false;
           }
         }
         const receive = bridgeFee === null ? null : amountNum - bridgeFee - deliveryFee;
@@ -966,7 +921,7 @@ export default function BridgePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, provider, fromKey, toKey, cleanAmount, speed, account, views, forwarder, recipient, useOther, otherValid]);
 
-  /* validation */
+  /* ---------- validation ---------- */
   const reserve = fromKey === "Arc" ? ARC_GAS_RESERVE : ZERO;
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (fromKey === toKey) return { text: "Choose two different networks", hard: true };
@@ -986,7 +941,7 @@ export default function BridgePage() {
     return null;
   }, [amount, units, balance, reserve, fromKey, toKey, gasBalance, quote, fromView, useOther, otherTrim, otherIsToken, otherValid, customRecipient, otherChecked]);
 
-  /* actions */
+  /* ---------- actions ---------- */
   const flip = () => {
     if (busy) return;
     setFromKey(toKey);
@@ -995,7 +950,6 @@ export default function BridgePage() {
     setAmount("");
     setMessage("");
   };
-  /** Choose a network on either side. Picking the network that is on the other side swaps them. */
   const pickNetwork = (side: "from" | "to", key: ChainKey) => {
     if (side === "from") {
       if (key === toKey) setToKey(fromKey);
@@ -1015,7 +969,6 @@ export default function BridgePage() {
     setAmount(formatUnits6(v, 0).replace(/,/g, ""));
   };
 
-  /** Switch the wallet to the network you are bridging from. */
   const switchWallet = async () => {
     if (!provider || !fromView) return;
     setNotice("");
@@ -1049,7 +1002,6 @@ export default function BridgePage() {
     stepsRef.current = next;
     setSteps(next);
   };
-  /** Close the result popup. After a success the form is cleared; after a failure it keeps your numbers. */
   const closePopup = () => {
     const wasDone = phase === "done";
     setPhase("idle");
@@ -1073,7 +1025,6 @@ export default function BridgePage() {
   };
 
   const startSteps = () => putSteps(STEP_ORDER.map((key, i) => ({ key, state: i === 0 ? "active" : "pending" })));
-  /** Kit events: a step is only a check mark when it really finished. A failed step is marked red. */
   const onKitEvent = (e: unknown) => {
     const ev = e as { method?: string; values?: { txHash?: string; state?: string; errorMessage?: string; error?: unknown } };
     const idx = STEP_ORDER.indexOf(ev?.method as StepKey);
@@ -1087,7 +1038,6 @@ export default function BridgePage() {
       })
     );
   };
-  /** Use the final result from the kit to set every step exactly as it ended. */
   const applyResultSteps = (res: BridgeRes) => {
     if (!res.steps?.length) return;
     const keyOf = (name: string): StepKey | null => (/approve/i.test(name) ? "approve" : /burn/i.test(name) ? "burn" : /attest/i.test(name) ? "fetchAttestation" : /mint/i.test(name) ? "mint" : null);
@@ -1102,7 +1052,6 @@ export default function BridgePage() {
     );
   };
 
-  /** Finish: check the result, compare the recipient's balance, save history. */
   const finish = async (res: BridgeRes, before: bigint | null, sent: string) => {
     applyResultSteps(res);
     if (res.state !== "success") throw new Error(res.steps?.find((s) => s.errorMessage)?.errorMessage ?? "The bridge did not finish.");
@@ -1113,7 +1062,6 @@ export default function BridgePage() {
     const burn = hashOf(/burn/i);
     const mint = hashOf(/mint/i);
     let got = quote?.receive != null ? fmtNum(quote.receive) : "—";
-    /* the forwarder can take a few seconds to deliver; look for the new balance for up to ~20s */
     for (let i = 0; i < 8 && recipientRef.current; i++) {
       const after = await readUsdc(toKey, recipientRef.current);
       if (before !== null && after !== null && after > before) {
@@ -1135,16 +1083,15 @@ export default function BridgePage() {
       try {
         window.localStorage.setItem(historyKey, JSON.stringify(next));
       } catch {
-        /* ignore */
+        return;
       }
     }
   };
 
-  /** A step that was waiting when the bridge failed is shown red, never as a check mark. */
   const failedMarks = () => putSteps(stepsRef.current.map((s) => (s.state === "active" ? { ...s, state: "error" } : s)));
 
   const bridge = async () => {
-    if (lockRef.current || !provider || !account || problem || !quote || !units || !recipient) return; // lock stops double taps
+    if (lockRef.current || !provider || !account || problem || !quote || !units || !recipient) return;
     lockRef.current = true;
     recipientRef.current = recipient;
     setPhase("bridging");
@@ -1154,14 +1101,12 @@ export default function BridgePage() {
     startSteps();
     let kit: KitLike | null = null;
     try {
-      /* 1. checks right before sending */
       const accts = (await provider.request({ method: "eth_accounts" })) as string[];
       if (!accts?.[0] || accts[0].toLowerCase() !== account.toLowerCase()) throw new Error("ACCOUNT_CHANGED");
       if (fromView && chainNum(await provider.request({ method: "eth_chainId" })) !== fromView.chainId) throw new Error("WRONG_NETWORK");
       const balNow = await readUsdc(fromKey, account);
       if (balNow !== null && units > balNow) throw new Error("NO_BALANCE");
 
-      /* 2. fresh quote: stop if you would receive less than your slippage allows */
       kit = await getKit();
       const adapter = await getAdapter();
       const params: BridgeArgs = { from: { adapter, chain: fromKey }, to: destination(adapter, recipient), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } };
@@ -1175,11 +1120,9 @@ export default function BridgePage() {
           setQuote({ ...quote, receive: now });
           throw new Error("QUOTE_CHANGED");
         }
-        // Fast: cap the fee at the quote plus your slippage (the kit falls back to Standard if the fee goes above it)
         if (speed === "FAST" && fee > 0) params.config = { transferSpeed: "FAST", maxFee: (Math.ceil((fee + quote.receive * (slipPct / 100)) * 1e6) / 1e6).toFixed(6) };
       }
 
-      /* 3. run the bridge */
       const before = await readUsdc(toKey, recipient);
       kit.on?.("*", onKitEvent);
       executingRef.current = true;
@@ -1200,7 +1143,6 @@ export default function BridgePage() {
     }
   };
 
-  /** Resume a bridge that stopped halfway (USDC was sent but not yet received). */
   const resume = async () => {
     const failed = failedRef.current;
     if (lockRef.current || !failed || !provider || !account) return;
@@ -1232,7 +1174,7 @@ export default function BridgePage() {
     }
   };
 
-  /* main button */
+  /* ---------- main button ---------- */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
   if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (busy) action = { label: <span className="flex items-center gap-3"><Spinner />Bridging</span>, onClick: () => {}, disabled: true };
@@ -1241,7 +1183,6 @@ export default function BridgePage() {
 
   const amountFont = amount.length > 9 ? "clamp(1.25rem, 5vw, 1.375rem)" : amount.length > 6 ? "clamp(1.375rem, 5.6vw, 1.625rem)" : "clamp(1.5rem, 6.5vw, 1.875rem)";
 
-  /* gas fee text: "$0.02" for USDC, or "0.00001 ETH ($0.03)" for a gas coin */
   const gasText = useMemo(() => {
     if (!quote || !quote.gas.length) return "—";
     const sums = new Map<string, number>();
@@ -1285,7 +1226,6 @@ export default function BridgePage() {
       <div className="relative z-10">
         <Header />
 
-        {/* phones: normal size. Screens 900px+ wide: content at 90% (same as the Swap page). */}
         <section className={`pb-20 pt-8 sm:pt-12 lg:pb-32 lg:pt-14 min-[900px]:[zoom:0.9] ${CONTAINER}`}>
           <div className="fade-up mx-auto max-w-2xl text-center">
             <h1 className="text-[2.4rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[3.9rem]">
@@ -1330,7 +1270,6 @@ export default function BridgePage() {
 
               {lifiMode ? (
                 <div className="mt-4 sm:mt-5">
-                  {/* the two networks are picked here; the LI.FI widget below does the bridging */}
                   <div className="flex items-center justify-between gap-2">
                     <ChainButton view={fromView} onClick={() => setModal("from")} />
                     <button type="button" onClick={flip} aria-label="Switch direction" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white">
@@ -1354,7 +1293,7 @@ export default function BridgePage() {
               ) : (
               <>
               <div className="mt-4 sm:mt-5">
-                {/* from */}
+                {/* ---------- FROM ---------- */}
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
                   <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                     <span>From</span>
@@ -1389,7 +1328,7 @@ export default function BridgePage() {
                   </div>
                 </div>
 
-                {/* flip */}
+                {/* ---------- FLIP ---------- */}
                 <div className="relative z-10 -my-3 flex justify-center">
                   <button type="button" onClick={flip} disabled={busy} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
@@ -1398,7 +1337,7 @@ export default function BridgePage() {
                   </button>
                 </div>
 
-                {/* to */}
+                {/* ---------- TO ---------- */}
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 sm:p-4">
                   <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                     <span>To</span>
@@ -1416,7 +1355,7 @@ export default function BridgePage() {
                   <p className="mt-1.5 text-sm text-slate-500 tabular-nums">{quote && quote.receive !== null ? fmtUsd(Math.max(quote.receive, 0)) : fmtUsd(0)}</p>
                 </div>
 
-                {/* send to a different wallet address */}
+                {/* ---------- SEND TO ANOTHER ADDRESS ---------- */}
                 <div className="mt-3 flex items-center justify-between gap-3 px-1">
                   <span className="text-sm text-slate-400">Send to a different address</span>
                   <button
@@ -1463,7 +1402,7 @@ export default function BridgePage() {
                 )}
               </div>
 
-              {/* quote details: slippage, gas fee, estimated time, Fast */}
+              {/* ---------- QUOTE DETAILS ---------- */}
               {quote && (
                 <dl className="mt-4 space-y-2 px-1 text-[13px] sm:text-sm">
                   <div className="flex justify-between gap-4">
@@ -1539,7 +1478,7 @@ export default function BridgePage() {
         </section>
       </div>
 
-      {/* ---------- bridge popup: the road, success, or failure ---------- */}
+      {/* ---------- bridge popup ---------- */}
       {phase !== "idle" && (
         <Popup label="Bridge status" onClose={phase === "bridging" ? undefined : closePopup}>
           {phase === "done" && summary && (
@@ -1606,7 +1545,7 @@ export default function BridgePage() {
         </Popup>
       )}
 
-      {/* ---------- choose a network (either side); wide; shows your USDC balance on each ---------- */}
+      {/* ---------- choose a network ---------- */}
       <Modal wide open={modal === "from" || modal === "to"} onClose={() => setModal(null)} title={modal === "from" ? "Bridge from" : "Bridge to"}>
         <ul className="space-y-1">
           {list.map((k) => {
