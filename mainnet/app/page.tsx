@@ -874,6 +874,8 @@ export default function Home() {
     }
   };
 
+  const scrollToShowcase = () => document.getElementById("showcase")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   return (
     <main className={`${brandFont.className} relative min-h-screen overflow-x-hidden bg-[#010205] text-white selection:bg-[#167cff]/30`}>
       <style>{`
@@ -886,6 +888,9 @@ export default function Home() {
         .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:-40% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
         @keyframes heroShine{0%{background-position:-40% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:140% 0;opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+        @keyframes scrollCue{0%{opacity:0;transform:translateY(-8px)}35%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
+        .cue-arrow{display:block;opacity:.85;animation:scrollCue 2.4s ease-in-out infinite backwards}
+        .cue-arrow+.cue-arrow{margin-top:-11px;animation-delay:.3s}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-right{transform:translateX(70px)}
         .reveal-left{transform:translateX(-70px)}
@@ -936,10 +941,21 @@ export default function Home() {
               </Reveal>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={scrollToShowcase}
+            aria-label="Scroll down to explore"
+            className="absolute bottom-10 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center rounded-full px-3 py-2 text-[#8fd4ff] transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] xl:flex"
+            style={{ filter: "drop-shadow(0 0 4px rgba(57,196,255,0.5))" }}
+          >
+            <span className="cue-arrow"><Icon d="m6 9 6 6 6-6" size={26} sw={2} /></span>
+            <span className="cue-arrow"><Icon d="m6 9 6 6 6-6" size={26} sw={2} /></span>
+          </button>
         </section>
 
         {/* ---------------- SHOWCASE ---------------- */}
-        <section className="relative pb-10 lg:pb-16">
+        <section id="showcase" className="relative pb-10 xl:mt-10 lg:pb-16">
           <div
             className="relative overflow-hidden bg-[#050a16]/20 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)]"
             style={{ WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)" }}
