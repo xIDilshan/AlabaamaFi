@@ -95,7 +95,7 @@ const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
 const FALLBACK_GAS_UNITS = 230000;
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
-const CHAIN_NAME_WEIGHT = 650;
+const CHAIN_NAME_WEIGHT = 600;
 
 const BUTTON =
   "inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_15px_50px_rgba(30,120,255,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:brightness-100 sm:px-7 sm:py-4 sm:text-base";
@@ -1240,10 +1240,10 @@ export default function BridgePage() {
             <div className="relative rounded-[1.75rem] border border-white/[0.08] bg-[#050a16]/80 p-4 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-7">
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3 sm:pb-4">
                 <div className="min-w-0">
-                  <p className="text-xs text-slate-500">Route</p>
+                  <p className="text-xs text-slate-550">Route</p>
                   <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                     <span className="inline-flex items-center gap-1.5"><ChainLogo view={fromView} size={20} />{fromView?.label}</span>
-                    <span className="text-slate-500">to</span>
+                    <span className="text-slate-550">to</span>
                     <span className="inline-flex items-center gap-1.5"><ChainLogo view={toView} size={20} />{toView?.label}</span>
                   </p>
                 </div>
