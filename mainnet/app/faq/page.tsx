@@ -4,22 +4,15 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
-/*
-  AlabaamaFi Help Center (FAQ). Save as: app/faq/page.tsx
-  Laid out like a help center: search, topic cards, popular questions, contact options.
-  It has its own header (it does not use components/Header).
-  To add a question, add one object to the FAQ list below.
-*/
-
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
+const DOCS_URL = "https://docs.alabaamafi.xyz";
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
 
-/* footer sizes you can adjust (pixels). Text below 12px is drawn at 12px and scaled, so it really gets smaller on every phone. */
-const FOOTER_LINK_TEXT_PX = 11; // the words Docs and FAQ
-const FOOTER_SOCIAL_PX = 20; // Discord and GitHub (X is 2px smaller)
+const FOOTER_LINK_TEXT_PX = 11;
+const FOOTER_SOCIAL_PX = 20;
 
 /* ---------- icons ---------- */
 const Svg = ({ d, size = 20, sw = 1.8 }: { d: string; size?: number; sw?: number }) => (
@@ -70,30 +63,30 @@ const CATS: { id: Cat; blurb: string; icon: string }[] = [
 type Q = { cat: Cat; q: string; a: string; popular?: boolean; more?: { label: string; href: string } };
 const FAQ: Q[] = [
   /* ---- General ---- */
-  { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is a simple interface for Arc, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc, all in one place.", popular: true, more: { label: "Read the overview", href: "/docs#overview" } },
+  { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is a simple interface for Arc, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc, all in one place.", popular: true, more: { label: "Read the overview", href: `${DOCS_URL}/#overview` } },
   { cat: "General", q: "Do I need to create an account?", a: "No. You just connect your own wallet. Your settings and your swap and bridge history are saved in your browser, on your device." },
   { cat: "General", q: "Does AlabaamaFi hold my funds?", a: "No. AlabaamaFi is non-custodial. Every action is signed in your own wallet, and the site never has your private keys or seed phrase.", popular: true },
   { cat: "General", q: "Is this the official site?", a: "The official site is app.alabaamafi.xyz, the official X account is @Alabaama_Fi and the community is on Discord. Bookmark the site and avoid links from messages or ads." },
   { cat: "General", q: "Which pages does AlabaamaFi have?", a: "Home, Send, Swap, Bridge and Activity, plus these Docs and FAQ. Use the menu in the top corner to move between them." },
-  { cat: "General", q: "Where can I read the terms of service?", a: "The Terms of Service are in the Docs, at the end of the page.", more: { label: "Open the Terms of Service", href: "/docs#terms" } },
+  { cat: "General", q: "Where can I read the terms of service?", a: "The Terms of Service are in the Docs, at the end of the page.", more: { label: "Open the Terms of Service", href: `${DOCS_URL}/#terms` } },
 
   /* ---- Wallet and network ---- */
   { cat: "Wallet and network", q: "Which wallets work?", a: "Any EVM wallet, for example MetaMask, Rabby, OKX Wallet, Brave Wallet, Coinbase Wallet or a WalletConnect wallet. Use the Connect Wallet button in the top corner.", popular: true },
-  { cat: "Wallet and network", q: "How do I add Arc to my wallet?", a: "On the home page, use Add Arc Mainnet. To add it by hand, use: network name Arc Mainnet, RPC URL https://rpc.mainnet.arc.io, chain ID 5042, currency symbol USDC, block explorer https://explorer.arc.io. The home page also has a card with a Copy button for each one.", popular: true, more: { label: "See the network details", href: "/docs#networks" } },
+  { cat: "Wallet and network", q: "How do I add Arc to my wallet?", a: "On the home page, use Add Arc Mainnet. To add it by hand, use: network name Arc Mainnet, RPC URL https://rpc.mainnet.arc.io, chain ID 5042, currency symbol USDC, block explorer https://explorer.arc.io. The home page also has a card with a Copy button for each one.", popular: true, more: { label: "See the network details", href: `${DOCS_URL}/#networks` } },
   { cat: "Wallet and network", q: "Why do I need USDC for gas?", a: "On Arc, USDC is the gas token. You pay network fees in USDC, so there is no second token to hold. Keep a little USDC in your wallet for fees." },
   { cat: "Wallet and network", q: "The button says “Switch to Arc Mainnet”. What does that mean?", a: "Your wallet is on a different network. Tap the button and approve the switch in your wallet. On the Bridge page the button names the network you are sending from, for example “Switch to Ethereum”." },
   { cat: "Wallet and network", q: "My balance shows a dash (—). Why?", a: "The balance appears once your wallet is connected and on the right network. If it still shows a dash, switch networks, reconnect the wallet or refresh the page. A busy network provider can also delay it for a moment." },
   { cat: "Wallet and network", q: "Can I use the phone browser?", a: "Yes. Open the site in your phone’s browser and connect with WalletConnect, or open it inside your wallet app’s built-in browser. Every page is made for phones." },
 
   /* ---- Send ---- */
-  { cat: "Send", q: "How do I send USDC?", a: "Open Send, paste the recipient address, enter the amount and tap Send USDC. Confirm in your wallet. When it is final you see Successfully sent, with the amount, the fee and a link to the explorer.", popular: true, more: { label: "Read the Send guide", href: "/docs#send" } },
+  { cat: "Send", q: "How do I send USDC?", a: "Open Send, paste the recipient address, enter the amount and tap Send USDC. Confirm in your wallet. When it is final you see Successfully sent, with the amount, the fee and a link to the explorer.", popular: true, more: { label: "Read the Send guide", href: `${DOCS_URL}/#send` } },
   { cat: "Send", q: "Can I cancel or reverse a transfer?", a: "No. Blockchain transfers cannot be reversed, and Arc confirms them in under a second. Double-check the address before you confirm." },
   { cat: "Send", q: "Why does it say “Not enough left to cover the network fee”?", a: "The fee is paid in USDC from the same balance. If the amount you enter plus the fee is more than your balance, the page stops you. Lower the amount a little, or use Max, which keeps the fee for you." },
   { cat: "Send", q: "Why can’t I send to the zero address or the USDC contract?", a: "Arc does not allow transfers to the zero address, and sending USDC to the token contract would lose it. The page blocks both to protect you." },
   { cat: "Send", q: "Why was my transfer reverted?", a: "A transfer can be reverted if the sender or the recipient is blocklisted for USDC. Open the transaction in the explorer to see the details." },
 
   /* ---- Swap ---- */
-  { cat: "Swap", q: "Which tokens can I swap?", a: "USDC, EURC and cirBTC on Arc. Swaps run through Circle’s App Kit.", more: { label: "Read the Swap guide", href: "/docs#swap" } },
+  { cat: "Swap", q: "Which tokens can I swap?", a: "USDC, EURC and cirBTC on Arc. Swaps run through Circle’s App Kit.", more: { label: "Read the Swap guide", href: `${DOCS_URL}/#swap` } },
   { cat: "Swap", q: "What is slippage?", a: "Slippage is how far the price may move against you before the swap is cancelled. Auto uses 0.5% for USDC and EURC, and 1% when cirBTC is involved. In Settings you can pick Custom: 0.1%, 0.5%, 1%, 3%, 5% or your own value.", popular: true },
   { cat: "Swap", q: "What does “Minimum received” mean?", a: "It is the least you will get after slippage. The swap itself enforces it, so you cannot receive less than that amount." },
   { cat: "Swap", q: "Why did my swap stop and say the price moved?", a: "Just before sending, the page asks for a fresh price. If it is more than 0.5% worse than the one you saw, it stops and shows you the new price. Nothing was spent. Review it and tap Swap again." },
@@ -102,39 +95,39 @@ const FAQ: Q[] = [
   { cat: "Swap", q: "Where do I find my swap history?", a: "The History icon on the Swap card lists swaps made on this device. For everything your wallet has done on Arc, use the Activity page." },
 
   /* ---- Bridge ---- */
-  { cat: "Bridge", q: "Which networks can I bridge between?", a: "The ones on bridge.usdc.com that work with an EVM wallet: Arc, Ethereum, Base, Arbitrum, OP Mainnet, Polygon, Avalanche, Unichain, Linea, Codex, HyperEVM, Ink, Monad, Plume, Sei, Sonic, World Chain and XDC. You can bridge from Arc, to Arc, or between two other networks. Robinhood Chain is also available, through LI.FI.", popular: true, more: { label: "Read the Bridge guide", href: "/docs#bridge" } },
+  { cat: "Bridge", q: "Which networks can I bridge between?", a: "The ones on bridge.usdc.com that work with an EVM wallet: Arc, Ethereum, Base, Arbitrum, OP Mainnet, Polygon, Avalanche, Unichain, Linea, Codex, HyperEVM, Ink, Monad, Plume, Sei, Sonic, World Chain and XDC. You can bridge from Arc, to Arc, or between two other networks. Robinhood Chain is also available, through LI.FI.", popular: true, more: { label: "Read the Bridge guide", href: `${DOCS_URL}/#bridge` } },
   { cat: "Bridge", q: "How does the bridge work?", a: "It uses Circle’s CCTP. Your USDC is burned on the first network and the same amount of native USDC is minted on the second one. It is not a wrapped token." },
-  { cat: "Bridge", q: "What is Fast transfer?", a: "Fast transfer, the lightning-bolt icon, delivers your USDC in seconds instead of waiting about 15 minutes for the first network to finalize. It adds a small fee, taken from what you receive. It exists only on some source networks. From Arc, Avalanche and Polygon the standard transfer is already fast.", more: { label: "Fast or Standard", href: "/docs#bridge-fast" } },
+  { cat: "Bridge", q: "What is Fast transfer?", a: "Fast transfer, the lightning-bolt icon, delivers your USDC in seconds instead of waiting about 15 minutes for the first network to finalize. It adds a small fee, taken from what you receive. It exists only on some source networks. From Arc, Avalanche and Polygon the standard transfer is already fast.", more: { label: "Fast or Standard", href: `${DOCS_URL}/#bridge-fast` } },
   { cat: "Bridge", q: "How long does a bridge take?", a: "With Fast, about 8 seconds from most networks and about 20 seconds from Ethereum. Standard takes about 15 to 19 minutes from Ethereum, Base, Arbitrum, OP Mainnet and Unichain, about 8 seconds from Avalanche and Polygon, about 1 second from Arc, and hours from Linea. The quote shows the time for your route.", popular: true },
   { cat: "Bridge", q: "Why do I only confirm on the first network?", a: "Circle’s Forwarding Service delivers the USDC on the receiving network for you, for a small delivery fee that is shown in the quote. Codex, Plume and XDC are not covered, so receiving there needs one extra confirmation in your wallet." },
   { cat: "Bridge", q: "What is slippage on a bridge?", a: "Bridging does not trade tokens, so there is no price to move. Slippage only limits how much the fees may change before the bridge starts. If you would receive more than that much less than quoted, the bridge stops and shows the new amount." },
-  { cat: "Bridge", q: "What if a bridge stops halfway?", a: "The progress card marks the step that failed. If your USDC already left the first network, do not send it again. Tap Resume bridge if it appears, or check your wallet activity and the explorer. Keep the page open until a bridge finishes.", more: { label: "If a bridge stops halfway", href: "/docs#bridge-stuck" } },
+  { cat: "Bridge", q: "What if a bridge stops halfway?", a: "The progress card marks the step that failed. If your USDC already left the first network, do not send it again. Tap Resume bridge if it appears, or check your wallet activity and the explorer. Keep the page open until a bridge finishes.", more: { label: "If a bridge stops halfway", href: `${DOCS_URL}/#bridge-stuck` } },
   { cat: "Bridge", q: "Can I send the bridged USDC to a different address?", a: "Yes. Turn on Send to a different address, enter the address on the receiving network and tick the box that confirms it is correct. USDC sent to a wrong address cannot be recovered." },
   { cat: "Bridge", q: "Why do I need ETH (or another coin) to bridge?", a: "When you bridge from another network, you pay its gas in that network’s coin, such as ETH, POL or AVAX. The page warns you if you have none. From Arc, gas is paid in USDC." },
-  { cat: "Bridge", q: "How do I bridge to or from Robinhood Chain?", a: "Pick Robinhood Chain as one of the two networks. Circle’s bridge does not support it, so the page switches to LI.FI, a third-party bridge aggregator. USDC sent there often arrives as USDG, so check the token in the quote, and start with a small amount.", more: { label: "Robinhood Chain routes", href: "/docs#robinhood" } },
+  { cat: "Bridge", q: "How do I bridge to or from Robinhood Chain?", a: "Pick Robinhood Chain as one of the two networks. Circle’s bridge does not support it, so the page switches to LI.FI, a third-party bridge aggregator. USDC sent there often arrives as USDG, so check the token in the quote, and start with a small amount.", more: { label: "Robinhood Chain routes", href: `${DOCS_URL}/#robinhood` } },
   { cat: "Bridge", q: "Why does Robinhood Chain use a different bridge?", a: "Circle’s USDC bridge only works with networks that Circle has set up for its burn-and-mint transfers, and Robinhood Chain is not one of them. So when you pick Robinhood Chain, AlabaamaFi uses LI.FI, a bridge aggregator, for that route. Every other route still uses Circle’s bridge." },
   { cat: "Bridge", q: "What is LI.FI?", a: "LI.FI is a third-party service that finds a route between two networks and gets your funds there through bridges and relayers. AlabaamaFi shows its widget on the Bridge page for Robinhood Chain routes only. LI.FI shows its own quote, fees and time, and you confirm in your wallet." },
-  { cat: "Bridge", q: "Which Robinhood Chain routes can I use?", a: "Pick Robinhood Chain on either side of the Bridge page: Robinhood Chain to Arc, Arc to Robinhood Chain, or Robinhood Chain to and from another network. The widget shows only the routes LI.FI supports.", more: { label: "Robinhood Chain routes", href: "/docs#robinhood" } },
+  { cat: "Bridge", q: "Which Robinhood Chain routes can I use?", a: "Pick Robinhood Chain on either side of the Bridge page: Robinhood Chain to Arc, Arc to Robinhood Chain, or Robinhood Chain to and from another network. The widget shows only the routes LI.FI supports.", more: { label: "Robinhood Chain routes", href: `${DOCS_URL}/#robinhood` } },
   { cat: "Bridge", q: "Why did my USDC arrive as USDG on Robinhood Chain?", a: "USDC sent to Robinhood Chain often arrives as USDG, a different stablecoin issued by Paxos. Check the token you will receive in the quote before you confirm. If you need USDC again later, use a route that ends in USDC." },
   { cat: "Bridge", q: "Do I need a special coin for gas on Robinhood Chain?", a: "Robinhood Chain uses ETH for gas. If you bridge out of it, keep a little ETH there for the fee. When you bridge into it, the quote shows what you pay on the source network." },
   { cat: "Bridge", q: "Is a Robinhood Chain route as safe as Circle’s bridge?", a: "It works differently. Circle’s bridge burns and mints native USDC. LI.FI routes use bridges and relayers that deliver your funds, so each has its own risks. Read the quote, the fees and the time, start with a small amount, and only use the site at app.alabaamafi.xyz." },
   { cat: "Bridge", q: "The LI.FI widget does not work for my pair. What can I do?", a: "Try a different token or amount, or switch the two networks. If a pair still fails, use the “Open it in Jumper” link under the widget, which opens LI.FI’s own app with both networks chosen, or ask in our Discord." },
 
   /* ---- Activity ---- */
-  { cat: "Activity", q: "What does the Activity page show?", a: "Everything your connected wallet has done on Arc mainnet, newest first: sends, receives, swaps and bridges. It loads older history as you scroll until the very first transaction.", more: { label: "Read the Activity guide", href: "/docs#activity" } },
+  { cat: "Activity", q: "What does the Activity page show?", a: "Everything your connected wallet has done on Arc mainnet, newest first: sends, receives, swaps and bridges. It loads older history as you scroll until the very first transaction.", more: { label: "Read the Activity guide", href: `${DOCS_URL}/#activity` } },
   { cat: "Activity", q: "Why can’t I see an older transaction yet?", a: "History loads in pages. Scroll down or tap Load more, and it keeps going until it reaches the beginning. A brand-new transaction can take a moment to appear in the explorer." },
   { cat: "Activity", q: "Why is a transaction labelled “Contract interaction”?", a: "The page guesses the type from the data: one token out and another in is a Swap, and USDC burned or minted is a Bridge. Anything it cannot place shows as a contract interaction. Tap the row to open it in the explorer." },
   { cat: "Activity", q: "Does Activity show other networks?", a: "No, only Arc mainnet. For other networks use their own explorers. NFT transfers are not shown." },
 
   /* ---- Fees ---- */
-  { cat: "Fees", q: "What fees do I pay?", a: "The network fee (gas), which is paid in USDC on Arc. When you bridge you may also pay a small Fast fee and a Delivery fee, and swaps are priced into the quoted rate. Every fee is shown before you confirm.", popular: true, more: { label: "See all fees", href: "/docs#fees" } },
+  { cat: "Fees", q: "What fees do I pay?", a: "The network fee (gas), which is paid in USDC on Arc. When you bridge you may also pay a small Fast fee and a Delivery fee, and swaps are priced into the quoted rate. Every fee is shown before you confirm.", popular: true, more: { label: "See all fees", href: `${DOCS_URL}/#fees` } },
   { cat: "Fees", q: "Does AlabaamaFi charge a fee?", a: "AlabaamaFi does not add a fee of its own to sends, swaps or bridges. You pay the network fee, and the swap or bridge service may charge its own fee, which is shown in the quote." },
   { cat: "Fees", q: "Why is the fee in my wallet different from the quote?", a: "Quotes are estimates from the current gas price. Gas prices change second by second, and your wallet shows the exact fee when you confirm. After a Send, the success screen shows the real fee that was paid." },
   { cat: "Fees", q: "How fast does Arc settle?", a: "Arc finalizes transactions in under a second, so when your wallet reports a transaction as done, it is final." },
 
   /* ---- Security ---- */
   { cat: "Security", q: "Will AlabaamaFi ever ask for my seed phrase?", a: "Never. Not on the site, not in messages and not in replies. If anyone asks for it, it is a scam.", popular: true },
-  { cat: "Security", q: "What data does AlabaamaFi store?", a: "Only your settings and your swap and bridge history, in your own browser. There are no accounts. The services behind the site, such as RPC providers, Circle, LI.FI, CoinGecko and the Arc explorer, can see requests like your IP address and wallet address, and everything on a blockchain is public.", more: { label: "Security and privacy", href: "/docs#security" } },
+  { cat: "Security", q: "What data does AlabaamaFi store?", a: "Only your settings and your swap and bridge history, in your own browser. There are no accounts. The services behind the site, such as RPC providers, Circle, LI.FI, CoinGecko and the Arc explorer, can see requests like your IP address and wallet address, and everything on a blockchain is public.", more: { label: "Security and privacy", href: `${DOCS_URL}/#security` } },
   { cat: "Security", q: "What are token approvals?", a: "Some actions ask your wallet to approve a token, which lets a contract move that token up to the amount you approve. You can review and revoke approvals with a revoke tool." },
   { cat: "Security", q: "How can I stay safe?", a: "Use only app.alabaamafi.xyz, never share your seed phrase, double-check every address, read what your wallet shows before you confirm, and start with a small amount on a new route." },
   { cat: "Security", q: "Where can I get help or report a problem?", a: "Ask in our Discord or message @Alabaama_Fi on X, and include the page, the network and what you saw. Never post your seed phrase, and be careful with private messages from people you do not know." },
@@ -174,8 +167,8 @@ export default function FaqPage() {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<Cat | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [focus, setFocus] = useState(false); // search box has focus (on phones the page behind is dimmed)
-  const [menu, setMenu] = useState(false); // phone topics menu
+  const [focus, setFocus] = useState(false);
+  const [menu, setMenu] = useState(false);
 
   const all = useMemo(() => FAQ.map((f, i) => ({ ...f, id: `q${i}` })), []);
   const searching = query.trim().length > 0;
@@ -214,7 +207,6 @@ export default function FaqPage() {
     };
   }, [menu]);
 
-  /* the list of topics: the left column on desktop, and the phone menu */
   const topicList = (onPick: (c: Cat | null) => void) => (
     <nav aria-label="Topics">
       <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Topics</p>
@@ -269,7 +261,6 @@ export default function FaqPage() {
         </div>
       </header>
 
-      {/* on phones the page behind the search is dimmed while you type */}
       {focus && <div className="fixed inset-0 z-[60] bg-black/65 md:hidden" onClick={() => setFocus(false)} aria-hidden="true" />}
 
       <main className="flex-1">
@@ -365,7 +356,6 @@ export default function FaqPage() {
                       className="fade-up group flex h-full min-w-0 flex-col items-start rounded-[1.5rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-[#2588ff]/50 hover:shadow-[0_24px_70px_rgba(16,93,255,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff] sm:p-6"
                       style={{ "--delay": `${i * 50}ms` } as CSSProperties}
                     >
-                      {/* icon and title on one line, then the description, then how many articles */}
                       <span className="flex items-center gap-3">
                         <span className="shrink-0 text-[#62d4ff] transition duration-300 group-hover:scale-110" style={{ filter: "drop-shadow(0 0 5px rgba(57,196,255,0.9)) drop-shadow(0 0 14px rgba(22,136,245,0.6))" }}>
                           <Svg d={c.icon} size={26} sw={1.6} />
@@ -402,7 +392,7 @@ export default function FaqPage() {
                 <p className="mt-3 text-base font-semibold">Join our Discord</p>
                 <p className="mt-1 text-sm leading-5 text-slate-400">Ask the community and the team.</p>
               </a>
-              <Link href="/docs" className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
+              <Link href={DOCS_URL} className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
                 <span className="mx-auto flex h-11 w-11 items-center justify-center text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" }}><Svg d={I.book} size={28} sw={1.6} /></span>
                 <p className="mt-3 text-base font-semibold">Read the docs</p>
                 <p className="mt-1 text-sm leading-5 text-slate-400">Step-by-step guides for every page.</p>
@@ -444,8 +434,6 @@ export default function FaqPage() {
       {/* ================= FOOTER ================= */}
       <footer className="border-t border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
 
-        {/* wide screens: copyright on the left, social icons in the center, "Docs | FAQ" on the right.
-            Phones: icons, then "Docs | FAQ", then the copyright, all centered. */}
         <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
           <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
 
@@ -456,7 +444,7 @@ export default function FaqPage() {
           </div>
 
           <nav aria-label="Footer" className="order-2 flex items-center sm:order-3 sm:justify-self-end">
-            <Link href="/docs" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
+            <Link href={DOCS_URL} className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
             <span aria-hidden className="mx-3 h-3 w-px bg-white/25" />
             <Link href="/faq" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>FAQ</span></Link>
           </nav>
