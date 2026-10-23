@@ -288,6 +288,8 @@ function HeroEarth() {
     let h = 0;
     let dprNow = 1;
     let titleTop = 0;
+    let titleH = 0;
+    let padTop = 0;
     let headRight = 0;
 
     const offsetIn = (section: HTMLElement, el: HTMLElement) => {
@@ -302,7 +304,10 @@ function HeroEarth() {
     const measureText = () => {
       const section = canvas.closest("section") as HTMLElement | null;
       const title = section?.querySelector("[data-hero-title]") as HTMLElement | null;
+      const body = title?.closest("[data-hero-body]") as HTMLElement | null;
       titleTop = section && title ? offsetIn(section, title) : 0;
+      titleH = title ? title.offsetHeight : 0;
+      padTop = body ? parseFloat(getComputedStyle(body).paddingTop) || 0 : titleTop;
       headRight = 0;
       if (section && title) {
         const sr = section.getBoundingClientRect();
@@ -328,10 +333,12 @@ function HeroEarth() {
       const t = (ms - t0) / 1000;
       const cssW = w / dprNow;
       const heroH = h / dprNow - EARTH_EXTRA_TOP;
-      const top = Math.max(30, titleTop || 56) + EARTH_TOP_NUDGE;
+      const top = Math.max(30, padTop || titleTop || 56) + EARTH_TOP_NUDGE;
+      const lowered = Math.max(0, titleTop - padTop);
+      const dHead = lowered > 1 ? lowered + titleH : 120;
       const Rc = Math.max(160, Math.min((heroH - top) / (2 * EARTH_VISIBLE), cssW * (cssW < 640 ? 0.6 : 0.85)));
       const xf = 0.38 + 0.22 * Math.min(1, Math.max(0, (cssW - 1400) / 1000));
-      const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 240 * Rc - 14400)) : 0;
+      const need = headRight > 0 ? headRight + 40 + Math.sqrt(Math.max(0, 2 * Rc * dHead - dHead * dHead)) : 0;
       const cxc = Math.min(cssW - Rc * 0.1, Math.max(need, cssW - Rc * xf));
       const R = Rc * dprNow;
       const cx = cxc * dprNow;
@@ -1053,8 +1060,8 @@ export default function Home() {
             <HeroEarth />
           </div>
 
-          <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] xl:items-stretch ${CONTAINER}`}>
-            <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14 xl:flex xl:flex-col xl:pb-16">
+          <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] xl:items-center ${CONTAINER}`}>
+            <div data-hero-body className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14 xl:pb-0">
               <Reveal>
                 <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.8rem] font-normal leading-[1.1] tracking-normal [font-synthesis:none] sm:text-[3.5rem] md:text-[4.2rem] lg:text-[5rem] xl:whitespace-nowrap xl:text-[clamp(3.3rem,4vw,7rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
@@ -1072,19 +1079,17 @@ export default function Home() {
                 </h1>
               </Reveal>
 
-              <div className="xl:flex xl:flex-1 xl:flex-col xl:justify-center">
-                <Reveal delay={180}>
-                  <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
-                  <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
-                </Reveal>
+              <Reveal delay={180}>
+                <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
+              </Reveal>
 
-                <Reveal delay={270}>
-                  <div className="mt-9 flex flex-wrap gap-3">
-                    <Link href="/swap" className={BUTTON}>Start swapping</Link>
-                    <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
-                  </div>
-                </Reveal>
-              </div>
+              <Reveal delay={270}>
+                <div className="mt-9 flex flex-wrap gap-3">
+                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
+                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
+                </div>
+              </Reveal>
             </div>
           </div>
 
