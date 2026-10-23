@@ -52,7 +52,15 @@ const FEATURES = [
 ];
 
 const ICON_ACTIVITY = "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4";
-const ICON_PIE = "M21 12A9 9 0 1 1 12 3v9h9ZM15 3.5A9 9 0 0 1 20.5 9H15V3.5Z";
+const ICON_LIST = "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01";
+const ICON_COPY = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2";
+const ACT_ICONS = {
+  send: "M7 17 17 7M8 7h9v9",
+  receive: "M17 7 7 17M16 17H7V8",
+  swap: "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4",
+  bridge: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  contract: "m16 18 6-6-6-6M8 6l-6 6 6 6",
+};
 const ICON_CHART = "M3 3v18h18M7 15l4-4 3 3 5-6";
 const ICON_SETTINGS = "M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z";
 const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
@@ -557,19 +565,14 @@ const Chip = ({ sym, caret = false }: { sym: Tok; caret?: boolean }) => (
 
 function NetBadge({ size = 30 }: { size?: number }) {
   const [failed, setFailed] = useState(false);
-  const badge = { width: size, height: size, background: "#101827", border: "1px solid rgba(255,255,255,0.12)" } as CSSProperties;
   if (failed)
     return (
       <span className="flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: "#12b9ff", fontSize: size * 0.45 }}>
         A
       </span>
     );
-  return (
-    <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={badge}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/arc-logo.png" alt="Arc" onError={() => setFailed(true)} className="rounded-full object-cover" style={{ width: Math.round(size * 0.74), height: Math.round(size * 0.74) }} />
-    </span>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/arc-logo.png" alt="Arc" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" />;
 }
 
 type NetIconComp = ComponentType<Record<string, unknown>>;
@@ -722,28 +725,37 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
   if (kind === "send")
     return (
       <Shell>
-        <div className="space-y-3">
-          <Box>
-            <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+          <div>
+            <p className="text-xs text-slate-500">Network</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-medium"><NetBadge size={20} />Arc Mainnet</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-500">Balance</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">240.50 USDC</p>
+          </div>
+        </div>
+        <div className="mt-5 space-y-3">
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
+            <div className="flex items-center justify-between text-[13px] font-medium text-slate-400">
               <span>Recipient</span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-[#8fd4ff]">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></svg>
                 Paste
               </span>
             </div>
-            <p className="mt-3 text-base font-bold tracking-tight" style={NUM}>0x7a3c…f91d</p>
-          </Box>
-          <Box>
-            <BoxLabel left="Amount" right="" />
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <Amount>25</Amount>
-              <Chip sym="USDC" />
+            <p className="mt-3 text-base font-bold tracking-tight" style={NUM}>0x7a3c8d41e9b2…f91d</p>
+          </div>
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
+            <div className="flex items-center justify-between text-[13px] font-medium text-slate-400">
+              <span>Amount</span>
+              <span className="inline-flex items-center rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-[#8fd4ff]">Max</span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-sm text-slate-500">$25.00</span>
-              <span className="flex gap-1.5"><PillBtn>50%</PillBtn><PillBtn>Max</PillBtn></span>
+            <div className="mt-3 flex items-center gap-3">
+              <span className="min-w-0 flex-1 truncate tabular-nums tracking-tight text-white" style={{ ...NUM, fontSize: "1.875rem", fontWeight: 600, lineHeight: 1.1 }}>25.00</span>
+              <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-2 pr-4 text-sm font-semibold"><TokenLogo sym="USDC" size={22} />USDC</span>
             </div>
-          </Box>
+          </div>
         </div>
         <MainBtn>Send USDC</MainBtn>
       </Shell>
@@ -827,67 +839,77 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
     );
 
   /* ---- Activity page ---- */
-  const coins: { sym: Tok; name: string; color: string; pct: string; amount: string; usd: string }[] = [
-    { sym: "USDC", name: "USD Coin", color: "#0076ff", pct: "81.4%", amount: "1.2662", usd: "$1.27" },
-    { sym: "EURC", name: "Euro Coin", color: "#0043be", pct: "12.3%", amount: "0.170849", usd: "$0.19" },
-    { sym: "cirBTC", name: "Circle Wrapped Bitcoin", color: "#9a73ff", pct: "6.3%", amount: "0.0000012", usd: "$0.10" },
+  const filters = ["All", "Sent", "Received", "Swaps", "Bridges", "Contracts"];
+  const rows: { icon: string; tint: string; title: string; who?: string; hash: string; legs: { v: string; sym: Tok; in: boolean }[]; at: [number, number]; fee?: string }[] = [
+    { icon: ACT_ICONS.swap, tint: "text-[#7dd3fc]", title: "Swapped USDC for EURC", hash: "0x3f9a21c…8e1d", legs: [{ v: "+86.41", sym: "EURC", in: true }, { v: "−100.00", sym: "USDC", in: false }], at: [14, 14], fee: "0.01" },
+    { icon: ACT_ICONS.bridge, tint: "text-[#8fb4ff]", title: "Bridge in", who: "USDC delivered to Arc", hash: "0xb71c04e…52a9", legs: [{ v: "+99.78", sym: "USDC", in: true }], at: [12, 40] },
+    { icon: ACT_ICONS.send, tint: "text-slate-200", title: "Sent USDC", who: "To 0x7a3c…f91d", hash: "0x9d02e7a…c4f6", legs: [{ v: "−25.00", sym: "USDC", in: false }], at: [11, 2], fee: "0.01" },
+    { icon: ACT_ICONS.receive, tint: "text-emerald-300", title: "Received EURC", who: "From 0x91be…02a7", hash: "0x1ac55b9…07d3", legs: [{ v: "+40.00", sym: "EURC", in: true }], at: [9, 18] },
+    { icon: ACT_ICONS.contract, tint: "text-slate-300", title: "Approved USDC", who: "Contract 0x8e2f…41ab", hash: "0xe4380d1…a1b8", legs: [], at: [8, 55], fee: "0.01" },
   ];
+  const clock = (h: number, m: number) => `${String(h % 12 || 12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
   return (
     <Shell>
-      <div className="flex items-center gap-3">
-        <span className="h-10 w-10 shrink-0 rounded-full border border-white/10" style={{ background: "linear-gradient(135deg, hsl(157 85% 60%), hsl(217 80% 38%))" }} aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Your wallet</p>
-          <p className="mt-0.5 truncate text-base font-bold tracking-tight">0x441cb57e18…67d63e2a</p>
-        </div>
+      <GlowTitle d={ICON_LIST}>Activity</GlowTitle>
+      <div className="mt-3 flex gap-1 overflow-hidden">
+        {filters.map((f, i) => (
+          <span key={f} className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium ${i === 0 ? "bg-white/[0.12] text-white" : "text-slate-400"}`}>{f}</span>
+        ))}
       </div>
-
-      <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#08111f]/55 p-4 sm:p-5">
-        <GlowTitle d={ICON_PIE}>Portfolio</GlowTitle>
-        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight">$1.55</p>
-        <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-        <div className="mt-4 flex h-6 w-full gap-0.5">
-          {coins.map((c, i) => (
-            <span key={c.sym} className={`h-full ${i === 0 ? "rounded-l-md" : ""} ${i === coins.length - 1 ? "rounded-r-md" : ""}`} style={{ flex: `${parseFloat(c.pct)} 1 0%`, minWidth: 4, background: c.color }} />
-          ))}
-        </div>
-        <ul className="mt-2 divide-y divide-white/[0.06]">
-          {coins.map((c) => (
-            <li key={c.sym} className="flex items-center gap-3 py-2.5">
-              <TokenLogo sym={c.sym} size={32} />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{c.sym}</span>
-                  <span className="h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-                  <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold tabular-nums">{c.pct}</span>
+      <h3 className="mt-3 border-b border-white/[0.08] px-2 pb-2 pt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Today</h3>
+      <ul className="divide-y divide-white/[0.06]">
+        {rows.map((r) => (
+          <li key={r.title} className="flex items-start gap-3.5 px-2 py-3">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center ${r.tint}`} style={{ filter: "drop-shadow(0 0 5px currentColor)" }}>
+              <Icon d={r.icon} size={22} sw={1.8} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[15px] font-semibold">{r.title}</span>
+              {r.who && (
+                <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-slate-400">
+                  <span className="truncate">{r.who}</span>
+                  {/^(To|From|Contract)/.test(r.who) && <span className="shrink-0 text-slate-500"><Icon d={ICON_COPY} size={13} /></span>}
                 </span>
-                <span className="block truncate text-[11px] text-slate-500">{c.name}</span>
+              )}
+              <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Tx hash</span>
+                <span className="tabular-nums text-slate-300">{r.hash}</span>
+                <span className="shrink-0"><Icon d={ICON_COPY} size={13} /></span>
               </span>
-              <span className="text-right">
-                <span className="block text-sm font-semibold tabular-nums">{c.amount}</span>
-                <span className="block text-[11px] tabular-nums text-slate-500">{c.usd}</span>
+            </span>
+            <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+              {r.legs.map((l) => (
+                <span key={l.v + l.sym} className={`flex items-center justify-end gap-1.5 text-sm font-semibold tabular-nums ${l.in ? "text-emerald-300" : "text-slate-100"}`}>
+                  {l.v}
+                  <TokenLogo sym={l.sym} size={16} />
+                </span>
+              ))}
+              <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-slate-300">
+                <span className="text-slate-500"><ClockMark h={r.at[0]} m={r.at[1]} /></span>
+                <span className="tabular-nums">{clock(r.at[0], r.at[1])}</span>
               </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-[#08111f]/55 p-4 sm:p-5">
-        <GlowTitle d={ICON_ACTIVITY}>Transactions</GlowTitle>
-        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight">61</p>
-        <p className="mt-1 text-xs text-slate-500">Total on Arc mainnet</p>
-        <dl className="mt-4 space-y-3 border-t border-white/[0.06] pt-4 text-[13px]">
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-slate-400">Sent by this wallet</dt>
-            <dd className="font-semibold tabular-nums">59</dd>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-slate-400">Token transfers</dt>
-            <dd className="font-semibold tabular-nums">89</dd>
-          </div>
-        </dl>
-      </div>
+              {r.fee && <span className="text-[11px] tabular-nums text-slate-600">Fee {r.fee} USDC</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
     </Shell>
+  );
+}
+
+function ClockMark({ h, m, size = 15 }: { h: number; m: number; size?: number }) {
+  const tip = (deg: number, len: number) => {
+    const r = (deg * Math.PI) / 180;
+    return { x: (12 + len * Math.sin(r)).toFixed(2), y: (12 - len * Math.cos(r)).toFixed(2) };
+  };
+  const hand = tip(((h % 12) + m / 60) * 30, 5);
+  const minute = tip(m * 6, 7.6);
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.7" />
+      <line x1="12" y1="12" x2={hand.x} y2={hand.y} strokeWidth="2.3" />
+      <line x1="12" y1="12" x2={minute.x} y2={minute.y} strokeWidth="1.7" />
+    </svg>
   );
 }
 
