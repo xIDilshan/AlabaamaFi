@@ -13,14 +13,12 @@ const manrope = Manrope({
   weight: ["600", "700"],
 });
 
-// the section names use their own copy of Inter with every weight, so "bold" is always available
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-// icons are used in the mobile menu
 const navItems = [
   { href: "/", label: "Home", icon: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z" },
   { href: "/send", label: "Send", icon: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" },
@@ -29,14 +27,13 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: "M12 7v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4" },
 ];
 
-// extra links at the bottom of the mobile menu (Docs and FAQ are pages of this site, X is the AlabaamaFi account)
+const DOCS_URL = "https://docs.alabaamafi.xyz";
 const moreLinks = [
-  { href: "/docs", label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
+  { href: DOCS_URL, label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
   { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
 ];
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
-// Change this to your real GitHub page.
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
 
 const XLogo = ({ size = 16 }: { size?: number }) => (
@@ -57,16 +54,12 @@ const GitHubLogo = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
-/* ---------------------------------------------------------------------
-   SIZES YOU CAN ADJUST (in pixels)
-   Some phones and browsers will not show text smaller than about 12px, whatever size is written in the class.
-   These sizes are applied in a way that works anyway: the text is drawn at 12px and scaled to the size below.
-   --------------------------------------------------------------------- */
-const DOCS_FAQ_TEXT_PX = 13; // the words Docs and FAQ in the mobile menu
-const DOCS_FAQ_ICON_PX = 13; // the small icons next to them
-const CONNECT_TEXT_PX = 14; // the word Connect on the mobile Connect button
+const DOCS_FAQ_TEXT_PX = 13;
+const DOCS_FAQ_ICON_PX = 13;
+const DOCS_FAQ_TEXT_SHIFT_PX = 0;
+const DOCS_FAQ_ICON_SHIFT_PX = 0;
+const CONNECT_TEXT_PX = 14;
 
-// the social links at the bottom of the mobile menu (just the logos, no circles)
 const socials = [
   { href: X_URL, label: "AlabaamaFi on X", logo: <XLogo size={16} /> },
   { href: DISCORD_URL, label: "AlabaamaFi on Discord", logo: <DiscordLogo size={19} /> },
@@ -95,7 +88,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const mobileShortAddress = address ? `${address.slice(0, 4)}...${address.slice(-3)}` : "";
   const menuAddress = address ? `${address.slice(0, 10)}...${address.slice(-8)}` : "";
 
-  // the real name and logo of the wallet that is connected (for a browser wallet it looks at the wallet itself, so it says MetaMask, Rabby, Brave Wallet...)
   const connectedWallet = useWalletIdentity(connector);
 
   React.useEffect(() => {
@@ -162,7 +154,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
     setMobileMenuOpen(false);
   };
 
-  /* swipe the little pill up (or tap it) to close the menu */
   const [dragY, setDragY] = React.useState(0);
   const [dragging, setDragging] = React.useState(false);
   const dragStart = React.useRef<number | null>(null);
@@ -184,7 +175,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
     dragStart.current = null;
     setDragging(false);
     setDragY(0);
-    if (moved < -60 || Math.abs(moved) < 6) closeMobileMenu(); // swiped up enough, or just tapped
+    if (moved < -60 || Math.abs(moved) < 6) closeMobileMenu();
   };
 
   const isActive = (href: string) => {
@@ -193,13 +184,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      {/* No background, no border: only the logo, site name, sections and the wallet button show. */}
       <header className={`${inter.className} relative z-50`}>
         {/* MOBILE HEADER */}
 
         <div className="md:hidden">
           <div className="relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
-            {/* LEFT: logo, then the menu button */}
 
             <div className="flex min-w-0 items-center gap-1">
               <Link href="/" onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
@@ -227,8 +216,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </button>
             </div>
 
-            {/* RIGHT WALLET */}
-
             <button
               onClick={handleWalletClick}
               className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton}`}
@@ -243,8 +230,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </button>
           </div>
 
-          {/* DIM OVERLAY: only darkens the page, no blur */}
-
           <div
             className={`fixed inset-0 z-[70] bg-black/65 transition-opacity duration-300 ${
               mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
@@ -253,7 +238,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             aria-hidden="true"
           />
 
-          {/* MOBILE MENU: same card look as the network list on the Bridge page. Slides down from the top and covers the header. */}
+          {/* MOBILE MENU */}
 
           <div
             className="fixed left-0 right-0 top-0 z-[80] overflow-hidden rounded-b-[28px] border-x border-b border-white/[0.1] bg-[#080a0d] shadow-[0_25px_80px_rgba(0,0,0,0.65)]"
@@ -267,7 +252,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 : "transform .4s cubic-bezier(.32,.72,0,1), visibility 0s linear .4s",
             }}
           >
-            {/* top row: logo + name on one corner, connect button on the other */}
             <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
               <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
                 <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
@@ -293,7 +277,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </button>
             </div>
 
-            {/* sections */}
             <p className="px-6 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/30 sm:px-8">Menu</p>
             <nav className="grid gap-0.5 px-3 pb-3 sm:px-5">
               {navItems.map((item) => {
@@ -327,7 +310,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               })}
             </nav>
 
-            {/* Docs, FAQ, and the social logos (no circles around them) */}
             <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-white/[0.06] px-4 pb-1 pt-4 sm:px-6">
               {moreLinks.map((l) => {
                 const active = isActive(l.href);
@@ -340,10 +322,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
                     }`}
                   >
-                    <svg width={DOCS_FAQ_ICON_PX} height={DOCS_FAQ_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width={DOCS_FAQ_ICON_PX} height={DOCS_FAQ_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0, transform: `translateY(${DOCS_FAQ_ICON_SHIFT_PX}px)` }}>
                       <path d={l.icon} />
                     </svg>
-                    <span style={{ fontSize: "12px", zoom: DOCS_FAQ_TEXT_PX / 12 }}>{l.label}</span>
+                    <span style={{ display: "block", fontSize: "12px", lineHeight: 1, zoom: DOCS_FAQ_TEXT_PX / 12, transform: `translateY(${DOCS_FAQ_TEXT_SHIFT_PX}px)` }}>{l.label}</span>
                   </Link>
                 );
               })}
@@ -366,7 +348,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </div>
             </div>
 
-            {/* little pill: swipe up (or tap) to close */}
             <div
               className="flex cursor-grab touch-none select-none justify-center pb-4 pt-3 active:cursor-grabbing"
               onPointerDown={onHandleDown}
@@ -385,7 +366,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         <div className="hidden md:block">
           <div className="flex min-h-[86px] items-center gap-6 px-7 lg:px-10 xl:px-12">
-            {/* LOGO */}
 
             <Link href="/" className="flex shrink-0 items-center gap-3">
               <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14" />
@@ -396,8 +376,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 </h1>
               </div>
             </Link>
-
-            {/* NAVIGATION */}
 
             <nav className="ml-auto flex min-w-0 items-center justify-center gap-1 lg:gap-2">
               {navItems.map((item) => {
@@ -421,8 +399,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 );
               })}
             </nav>
-
-            {/* WALLET */}
 
             <div className="ml-auto shrink-0">
               <button
@@ -457,7 +433,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               className="w-full max-w-sm rounded-3xl border border-white/[0.10] bg-[#080a0d]/[0.98] p-4 shadow-[0_25px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:p-5"
               onClick={(event) => event.stopPropagation()}
             >
-              {/* WALLET HEADER */}
 
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3">
@@ -484,15 +459,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 </button>
               </div>
 
-              {/* WALLET ADDRESS */}
-
               <div className="mb-3 flex min-h-[48px] items-center justify-center rounded-2xl border border-white/[0.07] bg-black/30 px-4">
                 <span className="truncate text-center text-sm font-bold tracking-tight text-white/80" title={address}>
                   {menuAddress}
                 </span>
               </div>
-
-              {/* COPY + DISCONNECT */}
 
               <div className="grid grid-cols-2 gap-2">
                 <button
