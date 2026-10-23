@@ -19,6 +19,7 @@ const ARC = {
   docs: "https://docs.arc.io",
 };
 
+const DOCS_URL = "https://docs.alabaamafi.xyz";
 const SOCIAL = {
   x: "https://x.com/Alabaama_Fi",
   discord: "https://discord.gg/NBKHmUfw",
@@ -1063,7 +1064,7 @@ export default function Home() {
             </div>
 
             <nav aria-label="Footer" className="order-2 flex items-center sm:order-3 sm:justify-self-end">
-              <Link href="/docs" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
+              <Link href={DOCS_URL} className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>Docs</span></Link>
               <span aria-hidden className="mx-3 h-3 w-px bg-white/25" />
               <Link href="/faq" className="font-medium text-slate-300 transition hover:text-white"><span style={{ display: "block", fontSize: "12px", lineHeight: 1.2, zoom: FOOTER_LINK_TEXT_PX / 12 }}>FAQ</span></Link>
             </nav>
