@@ -378,7 +378,7 @@ function ChainButton({ view, onClick, disabled }: { view: ChainView | undefined;
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={`Choose network, now ${view?.label ?? ""}`} className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.07] py-1 pl-1 pr-3 text-[15px] font-semibold transition hover:bg-white/[0.12] disabled:opacity-60 sm:py-1.5 sm:pl-1.5 sm:pr-3.5 sm:text-base">
       <ChainLogo view={view} size={30} />
-      <span className="font-bold">{view?.label ?? "Select"}</span>
+      <span className="font-semibold">{view?.label ?? "Select"}</span>
       <span className="text-slate-400"><Chevron /></span>
     </button>
   );
