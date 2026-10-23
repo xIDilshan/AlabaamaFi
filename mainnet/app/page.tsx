@@ -20,6 +20,7 @@ const ARC = {
 };
 
 const DOCS_URL = "https://docs.alabaamafi.xyz";
+const ADDR_MASK = "0x…xxxx";
 const SOCIAL = {
   x: "https://x.com/Alabaama_Fi",
   discord: "https://discord.gg/NBKHmUfw",
@@ -744,7 +745,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
                 Paste
               </span>
             </div>
-            <p className="mt-3 text-base font-bold tracking-tight" style={NUM}>0x7a3c8d41e9b2…f91d</p>
+            <p className="mt-3 text-base font-bold tracking-tight" style={NUM}>{ADDR_MASK}</p>
           </div>
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
             <div className="flex items-center justify-between text-[13px] font-medium text-slate-400">
@@ -841,11 +842,11 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
   /* ---- Activity page ---- */
   const filters = ["All", "Sent", "Received", "Swaps", "Bridges", "Contracts"];
   const rows: { icon: string; tint: string; title: string; who?: string; hash: string; legs: { v: string; sym: Tok; in: boolean }[]; at: [number, number]; fee?: string }[] = [
-    { icon: ACT_ICONS.swap, tint: "text-[#7dd3fc]", title: "Swapped USDC for EURC", hash: "0x3f9a21c…8e1d", legs: [{ v: "+86.41", sym: "EURC", in: true }, { v: "−100.00", sym: "USDC", in: false }], at: [14, 14], fee: "0.01" },
-    { icon: ACT_ICONS.bridge, tint: "text-[#8fb4ff]", title: "Bridge in", who: "USDC delivered to Arc", hash: "0xb71c04e…52a9", legs: [{ v: "+99.78", sym: "USDC", in: true }], at: [12, 40] },
-    { icon: ACT_ICONS.send, tint: "text-slate-200", title: "Sent USDC", who: "To 0x7a3c…f91d", hash: "0x9d02e7a…c4f6", legs: [{ v: "−25.00", sym: "USDC", in: false }], at: [11, 2], fee: "0.01" },
-    { icon: ACT_ICONS.receive, tint: "text-emerald-300", title: "Received EURC", who: "From 0x91be…02a7", hash: "0x1ac55b9…07d3", legs: [{ v: "+40.00", sym: "EURC", in: true }], at: [9, 18] },
-    { icon: ACT_ICONS.contract, tint: "text-slate-300", title: "Approved USDC", who: "Contract 0x8e2f…41ab", hash: "0xe4380d1…a1b8", legs: [], at: [8, 55], fee: "0.01" },
+    { icon: ACT_ICONS.swap, tint: "text-[#7dd3fc]", title: "Swapped USDC for EURC", hash: ADDR_MASK, legs: [{ v: "+86.41", sym: "EURC", in: true }, { v: "−100.00", sym: "USDC", in: false }], at: [14, 14], fee: "0.01" },
+    { icon: ACT_ICONS.bridge, tint: "text-[#8fb4ff]", title: "Bridge in", who: "USDC delivered to Arc", hash: ADDR_MASK, legs: [{ v: "+99.78", sym: "USDC", in: true }], at: [12, 40] },
+    { icon: ACT_ICONS.send, tint: "text-slate-200", title: "Sent USDC", who: `To ${ADDR_MASK}`, hash: ADDR_MASK, legs: [{ v: "−25.00", sym: "USDC", in: false }], at: [11, 2], fee: "0.01" },
+    { icon: ACT_ICONS.receive, tint: "text-emerald-300", title: "Received EURC", who: `From ${ADDR_MASK}`, hash: ADDR_MASK, legs: [{ v: "+40.00", sym: "EURC", in: true }], at: [9, 18] },
+    { icon: ACT_ICONS.contract, tint: "text-slate-300", title: "Approved USDC", who: `Contract ${ADDR_MASK}`, hash: ADDR_MASK, legs: [], at: [8, 55], fee: "0.01" },
   ];
   const clock = (h: number, m: number) => `${String(h % 12 || 12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
   return (
@@ -1003,6 +1004,21 @@ export default function Home() {
     }
   };
 
+  const [cueVisible, setCueVisible] = useState(false);
+  useEffect(() => {
+    const update = () => {
+      const next = document.getElementById("showcase");
+      setCueVisible(window.matchMedia("(min-width: 1280px)").matches && window.scrollY < 40 && !!next && next.getBoundingClientRect().top > window.innerHeight - 100);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const scrollToShowcase = () => document.getElementById("showcase")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
@@ -1037,8 +1053,8 @@ export default function Home() {
             <HeroEarth />
           </div>
 
-          <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] ${CONTAINER}`}>
-            <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14">
+          <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] xl:items-stretch ${CONTAINER}`}>
+            <div className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14 xl:flex xl:flex-col xl:pb-16">
               <Reveal>
                 <h1 data-hero-title className={`${headlineFont.className} relative w-fit text-[2.8rem] font-normal leading-[1.1] tracking-normal [font-synthesis:none] sm:text-[3.5rem] md:text-[4.2rem] lg:text-[5rem] xl:whitespace-nowrap xl:text-[clamp(3.3rem,4vw,7rem)]`}>
                   <span className="bg-gradient-to-b from-white to-[#d9e0f5] bg-clip-text text-transparent">One place.</span>{" "}
@@ -1056,17 +1072,19 @@ export default function Home() {
                 </h1>
               </Reveal>
 
-              <Reveal delay={180}>
-                <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
-                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
-              </Reveal>
+              <div className="xl:flex xl:flex-1 xl:flex-col xl:justify-center">
+                <Reveal delay={180}>
+                  <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
+                  <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
+                </Reveal>
 
-              <Reveal delay={270}>
-                <div className="mt-9 flex flex-wrap gap-3">
-                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
-                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
-                </div>
-              </Reveal>
+                <Reveal delay={270}>
+                  <div className="mt-9 flex flex-wrap gap-3">
+                    <Link href="/swap" className={BUTTON}>Start swapping</Link>
+                    <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
+                  </div>
+                </Reveal>
+              </div>
             </div>
           </div>
 
@@ -1074,7 +1092,7 @@ export default function Home() {
             type="button"
             onClick={scrollToShowcase}
             aria-label="Scroll down to explore"
-            className="absolute -bottom-16 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center rounded-full px-3 py-2 text-[#8fd4ff] transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] xl:flex"
+            className={`fixed bottom-8 left-1/2 z-30 hidden -translate-x-1/2 flex-col items-center rounded-full px-3 py-2 text-[#8fd4ff] transition-[opacity,color] duration-500 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff] xl:flex ${cueVisible ? "opacity-100" : "pointer-events-none opacity-0"}`}
             style={{ filter: "drop-shadow(0 0 4px rgba(57,196,255,0.5))" }}
           >
             <span className="cue-arrow"><Icon d="m5 9 7 6 7-6" size={34} sw={2} /></span>
