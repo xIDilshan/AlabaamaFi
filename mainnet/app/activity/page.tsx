@@ -449,8 +449,8 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
 );
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
-const MATTE_CARD = "relative overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-5 backdrop-blur-xl sm:p-6";
-const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />;
+const MATTE_CARD = "relative overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-5 sm:p-6";
+const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.05]" style={{ backgroundImage: GRAIN }} />;
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
 
 type Section = "portfolio" | "transactions" | "activity";
@@ -527,7 +527,8 @@ const CALL_BASE = 168;
 const CALL_EXTRA_MAX = 60;
 const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: boolean; focus: string | null; onFocus: (k: string | null) => void }) => {
   const wrap = useRef<HTMLDivElement>(null);
-  const [w, setW] = useState(320);
+  const [w, setW] = useState(0);
+  const measured = w > 0;
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
@@ -535,8 +536,9 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const scale = Math.min(CALL_SCALE_MAX, Math.max(CALL_SCALE_MIN, w / CALL_BASE));
-  const vw = Math.max(CALL_BASE, w / scale);
+  const width = measured ? w : 320;
+  const scale = Math.min(CALL_SCALE_MAX, Math.max(CALL_SCALE_MIN, width / CALL_BASE));
+  const vw = Math.max(CALL_BASE, width / scale);
   const extra = Math.min(CALL_EXTRA_MAX, Math.max(0, vw / 2 - CALL_BASE / 2));
 
   const total = slices.reduce((acc, x) => acc + x.value, 0);
@@ -594,7 +596,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
 
   return (
     <div ref={wrap} className="relative mx-auto w-full min-w-0 py-1">
-      <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: "100%" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+      <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: "100%", visibility: measured ? "visible" : "hidden" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
         {single ? ring : drawSlices()}
         {!single &&
           calls.map((c) => {
@@ -706,7 +708,6 @@ function ActivityInner() {
   const [section, setSection] = useState<Section>("portfolio");
   const [focusKey, setFocusKey] = useState<string | null>(null);
   useEffect(() => setFocusKey(null), [section, target]);
-  const [updated, setUpdated] = useState(0);
   const listTop = useRef<HTMLElement>(null);
   const [page, setPage] = useState(1);
   const [wantPage, setWantPage] = useState<number | null>(null);
@@ -739,7 +740,6 @@ function ActivityInner() {
           setFirst(false);
         }
         setError("");
-        setUpdated(Date.now());
         setVersion((v) => v + 1);
       } catch {
         if (initial) setFirst(false);
@@ -1079,6 +1079,8 @@ function ActivityInner() {
         @keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:.7}100%{transform:translateY(-220px);opacity:0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
+        @keyframes tabIn{from{opacity:0}to{opacity:1}}
+        .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
 
@@ -1160,7 +1162,7 @@ function ActivityInner() {
 
               {/* ---------- PORTFOLIO ---------- */}
               {section === "portfolio" && (
-                <div className="fade-up -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
@@ -1226,7 +1228,7 @@ function ActivityInner() {
                                       </span>
                                     </span>
                                     <span>
-                                      <span className="block text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="block text-[15px] tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                       <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
                                     </span>
                                     <span className="text-right text-sm font-semibold tabular-nums" style={NUM}>{amountEl}</span>
@@ -1246,7 +1248,7 @@ function ActivityInner() {
 
               {/* ---------- TRANSACTIONS ---------- */}
               {section === "transactions" && (
-                <div className="fade-up -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
@@ -1258,7 +1260,7 @@ function ActivityInner() {
                       </div>
 
                       <div className="mt-8 text-center lg:text-left">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
                         <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
                           {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
                         </p>
@@ -1310,7 +1312,7 @@ function ActivityInner() {
                                       <span className="text-sm font-semibold">{t.label}</span>
                                     </span>
                                     <span>
-                                      <span className="block text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="block text-[15px] tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                       <span className="mt-1.5 block"><ShareBar pct={txBusy ? null : pct} color={t.color} /></span>
                                     </span>
                                     <span className="text-right text-sm font-semibold tabular-nums" style={NUM}>{countEl}</span>
@@ -1333,7 +1335,7 @@ function ActivityInner() {
 
               {/* ---------- ACTIVITY LIST ---------- */}
               {section === "activity" && (
-                <section ref={listTop} className="fade-up relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-4 sm:p-6" style={{ "--delay": "0ms" } as CSSProperties}>
+                <section ref={listTop} className="tab-in relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-4 sm:p-6" style={{ "--delay": "0ms" } as CSSProperties}>
                   <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
                     <SectionTitle icon={I.list}>Activity</SectionTitle>
                     <div className="inline-flex max-w-full gap-1 overflow-x-auto">
@@ -1350,7 +1352,7 @@ function ActivityInner() {
                   <div className="-mx-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                     <div className={!first && shown.length > 0 ? "min-w-[960px]" : ""}>
                       {!first && shown.length > 0 && (
-                        <div className={`grid items-center gap-x-5 border-y border-white/[0.08] px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${DESK_COLS}`}>
+                        <div className={`grid items-center gap-x-5 rounded-xl border border-white/[0.12] bg-white/[0.09] px-2 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-100 ${DESK_COLS}`}>
                           <span>Transaction</span>
                           <span>Tx hash</span>
                           <span>Time</span>
@@ -1365,15 +1367,13 @@ function ActivityInner() {
                   </div>
 
                   {!first && shown.length > 0 && (
-                    <div className="px-3 pb-1 pt-6 text-center">
-                      <nav aria-label="Pages" className="flex items-center justify-center gap-1.5">
-                        <PagerBtn label="First page" disabled={page === 1} onClick={() => setPage(1)} d="m11 17-5-5 5-5M18 17l-5-5 5-5" />
+                    <div className="mt-4 border-t border-white/[0.08] px-3 pb-1 pt-5 text-center">
+                      <nav aria-label="Pages" className="flex items-center justify-center gap-2">
                         <PagerBtn label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} d="m15 6-6 6 6 6" />
                         <span className="min-w-[7.5rem] px-2 text-sm tabular-nums text-slate-300" style={NUM}>
                           Page <span className="font-bold text-white">{page}</span> of {pages}{done ? "" : "+"}
                         </span>
                         <PagerBtn label="Next page" disabled={(page >= pages && done) || wantPage !== null} onClick={goNext} d="m9 6 6 6-6 6" />
-                        <PagerBtn label="Last page" disabled={page >= pages} onClick={() => setPage(pages)} d="m13 17 5-5-5-5M6 17l5-5-5-5" />
                       </nav>
                       <p className="mt-3 text-xs text-slate-500">
                         {wantPage !== null || loadingMore ? "Loading older activity…" : `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, shown.length)} of ${shown.length}${done ? "" : "+"}`}
@@ -1381,13 +1381,6 @@ function ActivityInner() {
                       {done && page >= pages && <p className="mt-1 text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>}
                     </div>
                   )}
-
-                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.08] px-2 pt-4 text-xs text-slate-500">
-                    <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
-                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
-                      See everything on the explorer
-                    </a>
-                  </div>
                 </section>
               )}
             </div>
