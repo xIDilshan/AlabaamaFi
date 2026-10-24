@@ -18,8 +18,8 @@ const MIN_VISIBLE = 8;
 const AUTO_LOAD_LIMIT = 600;
 const PAGE_SIZE = 50;
 const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2";
-const BTN_TEXT_PX = 11;
-const BTN_ICON_PX = 13;
+const BTN_TEXT_PX = 13;
+const BTN_ICON_PX = 15;
 const KNOWN_TOKENS: Record<string, string> = {
   "0x3600000000000000000000000000000000000000": "USDC",
   "0xbef5f6d51cb62b58e6a8f77868681825c6fe21c1": "EURC",
@@ -449,7 +449,8 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
 );
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
-const MATTE_CARD = "relative overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-5 sm:p-6";
+const MATTE_BG = "bg-[linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),linear-gradient(rgba(8,13,24,0.72),rgba(8,13,24,0.72))]";
+const MATTE_CARD = `relative overflow-hidden rounded-[1.75rem] border border-white/[0.14] ${MATTE_BG} p-5 sm:p-6`;
 const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.05]" style={{ backgroundImage: GRAIN }} />;
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
 
@@ -1132,19 +1133,19 @@ function ActivityInner() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <button onClick={copyAddress} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-3 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                    <button onClick={copyAddress} className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
                       <Svg d={I.copy} size={BTN_ICON_PX} /> <BtnText>{copied ? "Copied" : "Copy"}</BtnText>
                     </button>
-                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-3 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 font-semibold text-slate-200 transition hover:bg-white/[0.08]">
                       <Svg d={I.link} size={BTN_ICON_PX} /> <BtnText>Explorer</BtnText>
                     </a>
                     {!account && (
-                      <button onClick={backToStart} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3 font-bold text-white transition hover:brightness-110">
+                      <button onClick={backToStart} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 font-bold text-white transition hover:brightness-110">
                         <Svg d={I.wallet} size={BTN_ICON_PX} /> <BtnText>Connect wallet</BtnText>
                       </button>
                     )}
                     {account && viewingOther && (
-                      <button onClick={() => account && goTo(account)} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3 font-bold text-white transition hover:brightness-110">
+                      <button onClick={() => account && goTo(account)} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-3.5 font-bold text-white transition hover:brightness-110">
                         <Svg d={I.wallet} size={BTN_ICON_PX} /> <BtnText>My wallet</BtnText>
                       </button>
                     )}
@@ -1335,7 +1336,7 @@ function ActivityInner() {
 
               {/* ---------- ACTIVITY LIST ---------- */}
               {section === "activity" && (
-                <section ref={listTop} className="tab-in relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-4 sm:p-6" style={{ "--delay": "0ms" } as CSSProperties}>
+                <section ref={listTop} className={`tab-in relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] ${MATTE_BG} p-4 sm:p-6`} style={{ "--delay": "0ms" } as CSSProperties}>
                   <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
                     <SectionTitle icon={I.list}>Activity</SectionTitle>
                     <div className="inline-flex max-w-full gap-1 overflow-x-auto">
