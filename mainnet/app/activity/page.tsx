@@ -529,10 +529,6 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const vw = Math.max(CALL_BASE, w / scale);
   const extra = Math.min(CALL_EXTRA_MAX, Math.max(0, vw / 2 - CALL_BASE / 2));
   const pxW = vw * scale;
-  useEffect(() => {
-    const el = wrap.current;
-    if (el && pxW > w) el.scrollLeft = (pxW - w) / 2;
-  }, [pxW, w]);
 
   const total = slices.reduce((acc, x) => acc + x.value, 0);
   const live = slices.filter((x) => x.value > 0);
@@ -588,7 +584,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const single = empty || live.length === 1;
 
   return (
-    <div ref={wrap} className="relative mx-auto w-full overflow-x-auto py-1 [scrollbar-width:thin] lg:overflow-visible">
+    <div ref={wrap} className="relative mx-auto w-full py-1">
       <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: pxW, maxWidth: "none" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
         {single ? ring : drawSlices()}
         {!single &&
@@ -1126,168 +1122,172 @@ function ActivityInner() {
 
               {/* ---------- PORTFOLIO ---------- */}
               {section === "portfolio" && (
-                <section className={`fade-up mt-4 ${MATTE_CARD}`}>
-                  <Grain />
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-4">
-                      <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
-                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
-                        <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
-                      </button>
-                    </div>
+                <div className="fade-up mt-4 overflow-x-auto [scrollbar-width:thin]">
+                  <section className={`${MATTE_CARD} min-w-[328px]`}>
+                    <Grain />
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-4">
+                        <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
+                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                          <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
+                        </button>
+                      </div>
 
-                    <div className="mt-8 text-center lg:text-left">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                      <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                        {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                      </p>
-                      <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-                    </div>
+                      <div className="mt-8 text-center lg:text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                        </p>
+                        <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                      </div>
 
-                    <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
-                      <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
+                      <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                        <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
 
-                      <div className="min-w-0">
-                        <div className={`${TABLE_HEAD} ${PF_COLS} px-3`}>
-                          <span>Token</span>
-                          <span>Allocation</span>
-                          <span className="text-right">Amount</span>
-                          <span className="text-right">Value</span>
-                        </div>
+                        <div className="min-w-0">
+                          <div className={`${TABLE_HEAD} ${PF_COLS} px-3`}>
+                            <span>Token</span>
+                            <span>Allocation</span>
+                            <span className="text-right">Amount</span>
+                            <span className="text-right">Value</span>
+                          </div>
 
-                        <ul>
-                          {rows.map((r) => {
-                            const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
-                            const pctText = loadingInfo || pct === null ? "—" : fmtPct(pct);
-                            const amountEl = loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount);
-                            const usdEl = loadingInfo ? <span className="inline-block h-3.5 w-12 animate-pulse rounded bg-white/[0.07]" /> : r.usd !== null ? fmtUsd(r.usd) : "—";
-                            return (
-                              <li
-                                key={r.sym}
-                                onMouseEnter={() => setFocusKey(r.sym)}
-                                onMouseLeave={() => setFocusKey(null)}
-                                className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
-                              >
-                                <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
-                                  <TokenDot symbol={r.sym} size={38} />
-                                  <span className="min-w-0 flex-1">
-                                    <span className="block text-[15px] font-semibold">{r.sym}</span>
-                                    <span className="block truncate text-xs text-slate-500">{r.name}</span>
-                                  </span>
-                                  <span className="text-right">
-                                    <span className="block text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
-                                    <span className="block text-xs tabular-nums text-slate-500" style={NUM}>{usdEl}</span>
-                                  </span>
-                                </div>
-
-                                <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
-                                  <span className="flex min-w-0 items-center gap-3.5">
+                          <ul>
+                            {rows.map((r) => {
+                              const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
+                              const pctText = loadingInfo || pct === null ? "—" : fmtPct(pct);
+                              const amountEl = loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount);
+                              const usdEl = loadingInfo ? <span className="inline-block h-3.5 w-12 animate-pulse rounded bg-white/[0.07]" /> : r.usd !== null ? fmtUsd(r.usd) : "—";
+                              return (
+                                <li
+                                  key={r.sym}
+                                  onMouseEnter={() => setFocusKey(r.sym)}
+                                  onMouseLeave={() => setFocusKey(null)}
+                                  className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
+                                >
+                                  <div className="flex items-center gap-3.5 lg:hidden">
                                     <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
                                     <TokenDot symbol={r.sym} size={38} />
-                                    <span className="min-w-0">
+                                    <span className="min-w-0 flex-1">
                                       <span className="block text-[15px] font-semibold">{r.sym}</span>
                                       <span className="block truncate text-xs text-slate-500">{r.name}</span>
                                     </span>
-                                  </span>
-                                  <span>
-                                    <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
-                                    <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
-                                  </span>
-                                  <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
-                                  <span className="text-right text-sm tabular-nums text-slate-300" style={NUM}>{usdEl}</span>
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                        {infoFailed && !refreshing && <p className="mt-2 px-3 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                                    <span className="text-right">
+                                      <span className="block text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
+                                      <span className="block text-xs tabular-nums text-slate-500" style={NUM}>{usdEl}</span>
+                                    </span>
+                                  </div>
+
+                                  <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
+                                    <span className="flex min-w-0 items-center gap-3.5">
+                                      <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
+                                      <TokenDot symbol={r.sym} size={38} />
+                                      <span className="min-w-0">
+                                        <span className="block text-[15px] font-semibold">{r.sym}</span>
+                                        <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                                      </span>
+                                    </span>
+                                    <span>
+                                      <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
+                                    </span>
+                                    <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
+                                    <span className="text-right text-sm tabular-nums text-slate-300" style={NUM}>{usdEl}</span>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {infoFailed && !refreshing && <p className="mt-2 px-3 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </section>
+                  </section>
+                </div>
               )}
 
               {/* ---------- TRANSACTIONS ---------- */}
               {section === "transactions" && (
-                <section className={`fade-up mt-4 ${MATTE_CARD}`}>
-                  <Grain />
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-4">
-                      <SectionTitle icon={I.history}>Transactions</SectionTitle>
-                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
-                        <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
-                      </button>
-                    </div>
-
-                    <div className="mt-8 text-center lg:text-left">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
-                      <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                        {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
-                      <div>
-                        <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
-                        <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
-                          <div className="flex items-center justify-between gap-3">
-                            <dt className="text-slate-400">Sent by this wallet</dt>
-                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.sent ?? null)}</dd>
-                          </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <dt className="text-slate-400">Token transfers</dt>
-                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.transfersCount ?? null)}</dd>
-                          </div>
-                        </dl>
+                <div className="fade-up mt-4 overflow-x-auto [scrollbar-width:thin]">
+                  <section className={`${MATTE_CARD} min-w-[328px]`}>
+                    <Grain />
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-4">
+                        <SectionTitle icon={I.history}>Transactions</SectionTitle>
+                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                          <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
+                        </button>
                       </div>
 
-                      <div className="min-w-0">
-                        <div className={`${TABLE_HEAD} ${TX_COLS} px-3`}>
-                          <span>Type</span>
-                          <span>Share</span>
-                          <span className="text-right">Count</span>
+                      <div className="mt-8 text-center lg:text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
+                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                          {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
+                        </p>
+                      </div>
+
+                      <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                        <div>
+                          <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
+                          <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-slate-400">Sent by this wallet</dt>
+                              <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.sent ?? null)}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-slate-400">Token transfers</dt>
+                              <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.transfersCount ?? null)}</dd>
+                            </div>
+                          </dl>
                         </div>
 
-                        <ul>
-                          {typeRows.map((t) => {
-                            const pct = typeTotal > 0 ? (t.n / typeTotal) * 100 : null;
-                            const pctText = first || pct === null ? "—" : fmtPct(pct);
-                            const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${pad2(t.n)}${done ? "" : "+"}`;
-                            return (
-                              <li
-                                key={t.key}
-                                onMouseEnter={() => setFocusKey(t.key)}
-                                onMouseLeave={() => setFocusKey(null)}
-                                className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
-                              >
-                                <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
-                                  <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
-                                  <span className="text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{countEl}</span>
-                                </div>
+                        <div className="min-w-0">
+                          <div className={`${TABLE_HEAD} ${TX_COLS} px-3`}>
+                            <span>Type</span>
+                            <span>Share</span>
+                            <span className="text-right">Count</span>
+                          </div>
 
-                                <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
-                                  <span className="flex items-center gap-3.5">
+                          <ul>
+                            {typeRows.map((t) => {
+                              const pct = typeTotal > 0 ? (t.n / typeTotal) * 100 : null;
+                              const pctText = first || pct === null ? "—" : fmtPct(pct);
+                              const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${pad2(t.n)}${done ? "" : "+"}`;
+                              return (
+                                <li
+                                  key={t.key}
+                                  onMouseEnter={() => setFocusKey(t.key)}
+                                  onMouseLeave={() => setFocusKey(null)}
+                                  className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
+                                >
+                                  <div className="flex items-center gap-3.5 lg:hidden">
                                     <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
-                                    <span className="text-[15px] font-semibold">{t.label}</span>
-                                  </span>
-                                  <span>
-                                    <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
-                                    <span className="mt-1.5 block"><ShareBar pct={first ? null : pct} color={t.color} /></span>
-                                  </span>
-                                  <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{countEl}</span>
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                        {!first && !done && !error && <p className="mt-3 px-3 text-[11px] text-slate-500">Still counting older activity…</p>}
-                        <p className="mt-3 px-3 text-xs leading-5 text-slate-500">Received transfers and some contract interactions are not included in the total transaction count.</p>
+                                    <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
+                                    <span className="text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{countEl}</span>
+                                  </div>
+
+                                  <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
+                                    <span className="flex items-center gap-3.5">
+                                      <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
+                                      <span className="text-[15px] font-semibold">{t.label}</span>
+                                    </span>
+                                    <span>
+                                      <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="mt-1.5 block"><ShareBar pct={first ? null : pct} color={t.color} /></span>
+                                    </span>
+                                    <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{countEl}</span>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {!first && !done && !error && <p className="mt-3 px-3 text-[11px] text-slate-500">Still counting older activity…</p>}
+                          <p className="mt-3 px-3 text-xs leading-5 text-slate-500">Received transfers and some contract interactions are not included in the total transaction count.</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </section>
+                  </section>
+                </div>
               )}
 
               {/* ---------- ACTIVITY LIST ---------- */}
