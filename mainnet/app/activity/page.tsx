@@ -2,11 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
+const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
+const NUM = { fontFamily: manrope.style.fontFamily } as CSSProperties;
 
 const EXPLORER = "https://explorer.arc.io";
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10 2xl:px-16";
@@ -353,7 +355,7 @@ function Row({ e }: { e: Ev }) {
     </span>
   ));
   const iconBox = (
-    <span className={`flex h-10 w-10 shrink-0 items-center justify-center ${e.status === "error" ? "text-red-300" : TINT[e.type]}`} style={{ filter: "drop-shadow(0 0 5px currentColor)" }}>
+    <span className={`flex h-10 w-10 shrink-0 items-center justify-center ${e.status === "error" ? "text-red-300" : TINT[e.type]}`} style={{ filter: "drop-shadow(0 0 3px color-mix(in srgb, currentColor 45%, transparent))" }}>
       <Svg d={ICONS[e.type]} size={22} />
     </span>
   );
@@ -482,7 +484,6 @@ const RING_IN = 17;
 const RING_GAP = 3.2;
 const RING_ROUND = 2.4;
 const RING_MIN = 0.035;
-const LABEL_MIN = 0.11;
 const readableOn = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
@@ -492,6 +493,7 @@ const readableOn = (hex: string) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? "#0b1220" : "#ffffff";
 };
 const polar = (rho: number, ang: number) => `${(rho * Math.sin(ang)).toFixed(3)} ${(-rho * Math.cos(ang)).toFixed(3)}`;
+const xy = (rho: number, ang: number) => ({ x: Number((rho * Math.sin(ang)).toFixed(2)), y: Number((-rho * Math.cos(ang)).toFixed(2)) });
 function sectorPath(a0: number, a1: number) {
   const d = RING_GAP / 2 + RING_ROUND;
   const ro = RING_OUT - RING_ROUND;
@@ -515,49 +517,74 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const weights = live.map((x) => Math.max(x.value / total, RING_MIN));
   const wSum = weights.reduce((acc, w) => acc + w, 0);
   let start = 0;
+  const parts = live.map((x, i) => {
+    const a0 = (start / wSum) * Math.PI * 2;
+    start += weights[i];
+    const a1 = (start / wSum) * Math.PI * 2;
+    return { x, a0, a1, mid: (a0 + a1) / 2, share: x.value / total };
+  });
+
+  const calls = parts.map((p) => {
+    const dir = Math.sin(p.mid) >= 0 ? 1 : -1;
+    const dot = xy((RING_IN + RING_OUT) / 2, p.mid);
+    const edge = xy(RING_OUT, p.mid);
+    const elbow = xy(RING_OUT + 5, p.mid);
+    return { key: p.x.key, color: p.x.color, text: fmtPct(p.share * 100).replace("%", " %"), dir, dot, edge, elbow, y: elbow.y };
+  });
+  for (const side of [1, -1]) {
+    const group = calls.filter((c) => c.dir === side).sort((p, q) => p.y - q.y);
+    for (let k = 1; k < group.length; k++) if (group[k].y - group[k - 1].y < 8) group[k].y = group[k - 1].y + 8;
+  }
+
+  const glow = (c: string) => `drop-shadow(0 0 3px ${c}59)`;
+  const drawSlices = () =>
+    parts.map((p) => (
+      <g
+        key={p.x.key}
+        transform={focus === p.x.key ? "scale(1.05)" : undefined}
+        style={{ opacity: focus !== null && focus !== p.x.key ? 0.3 : 1, transition: "opacity .2s", cursor: "pointer", filter: glow(p.x.color) }}
+        onMouseEnter={() => onFocus(p.x.key)}
+        onMouseLeave={() => onFocus(null)}
+        onClick={() => onFocus(focus === p.x.key ? null : p.x.key)}
+      >
+        <title>{`${p.x.label} ${fmtPct(p.share * 100)}`}</title>
+        <path d={sectorPath(p.a0, p.a1)} fill={p.x.color} stroke={p.x.color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" />
+      </g>
+    ));
+  const ring = (
+    <path
+      d={ringPath()}
+      fillRule="evenodd"
+      fill={empty ? "rgba(255,255,255,0.07)" : live[0].color}
+      stroke={empty ? "rgba(255,255,255,0.07)" : live[0].color}
+      strokeWidth={RING_ROUND * 2}
+      strokeLinejoin="round"
+      style={empty ? undefined : { filter: glow(live[0].color) }}
+    />
+  );
+  const single = empty || live.length === 1;
+
   return (
-    <div className="relative mx-auto aspect-square w-[17rem] max-w-full lg:w-[23rem]">
-      <svg viewBox="-66 -66 132 132" className={`h-full w-full overflow-visible ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
-        {empty || live.length === 1 ? (
-          <path d={ringPath()} fillRule="evenodd" fill={empty ? "rgba(255,255,255,0.07)" : live[0].color} stroke={empty ? "rgba(255,255,255,0.07)" : live[0].color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" style={empty ? undefined : { filter: `drop-shadow(0 0 5px ${live[0].color}8c)` }} />
-        ) : (
-          live.map((x, i) => {
-            const a0 = (start / wSum) * Math.PI * 2;
-            start += weights[i];
-            const a1 = (start / wSum) * Math.PI * 2;
-            const mid = (a0 + a1) / 2;
-            const share = x.value / total;
-            const inside = share >= LABEL_MIN;
-            const text = fmtPct(share * 100).replace("%", " %");
-            const dim = focus !== null && focus !== x.key;
+    <div className="relative mx-auto w-full">
+      <svg viewBox="-84 -62 168 124" className={`mx-auto block h-auto w-full max-w-[21rem] overflow-visible lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+        {single ? ring : drawSlices()}
+        {!single &&
+          calls.map((c) => {
+            const endX = c.elbow.x + c.dir * 6;
             return (
-              <g
-                key={x.key}
-                transform={focus === x.key ? "scale(1.05)" : undefined}
-                style={{ opacity: dim ? 0.3 : 1, transition: "opacity .2s", cursor: "pointer", filter: `drop-shadow(0 0 5px ${x.color}8c)` }}
-                onMouseEnter={() => onFocus(x.key)}
-                onMouseLeave={() => onFocus(null)}
-                onClick={() => onFocus(focus === x.key ? null : x.key)}
-              >
-                <title>{`${x.label} ${fmtPct(share * 100)}`}</title>
-                <path d={sectorPath(a0, a1)} fill={x.color} stroke={x.color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" />
-                <text
-                  className="lg:hidden"
-                  x={Number((Math.sin(mid) * (inside ? (RING_IN + RING_OUT) / 2 : RING_OUT + 9)).toFixed(2))}
-                  y={Number((-Math.cos(mid) * (inside ? (RING_IN + RING_OUT) / 2 : RING_OUT + 9)).toFixed(2))}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize="6.2"
-                  fontWeight="700"
-                  fill={inside ? readableOn(x.color) : "#e2e8f0"}
-                  style={{ pointerEvents: "none" }}
-                >
-                  {text}
+              <g key={c.key} style={{ pointerEvents: "none", opacity: focus !== null && focus !== c.key ? 0.3 : 1, transition: "opacity .2s" }}>
+                <path d={`M ${c.dot.x} ${c.dot.y} L ${c.edge.x} ${c.edge.y}`} stroke={readableOn(c.color)} strokeWidth="0.55" fill="none" strokeLinecap="round" />
+                <path d={`M ${c.edge.x} ${c.edge.y} L ${c.elbow.x} ${c.elbow.y} L ${endX} ${c.y}`} stroke="rgba(226,232,240,0.75)" strokeWidth="0.55" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx={c.dot.x} cy={c.dot.y} r="1.3" fill={readableOn(c.color)} />
+                <text x={endX + c.dir * 2} y={c.y} textAnchor={c.dir > 0 ? "start" : "end"} dominantBaseline="central" fontSize="6.4" fontWeight="700" fill="#f1f5f9" style={NUM}>
+                  {c.text}
                 </text>
               </g>
             );
-          })
-        )}
+          })}
+      </svg>
+      <svg viewBox="-56 -56 112 112" className={`mx-auto hidden h-auto w-[22rem] overflow-visible lg:block ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+        {single ? ring : drawSlices()}
       </svg>
     </div>
   );
@@ -1088,12 +1115,16 @@ function ActivityInner() {
 
                     <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
-                        <p className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                        <p className="mt-1.5 text-center text-4xl font-bold tabular-nums tracking-tight">
-                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                        </p>
-                        <p className="mt-1.5 text-center text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        <div className="text-center">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                            {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                          </p>
+                          <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        </div>
+                        <div className="mt-6">
+                          <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
+                        </div>
                       </div>
 
                       <div className="min-w-0">
@@ -1118,21 +1149,21 @@ function ActivityInner() {
                                 className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
                               >
                                 <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 7px ${r.color}99` }} aria-hidden />
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
                                   <TokenDot symbol={r.sym} size={38} />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[15px] font-semibold">{r.sym}</span>
                                     <span className="block truncate text-xs text-slate-500">{r.name}</span>
                                   </span>
                                   <span className="text-right">
-                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
-                                    <span className="block text-xs tabular-nums text-slate-500">{amountEl} · {usdEl}</span>
+                                    <span className="block text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
+                                    <span className="block text-xs tabular-nums text-slate-500" style={NUM}>{usdEl}</span>
                                   </span>
                                 </div>
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
                                   <span className="flex min-w-0 items-center gap-3.5">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 7px ${r.color}99` }} aria-hidden />
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
                                     <TokenDot symbol={r.sym} size={38} />
                                     <span className="min-w-0">
                                       <span className="block text-[15px] font-semibold">{r.sym}</span>
@@ -1140,11 +1171,11 @@ function ActivityInner() {
                                     </span>
                                   </span>
                                   <span>
-                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                     <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
                                   </span>
-                                  <span className="text-right text-[15px] font-semibold tabular-nums">{amountEl}</span>
-                                  <span className="text-right text-sm tabular-nums text-slate-300">{usdEl}</span>
+                                  <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
+                                  <span className="text-right text-sm tabular-nums text-slate-300" style={NUM}>{usdEl}</span>
                                 </div>
                               </li>
                             );
@@ -1166,19 +1197,23 @@ function ActivityInner() {
 
                     <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
-                        <p className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
-                        <p className="mt-1.5 text-center text-4xl font-bold tabular-nums tracking-tight">
-                          {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
-                        </p>
+                        <div className="text-center">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
+                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                            {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
+                          </p>
+                        </div>
+                        <div className="mt-6">
+                          <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
+                        </div>
                         <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Sent by this wallet</dt>
-                            <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
+                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
                           </div>
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Token transfers</dt>
-                            <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
+                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
                           </div>
                         </dl>
                       </div>
@@ -1203,30 +1238,28 @@ function ActivityInner() {
                                 className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
                               >
                                 <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 7px ${t.color}99` }} aria-hidden />
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
                                   <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
-                                  <span className="text-right">
-                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
-                                    <span className="block text-xs tabular-nums text-slate-500">{countEl}</span>
-                                  </span>
+                                  <span className="text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{countEl}</span>
                                 </div>
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
                                   <span className="flex items-center gap-3.5">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 7px ${t.color}99` }} aria-hidden />
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
                                     <span className="text-[15px] font-semibold">{t.label}</span>
                                   </span>
                                   <span>
-                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                     <span className="mt-1.5 block"><ShareBar pct={first ? null : pct} color={t.color} /></span>
                                   </span>
-                                  <span className="text-right text-[15px] font-semibold tabular-nums">{countEl}</span>
+                                  <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{countEl}</span>
                                 </div>
                               </li>
                             );
                           })}
                         </ul>
                         {!first && !done && !error && <p className="mt-3 px-3 text-[11px] text-slate-500">Still counting older activity…</p>}
+                        <p className="mt-3 px-3 text-xs leading-5 text-slate-500">Received transfers and some contract interactions are not included in the total transaction count.</p>
                       </div>
                     </div>
                   </div>
