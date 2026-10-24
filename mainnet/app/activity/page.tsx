@@ -477,24 +477,50 @@ const TX_COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,0.8fr)]";
 const TABLE_HEAD = "hidden items-center gap-x-6 border-b border-white/[0.08] pb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid";
 
 type Slice = { key: string; label: string; color: string; value: number };
-const StackedBar = ({ slices, loading }: { slices: Slice[]; loading: boolean }) => {
-  const total = slices.reduce((a, x) => a + x.value, 0);
+const Donut = ({ slices, loading, focus, onFocus, label, value }: { slices: Slice[]; loading: boolean; focus: string | null; onFocus: (k: string | null) => void; label: string; value: ReactNode }) => {
+  const R = 40;
+  const C = 2 * Math.PI * R;
+  const total = slices.reduce((acc, x) => acc + x.value, 0);
   const live = slices.filter((x) => x.value > 0);
   const empty = loading || total <= 0 || live.length === 0;
+  let used = 0;
   return (
-    <div role="img" aria-label="How the total is split" className={`flex h-7 w-full gap-0.5 ${loading ? "animate-pulse" : ""}`}>
-      {empty ? (
-        <span className="h-full w-full rounded-md bg-white/[0.07]" />
-      ) : (
-        live.map((x, i) => (
-          <span
-            key={x.key}
-            title={`${x.label} ${fmtPct((x.value / total) * 100)}`}
-            className={`h-full ${i === 0 ? "rounded-l-md" : ""} ${i === live.length - 1 ? "rounded-r-md" : ""}`}
-            style={{ flex: `${x.value} 1 0%`, minWidth: 4, background: x.color }}
-          />
-        ))
-      )}
+    <div className="relative mx-auto aspect-square w-[15rem] sm:w-[17.5rem] lg:w-[19rem]">
+      <svg viewBox="0 0 100 100" className={`h-full w-full -rotate-90 ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="14" />
+        {!empty &&
+          live.map((x) => {
+            const len = (x.value / total) * C;
+            const gap = live.length > 1 ? 1.4 : 0;
+            const dash = Math.max(0.01, len - gap);
+            const offset = -used;
+            used += len;
+            const dim = focus !== null && focus !== x.key;
+            return (
+              <circle
+                key={x.key}
+                cx="50"
+                cy="50"
+                r={R}
+                fill="none"
+                stroke={x.color}
+                strokeWidth={focus === x.key ? 16 : 14}
+                strokeDasharray={`${dash} ${C - dash}`}
+                strokeDashoffset={offset}
+                style={{ opacity: dim ? 0.3 : 1, transition: "opacity .2s, stroke-width .2s", cursor: "pointer" }}
+                onMouseEnter={() => onFocus(x.key)}
+                onMouseLeave={() => onFocus(null)}
+                onClick={() => onFocus(focus === x.key ? null : x.key)}
+              >
+                <title>{`${x.label} ${fmtPct((x.value / total) * 100)}`}</title>
+              </circle>
+            );
+          })}
+      </svg>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-10 text-center">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</span>
+        <span className="mt-1 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{value}</span>
+      </div>
     </div>
   );
 };
@@ -585,6 +611,8 @@ function ActivityInner() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [section, setSection] = useState<Section>("portfolio");
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  useEffect(() => setFocusKey(null), [section, target]);
   const [updated, setUpdated] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
 
@@ -1020,68 +1048,65 @@ function ActivityInner() {
                       </button>
                     </div>
 
-                    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.7fr)] lg:gap-14">
+                    <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                        <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight text-white">
-                          {loadingInfo ? <span className="inline-block h-9 w-40 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                        </p>
-                        <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        <Donut
+                          slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))}
+                          loading={loadingInfo}
+                          focus={focusKey}
+                          onFocus={setFocusKey}
+                          label="Total value"
+                          value={loadingInfo ? <span className="inline-block h-8 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                        />
+                        <p className="mt-4 text-center text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                       </div>
 
                       <div className="min-w-0">
-                        <StackedBar slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} />
-
-                        <div className={`mt-6 ${TABLE_HEAD} ${PF_COLS}`}>
+                        <div className={`${TABLE_HEAD} ${PF_COLS} px-3`}>
                           <span>Token</span>
                           <span>Allocation</span>
                           <span className="text-right">Amount</span>
                           <span className="text-right">Value</span>
                         </div>
 
-                        <ul className="divide-y divide-white/[0.08]">
+                        <ul>
                           {rows.map((r) => {
                             const pct = r.usd !== null && totalUsd > 0 ? (r.usd / totalUsd) * 100 : null;
                             const pctText = loadingInfo || pct === null ? "—" : fmtPct(pct);
                             const amountEl = loadingInfo ? <span className="inline-block h-4 w-20 animate-pulse rounded bg-white/[0.07]" /> : r.amount === null ? "—" : fmtAmt(r.amount);
                             const usdEl = loadingInfo ? <span className="inline-block h-3.5 w-12 animate-pulse rounded bg-white/[0.07]" /> : r.usd !== null ? fmtUsd(r.usd) : "—";
                             return (
-                              <li key={r.sym} className="py-4">
-                                <div className="lg:hidden">
-                                  <div className="flex items-center gap-3.5">
-                                    <TokenDot symbol={r.sym} size={38} />
-                                    <span className="min-w-0 flex-1">
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-[15px] font-semibold">{r.sym}</span>
-                                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
-                                      </span>
-                                      <span className="block truncate text-xs text-slate-500">{r.name}</span>
-                                    </span>
-                                    <span className="text-right">
-                                      <span className="block text-[15px] font-semibold tabular-nums">{amountEl}</span>
-                                      <span className="block text-xs tabular-nums text-slate-500">{usdEl}</span>
-                                    </span>
-                                  </div>
-                                  <div className="mt-3 flex items-center gap-3">
-                                    <ShareBar pct={loadingInfo ? null : pct} color={r.color} />
-                                    <span className="w-14 shrink-0 text-right text-xs font-semibold tabular-nums">{pctText}</span>
-                                  </div>
+                              <li
+                                key={r.sym}
+                                onMouseEnter={() => setFocusKey(r.sym)}
+                                onMouseLeave={() => setFocusKey(null)}
+                                className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
+                              >
+                                <div className="flex items-center gap-3.5 lg:hidden">
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color }} aria-hidden />
+                                  <TokenDot symbol={r.sym} size={38} />
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block text-[15px] font-semibold">{r.sym}</span>
+                                    <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                                  </span>
+                                  <span className="text-right">
+                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="block text-xs tabular-nums text-slate-500">{amountEl} · {usdEl}</span>
+                                  </span>
                                 </div>
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
                                   <span className="flex min-w-0 items-center gap-3.5">
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color }} aria-hidden />
                                     <TokenDot symbol={r.sym} size={38} />
                                     <span className="min-w-0">
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-[15px] font-semibold">{r.sym}</span>
-                                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} aria-hidden />
-                                      </span>
+                                      <span className="block text-[15px] font-semibold">{r.sym}</span>
                                       <span className="block truncate text-xs text-slate-500">{r.name}</span>
                                     </span>
                                   </span>
-                                  <span className="flex items-center gap-3">
-                                    <ShareBar pct={loadingInfo ? null : pct} color={r.color} />
-                                    <span className="w-14 shrink-0 text-right text-sm font-semibold tabular-nums">{pctText}</span>
+                                  <span>
+                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
                                   </span>
                                   <span className="text-right text-[15px] font-semibold tabular-nums">{amountEl}</span>
                                   <span className="text-right text-sm tabular-nums text-slate-300">{usdEl}</span>
@@ -1090,7 +1115,7 @@ function ActivityInner() {
                             );
                           })}
                         </ul>
-                        {infoFailed && !refreshing && <p className="mt-2 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
+                        {infoFailed && !refreshing && <p className="mt-2 px-3 text-xs text-amber-300">Couldn&apos;t load balances right now. Tap refresh to try again.</p>}
                       </div>
                     </div>
                   </div>
@@ -1104,13 +1129,17 @@ function ActivityInner() {
                   <div className="relative">
                     <SectionTitle icon={I.history}>Transactions</SectionTitle>
 
-                    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.7fr)] lg:gap-14">
+                    <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
-                        <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight text-white">
-                          {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
-                        </p>
-                        <dl className="mt-6 space-y-3.5 border-t border-white/[0.08] pt-5 text-sm">
+                        <Donut
+                          slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))}
+                          loading={first}
+                          focus={focusKey}
+                          onFocus={setFocusKey}
+                          label="Total on Arc"
+                          value={loadingInfo && totalTx === null ? <span className="inline-block h-8 w-16 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
+                        />
+                        <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Sent by this wallet</dt>
                             <dd className="font-semibold tabular-nums">{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
@@ -1123,43 +1152,41 @@ function ActivityInner() {
                       </div>
 
                       <div className="min-w-0">
-                        <StackedBar slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} />
-
-                        <div className={`mt-6 ${TABLE_HEAD} ${TX_COLS}`}>
+                        <div className={`${TABLE_HEAD} ${TX_COLS} px-3`}>
                           <span>Type</span>
                           <span>Share</span>
                           <span className="text-right">Count</span>
                         </div>
 
-                        <ul className="divide-y divide-white/[0.08]">
+                        <ul>
                           {typeRows.map((t) => {
                             const pct = typeTotal > 0 ? (t.n / typeTotal) * 100 : null;
                             const pctText = first || pct === null ? "—" : fmtPct(pct);
                             const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(t.n)}${done ? "" : "+"}`;
                             return (
-                              <li key={t.key} className="py-4">
-                                <div className="lg:hidden">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="flex items-center gap-2.5">
-                                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: t.color }} aria-hidden />
-                                      <span className="text-[15px] font-semibold">{t.label}</span>
-                                    </span>
-                                    <span className="text-[15px] font-semibold tabular-nums">{countEl}</span>
-                                  </div>
-                                  <div className="mt-3 flex items-center gap-3">
-                                    <ShareBar pct={first ? null : pct} color={t.color} />
-                                    <span className="w-14 shrink-0 text-right text-xs font-semibold tabular-nums">{pctText}</span>
-                                  </div>
+                              <li
+                                key={t.key}
+                                onMouseEnter={() => setFocusKey(t.key)}
+                                onMouseLeave={() => setFocusKey(null)}
+                                className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
+                              >
+                                <div className="flex items-center gap-3.5 lg:hidden">
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color }} aria-hidden />
+                                  <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
+                                  <span className="text-right">
+                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="block text-xs tabular-nums text-slate-500">{countEl}</span>
+                                  </span>
                                 </div>
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
-                                  <span className="flex items-center gap-2.5">
-                                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: t.color }} aria-hidden />
+                                  <span className="flex items-center gap-3.5">
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color }} aria-hidden />
                                     <span className="text-[15px] font-semibold">{t.label}</span>
                                   </span>
-                                  <span className="flex items-center gap-3">
-                                    <ShareBar pct={first ? null : pct} color={t.color} />
-                                    <span className="w-14 shrink-0 text-right text-sm font-semibold tabular-nums">{pctText}</span>
+                                  <span>
+                                    <span className="block text-xl font-bold tabular-nums">{pctText}</span>
+                                    <span className="mt-1.5 block"><ShareBar pct={first ? null : pct} color={t.color} /></span>
                                   </span>
                                   <span className="text-right text-[15px] font-semibold tabular-nums">{countEl}</span>
                                 </div>
@@ -1167,7 +1194,7 @@ function ActivityInner() {
                             );
                           })}
                         </ul>
-                        {!first && !done && !error && <p className="mt-3 text-[11px] text-slate-500">Still counting older activity…</p>}
+                        {!first && !done && !error && <p className="mt-3 px-3 text-[11px] text-slate-500">Still counting older activity…</p>}
                       </div>
                     </div>
                   </div>
