@@ -230,14 +230,14 @@ function SpaceBackground() {
 }
 
 const TOKEN_LOGO: Record<string, string> = { USDC: "/usdc-logo.webp", EURC: "/eurc-logo.png", cirBTC: "/cirbtc-logo.jpg" };
-function TokenDot({ symbol, size = 16 }: { symbol: string; size?: number }) {
+function TokenDot({ symbol, size = 16, fluid = false }: { symbol: string; size?: number; fluid?: boolean }) {
   const [failed, setFailed] = useState(false);
   const src = TOKEN_LOGO[symbol];
   if (src && !failed)
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={symbol} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />;
+    return <img src={src} alt={symbol} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" style={fluid ? { width: "100%", height: "100%" } : { width: size, height: size }} />;
   return (
-    <span className="flex shrink-0 items-center justify-center rounded-full bg-white/10 font-bold text-white" style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden>
+    <span className="flex shrink-0 items-center justify-center rounded-full bg-white/10 font-bold text-white" style={fluid ? { width: "100%", height: "100%", fontSize: size * 0.5 } : { width: size, height: size, fontSize: size * 0.5 }} aria-hidden>
       {symbol[0] ?? "?"}
     </span>
   );
@@ -475,6 +475,11 @@ const SECTIONS: [Section, string][] = [
   ["transactions", "Transactions"],
   ["activity", "Activity"],
 ];
+const FS_MAIN = "clamp(12px, 3.75vw, 15px)";
+const FS_SUB = "clamp(10px, 3.1vw, 12px)";
+const FS_COUNT = "clamp(14px, 4.5vw, 18px)";
+const SZ_LOGO = "clamp(28px, 9.5vw, 38px)";
+const SZ_SWATCH = "clamp(10px, 3.5vw, 14px)";
 const PF_COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.1fr)_minmax(0,0.9fr)]";
 const TX_COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,0.8fr)]";
 const TABLE_HEAD = "hidden items-center gap-x-6 border-b border-white/[0.08] pb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid";
@@ -484,7 +489,7 @@ const RING_OUT = 50;
 const RING_IN = 17;
 const RING_GAP = 3.2;
 const RING_ROUND = 2.4;
-const RING_MIN = 0.035;
+const RING_MIN = 0.045;
 const readableOn = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
@@ -495,10 +500,17 @@ const readableOn = (hex: string) => {
 };
 const polar = (rho: number, ang: number) => `${(rho * Math.sin(ang)).toFixed(3)} ${(-rho * Math.cos(ang)).toFixed(3)}`;
 const xy = (rho: number, ang: number) => ({ x: Number((rho * Math.sin(ang)).toFixed(2)), y: Number((-rho * Math.cos(ang)).toFixed(2)) });
-function sectorPath(a0: number, a1: number) {
-  const d = RING_GAP / 2 + RING_ROUND;
-  const ro = RING_OUT - RING_ROUND;
-  const ri = RING_IN + RING_ROUND;
+function roundFor(sweep: number) {
+  for (let r = RING_ROUND; r > 0.3; r -= 0.2) {
+    const d = RING_GAP / 2 + r;
+    if (sweep - 2 * Math.asin(Math.min(1, d / (RING_IN + r))) >= 0.05) return r;
+  }
+  return 0.3;
+}
+function sectorPath(a0: number, a1: number, r: number) {
+  const d = RING_GAP / 2 + r;
+  const ro = RING_OUT - r;
+  const ri = RING_IN + r;
   const o0 = a0 + Math.asin(d / ro);
   const o1 = a1 - Math.asin(d / ro);
   let i0 = a0 + Math.asin(Math.min(1, d / ri));
@@ -528,7 +540,6 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const scale = Math.min(CALL_SCALE_MAX, Math.max(CALL_SCALE_MIN, w / CALL_BASE));
   const vw = Math.max(CALL_BASE, w / scale);
   const extra = Math.min(CALL_EXTRA_MAX, Math.max(0, vw / 2 - CALL_BASE / 2));
-  const pxW = vw * scale;
 
   const total = slices.reduce((acc, x) => acc + x.value, 0);
   const live = slices.filter((x) => x.value > 0);
@@ -540,7 +551,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     const a0 = (start / wSum) * Math.PI * 2;
     start += weights[i];
     const a1 = (start / wSum) * Math.PI * 2;
-    return { x, a0, a1, mid: (a0 + a1) / 2, share: x.value / total };
+    return { x, a0, a1, mid: (a0 + a1) / 2, share: x.value / total, r: roundFor(a1 - a0) };
   });
 
   const calls = parts.map((p) => {
@@ -567,7 +578,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
         onClick={() => onFocus(focus === p.x.key ? null : p.x.key)}
       >
         <title>{`${p.x.label} ${fmtPct(p.share * 100)}`}</title>
-        <path d={sectorPath(p.a0, p.a1)} fill={p.x.color} stroke={p.x.color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" />
+        <path d={sectorPath(p.a0, p.a1, p.r)} fill={p.x.color} stroke={p.x.color} strokeWidth={p.r * 2} strokeLinejoin="round" />
       </g>
     ));
   const ring = (
@@ -584,8 +595,8 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const single = empty || live.length === 1;
 
   return (
-    <div ref={wrap} className="relative mx-auto w-full py-1">
-      <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: pxW, maxWidth: "none" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+    <div ref={wrap} className="relative mx-auto w-full min-w-0 py-1">
+      <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: "100%" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
         {single ? ring : drawSlices()}
         {!single &&
           calls.map((c) => {
@@ -945,6 +956,7 @@ function ActivityInner() {
     setRefreshing(false);
   };
   const loadingInfo = (info === null && !infoFailed) || refreshing;
+  const txBusy = first || refreshing;
 
   const searchBox = (big: boolean) => {
     const typed = input.trim();
@@ -1122,13 +1134,13 @@ function ActivityInner() {
 
               {/* ---------- PORTFOLIO ---------- */}
               {section === "portfolio" && (
-                <div className="fade-up mt-4 overflow-x-auto [scrollbar-width:thin]">
+                <div className="fade-up -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
-                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="sticky right-3 z-10 -mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
                           <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                         </button>
                       </div>
@@ -1141,7 +1153,7 @@ function ActivityInner() {
                         <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                       </div>
 
-                      <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                      <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                         <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
 
                         <div className="min-w-0">
@@ -1165,16 +1177,16 @@ function ActivityInner() {
                                   onMouseLeave={() => setFocusKey(null)}
                                   className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
                                 >
-                                  <div className="flex items-center gap-3.5 lg:hidden">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
-                                    <TokenDot symbol={r.sym} size={38} />
+                                  <div className="flex items-center gap-[clamp(8px,3vw,14px)] lg:hidden">
+                                    <span className="shrink-0 rounded-[4px]" style={{ width: SZ_SWATCH, height: SZ_SWATCH, background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
+                                    <span className="shrink-0" style={{ width: SZ_LOGO, height: SZ_LOGO }}><TokenDot symbol={r.sym} size={38} fluid /></span>
                                     <span className="min-w-0 flex-1">
-                                      <span className="block text-[15px] font-semibold">{r.sym}</span>
-                                      <span className="block truncate text-xs text-slate-500">{r.name}</span>
+                                      <span className="block font-semibold" style={{ fontSize: FS_MAIN }}>{r.sym}</span>
+                                      <span className="block truncate text-slate-500" style={{ fontSize: FS_SUB }}>{r.name}</span>
                                     </span>
                                     <span className="text-right">
-                                      <span className="block text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
-                                      <span className="block text-xs tabular-nums text-slate-500" style={NUM}>{usdEl}</span>
+                                      <span className="block font-semibold tabular-nums" style={{ ...NUM, fontSize: FS_MAIN }}>{amountEl}</span>
+                                      <span className="block tabular-nums text-slate-500" style={{ ...NUM, fontSize: FS_SUB }}>{usdEl}</span>
                                     </span>
                                   </div>
 
@@ -1208,13 +1220,13 @@ function ActivityInner() {
 
               {/* ---------- TRANSACTIONS ---------- */}
               {section === "transactions" && (
-                <div className="fade-up mt-4 overflow-x-auto [scrollbar-width:thin]">
+                <div className="fade-up -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <SectionTitle icon={I.history}>Transactions</SectionTitle>
-                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                        <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="sticky right-3 z-10 -mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
                           <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                         </button>
                       </div>
@@ -1222,13 +1234,13 @@ function ActivityInner() {
                       <div className="mt-8 text-center lg:text-left">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
                         <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                          {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
+                          {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
                         </p>
                       </div>
 
-                      <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                      <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                         <div>
-                          <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
+                          <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={txBusy} focus={focusKey} onFocus={setFocusKey} />
                           <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
                             <div className="flex items-center justify-between gap-3">
                               <dt className="text-slate-400">Sent by this wallet</dt>
@@ -1251,8 +1263,8 @@ function ActivityInner() {
                           <ul>
                             {typeRows.map((t) => {
                               const pct = typeTotal > 0 ? (t.n / typeTotal) * 100 : null;
-                              const pctText = first || pct === null ? "—" : fmtPct(pct);
-                              const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${pad2(t.n)}${done ? "" : "+"}`;
+                              const pctText = txBusy || pct === null ? "—" : fmtPct(pct);
+                              const countEl = txBusy ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${pad2(t.n)}${done ? "" : "+"}`;
                               return (
                                 <li
                                   key={t.key}
@@ -1260,10 +1272,10 @@ function ActivityInner() {
                                   onMouseLeave={() => setFocusKey(null)}
                                   className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
                                 >
-                                  <div className="flex items-center gap-3.5 lg:hidden">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
-                                    <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
-                                    <span className="text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{countEl}</span>
+                                  <div className="flex items-center gap-[clamp(8px,3vw,14px)] lg:hidden">
+                                    <span className="shrink-0 rounded-[4px]" style={{ width: SZ_SWATCH, height: SZ_SWATCH, background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
+                                    <span className="min-w-0 flex-1 font-semibold" style={{ fontSize: FS_MAIN }}>{t.label}</span>
+                                    <span className="tabular-nums" style={{ ...NUM, fontWeight: 700, fontSize: FS_COUNT }}>{countEl}</span>
                                   </div>
 
                                   <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
@@ -1273,7 +1285,7 @@ function ActivityInner() {
                                     </span>
                                     <span>
                                       <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
-                                      <span className="mt-1.5 block"><ShareBar pct={first ? null : pct} color={t.color} /></span>
+                                      <span className="mt-1.5 block"><ShareBar pct={txBusy ? null : pct} color={t.color} /></span>
                                     </span>
                                     <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{countEl}</span>
                                   </div>
