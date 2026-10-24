@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
@@ -622,72 +622,124 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
 };
 type WeekDay = { key: number; label: string; full: string; today: boolean; known: boolean };
 const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
-const WEEK_HALF = 28;
-const WEEK_TX_H = 56;
-const TYPE_ORDER = ["send", "receive", "swap", "bridge", "contract"] as const;
+const LINE_W = 384;
+const LINE_H = 84;
+const LINE_PAD_X = 18;
+const LINE_PAD_Y = 12;
 
-function HoldWeek({ days, loading }: { days: (WeekDay & { usd: number; count: number })[]; loading: boolean }) {
-  const known = days.filter((d) => d.known);
-  const sum = known.reduce((a, d) => a + d.usd, 0);
-  const max = Math.max(0.0001, ...known.map((d) => Math.abs(d.usd)));
+function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; loading: boolean }) {
+  const gid = useId().replace(/:/g, "");
+  const [hover, setHover] = useState<number | null>(null);
+  const pts = days.map((d, k) => ({ d, k })).filter((p) => p.d.known);
+  const ready = !loading && pts.length >= 2;
+  const x = (k: number) => LINE_PAD_X + (k / (days.length - 1)) * (LINE_W - LINE_PAD_X * 2);
+  const vals = pts.map((p) => p.d.value);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const y = (v: number) => (hi - lo < 1e-9 ? LINE_H / 2 : LINE_H - LINE_PAD_Y - ((v - lo) / (hi - lo)) * (LINE_H - LINE_PAD_Y * 2));
+  const first = vals[0] ?? 0;
+  const last = vals[vals.length - 1] ?? 0;
+  const change = last - first;
+  const color = change > 0.0049 ? "#34d399" : change < -0.0049 ? "#f87171" : "#62d4ff";
+  const coords = pts.map((p) => ({ x: Number(x(p.k).toFixed(2)), y: Number(y(p.d.value).toFixed(2)) }));
+  let line = coords.length ? `M ${coords[0].x} ${coords[0].y}` : "";
+  for (let i = 1; i < coords.length; i++) {
+    const p = coords[i - 1];
+    const q = coords[i];
+    const mx = ((p.x + q.x) / 2).toFixed(2);
+    line += ` C ${mx} ${p.y} ${mx} ${q.y} ${q.x} ${q.y}`;
+  }
+  const area = coords.length ? `${line} L ${coords[coords.length - 1].x} ${LINE_H} L ${coords[0].x} ${LINE_H} Z` : "";
+  const onMove = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const fx = ((e.clientX - r.left) / r.width) * LINE_W;
+    let best = pts[0]?.k ?? 0;
+    for (const p of pts) if (Math.abs(x(p.k) - fx) < Math.abs(x(best) - fx)) best = p.k;
+    setHover(best);
+  };
+  const hp = hover !== null && days[hover]?.known ? coords[pts.findIndex((p) => p.k === hover)] : null;
+  const pct = first > 0.0049 ? (change / first) * 100 : null;
+
   return (
     <div className="hidden w-full max-w-[24rem] lg:block">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holding changes · 7 days</p>
-        <p className={`text-sm font-bold tabular-nums ${loading ? "text-slate-500" : sum > 0.0049 ? "text-emerald-300" : sum < -0.0049 ? "text-red-300" : "text-slate-300"}`} style={NUM}>{loading ? "—" : signedUsd(sum)}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holdings · 7 days</p>
+        <p className="text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : hover !== null ? "#f1f5f9" : color }}>
+          {!ready ? "—" : hover !== null && days[hover] ? `${fmtUsd(days[hover].value)} · ${days[hover].full}` : `${signedUsd(change)}${pct !== null ? ` · ${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%` : ""}`}
+        </p>
       </div>
-      <div className={`mt-3 grid grid-cols-7 gap-2 ${loading ? "animate-pulse" : ""}`}>
-        {days.map((d) => {
-          const h = !d.known || loading || Math.abs(d.usd) < 0.0049 ? 0 : Math.max(3, (Math.abs(d.usd) / max) * WEEK_HALF);
-          const up = d.usd >= 0;
-          return (
-            <div key={d.key} title={loading ? "" : d.known ? `${d.full}: ${signedUsd(d.usd)} · ${d.count} transactions` : `${d.full}: older activity is still loading`} className="flex flex-col items-center">
-              <div className="flex w-full items-end justify-center" style={{ height: WEEK_HALF }}>
-                {up && h > 0 && <span className="block w-3.5 rounded-t-md" style={{ height: h, background: "#34d399", boxShadow: "0 0 4px #34d39959" }} />}
-              </div>
-              <div className={`h-px w-full ${d.known && !loading ? "bg-white/[0.14]" : "bg-white/[0.07]"}`} />
-              <div className="flex w-full items-start justify-center" style={{ height: WEEK_HALF }}>
-                {!up && h > 0 && <span className="block w-3.5 rounded-b-md" style={{ height: h, background: "#f87171", boxShadow: "0 0 4px #f8717159" }} />}
-              </div>
-              <span className={`mt-1.5 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
-            </div>
-          );
-        })}
+      <svg
+        viewBox={`0 0 ${LINE_W} ${LINE_H}`}
+        className={`mt-3 block h-auto w-full ${loading ? "animate-pulse" : ""}`}
+        style={{ touchAction: "pan-y" }}
+        onPointerMove={ready ? onMove : undefined}
+        onPointerDown={ready ? onMove : undefined}
+        onPointerLeave={() => setHover(null)}
+        onPointerCancel={() => setHover(null)}
+        role="img"
+        aria-label="Holdings over the last 7 days"
+      >
+        <defs>
+          <linearGradient id={`hl-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={color} stopOpacity="0.28" />
+            <stop offset="1" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {ready ? (
+          <>
+            <path d={area} fill={`url(#hl-${gid})`} />
+            <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {hp ? (
+              <>
+                <line x1={hp.x} x2={hp.x} y1="0" y2={LINE_H} stroke="rgba(255,255,255,0.28)" strokeDasharray="3 3" />
+                <circle cx={hp.x} cy={hp.y} r="4" fill={color} stroke="#0b1220" strokeWidth="2" />
+              </>
+            ) : (
+              <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4" fill={color} stroke="#0b1220" strokeWidth="2" />
+            )}
+          </>
+        ) : (
+          <path d={`M ${LINE_PAD_X} ${LINE_H / 2} L ${LINE_W - LINE_PAD_X} ${LINE_H / 2}`} stroke="rgba(255,255,255,0.12)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 6" />
+        )}
+      </svg>
+      <div className="relative mt-1 h-4">
+        {days.map((d, k) => (
+          <span key={d.key} className={`absolute -translate-x-1/2 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`} style={{ left: `${(x(k) / LINE_W) * 100}%` }}>
+            {d.label}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
-function TxWeek({ days, colors, loading }: { days: (WeekDay & { c: Record<string, number>; total: number })[]; colors: Record<string, string>; loading: boolean }) {
+function TxBars({ days, loading }: { days: (WeekDay & { total: number })[]; loading: boolean }) {
   const known = days.filter((d) => d.known);
   const sum = known.reduce((a, d) => a + d.total, 0);
   const max = Math.max(1, ...known.map((d) => d.total));
   return (
     <div className="hidden w-full max-w-[24rem] lg:block">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 7 days</p>
-        <p className="text-sm font-bold tabular-nums text-slate-200" style={NUM}>{loading ? "—" : pad2(sum)}</p>
-      </div>
-      <div className={`mt-3 grid grid-cols-7 gap-2 ${loading ? "animate-pulse" : ""}`}>
+      <div className={`flex h-12 items-end gap-1.5 ${loading ? "animate-pulse" : ""}`}>
         {days.map((d) => {
-          const h = !d.known || loading || d.total === 0 ? 0 : Math.max(4, (d.total / max) * WEEK_TX_H);
+          const real = !loading && d.known && d.total > 0;
           return (
-            <div key={d.key} title={loading ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`} className="flex flex-col items-center">
-              <span className="text-[11px] tabular-nums text-slate-300" style={NUM}>{loading ? "" : d.known ? pad2(d.total) : "—"}</span>
-              <div className="mt-1 flex w-full items-end justify-center" style={{ height: WEEK_TX_H }}>
-                {h > 0 ? (
-                  <span className="flex w-3.5 flex-col-reverse overflow-hidden rounded-md" style={{ height: h }}>
-                    {TYPE_ORDER.map((t) => (d.c[t] ? <span key={t} style={{ flex: `${d.c[t]} 1 0%`, background: colors[t] }} /> : null))}
-                  </span>
-                ) : (
-                  <span className="block h-1 w-3.5 rounded-full bg-white/[0.12]" />
-                )}
-              </div>
-              <span className={`mt-1.5 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
-            </div>
+            <span
+              key={d.key}
+              title={loading ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`}
+              className="flex-1 rounded-[3px]"
+              style={{ height: real ? Math.max(6, (d.total / max) * 48) : 6, background: real ? "#378ADD" : "rgba(255,255,255,0.12)" }}
+            />
           );
         })}
       </div>
+      <div className="mt-1.5 grid grid-cols-7 gap-1.5 text-center">
+        {days.map((d) => (
+          <span key={d.key} className={`text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Last 7 days · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
+      </p>
     </div>
   );
 }
@@ -1030,21 +1082,7 @@ function ActivityInner() {
     [weekDays, events, prices]
   );
   const txWeek = useMemo(
-    () =>
-      weekDays.map((day) => {
-        const c: Record<string, number> = { send: 0, receive: 0, swap: 0, bridge: 0, contract: 0 };
-        let total = 0;
-        for (const e of events) {
-          if (e.t < day.key || e.t >= day.end) continue;
-          total++;
-          if (e.type === "send") c.send++;
-          else if (e.type === "receive") c.receive++;
-          else if (e.type === "swap") c.swap++;
-          else if (e.type.startsWith("bridge")) c.bridge++;
-          else c.contract++;
-        }
-        return { ...day, c, total };
-      }),
+    () => weekDays.map((day) => ({ ...day, total: events.filter((e) => e.t >= day.key && e.t < day.end).length })),
     [weekDays, events]
   );
 
@@ -1069,6 +1107,15 @@ function ActivityInner() {
   });
   const totalUsd = rows.reduce((a, r) => a + (r.usd ?? 0), 0);
   const haveUsd = rows.some((r) => r.usd !== null);
+  const holdSeries = useMemo(() => {
+    const end: number[] = new Array(holdWeek.length).fill(0);
+    let acc = totalUsd;
+    for (let k = holdWeek.length - 1; k >= 0; k--) {
+      end[k] = acc;
+      acc -= holdWeek[k].usd;
+    }
+    return holdWeek.map((d, k) => ({ ...d, value: Math.max(0, end[k]) }));
+  }, [holdWeek, totalUsd]);
   const totalTx = info?.txCount ?? (txDone && txMap.current.size ? txMap.current.size : null);
 
   /* ----- actions ----- */
@@ -1298,7 +1345,7 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 lg:flex lg:items-end lg:justify-between lg:gap-10">
+                      <div className="mt-8 lg:flex lg:items-start lg:justify-between lg:gap-10">
                         <div className="text-center lg:text-left">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
                           <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
@@ -1306,7 +1353,7 @@ function ActivityInner() {
                           </p>
                           <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                         </div>
-                        <HoldWeek days={holdWeek} loading={txBusy || Object.keys(prices).length === 0} />
+                        <HoldLine days={holdSeries} loading={loadingInfo || txBusy || Object.keys(prices).length === 0} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
@@ -1387,14 +1434,14 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 lg:flex lg:items-end lg:justify-between lg:gap-10">
+                      <div className="mt-8 lg:flex lg:items-start lg:justify-between lg:gap-10">
                         <div className="text-center lg:text-left">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
                           <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
                             {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
                           </p>
                         </div>
-                        <TxWeek days={txWeek} colors={Object.fromEntries(typeRows.map((t) => [t.key, t.color]))} loading={txBusy} />
+                        <TxBars days={txWeek} loading={txBusy} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
