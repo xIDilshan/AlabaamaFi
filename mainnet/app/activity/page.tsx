@@ -189,7 +189,7 @@ const TINT: Record<EvType, string> = {
   swap: "text-[#7dd3fc]",
   "bridge-out": "text-[#8fb4ff]",
   "bridge-in": "text-[#8fb4ff]",
-  contract: "text-slate-300",
+  contract: "text-slate-400",
 };
 
 const Svg = ({ d, size = 20 }: { d: string; size?: number }) => (
@@ -477,50 +477,88 @@ const TX_COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,0.8fr)]";
 const TABLE_HEAD = "hidden items-center gap-x-6 border-b border-white/[0.08] pb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid";
 
 type Slice = { key: string; label: string; color: string; value: number };
-const Donut = ({ slices, loading, focus, onFocus, label, value }: { slices: Slice[]; loading: boolean; focus: string | null; onFocus: (k: string | null) => void; label: string; value: ReactNode }) => {
-  const R = 40;
-  const C = 2 * Math.PI * R;
+const RING_OUT = 50;
+const RING_IN = 17;
+const RING_GAP = 3.2;
+const RING_ROUND = 2.4;
+const RING_MIN = 0.035;
+const LABEL_MIN = 0.11;
+const readableOn = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? "#0b1220" : "#ffffff";
+};
+const polar = (rho: number, ang: number) => `${(rho * Math.sin(ang)).toFixed(3)} ${(-rho * Math.cos(ang)).toFixed(3)}`;
+function sectorPath(a0: number, a1: number) {
+  const d = RING_GAP / 2 + RING_ROUND;
+  const ro = RING_OUT - RING_ROUND;
+  const ri = RING_IN + RING_ROUND;
+  const o0 = a0 + Math.asin(d / ro);
+  const o1 = a1 - Math.asin(d / ro);
+  let i0 = a0 + Math.asin(Math.min(1, d / ri));
+  let i1 = a1 - Math.asin(Math.min(1, d / ri));
+  if (i1 < i0) i0 = i1 = (a0 + a1) / 2;
+  return `M ${polar(ri, i0)} L ${polar(ro, o0)} A ${ro} ${ro} 0 ${o1 - o0 > Math.PI ? 1 : 0} 1 ${polar(ro, o1)} L ${polar(ri, i1)} A ${ri} ${ri} 0 ${i1 - i0 > Math.PI ? 1 : 0} 0 ${polar(ri, i0)} Z`;
+}
+const ringPath = () => {
+  const ro = RING_OUT - RING_ROUND;
+  const ri = RING_IN + RING_ROUND;
+  return `M ${ro} 0 A ${ro} ${ro} 0 1 1 ${-ro} 0 A ${ro} ${ro} 0 1 1 ${ro} 0 Z M ${ri} 0 A ${ri} ${ri} 0 1 0 ${-ri} 0 A ${ri} ${ri} 0 1 0 ${ri} 0 Z`;
+};
+const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: boolean; focus: string | null; onFocus: (k: string | null) => void }) => {
   const total = slices.reduce((acc, x) => acc + x.value, 0);
   const live = slices.filter((x) => x.value > 0);
   const empty = loading || total <= 0 || live.length === 0;
-  let used = 0;
+  const weights = live.map((x) => Math.max(x.value / total, RING_MIN));
+  const wSum = weights.reduce((acc, w) => acc + w, 0);
+  let start = 0;
   return (
-    <div className="relative mx-auto aspect-square w-[15rem] sm:w-[17.5rem] lg:w-[19rem]">
-      <svg viewBox="0 0 100 100" className={`h-full w-full -rotate-90 ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
-        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="14" />
-        {!empty &&
-          live.map((x) => {
-            const len = (x.value / total) * C;
-            const gap = live.length > 1 ? 1.4 : 0;
-            const dash = Math.max(0.01, len - gap);
-            const offset = -used;
-            used += len;
+    <div className="relative mx-auto aspect-square w-[17rem] max-w-full lg:w-[23rem]">
+      <svg viewBox="-66 -66 132 132" className={`h-full w-full overflow-visible ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+        {empty || live.length === 1 ? (
+          <path d={ringPath()} fillRule="evenodd" fill={empty ? "rgba(255,255,255,0.07)" : live[0].color} stroke={empty ? "rgba(255,255,255,0.07)" : live[0].color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" style={empty ? undefined : { filter: `drop-shadow(0 0 5px ${live[0].color}8c)` }} />
+        ) : (
+          live.map((x, i) => {
+            const a0 = (start / wSum) * Math.PI * 2;
+            start += weights[i];
+            const a1 = (start / wSum) * Math.PI * 2;
+            const mid = (a0 + a1) / 2;
+            const share = x.value / total;
+            const inside = share >= LABEL_MIN;
+            const text = fmtPct(share * 100).replace("%", " %");
             const dim = focus !== null && focus !== x.key;
             return (
-              <circle
+              <g
                 key={x.key}
-                cx="50"
-                cy="50"
-                r={R}
-                fill="none"
-                stroke={x.color}
-                strokeWidth={focus === x.key ? 16 : 14}
-                strokeDasharray={`${dash} ${C - dash}`}
-                strokeDashoffset={offset}
-                style={{ opacity: dim ? 0.3 : 1, transition: "opacity .2s, stroke-width .2s", cursor: "pointer" }}
+                transform={focus === x.key ? "scale(1.05)" : undefined}
+                style={{ opacity: dim ? 0.3 : 1, transition: "opacity .2s", cursor: "pointer", filter: `drop-shadow(0 0 5px ${x.color}8c)` }}
                 onMouseEnter={() => onFocus(x.key)}
                 onMouseLeave={() => onFocus(null)}
                 onClick={() => onFocus(focus === x.key ? null : x.key)}
               >
-                <title>{`${x.label} ${fmtPct((x.value / total) * 100)}`}</title>
-              </circle>
+                <title>{`${x.label} ${fmtPct(share * 100)}`}</title>
+                <path d={sectorPath(a0, a1)} fill={x.color} stroke={x.color} strokeWidth={RING_ROUND * 2} strokeLinejoin="round" />
+                <text
+                  className="lg:hidden"
+                  x={Number((Math.sin(mid) * (inside ? (RING_IN + RING_OUT) / 2 : RING_OUT + 9)).toFixed(2))}
+                  y={Number((-Math.cos(mid) * (inside ? (RING_IN + RING_OUT) / 2 : RING_OUT + 9)).toFixed(2))}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize="6.2"
+                  fontWeight="700"
+                  fill={inside ? readableOn(x.color) : "#e2e8f0"}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {text}
+                </text>
+              </g>
             );
-          })}
+          })
+        )}
       </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-10 text-center">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</span>
-        <span className="mt-1 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">{value}</span>
-      </div>
     </div>
   );
 };
@@ -794,11 +832,11 @@ function ActivityInner() {
   }, [events]);
 
   const typeRows = [
-    { key: "send", label: "Sent", color: "#4f8cff", n: typeCounts.send },
+    { key: "send", label: "Sent", color: "#e2e8f0", n: typeCounts.send },
     { key: "receive", label: "Received", color: "#34d399", n: typeCounts.receive },
     { key: "swap", label: "Swaps", color: "#22d3ee", n: typeCounts.swap },
     { key: "bridge", label: "Bridges", color: "#a78bfa", n: typeCounts.bridge },
-    { key: "contract", label: "Contracts", color: "#f59e0b", n: typeCounts.contract },
+    { key: "contract", label: "Contracts", color: "#94a3b8", n: typeCounts.contract },
   ];
   const typeTotal = typeRows.reduce((a, t) => a + t.n, 0);
 
@@ -1050,15 +1088,12 @@ function ActivityInner() {
 
                     <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <Donut
-                          slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))}
-                          loading={loadingInfo}
-                          focus={focusKey}
-                          onFocus={setFocusKey}
-                          label="Total value"
-                          value={loadingInfo ? <span className="inline-block h-8 w-24 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                        />
-                        <p className="mt-4 text-center text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
+                        <p className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                        <p className="mt-1.5 text-center text-4xl font-bold tabular-nums tracking-tight">
+                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                        </p>
+                        <p className="mt-1.5 text-center text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                       </div>
 
                       <div className="min-w-0">
@@ -1083,7 +1118,7 @@ function ActivityInner() {
                                 className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === r.sym ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== r.sym ? "opacity-60" : ""}`}
                               >
                                 <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color }} aria-hidden />
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 7px ${r.color}99` }} aria-hidden />
                                   <TokenDot symbol={r.sym} size={38} />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[15px] font-semibold">{r.sym}</span>
@@ -1097,7 +1132,7 @@ function ActivityInner() {
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
                                   <span className="flex min-w-0 items-center gap-3.5">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color }} aria-hidden />
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 7px ${r.color}99` }} aria-hidden />
                                     <TokenDot symbol={r.sym} size={38} />
                                     <span className="min-w-0">
                                       <span className="block text-[15px] font-semibold">{r.sym}</span>
@@ -1131,14 +1166,11 @@ function ActivityInner() {
 
                     <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <Donut
-                          slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))}
-                          loading={first}
-                          focus={focusKey}
-                          onFocus={setFocusKey}
-                          label="Total on Arc"
-                          value={loadingInfo && totalTx === null ? <span className="inline-block h-8 w-16 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
-                        />
+                        <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
+                        <p className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
+                        <p className="mt-1.5 text-center text-4xl font-bold tabular-nums tracking-tight">
+                          {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
+                        </p>
                         <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Sent by this wallet</dt>
@@ -1171,7 +1203,7 @@ function ActivityInner() {
                                 className={`rounded-2xl border-t border-white/[0.08] px-3 py-4 transition-colors first:border-t-0 ${focusKey === t.key ? "bg-white/[0.06]" : ""} ${focusKey && focusKey !== t.key ? "opacity-60" : ""}`}
                               >
                                 <div className="flex items-center gap-3.5 lg:hidden">
-                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color }} aria-hidden />
+                                  <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 7px ${t.color}99` }} aria-hidden />
                                   <span className="min-w-0 flex-1 text-[15px] font-semibold">{t.label}</span>
                                   <span className="text-right">
                                     <span className="block text-xl font-bold tabular-nums">{pctText}</span>
@@ -1181,7 +1213,7 @@ function ActivityInner() {
 
                                 <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
                                   <span className="flex items-center gap-3.5">
-                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color }} aria-hidden />
+                                    <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 7px ${t.color}99` }} aria-hidden />
                                     <span className="text-[15px] font-semibold">{t.label}</span>
                                   </span>
                                   <span>
