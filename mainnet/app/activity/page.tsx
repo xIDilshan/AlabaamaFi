@@ -449,7 +449,7 @@ const SectionTitle = ({ icon, children }: { icon: string; children: ReactNode })
 );
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
-const MATTE_BG = "bg-[linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),linear-gradient(rgba(8,13,24,0.72),rgba(8,13,24,0.72))]";
+const MATTE_BG = "bg-[linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),linear-gradient(rgba(9,22,48,0.72),rgba(9,22,48,0.72))]";
 const MATTE_CARD = `relative overflow-hidden rounded-[1.75rem] border border-white/[0.14] ${MATTE_BG} p-5 sm:p-6`;
 const Grain = () => <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.05]" style={{ backgroundImage: GRAIN }} />;
 const fmtPct = (p: number) => (p <= 0 ? "0%" : p >= 99.95 ? "100%" : p < 0.1 ? "<0.1%" : `${p.toFixed(1)}%`);
