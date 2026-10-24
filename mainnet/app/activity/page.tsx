@@ -620,6 +620,78 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     </div>
   );
 };
+type WeekDay = { key: number; label: string; full: string; today: boolean; known: boolean };
+const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
+const WEEK_HALF = 28;
+const WEEK_TX_H = 56;
+const TYPE_ORDER = ["send", "receive", "swap", "bridge", "contract"] as const;
+
+function HoldWeek({ days, loading }: { days: (WeekDay & { usd: number; count: number })[]; loading: boolean }) {
+  const known = days.filter((d) => d.known);
+  const sum = known.reduce((a, d) => a + d.usd, 0);
+  const max = Math.max(0.0001, ...known.map((d) => Math.abs(d.usd)));
+  return (
+    <div className="hidden w-full max-w-[24rem] lg:block">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holding changes · 7 days</p>
+        <p className={`text-sm font-bold tabular-nums ${loading ? "text-slate-500" : sum > 0.0049 ? "text-emerald-300" : sum < -0.0049 ? "text-red-300" : "text-slate-300"}`} style={NUM}>{loading ? "—" : signedUsd(sum)}</p>
+      </div>
+      <div className={`mt-3 grid grid-cols-7 gap-2 ${loading ? "animate-pulse" : ""}`}>
+        {days.map((d) => {
+          const h = !d.known || loading || Math.abs(d.usd) < 0.0049 ? 0 : Math.max(3, (Math.abs(d.usd) / max) * WEEK_HALF);
+          const up = d.usd >= 0;
+          return (
+            <div key={d.key} title={loading ? "" : d.known ? `${d.full}: ${signedUsd(d.usd)} · ${d.count} transactions` : `${d.full}: older activity is still loading`} className="flex flex-col items-center">
+              <div className="flex w-full items-end justify-center" style={{ height: WEEK_HALF }}>
+                {up && h > 0 && <span className="block w-3.5 rounded-t-md" style={{ height: h, background: "#34d399", boxShadow: "0 0 4px #34d39959" }} />}
+              </div>
+              <div className={`h-px w-full ${d.known && !loading ? "bg-white/[0.14]" : "bg-white/[0.07]"}`} />
+              <div className="flex w-full items-start justify-center" style={{ height: WEEK_HALF }}>
+                {!up && h > 0 && <span className="block w-3.5 rounded-b-md" style={{ height: h, background: "#f87171", boxShadow: "0 0 4px #f8717159" }} />}
+              </div>
+              <span className={`mt-1.5 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TxWeek({ days, colors, loading }: { days: (WeekDay & { c: Record<string, number>; total: number })[]; colors: Record<string, string>; loading: boolean }) {
+  const known = days.filter((d) => d.known);
+  const sum = known.reduce((a, d) => a + d.total, 0);
+  const max = Math.max(1, ...known.map((d) => d.total));
+  return (
+    <div className="hidden w-full max-w-[24rem] lg:block">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 7 days</p>
+        <p className="text-sm font-bold tabular-nums text-slate-200" style={NUM}>{loading ? "—" : pad2(sum)}</p>
+      </div>
+      <div className={`mt-3 grid grid-cols-7 gap-2 ${loading ? "animate-pulse" : ""}`}>
+        {days.map((d) => {
+          const h = !d.known || loading || d.total === 0 ? 0 : Math.max(4, (d.total / max) * WEEK_TX_H);
+          return (
+            <div key={d.key} title={loading ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`} className="flex flex-col items-center">
+              <span className="text-[11px] tabular-nums text-slate-300" style={NUM}>{loading ? "" : d.known ? pad2(d.total) : "—"}</span>
+              <div className="mt-1 flex w-full items-end justify-center" style={{ height: WEEK_TX_H }}>
+                {h > 0 ? (
+                  <span className="flex w-3.5 flex-col-reverse overflow-hidden rounded-md" style={{ height: h }}>
+                    {TYPE_ORDER.map((t) => (d.c[t] ? <span key={t} style={{ flex: `${d.c[t]} 1 0%`, background: colors[t] }} /> : null))}
+                  </span>
+                ) : (
+                  <span className="block h-1 w-3.5 rounded-full bg-white/[0.12]" />
+                )}
+              </div>
+              <span className={`mt-1.5 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const ShareBar = ({ pct, color }: { pct: number | null; color: string }) => (
   <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.1]">
     <span className="block h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct ?? 0))}%`, background: color }} />
@@ -924,6 +996,58 @@ function ActivityInner() {
   ];
   const typeTotal = typeRows.reduce((a, t) => a + t.n, 0);
 
+  const weekDays = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 7 }, (_, k) => {
+      const i = 6 - k;
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1).getTime();
+      const start = d.getTime();
+      return {
+        key: start,
+        end,
+        label: d.toLocaleDateString([], { weekday: "short" }),
+        full: d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }),
+        today: i === 0,
+        known: done || horizon === 0 || start >= horizon,
+      };
+    });
+  }, [done, horizon]);
+  const holdWeek = useMemo(
+    () =>
+      weekDays.map((day) => {
+        const evs = events.filter((e) => e.t >= day.key && e.t < day.end);
+        let usd = 0;
+        for (const e of evs) {
+          for (const l of e.legs) {
+            const v = Number(l.amount) * (prices[l.symbol] ?? (l.symbol === "USDC" ? 1 : 0));
+            usd += l.dir === "in" ? v : -v;
+          }
+          if (e.fee) usd -= Number(e.fee) || 0;
+        }
+        return { ...day, usd, count: evs.length };
+      }),
+    [weekDays, events, prices]
+  );
+  const txWeek = useMemo(
+    () =>
+      weekDays.map((day) => {
+        const c: Record<string, number> = { send: 0, receive: 0, swap: 0, bridge: 0, contract: 0 };
+        let total = 0;
+        for (const e of events) {
+          if (e.t < day.key || e.t >= day.end) continue;
+          total++;
+          if (e.type === "send") c.send++;
+          else if (e.type === "receive") c.receive++;
+          else if (e.type === "swap") c.swap++;
+          else if (e.type.startsWith("bridge")) c.bridge++;
+          else c.contract++;
+        }
+        return { ...day, c, total };
+      }),
+    [weekDays, events]
+  );
+
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
     for (const e of pageItems) {
@@ -1174,12 +1298,15 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 text-center lg:text-left">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                        </p>
-                        <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                      <div className="mt-8 lg:flex lg:items-end lg:justify-between lg:gap-10">
+                        <div className="text-center lg:text-left">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                            {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                          </p>
+                          <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        </div>
+                        <HoldWeek days={holdWeek} loading={txBusy || Object.keys(prices).length === 0} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
@@ -1260,11 +1387,14 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 text-center lg:text-left">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
-                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                          {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
-                        </p>
+                      <div className="mt-8 lg:flex lg:items-end lg:justify-between lg:gap-10">
+                        <div className="text-center lg:text-left">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
+                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                            {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
+                          </p>
+                        </div>
+                        <TxWeek days={txWeek} colors={Object.fromEntries(typeRows.map((t) => [t.key, t.color]))} loading={txBusy} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
