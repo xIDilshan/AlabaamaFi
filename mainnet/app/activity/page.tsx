@@ -16,6 +16,7 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 const USDC_ERC20 = "0x3600000000000000000000000000000000000000";
 const MIN_VISIBLE = 8;
 const AUTO_LOAD_LIMIT = 600;
+const PAGE_SIZE = 50;
 const COPY_ICON = "M11 9h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2";
 const BTN_TEXT_PX = 11;
 const BTN_ICON_PX = 13;
@@ -213,7 +214,7 @@ function SpaceBackground() {
     };
   }, []);
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden" style={{ willChange: "transform" }}>
       <div className="absolute -inset-6 blur-[3px]">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
         <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
@@ -244,7 +245,7 @@ function TokenDot({ symbol, size = 16, fluid = false }: { symbol: string; size?:
 }
 
 const SLIDE = "block max-w-full overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-const DESK_COLS = "lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]";
+const DESK_COLS = "grid-cols-[minmax(0,2.4fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]";
 
 function ClockIcon({ t, size = 15 }: { t: number; size?: number }) {
   const d = new Date(t);
@@ -370,30 +371,7 @@ function Row({ e }: { e: Ev }) {
 
   return (
     <a href={`${EXPLORER}/tx/${e.hash}`} target="_blank" rel="noreferrer" className="group block px-2 py-4 transition hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39c4ff]">
-      {/* ---------- phones and tablets ---------- */}
-      <div className="flex items-start gap-3.5 lg:hidden">
-        {iconBox}
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className={`${SLIDE} min-w-0 text-[15px] font-semibold`} title={titleOf(e)}>{titleOf(e)}</span>
-            {e.status === "error" && <span className="rounded-full bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">Failed</span>}
-            {e.status === "pending" && <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">Pending</span>}
-          </span>
-          {whoLine}
-          <span className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
-            <span>Tx hash</span>
-            {hashCell}
-          </span>
-        </span>
-        <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-          {amounts}
-          <span className="mt-1 text-xs">{timeCell}</span>
-          {e.fee && <span className="text-[11px] tabular-nums text-slate-600">Fee {fmtAmt(e.fee)} USDC</span>}
-        </span>
-      </div>
-
-      {/* ---------- wide screens ---------- */}
-      <div className={`hidden items-center gap-x-5 text-sm lg:grid ${DESK_COLS}`}>
+      <div className={`grid items-center gap-x-5 text-sm ${DESK_COLS}`}>
         <span className="flex min-w-0 items-center gap-3.5">
           {iconBox}
           <span className="min-w-0">
@@ -430,6 +408,12 @@ function Skeleton() {
     </div>
   );
 }
+
+const PagerBtn = ({ label, disabled, onClick, d }: { label: string; disabled: boolean; onClick: () => void; d: string }) => (
+  <button type="button" onClick={onClick} disabled={disabled} aria-label={label} title={label} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.045] text-slate-200 transition hover:bg-white/[0.1] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-white/[0.045]">
+    <Svg d={d} size={16} />
+  </button>
+);
 
 const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) => (
   <button onClick={onClick} aria-pressed={active} className={`shrink-0 rounded-md px-3.5 py-1.5 text-sm font-medium transition ${active ? "bg-white/[0.12] text-white" : "text-slate-400 hover:bg-white/[0.06] hover:text-white"}`}>
@@ -500,30 +484,44 @@ const readableOn = (hex: string) => {
 };
 const polar = (rho: number, ang: number) => `${(rho * Math.sin(ang)).toFixed(3)} ${(-rho * Math.cos(ang)).toFixed(3)}`;
 const xy = (rho: number, ang: number) => ({ x: Number((rho * Math.sin(ang)).toFixed(2)), y: Number((-rho * Math.cos(ang)).toFixed(2)) });
-function roundFor(sweep: number) {
-  for (let r = RING_ROUND; r > 0.3; r -= 0.2) {
-    const d = RING_GAP / 2 + r;
-    if (sweep - 2 * Math.asin(Math.min(1, d / (RING_IN + r))) >= 0.05) return r;
-  }
-  return 0.3;
+type Pt = { x: number; y: number };
+const pt = (p: Pt) => `${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
+function fillet(a: number, side: 1 | -1, rho: number, outer: boolean) {
+  const h = RING_GAP / 2;
+  const rr = outer ? RING_OUT - rho : RING_IN + rho;
+  const off = h + rho;
+  const t = Math.sqrt(Math.max(0, rr * rr - off * off));
+  const nx = Math.cos(a);
+  const ny = Math.sin(a);
+  const ux = Math.sin(a);
+  const uy = -Math.cos(a);
+  const cx = side * off * nx + t * ux;
+  const cy = side * off * ny + t * uy;
+  const k = (outer ? RING_OUT : RING_IN) / rr;
+  return { line: { x: side * h * nx + t * ux, y: side * h * ny + t * uy }, circ: { x: cx * k, y: cy * k }, ang: a + side * Math.asin(Math.min(1, off / rr)) };
 }
-function sectorPath(a0: number, a1: number, r: number) {
-  const d = RING_GAP / 2 + r;
-  const ro = RING_OUT - r;
-  const ri = RING_IN + r;
-  const o0 = a0 + Math.asin(d / ro);
-  const o1 = a1 - Math.asin(d / ro);
-  let i0 = a0 + Math.asin(Math.min(1, d / ri));
-  let i1 = a1 - Math.asin(Math.min(1, d / ri));
-  if (i1 < i0) i0 = i1 = (a0 + a1) / 2;
-  return `M ${polar(ri, i0)} L ${polar(ro, o0)} A ${ro} ${ro} 0 ${o1 - o0 > Math.PI ? 1 : 0} 1 ${polar(ro, o1)} L ${polar(ri, i1)} A ${ri} ${ri} 0 ${i1 - i0 > Math.PI ? 1 : 0} 0 ${polar(ri, i0)} Z`;
+function innerRho(sweep: number) {
+  const h = RING_GAP / 2;
+  for (let r = RING_ROUND; r > 0.35; r -= 0.1) if (sweep - 2 * Math.asin(Math.min(1, (h + r) / (RING_IN + r))) >= 0.03) return r;
+  return 0.35;
+}
+function sectorPath(a0: number, a1: number) {
+  const ro = RING_ROUND;
+  const ri = innerRho(a1 - a0);
+  const i0 = fillet(a0, 1, ri, false);
+  const o0 = fillet(a0, 1, ro, true);
+  const o1 = fillet(a1, -1, ro, true);
+  const i1 = fillet(a1, -1, ri, false);
+  const outerLarge = o1.ang - o0.ang > Math.PI ? 1 : 0;
+  const innerLarge = i1.ang - i0.ang > Math.PI ? 1 : 0;
+  return `M ${pt(i0.line)} L ${pt(o0.line)} A ${ro} ${ro} 0 0 1 ${pt(o0.circ)} A ${RING_OUT} ${RING_OUT} 0 ${outerLarge} 1 ${pt(o1.circ)} A ${ro} ${ro} 0 0 1 ${pt(o1.line)} L ${pt(i1.line)} A ${ri} ${ri} 0 0 1 ${pt(i1.circ)} A ${RING_IN} ${RING_IN} 0 ${innerLarge} 0 ${pt(i0.circ)} A ${ri} ${ri} 0 0 1 ${pt(i0.line)} Z`;
 }
 const ringPath = () => {
   const ro = RING_OUT - RING_ROUND;
   const ri = RING_IN + RING_ROUND;
   return `M ${ro} 0 A ${ro} ${ro} 0 1 1 ${-ro} 0 A ${ro} ${ro} 0 1 1 ${ro} 0 Z M ${ri} 0 A ${ri} ${ri} 0 1 0 ${-ri} 0 A ${ri} ${ri} 0 1 0 ${ri} 0 Z`;
 };
-const CALL_SCALE_MAX = 1.9;
+const CALL_SCALE_MAX = 2.25;
 const CALL_SCALE_MIN = 1.7;
 const CALL_BASE = 168;
 const CALL_EXTRA_MAX = 60;
@@ -551,7 +549,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     const a0 = (start / wSum) * Math.PI * 2;
     start += weights[i];
     const a1 = (start / wSum) * Math.PI * 2;
-    return { x, a0, a1, mid: (a0 + a1) / 2, share: x.value / total, r: roundFor(a1 - a0) };
+    return { x, a0, a1, mid: (a0 + a1) / 2, share: x.value / total };
   });
 
   const calls = parts.map((p) => {
@@ -578,7 +576,7 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
         onClick={() => onFocus(focus === p.x.key ? null : p.x.key)}
       >
         <title>{`${p.x.label} ${fmtPct(p.share * 100)}`}</title>
-        <path d={sectorPath(p.a0, p.a1, p.r)} fill={p.x.color} stroke={p.x.color} strokeWidth={p.r * 2} strokeLinejoin="round" />
+        <path d={sectorPath(p.a0, p.a1)} fill={p.x.color} />
       </g>
     ));
   const ring = (
@@ -709,7 +707,9 @@ function ActivityInner() {
   const [focusKey, setFocusKey] = useState<string | null>(null);
   useEffect(() => setFocusKey(null), [section, target]);
   const [updated, setUpdated] = useState(0);
-  const sentinel = useRef<HTMLDivElement>(null);
+  const listTop = useRef<HTMLElement>(null);
+  const [page, setPage] = useState(1);
+  const [wantPage, setWantPage] = useState<number | null>(null);
 
   const [info, setInfo] = useState<Info | null>(null);
   const [infoFailed, setInfoFailed] = useState(false);
@@ -790,6 +790,8 @@ function ActivityInner() {
     setFirst(true);
     setError("");
     setFilter("all");
+    setPage(1);
+    setWantPage(null);
     setSection("portfolio");
     setVersion((v) => v + 1);
     if (!target) return;
@@ -862,19 +864,43 @@ function ActivityInner() {
 
   const shown = useMemo(() => events.filter((e) => (filter === "all" ? true : filter === "bridge" ? e.type.startsWith("bridge") : e.type === filter)), [events, filter]);
 
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const pageItems = useMemo(() => shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [shown, page]);
+  useEffect(() => {
+    if (page > pages) setPage(pages);
+  }, [page, pages]);
+
   useEffect(() => {
     if (!target || first || done || loadingMore || error || failsRef.current > 0) return;
-    if (shown.length < MIN_VISIBLE || txMap.current.size + trMap.current.size < AUTO_LOAD_LIMIT) loadMore();
-  }, [target, first, done, loadingMore, error, shown.length, loadMore, version]);
+    const needPage = wantPage !== null && shown.length <= (wantPage - 1) * PAGE_SIZE;
+    if (needPage || shown.length < MIN_VISIBLE || txMap.current.size + trMap.current.size < AUTO_LOAD_LIMIT) loadMore();
+  }, [target, first, done, loadingMore, error, shown.length, loadMore, version, wantPage]);
+
   useEffect(() => {
-    const el = sentinel.current;
-    if (!el || !target) return;
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting && !done && !error) loadMore();
-    }, { rootMargin: "300px" });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [target, done, error, loadMore, shown.length, section]);
+    if (wantPage === null) return;
+    if (shown.length > (wantPage - 1) * PAGE_SIZE) {
+      setPage(wantPage);
+      setWantPage(null);
+    } else if (done || error) setWantPage(null);
+  }, [wantPage, shown.length, done, error]);
+
+  const pageMounted = useRef(false);
+  useEffect(() => {
+    if (!pageMounted.current) {
+      pageMounted.current = true;
+      return;
+    }
+    listTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
+
+  const goNext = () => {
+    if (page < pages) return setPage(page + 1);
+    if (done) return;
+    failsRef.current = 0;
+    setError("");
+    setWantPage(page + 1);
+    loadMore();
+  };
 
   const typeCounts = useMemo(() => {
     const c = { send: 0, receive: 0, swap: 0, bridge: 0, contract: 0 };
@@ -899,14 +925,14 @@ function ActivityInner() {
 
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
-    for (const e of shown) {
+    for (const e of pageItems) {
       const day = e.t ? dayLabel(e.t) : "Earlier";
       const last = out[out.length - 1];
       if (last && last.day === day) last.items.push(e);
       else out.push({ day, items: [e] });
     }
     return out;
-  }, [shown]);
+  }, [pageItems]);
 
   /* ----- portfolio numbers ----- */
   const rows = PORTFOLIO.map((t) => {
@@ -1193,18 +1219,18 @@ function ActivityInner() {
                                   <div className={`hidden items-center gap-x-6 lg:grid ${PF_COLS}`}>
                                     <span className="flex min-w-0 items-center gap-3.5">
                                       <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: r.color, boxShadow: `0 0 4px ${r.color}59` }} aria-hidden />
-                                      <TokenDot symbol={r.sym} size={38} />
+                                      <TokenDot symbol={r.sym} size={34} />
                                       <span className="min-w-0">
-                                        <span className="block text-[15px] font-semibold">{r.sym}</span>
+                                        <span className="block text-sm font-semibold">{r.sym}</span>
                                         <span className="block truncate text-xs text-slate-500">{r.name}</span>
                                       </span>
                                     </span>
                                     <span>
-                                      <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="block text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                       <span className="mt-1.5 block"><ShareBar pct={loadingInfo ? null : pct} color={r.color} /></span>
                                     </span>
-                                    <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{amountEl}</span>
-                                    <span className="text-right text-sm tabular-nums text-slate-300" style={NUM}>{usdEl}</span>
+                                    <span className="text-right text-sm font-semibold tabular-nums" style={NUM}>{amountEl}</span>
+                                    <span className="text-right text-[13px] tabular-nums text-slate-300" style={NUM}>{usdEl}</span>
                                   </div>
                                 </li>
                               );
@@ -1281,20 +1307,23 @@ function ActivityInner() {
                                   <div className={`hidden items-center gap-x-6 lg:grid ${TX_COLS}`}>
                                     <span className="flex items-center gap-3.5">
                                       <span className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: t.color, boxShadow: `0 0 4px ${t.color}59` }} aria-hidden />
-                                      <span className="text-[15px] font-semibold">{t.label}</span>
+                                      <span className="text-sm font-semibold">{t.label}</span>
                                     </span>
                                     <span>
-                                      <span className="block text-xl tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
+                                      <span className="block text-lg tabular-nums" style={{ ...NUM, fontWeight: 700 }}>{pctText}</span>
                                       <span className="mt-1.5 block"><ShareBar pct={txBusy ? null : pct} color={t.color} /></span>
                                     </span>
-                                    <span className="text-right text-[15px] font-semibold tabular-nums" style={NUM}>{countEl}</span>
+                                    <span className="text-right text-sm font-semibold tabular-nums" style={NUM}>{countEl}</span>
                                   </div>
                                 </li>
                               );
                             })}
                           </ul>
                           {!first && !done && !error && <p className="mt-3 px-3 text-[11px] text-slate-500">Still counting older activity…</p>}
-                          <p className="mt-3 px-3 text-xs leading-5 text-slate-500">Received transfers and some contract interactions are not included in the total transaction count.</p>
+                          <p className="mt-3 flex gap-2 px-3 text-xs leading-5 text-slate-500">
+                            <span className="mt-0.5 shrink-0 text-[#62d4ff]"><Svg d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 16v-4M12 8h.01" size={14} /></span>
+                            <span><span className="font-semibold text-slate-300">Note:</span> Received transfers and some contract interactions are not counted in the total transaction count.</span>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1304,53 +1333,60 @@ function ActivityInner() {
 
               {/* ---------- ACTIVITY LIST ---------- */}
               {section === "activity" && (
-                <section className="fade-up relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-4 backdrop-blur-xl sm:p-6" style={{ "--delay": "0ms" } as CSSProperties}>
-                  <Grain />
-                  <div className="relative">
-                    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
-                      <SectionTitle icon={I.list}>Activity</SectionTitle>
-                      <div className="inline-flex max-w-full gap-1 overflow-x-auto">
-                        {FILTERS.map(([f, label]) => (
-                          <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{label}</FilterBtn>
-                        ))}
-                      </div>
+                <section ref={listTop} className="fade-up relative mt-4 min-w-0 overflow-hidden rounded-[1.75rem] border border-white/[0.14] bg-white/[0.07] p-4 sm:p-6" style={{ "--delay": "0ms" } as CSSProperties}>
+                  <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
+                    <SectionTitle icon={I.list}>Activity</SectionTitle>
+                    <div className="inline-flex max-w-full gap-1 overflow-x-auto">
+                      {FILTERS.map(([f, label]) => (
+                        <FilterBtn key={f} active={filter === f} onClick={() => { setFilter(f); setPage(1); setWantPage(null); }}>{label}</FilterBtn>
+                      ))}
                     </div>
+                  </div>
 
-                    {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
-                      <p className="mb-3 border-l-2 border-amber-400/60 py-1.5 pl-3 text-xs leading-5 text-amber-200">{error}</p>
-                    )}
+                  {error && (txMap.current.size > 0 || trMap.current.size > 0) && (
+                    <p className="mb-3 border-l-2 border-amber-400/60 py-1.5 pl-3 text-xs leading-5 text-amber-200">{error}</p>
+                  )}
 
-                    {!first && shown.length > 0 && (
-                      <div className={`hidden items-center gap-x-5 border-y border-white/[0.08] px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:grid ${DESK_COLS}`}>
-                        <span>Transaction</span>
-                        <span>Tx hash</span>
-                        <span>Time</span>
-                        <span>Status</span>
-                        <span className="text-right">Amount</span>
-                        <span className="text-right">Fee</span>
-                      </div>
-                    )}
+                  <div className="-mx-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                    <div className={!first && shown.length > 0 ? "min-w-[960px]" : ""}>
+                      {!first && shown.length > 0 && (
+                        <div className={`grid items-center gap-x-5 border-y border-white/[0.08] px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${DESK_COLS}`}>
+                          <span>Transaction</span>
+                          <span>Tx hash</span>
+                          <span>Time</span>
+                          <span>Status</span>
+                          <span className="text-right">Amount</span>
+                          <span className="text-right">Fee</span>
+                        </div>
+                      )}
 
-                    {body}
-
-                    {!first && shown.length > 0 && (
-                      <div ref={sentinel} className="px-3 pb-1 pt-6 text-center">
-                        {done ? (
-                          <p className="text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>
-                        ) : (
-                          <button onClick={() => { failsRef.current = 0; setError(""); loadMore(); }} disabled={loadingMore} className="rounded-full border border-white/10 bg-white/[0.045] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.08] disabled:opacity-60">
-                            {loadingMore ? "Loading older activity…" : "Load more"}
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.08] px-2 pt-4 text-xs text-slate-500">
-                      <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
-                      <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
-                        See everything on the explorer
-                      </a>
+                      {body}
                     </div>
+                  </div>
+
+                  {!first && shown.length > 0 && (
+                    <div className="px-3 pb-1 pt-6 text-center">
+                      <nav aria-label="Pages" className="flex items-center justify-center gap-1.5">
+                        <PagerBtn label="First page" disabled={page === 1} onClick={() => setPage(1)} d="m11 17-5-5 5-5M18 17l-5-5 5-5" />
+                        <PagerBtn label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} d="m15 6-6 6 6 6" />
+                        <span className="min-w-[7.5rem] px-2 text-sm tabular-nums text-slate-300" style={NUM}>
+                          Page <span className="font-bold text-white">{page}</span> of {pages}{done ? "" : "+"}
+                        </span>
+                        <PagerBtn label="Next page" disabled={(page >= pages && done) || wantPage !== null} onClick={goNext} d="m9 6 6 6-6 6" />
+                        <PagerBtn label="Last page" disabled={page >= pages} onClick={() => setPage(pages)} d="m13 17 5-5-5-5M6 17l5-5-5-5" />
+                      </nav>
+                      <p className="mt-3 text-xs text-slate-500">
+                        {wantPage !== null || loadingMore ? "Loading older activity…" : `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, shown.length)} of ${shown.length}${done ? "" : "+"}`}
+                      </p>
+                      {done && page >= pages && <p className="mt-1 text-xs text-slate-600">That&apos;s the whole history of this wallet on Arc mainnet.</p>}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.08] px-2 pt-4 text-xs text-slate-500">
+                    <span>{updated ? `Updated ${timeOf(updated)}` : ""}</span>
+                    <a href={`${EXPLORER}/address/${target}`} target="_blank" rel="noreferrer" className="font-medium text-[#65caff] hover:text-white">
+                      See everything on the explorer
+                    </a>
                   </div>
                 </section>
               )}
