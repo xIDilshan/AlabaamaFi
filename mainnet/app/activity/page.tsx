@@ -447,6 +447,7 @@ const PORTFOLIO = [
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtInt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
+const pad2 = (n: number | null) => (n === null ? "—" : n >= 0 && n < 10 ? `0${n}` : fmtInt(n));
 const hue = (a: string) => parseInt(a.slice(2, 8), 16) % 360;
 
 const GlowIcon = ({ d, size = 28 }: { d: string; size?: number }) => (
@@ -510,12 +511,34 @@ const ringPath = () => {
   const ri = RING_IN + RING_ROUND;
   return `M ${ro} 0 A ${ro} ${ro} 0 1 1 ${-ro} 0 A ${ro} ${ro} 0 1 1 ${ro} 0 Z M ${ri} 0 A ${ri} ${ri} 0 1 0 ${-ri} 0 A ${ri} ${ri} 0 1 0 ${ri} 0 Z`;
 };
+const CALL_SCALE_MAX = 1.9;
+const CALL_SCALE_MIN = 1.7;
+const CALL_BASE = 168;
+const CALL_EXTRA_MAX = 60;
 const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: boolean; focus: string | null; onFocus: (k: string | null) => void }) => {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(320);
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const scale = Math.min(CALL_SCALE_MAX, Math.max(CALL_SCALE_MIN, w / CALL_BASE));
+  const vw = Math.max(CALL_BASE, w / scale);
+  const extra = Math.min(CALL_EXTRA_MAX, Math.max(0, vw / 2 - CALL_BASE / 2));
+  const pxW = vw * scale;
+  useEffect(() => {
+    const el = wrap.current;
+    if (el && pxW > w) el.scrollLeft = (pxW - w) / 2;
+  }, [pxW, w]);
+
   const total = slices.reduce((acc, x) => acc + x.value, 0);
   const live = slices.filter((x) => x.value > 0);
   const empty = loading || total <= 0 || live.length === 0;
   const weights = live.map((x) => Math.max(x.value / total, RING_MIN));
-  const wSum = weights.reduce((acc, w) => acc + w, 0);
+  const wSum = weights.reduce((acc, v) => acc + v, 0);
   let start = 0;
   const parts = live.map((x, i) => {
     const a0 = (start / wSum) * Math.PI * 2;
@@ -565,12 +588,12 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
   const single = empty || live.length === 1;
 
   return (
-    <div className="relative mx-auto w-full">
-      <svg viewBox="-84 -62 168 124" className={`mx-auto block h-auto w-full max-w-[21rem] overflow-visible lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
+    <div ref={wrap} className="relative mx-auto w-full overflow-x-auto py-1 [scrollbar-width:thin] lg:overflow-visible">
+      <svg viewBox={`${-vw / 2} -62 ${vw} 124`} style={{ width: pxW, maxWidth: "none" }} className={`mx-auto block h-auto lg:hidden ${loading ? "animate-pulse" : ""}`} role="img" aria-label="How the total is split">
         {single ? ring : drawSlices()}
         {!single &&
           calls.map((c) => {
-            const endX = c.elbow.x + c.dir * 6;
+            const endX = c.elbow.x + c.dir * (6 + extra);
             return (
               <g key={c.key} style={{ pointerEvents: "none", opacity: focus !== null && focus !== c.key ? 0.3 : 1, transition: "opacity .2s" }}>
                 <path d={`M ${c.dot.x} ${c.dot.y} L ${c.edge.x} ${c.edge.y}`} stroke={readableOn(c.color)} strokeWidth="0.55" fill="none" strokeLinecap="round" />
@@ -1108,24 +1131,21 @@ function ActivityInner() {
                   <div className="relative">
                     <div className="flex items-start justify-between gap-4">
                       <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
-                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh portfolio" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
                         <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                       </button>
                     </div>
 
-                    <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
-                      <div>
-                        <div className="text-center">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                            {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                          </p>
-                          <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-                        </div>
-                        <div className="mt-6">
-                          <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
-                        </div>
-                      </div>
+                    <div className="mt-8 text-center lg:text-left">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                      <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                        {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                      </p>
+                      <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                    </div>
+
+                    <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                      <Donut slices={rows.map((r) => ({ key: r.sym, label: r.sym, color: r.color, value: r.usd ?? 0 }))} loading={loadingInfo} focus={focusKey} onFocus={setFocusKey} />
 
                       <div className="min-w-0">
                         <div className={`${TABLE_HEAD} ${PF_COLS} px-3`}>
@@ -1193,27 +1213,31 @@ function ActivityInner() {
                 <section className={`fade-up mt-4 ${MATTE_CARD}`}>
                   <Grain />
                   <div className="relative">
-                    <SectionTitle icon={I.history}>Transactions</SectionTitle>
+                    <div className="flex items-start justify-between gap-4">
+                      <SectionTitle icon={I.history}>Transactions</SectionTitle>
+                      <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
+                        <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
+                      </button>
+                    </div>
 
-                    <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
+                    <div className="mt-8 text-center lg:text-left">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
+                      <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                        {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 grid items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
                       <div>
-                        <div className="text-center">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total on Arc mainnet</p>
-                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                            {loadingInfo && totalTx === null ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : fmtInt(totalTx)}
-                          </p>
-                        </div>
-                        <div className="mt-6">
-                          <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
-                        </div>
+                        <Donut slices={typeRows.map((t) => ({ key: t.key, label: t.label, color: t.color, value: t.n }))} loading={first} focus={focusKey} onFocus={setFocusKey} />
                         <dl className="mx-auto mt-6 max-w-xs space-y-3 border-t border-white/[0.08] pt-5 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Sent by this wallet</dt>
-                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.sent ?? null)}</dd>
+                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.sent ?? null)}</dd>
                           </div>
                           <div className="flex items-center justify-between gap-3">
                             <dt className="text-slate-400">Token transfers</dt>
-                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : fmtInt(info?.transfersCount ?? null)}</dd>
+                            <dd className="font-semibold tabular-nums" style={NUM}>{loadingInfo ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : pad2(info?.transfersCount ?? null)}</dd>
                           </div>
                         </dl>
                       </div>
@@ -1229,7 +1253,7 @@ function ActivityInner() {
                           {typeRows.map((t) => {
                             const pct = typeTotal > 0 ? (t.n / typeTotal) * 100 : null;
                             const pctText = first || pct === null ? "—" : fmtPct(pct);
-                            const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${fmtInt(t.n)}${done ? "" : "+"}`;
+                            const countEl = first ? <span className="inline-block h-4 w-10 animate-pulse rounded bg-white/[0.07]" /> : `${pad2(t.n)}${done ? "" : "+"}`;
                             return (
                               <li
                                 key={t.key}
