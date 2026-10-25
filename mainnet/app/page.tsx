@@ -1080,7 +1080,7 @@ export default function Home() {
               </Reveal>
 
               <Reveal delay={180}>
-                <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">A simple interface for Arc</p>
+                <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">Your orbit for DeFi on Arc</p>
                 <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
               </Reveal>
 
@@ -1221,7 +1221,7 @@ export default function Home() {
         {/* ---------------- FOOTER ---------------- */}
         <footer className="border-t border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
           <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
-            <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+            <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. Your orbit for DeFi on Arc.</p>
 
             <div className="order-1 flex items-center gap-1 sm:order-2">
               <a href={SOCIAL.discord} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={FOOTER_SOCIAL_PX} /></a>
