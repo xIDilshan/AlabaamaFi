@@ -622,13 +622,13 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
 };
 type WeekDay = { key: number; label: string; full: string; today: boolean; known: boolean };
 const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
-const DOT_W = 384;
-const DOT_H = 98;
-const DOT_PX = 18;
-const DOT_COLS = 50;
-const DOT_ROWS = 11;
-const DOT_TOP = 8;
-const DOT_BOT = 8;
+const DOT_W = 432;
+const DOT_H = 120;
+const DOT_PX = 20;
+const DOT_COLS = 58;
+const DOT_ROWS = 14;
+const DOT_TOP = 10;
+const DOT_BOT = 10;
 const dotX = (c: number) => DOT_PX + (c / (DOT_COLS - 1)) * (DOT_W - DOT_PX * 2);
 const dotY = (r: number) => DOT_TOP + (r / (DOT_ROWS - 1)) * (DOT_H - DOT_TOP - DOT_BOT);
 
@@ -679,6 +679,7 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
     }
     const grid: ReactNode[] = [];
     const fill: ReactNode[] = [];
+    const halo: ReactNode[] = [];
     const line: ReactNode[] = [];
     let n = 0;
     for (let c = 0; c < DOT_COLS; c++) {
@@ -693,10 +694,11 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
       }
       bright[c].forEach((r) => {
         n++;
-        line.push(<circle key={`l${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="2.6" fill={color} style={{ animation: `dotPulse ${(2.4 + (n % 5) * 0.5).toFixed(1)}s ease-in-out ${((n * 0.37) % 3).toFixed(2)}s infinite` }} />);
+        halo.push(<circle key={`h${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="5.4" fill={color} opacity="0.13" />);
+        line.push(<circle key={`l${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="2.9" fill={color} style={{ animation: `dotPulse ${(2.4 + (n % 5) * 0.5).toFixed(1)}s ease-in-out ${((n * 0.37) % 3).toFixed(2)}s infinite` }} />);
       });
     }
-    return { grid, fill, line };
+    return { grid, fill, halo, line };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, days, color]);
 
@@ -712,10 +714,10 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
   const endK = pts[pts.length - 1]?.k ?? 0;
 
   return (
-    <div className="hidden w-full max-w-[24rem] lg:block">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holdings · 7 days</p>
-        <p className="text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : shown !== null ? "#f1f5f9" : color }}>
+    <div className="hidden w-full max-w-[27rem] lg:block">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holdings · 7 days</p>
+        <p className="whitespace-nowrap text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : shown !== null ? "#f1f5f9" : color }}>
           {!ready ? "—" : shown !== null ? `${fmtUsd(days[shown].value)} · ${days[shown].full}` : `${signedUsd(change)}${pct !== null ? ` · ${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%` : ""}`}
         </p>
       </div>
@@ -732,19 +734,23 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
       >
         <g>{art.grid}</g>
         <g>{art.fill}</g>
-        <g style={{ filter: `drop-shadow(0 0 2.5px ${color})` }}>{art.line}</g>
+        <g>{art.halo}</g>
+        <g>{art.line}</g>
         {ready && (
           <>
             {shown !== null && <line x1={dotX(colOfDay(shown))} x2={dotX(colOfDay(shown))} y1="0" y2={DOT_H} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />}
-            <circle
-              cx={dotX(colOfDay(shown ?? endK))}
-              cy={dotY(rowOf((shown !== null ? days[shown] : days[endK]).value))}
-              r="3.8"
-              fill={color}
-              stroke="#0b1220"
-              strokeWidth="1.6"
-              style={{ filter: `drop-shadow(0 0 4px ${color})` }}
-            />
+            {(() => {
+              const mx = dotX(colOfDay(shown ?? endK));
+              const my = dotY(rowOf((shown !== null ? days[shown] : days[endK]).value));
+              return (
+                <g>
+                  <circle cx={mx} cy={my} r="10" fill={color} opacity="0.12" />
+                  <circle cx={mx} cy={my} r="6.5" fill={color} opacity="0.22" />
+                  {shown === null && <circle cx={mx} cy={my} r="4.2" fill="none" stroke={color} strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />}
+                  <circle cx={mx} cy={my} r="4.2" fill={color} stroke="#0b1220" strokeWidth="1.6" />
+                </g>
+              );
+            })()}
           </>
         )}
       </svg>
@@ -755,6 +761,12 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
           </span>
         ))}
       </div>
+      {ready && (
+        <div className="mt-2 flex justify-between text-[11px] tabular-nums text-slate-500" style={NUM}>
+          <span>Low {fmtUsd(lo)}</span>
+          <span>High {fmtUsd(hi)}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -768,10 +780,10 @@ function TxHeat({ weeks, loading }: { weeks: HeatDay[][]; loading: boolean }) {
   const max = Math.max(1, ...all.map((d) => d.total));
   const sum = all.reduce((a, d) => a + d.total, 0);
   return (
-    <div className="hidden w-full max-w-[24rem] lg:block">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 4 weeks</p>
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+    <div className="hidden w-full max-w-[27rem] lg:block">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 2 weeks</p>
+        <div className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-slate-500">
           <span>Less</span>
           {[1, 2, 3, 4].map((l) => (
             <span key={l} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: HEAT[l] }} />
@@ -793,7 +805,7 @@ function TxHeat({ weeks, loading }: { weeks: HeatDay[][]; loading: boolean }) {
                 <span
                   key={d.key}
                   title={loading || d.future ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`}
-                  className={`h-6 rounded-md ${d.today ? "ring-1 ring-white/70" : ""} ${d.future ? "border border-dashed border-white/10" : ""}`}
+                  className={`h-9 rounded-lg ${d.today ? "ring-1 ring-white/70" : ""} ${d.future ? "border border-dashed border-white/10" : ""}`}
                   style={{ background: d.future ? "transparent" : !d.known ? "rgba(255,255,255,0.03)" : HEAT[lvl], boxShadow: lvl >= 3 ? `0 0 5px ${HEAT[lvl]}80` : undefined }}
                 />
               );
@@ -802,7 +814,7 @@ function TxHeat({ weeks, loading }: { weeks: HeatDay[][]; loading: boolean }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-slate-500">
-        Last 4 weeks · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
+        Last 2 weeks · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
       </p>
     </div>
   );
@@ -1155,8 +1167,8 @@ function ActivityInner() {
     }
     const now = new Date();
     const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 21);
-    return Array.from({ length: 4 }, (_, w) =>
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 7);
+    return Array.from({ length: 2 }, (_, w) =>
       Array.from({ length: 7 }, (_, i) => {
         const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + w * 7 + i);
         const start = day.getTime();
@@ -1340,6 +1352,7 @@ function ActivityInner() {
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
         @keyframes dotPulse{0%,100%{opacity:.6}50%{opacity:1}}
+        @keyframes endRing{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.8);opacity:0}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
