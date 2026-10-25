@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
@@ -207,25 +207,21 @@ function SpaceBackground() {
   const { stars, dust } = useMemo(() => {
     let seed = 41;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const r2 = (n: number) => Math.round(n * 100) / 100;
-    return {
-      stars: Array.from({ length: 140 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1 + rnd() * 1.8), d: r2(rnd() * 7), t: r2(3 + rnd() * 5) })),
-      dust: Array.from({ length: 26 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1.5 + rnd() * 2), d: r2(rnd() * 14), t: r2(14 + rnd() * 14) })),
-    };
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    const make = (count: number, color: string) => Array.from({ length: count }, () => `${r1(rnd() * 100)}vw ${r1(rnd() * 100)}vh 2.4px ${r1(rnd() * 0.8)}px ${color}`).join(",");
+    return { stars: Array.from({ length: 6 }, () => make(24, "#a9dfff")), dust: make(26, "#6cc4ff") };
   }, []);
+  const TIMES = [4.2, 5.6, 6.8, 5.0, 7.6, 6.2];
+  const DELAYS = [0, 1.7, 3.1, 0.9, 4.4, 2.6];
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden" style={{ willChange: "transform" }}>
-      <div className="absolute -inset-6 blur-[3px]">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
-        <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
-        <div className="absolute -left-[25vw] top-[45%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
-        {stars.map((s) => (
-          <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
-        ))}
-        {dust.map((p) => (
-          <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
-        ))}
-      </div>
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
+      <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)]" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
+      <div className="absolute -left-[25vw] top-[45%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)]" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
+      {stars.map((shadow, i) => (
+        <span key={i} className="absolute left-0 top-0 h-px w-px rounded-full" style={{ boxShadow: shadow, animation: `twinkle ${TIMES[i]}s ease-in-out ${DELAYS[i]}s infinite` }} />
+      ))}
+      <span className="absolute left-0 top-0 h-px w-px rounded-full" style={{ boxShadow: dust, opacity: 0.4 }} />
     </div>
   );
 }
@@ -620,206 +616,6 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     </div>
   );
 };
-type WeekDay = { key: number; label: string; full: string; today: boolean; known: boolean };
-const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
-const DOT_W = 432;
-const DOT_H = 120;
-const DOT_PX = 20;
-const DOT_COLS = 58;
-const DOT_ROWS = 14;
-const DOT_TOP = 10;
-const DOT_BOT = 10;
-const dotX = (c: number) => DOT_PX + (c / (DOT_COLS - 1)) * (DOT_W - DOT_PX * 2);
-const dotY = (r: number) => DOT_TOP + (r / (DOT_ROWS - 1)) * (DOT_H - DOT_TOP - DOT_BOT);
-
-function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; loading: boolean }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const pts = days.map((d, k) => ({ d, k })).filter((p) => p.d.known);
-  const ready = !loading && pts.length >= 2;
-  const vals = pts.map((p) => p.d.value);
-  const lo = Math.min(...vals);
-  const hi = Math.max(...vals);
-  const first = vals[0] ?? 0;
-  const last = vals[vals.length - 1] ?? 0;
-  const change = last - first;
-  const color = change > 0.0049 ? "#34d399" : change < -0.0049 ? "#f87171" : "#62d4ff";
-  const rowOf = (v: number) => (hi - lo < 1e-9 ? Math.floor(DOT_ROWS / 2) : Math.round((1 - (v - lo) / (hi - lo)) * (DOT_ROWS - 1)));
-  const colOfDay = (k: number) => Math.round((k / (days.length - 1)) * (DOT_COLS - 1));
-
-  const art = useMemo(() => {
-    const bright: Set<number>[] = Array.from({ length: DOT_COLS }, () => new Set<number>());
-    const has: boolean[] = new Array(DOT_COLS).fill(false);
-    if (ready) {
-      const rowsAt: (number | null)[] = [];
-      for (let c = 0; c < DOT_COLS; c++) {
-        const kf = (c / (DOT_COLS - 1)) * (days.length - 1);
-        if (kf < pts[0].k - 1e-9 || kf > pts[pts.length - 1].k + 1e-9) {
-          rowsAt.push(null);
-          continue;
-        }
-        const i = pts.findIndex((_, j) => j < pts.length - 1 && pts[j].k <= kf && kf <= pts[j + 1].k);
-        let v = pts[pts.length - 1].d.value;
-        if (i >= 0) {
-          const t = (kf - pts[i].k) / (pts[i + 1].k - pts[i].k);
-          v = pts[i].d.value + (pts[i + 1].d.value - pts[i].d.value) * (t * t * (3 - 2 * t));
-        }
-        const r = rowOf(v);
-        rowsAt.push(r);
-        bright[c].add(r);
-        has[c] = true;
-      }
-      for (let c = 1; c < DOT_COLS; c++) {
-        const a0 = rowsAt[c - 1];
-        const a1 = rowsAt[c];
-        if (a0 === null || a1 === null || Math.abs(a1 - a0) < 2) continue;
-        const mid = Math.round((a0 + a1) / 2);
-        for (let r = Math.min(a1, mid); r <= Math.max(a1, mid); r++) bright[c].add(r);
-        for (let r = Math.min(a0, mid); r <= Math.max(a0, mid); r++) bright[c - 1].add(r);
-      }
-    }
-    const grid: ReactNode[] = [];
-    const fill: ReactNode[] = [];
-    const halo: ReactNode[] = [];
-    const line: ReactNode[] = [];
-    let n = 0;
-    for (let c = 0; c < DOT_COLS; c++) {
-      const top = has[c] ? Math.min(...bright[c]) : DOT_ROWS;
-      const bottom = has[c] ? Math.max(...bright[c]) : -1;
-      for (let r = 0; r < DOT_ROWS; r++) {
-        if (r < top) grid.push(<circle key={`g${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="1.2" fill="#a9dfff" opacity="0.12" />);
-        else if (r > bottom) {
-          const depth = (r - bottom) / Math.max(1, DOT_ROWS - 1 - bottom);
-          fill.push(<circle key={`f${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="1.7" fill={color} opacity={Number((0.5 * (1 - 0.85 * depth)).toFixed(3))} />);
-        }
-      }
-      bright[c].forEach((r) => {
-        n++;
-        halo.push(<circle key={`h${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="5.4" fill={color} opacity="0.13" />);
-        line.push(<circle key={`l${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="2.9" fill={color} style={{ animation: `dotPulse ${(2.4 + (n % 5) * 0.5).toFixed(1)}s ease-in-out ${((n * 0.37) % 3).toFixed(2)}s infinite` }} />);
-      });
-    }
-    return { grid, fill, halo, line };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, days, color]);
-
-  const onMove = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const fx = ((e.clientX - r.left) / r.width) * DOT_W;
-    let best = pts[0]?.k ?? 0;
-    for (const p of pts) if (Math.abs(dotX(colOfDay(p.k)) - fx) < Math.abs(dotX(colOfDay(best)) - fx)) best = p.k;
-    setHover(best);
-  };
-  const pct = first > 0.0049 ? (change / first) * 100 : null;
-  const shown = hover !== null && days[hover]?.known ? hover : null;
-  const endK = pts[pts.length - 1]?.k ?? 0;
-
-  return (
-    <div className="hidden w-full max-w-[27rem] lg:block">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holdings · 7 days</p>
-        <p className="whitespace-nowrap text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : shown !== null ? "#f1f5f9" : color }}>
-          {!ready ? "—" : shown !== null ? `${fmtUsd(days[shown].value)} · ${days[shown].full}` : `${signedUsd(change)}${pct !== null ? ` · ${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%` : ""}`}
-        </p>
-      </div>
-      <svg
-        viewBox={`0 0 ${DOT_W} ${DOT_H}`}
-        className={`mt-3 block h-auto w-full ${loading ? "animate-pulse" : ""}`}
-        style={{ touchAction: "pan-y" }}
-        onPointerMove={ready ? onMove : undefined}
-        onPointerDown={ready ? onMove : undefined}
-        onPointerLeave={() => setHover(null)}
-        onPointerCancel={() => setHover(null)}
-        role="img"
-        aria-label="Holdings over the last 7 days"
-      >
-        <g>{art.grid}</g>
-        <g>{art.fill}</g>
-        <g>{art.halo}</g>
-        <g>{art.line}</g>
-        {ready && (
-          <>
-            {shown !== null && <line x1={dotX(colOfDay(shown))} x2={dotX(colOfDay(shown))} y1="0" y2={DOT_H} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />}
-            {(() => {
-              const mx = dotX(colOfDay(shown ?? endK));
-              const my = dotY(rowOf((shown !== null ? days[shown] : days[endK]).value));
-              return (
-                <g>
-                  <circle cx={mx} cy={my} r="10" fill={color} opacity="0.12" />
-                  <circle cx={mx} cy={my} r="6.5" fill={color} opacity="0.22" />
-                  {shown === null && <circle cx={mx} cy={my} r="4.2" fill="none" stroke={color} strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />}
-                  <circle cx={mx} cy={my} r="4.2" fill={color} stroke="#0b1220" strokeWidth="1.6" />
-                </g>
-              );
-            })()}
-          </>
-        )}
-      </svg>
-      <div className="relative mt-1 h-4">
-        {days.map((d, k) => (
-          <span key={d.key} className={`absolute -translate-x-1/2 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`} style={{ left: `${(dotX(colOfDay(k)) / DOT_W) * 100}%` }}>
-            {d.label}
-          </span>
-        ))}
-      </div>
-      {ready && (
-        <div className="mt-2 flex justify-between text-[11px] tabular-nums text-slate-500" style={NUM}>
-          <span>Low {fmtUsd(lo)}</span>
-          <span>High {fmtUsd(hi)}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-type HeatDay = { key: number; full: string; short: string; total: number; known: boolean; future: boolean; today: boolean };
-const HEAT = ["rgba(255,255,255,0.06)", "#1d4f91", "#2a6bd1", "#4a90f5", "#8cc0ff"];
-const heatLevel = (total: number, max: number) => (total <= 0 ? 0 : total / max <= 0.25 ? 1 : total / max <= 0.5 ? 2 : total / max <= 0.75 ? 3 : 4);
-
-function TxHeat({ weeks, loading }: { weeks: HeatDay[][]; loading: boolean }) {
-  const all = weeks.flat().filter((d) => d.known && !d.future);
-  const max = Math.max(1, ...all.map((d) => d.total));
-  const sum = all.reduce((a, d) => a + d.total, 0);
-  return (
-    <div className="hidden w-full max-w-[27rem] lg:block">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 2 weeks</p>
-        <div className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-slate-500">
-          <span>Less</span>
-          {[1, 2, 3, 4].map((l) => (
-            <span key={l} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: HEAT[l] }} />
-          ))}
-          <span>More</span>
-        </div>
-      </div>
-      <div className={`mt-3 grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] gap-1.5 ${loading ? "animate-pulse" : ""}`}>
-        <span />
-        {weeks[0].map((d) => (
-          <span key={d.short} className="text-center text-[11px] text-slate-500">{d.short}</span>
-        ))}
-        {weeks.map((week) => (
-          <Fragment key={week[0].key}>
-            <span className="self-center text-[10px] tabular-nums text-slate-500">{new Date(week[0].key).toLocaleDateString([], { month: "short", day: "2-digit" })}</span>
-            {week.map((d) => {
-              const lvl = loading || !d.known || d.future ? 0 : heatLevel(d.total, max);
-              return (
-                <span
-                  key={d.key}
-                  title={loading || d.future ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`}
-                  className={`h-9 rounded-lg ${d.today ? "ring-1 ring-white/70" : ""} ${d.future ? "border border-dashed border-white/10" : ""}`}
-                  style={{ background: d.future ? "transparent" : !d.known ? "rgba(255,255,255,0.03)" : HEAT[lvl], boxShadow: lvl >= 3 ? `0 0 5px ${HEAT[lvl]}80` : undefined }}
-                />
-              );
-            })}
-          </Fragment>
-        ))}
-      </div>
-      <p className="mt-3 text-xs text-slate-500">
-        Last 2 weeks · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
-      </p>
-    </div>
-  );
-}
-
 const ShareBar = ({ pct, color }: { pct: number | null; color: string }) => (
   <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.1]">
     <span className="block h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct ?? 0))}%`, background: color }} />
@@ -1124,67 +920,6 @@ function ActivityInner() {
   ];
   const typeTotal = typeRows.reduce((a, t) => a + t.n, 0);
 
-  const weekDays = useMemo(() => {
-    const now = new Date();
-    return Array.from({ length: 7 }, (_, k) => {
-      const i = 6 - k;
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1).getTime();
-      const start = d.getTime();
-      return {
-        key: start,
-        end,
-        label: d.toLocaleDateString([], { weekday: "short" }),
-        full: d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }),
-        today: i === 0,
-        known: done || horizon === 0 || start >= horizon,
-      };
-    });
-  }, [done, horizon]);
-  const holdWeek = useMemo(
-    () =>
-      weekDays.map((day) => {
-        const evs = events.filter((e) => e.t >= day.key && e.t < day.end);
-        let usd = 0;
-        for (const e of evs) {
-          for (const l of e.legs) {
-            const v = Number(l.amount) * (prices[l.symbol] ?? (l.symbol === "USDC" ? 1 : 0));
-            usd += l.dir === "in" ? v : -v;
-          }
-          if (e.fee) usd -= Number(e.fee) || 0;
-        }
-        return { ...day, usd, count: evs.length };
-      }),
-    [weekDays, events, prices]
-  );
-  const heatWeeks = useMemo(() => {
-    const counts = new Map<number, number>();
-    for (const e of events) {
-      if (!e.t) continue;
-      const d = new Date(e.t);
-      const k = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-      counts.set(k, (counts.get(k) ?? 0) + 1);
-    }
-    const now = new Date();
-    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 7);
-    return Array.from({ length: 2 }, (_, w) =>
-      Array.from({ length: 7 }, (_, i) => {
-        const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + w * 7 + i);
-        const start = day.getTime();
-        return {
-          key: start,
-          short: day.toLocaleDateString([], { weekday: "short" }),
-          full: day.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }),
-          total: counts.get(start) ?? 0,
-          known: done || horizon === 0 || start >= horizon,
-          future: start > today0,
-          today: start === today0,
-        } as HeatDay;
-      })
-    );
-  }, [events, done, horizon]);
-
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
     for (const e of pageItems) {
@@ -1206,15 +941,6 @@ function ActivityInner() {
   });
   const totalUsd = rows.reduce((a, r) => a + (r.usd ?? 0), 0);
   const haveUsd = rows.some((r) => r.usd !== null);
-  const holdSeries = useMemo(() => {
-    const end: number[] = new Array(holdWeek.length).fill(0);
-    let acc = totalUsd;
-    for (let k = holdWeek.length - 1; k >= 0; k--) {
-      end[k] = acc;
-      acc -= holdWeek[k].usd;
-    }
-    return holdWeek.map((d, k) => ({ ...d, value: Math.max(0, end[k]) }));
-  }, [holdWeek, totalUsd]);
   const totalTx = info?.txCount ?? (txDone && txMap.current.size ? txMap.current.size : null);
 
   /* ----- actions ----- */
@@ -1332,7 +1058,7 @@ function ActivityInner() {
             <h3 className="border-b border-white/[0.08] px-2 pb-2 pt-6 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{g.day}</h3>
             <div className="divide-y divide-white/[0.05]">
               {g.items.map((e) => (
-                <Row key={`${e.hash}-${e.type}`} e={e} />
+                <Row key={e.hash} e={e} />
               ))}
             </div>
           </section>
@@ -1351,8 +1077,6 @@ function ActivityInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
-        @keyframes dotPulse{0%,100%{opacity:.6}50%{opacity:1}}
-        @keyframes endRing{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.8);opacity:0}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
@@ -1435,7 +1159,7 @@ function ActivityInner() {
 
               {/* ---------- PORTFOLIO ---------- */}
               {section === "portfolio" && (
-                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [overscroll-behavior-x:contain] [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
@@ -1446,15 +1170,12 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 lg:flex lg:items-start lg:justify-between lg:gap-10">
-                        <div className="text-center lg:text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
-                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                            {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
-                          </p>
-                          <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
-                        </div>
-                        <HoldLine days={holdSeries} loading={loadingInfo || txBusy || Object.keys(prices).length === 0} />
+                      <div className="mt-8 text-center lg:text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
+                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                        </p>
+                        <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
@@ -1524,7 +1245,7 @@ function ActivityInner() {
 
               {/* ---------- TRANSACTIONS ---------- */}
               {section === "transactions" && (
-                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                <div className="tab-in -mx-4 mt-4 overflow-x-auto px-4 pb-3 [overscroll-behavior-x:contain] [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                   <section className={`${MATTE_CARD} min-w-[328px]`}>
                     <Grain />
                     <div className="relative">
@@ -1535,14 +1256,11 @@ function ActivityInner() {
                         </button>
                       </div>
 
-                      <div className="mt-8 lg:flex lg:items-start lg:justify-between lg:gap-10">
-                        <div className="text-center lg:text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
-                          <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                            {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
-                          </p>
-                        </div>
-                        <TxHeat weeks={heatWeeks} loading={txBusy} />
+                      <div className="mt-8 text-center lg:text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total transactions on Arc</p>
+                        <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
+                          {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
+                        </p>
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
@@ -1628,7 +1346,7 @@ function ActivityInner() {
                     <p className="mb-3 border-l-2 border-amber-400/60 py-1.5 pl-3 text-xs leading-5 text-amber-200">{error}</p>
                   )}
 
-                  <div className="-mx-4 overflow-x-auto px-4 pb-3 [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+                  <div className="-mx-4 overflow-x-auto px-4 pb-3 [overscroll-behavior-x:contain] [scrollbar-color:rgba(255,255,255,0.3)_transparent] [scrollbar-width:thin] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
                     <div className={!first && shown.length > 0 ? "min-w-[960px]" : ""}>
                       {!first && shown.length > 0 && (
                         <div className={`grid items-center gap-x-5 rounded-xl border border-white/[0.12] bg-white/[0.09] px-2 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-100 ${DESK_COLS}`}>
