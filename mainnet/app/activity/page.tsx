@@ -842,7 +842,7 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
         if (a <= 0.01) continue;
         ctx.fillStyle = `rgba(${p.col},${(a * 0.18).toFixed(3)})`;
         ctx.beginPath();
-        ctx.arc(x, y, p.size * 3, 0, 6.283);
+        ctx.arc(x, y, p.size * 2.2, 0, 6.283);
         ctx.fill();
         ctx.fillStyle = `rgba(${p.col},${a.toFixed(3)})`;
         ctx.beginPath();
@@ -1307,7 +1307,7 @@ function ActivityInner() {
     if (!haveUsd) return null;
     const now = Date.now();
     const weekStart = now - 7 * 86400000;
-    const start = done ? weekStart : Math.max(weekStart, horizon);
+    const start = Math.min(done ? weekStart : Math.max(weekStart, horizon), now - 3600000);
     const evs = events.filter((e) => e.t >= start).sort((a, b) => a.t - b.t);
     const nets = evs.map((e) => {
       let usd = 0;
@@ -1324,16 +1324,15 @@ function ActivityInner() {
       after[i] = acc;
       acc -= nets[i];
     }
-    const eps = Math.max(60000, (now - start) * 0.045);
-    const raw: SeriesPt[] = [{ t: start, v: Math.max(0, acc) }];
-    evs.forEach((e, i) => {
-      raw.push({ t: Math.max(start, e.t - eps), v: Math.max(0, i === 0 ? acc : after[i - 1]) });
-      raw.push({ t: e.t, v: Math.max(0, after[i]) });
-    });
-    raw.push({ t: now, v: Math.max(0, totalUsd) });
-    raw.sort((a, b) => a.t - b.t);
+    const SAMPLES = 48;
+    const step = (now - start) / SAMPLES;
     const pts: SeriesPt[] = [];
-    for (const p of raw) pts.push({ t: pts.length && p.t <= pts[pts.length - 1].t ? pts[pts.length - 1].t + 1 : p.t, v: p.v });
+    let j = 0;
+    for (let k = 0; k <= SAMPLES; k++) {
+      const tk = k === SAMPLES ? now : start + k * step;
+      while (j < evs.length && evs[j].t <= tk) j++;
+      pts.push({ t: tk, v: Math.max(0, j === 0 ? acc : after[j - 1]) });
+    }
     const change = pts[pts.length - 1].v - pts[0].v;
     const pct = pts[0].v > 0.0049 ? (change / pts[0].v) * 100 : null;
     const days = Math.round((now - start) / 86400000);
