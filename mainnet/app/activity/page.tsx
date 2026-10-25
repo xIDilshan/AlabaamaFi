@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
@@ -426,7 +426,7 @@ const PORTFOLIO = [
 ];
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtChipPrice = (p: number) => (p >= 10000 ? `$${(p / 1000).toFixed(1)}k` : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toFixed(4)}`);
+const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
 const fmtInt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
 const pad2 = (n: number | null) => (n === null ? "—" : n >= 0 && n < 10 ? `0${n}` : fmtInt(n));
 const hue = (a: string) => parseInt(a.slice(2, 8), 16) % 360;
@@ -617,6 +617,156 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     </div>
   );
 };
+type SeriesPt = { t: number; v: number };
+type HoldSeries = { pts: SeriesPt[]; start: number; end: number; change: number; pct: number | null; label: string };
+
+function monotoneSlopes(xs: number[], ys: number[]) {
+  const n = xs.length;
+  const h = xs.slice(1).map((x, i) => x - xs[i]);
+  const d = h.map((hi, i) => (ys[i + 1] - ys[i]) / hi);
+  const m = new Array(n).fill(0);
+  if (n === 2) {
+    m[0] = d[0];
+    m[1] = d[0];
+    return m;
+  }
+  m[0] = d[0];
+  m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) {
+    if (d[i - 1] * d[i] <= 0) m[i] = 0;
+    else {
+      const w1 = 2 * h[i] + h[i - 1];
+      const w2 = h[i] + 2 * h[i - 1];
+      m[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]);
+    }
+  }
+  return m;
+}
+function hermiteAt(xs: number[], ys: number[], m: number[], x: number) {
+  let i = xs.findIndex((px, k) => k < xs.length - 1 && x >= px && x <= xs[k + 1]);
+  if (i < 0) i = x < xs[0] ? 0 : xs.length - 2;
+  const h = xs[i + 1] - xs[i];
+  const t = (x - xs[i]) / h;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * ys[i] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * ys[i + 1] + (t3 - t2) * h * m[i + 1];
+}
+
+const CHART_H = 150;
+const CHART_PAD = 6;
+function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; loading: boolean; onHover: (p: SeriesPt | null) => void }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(0);
+  const [hx, setHx] = useState<number | null>(null);
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const ready = !loading && !!series && series.pts.length >= 2 && w > 0;
+  const pts = series?.pts ?? [];
+  const vals = pts.map((p) => p.v);
+  const lo = vals.length ? Math.min(...vals) : 0;
+  const hi = vals.length ? Math.max(...vals) : 1;
+  const pad = hi - lo > 1e-9 ? (hi - lo) * 0.15 : Math.max(hi * 0.05, 0.01);
+  const yMin = Math.max(0, lo - pad);
+  const yMax = hi + pad;
+  const color = !series ? "#62d4ff" : series.change > 0.0049 ? "#34d399" : series.change < -0.0049 ? "#f87171" : "#62d4ff";
+  const inner = Math.max(1, w - CHART_PAD * 2);
+  const xOf = (t: number) => CHART_PAD + ((t - (series?.start ?? 0)) / Math.max(1, (series?.end ?? 1) - (series?.start ?? 0))) * inner;
+  const yOf = (v: number) => CHART_H - 8 - ((v - yMin) / Math.max(1e-9, yMax - yMin)) * (CHART_H - 8 - 10);
+  const xs = pts.map((p) => xOf(p.t));
+  const ysPx = pts.map((p) => yOf(p.v));
+  const mY = ready ? monotoneSlopes(xs, ysPx) : [];
+  const mV = ready ? monotoneSlopes(xs, vals) : [];
+  let line = "";
+  if (ready) {
+    line = `M ${xs[0].toFixed(1)} ${ysPx[0].toFixed(1)}`;
+    for (let i = 0; i < xs.length - 1; i++) {
+      const h = xs[i + 1] - xs[i];
+      line += ` C ${(xs[i] + h / 3).toFixed(1)} ${(ysPx[i] + (mY[i] * h) / 3).toFixed(1)} ${(xs[i + 1] - h / 3).toFixed(1)} ${(ysPx[i + 1] - (mY[i + 1] * h) / 3).toFixed(1)} ${xs[i + 1].toFixed(1)} ${ysPx[i + 1].toFixed(1)}`;
+    }
+  }
+  const area = ready ? `${line} L ${xs[xs.length - 1].toFixed(1)} ${CHART_H} L ${xs[0].toFixed(1)} ${CHART_H} Z` : "";
+  const gid = useId().replace(/:/g, "");
+  const move = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
+    if (!ready || !series) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = Math.min(xs[xs.length - 1], Math.max(xs[0], e.clientX - r.left));
+    const v = Math.max(0, hermiteAt(xs, vals, mV, x));
+    setHx(x);
+    onHover({ t: series.start + ((x - CHART_PAD) / inner) * (series.end - series.start), v });
+  };
+  const leave = () => {
+    setHx(null);
+    onHover(null);
+  };
+  const hv = hx !== null && ready ? Math.max(0, hermiteAt(xs, vals, mV, hx)) : null;
+  const ticks: { x: number; label: string }[] = [];
+  if (ready && series) {
+    const d0 = new Date(series.start);
+    for (let m = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 1).getTime(); m < series.end; m += 86400000) {
+      const x = xOf(m);
+      if (x > 24 && x < w - 24) ticks.push({ x, label: new Date(m).toLocaleDateString([], { weekday: "short" }) });
+    }
+  }
+  return (
+    <div ref={wrap} className="w-full min-w-0">
+      <svg
+        width={w || "100%"}
+        height={CHART_H}
+        className={`block ${loading ? "animate-pulse" : ""}`}
+        style={{ touchAction: "pan-y", visibility: w > 0 ? "visible" : "hidden" }}
+        onPointerMove={ready ? move : undefined}
+        onPointerDown={ready ? move : undefined}
+        onPointerLeave={leave}
+        onPointerCancel={leave}
+        role="img"
+        aria-label="Holdings over the last 7 days"
+      >
+        <defs>
+          <linearGradient id={`hc-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={color} stopOpacity="0.3" />
+            <stop offset="1" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line key={f} x1="0" x2={w} y1={CHART_H * f} y2={CHART_H * f} stroke="rgba(255,255,255,0.06)" strokeDasharray="2 6" />
+        ))}
+        {ready ? (
+          <>
+            <path d={area} fill={`url(#hc-${gid})`} />
+            <path d={line} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            {hx !== null && hv !== null ? (
+              <>
+                <line x1={hx} x2={hx} y1="0" y2={CHART_H} stroke="rgba(255,255,255,0.28)" strokeDasharray="3 3" />
+                <circle cx={hx} cy={yOf(hv)} r="5" fill={color} stroke="#0b1220" strokeWidth="2" />
+              </>
+            ) : (
+              <g>
+                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="9" fill={color} opacity="0.14" />
+                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="4.5" fill="none" stroke={color} strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />
+                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="4.5" fill={color} stroke="#0b1220" strokeWidth="2" />
+              </g>
+            )}
+          </>
+        ) : (
+          <path d={`M ${CHART_PAD} ${CHART_H / 2} L ${Math.max(CHART_PAD, w - CHART_PAD)} ${CHART_H / 2}`} stroke="rgba(255,255,255,0.14)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 7" />
+        )}
+      </svg>
+      <div className="relative mt-1 h-4">
+        {ticks.map((t) => (
+          <span key={t.x} className="absolute -translate-x-1/2 text-[11px] text-slate-500" style={{ left: t.x }}>
+            {t.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const ShareBar = ({ pct, color }: { pct: number | null; color: string }) => (
   <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.1]">
     <span className="block h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct ?? 0))}%`, background: color }} />
@@ -942,6 +1092,44 @@ function ActivityInner() {
   });
   const totalUsd = rows.reduce((a, r) => a + (r.usd ?? 0), 0);
   const haveUsd = rows.some((r) => r.usd !== null);
+  const holdSeries = useMemo((): HoldSeries | null => {
+    if (!haveUsd) return null;
+    const now = Date.now();
+    const weekStart = now - 7 * 86400000;
+    const start = done ? weekStart : Math.max(weekStart, horizon);
+    const evs = events.filter((e) => e.t >= start).sort((a, b) => a.t - b.t);
+    const nets = evs.map((e) => {
+      let usd = 0;
+      for (const l of e.legs) {
+        const v = Number(l.amount) * (prices[l.symbol] ?? (l.symbol === "USDC" ? 1 : 0));
+        usd += l.dir === "in" ? v : -v;
+      }
+      if (e.fee) usd -= Number(e.fee) || 0;
+      return usd;
+    });
+    const after: number[] = new Array(evs.length);
+    let acc = totalUsd;
+    for (let i = evs.length - 1; i >= 0; i--) {
+      after[i] = acc;
+      acc -= nets[i];
+    }
+    const eps = Math.max(60000, (now - start) * 0.045);
+    const raw: SeriesPt[] = [{ t: start, v: Math.max(0, acc) }];
+    evs.forEach((e, i) => {
+      raw.push({ t: Math.max(start, e.t - eps), v: Math.max(0, i === 0 ? acc : after[i - 1]) });
+      raw.push({ t: e.t, v: Math.max(0, after[i]) });
+    });
+    raw.push({ t: now, v: Math.max(0, totalUsd) });
+    raw.sort((a, b) => a.t - b.t);
+    const pts: SeriesPt[] = [];
+    for (const p of raw) pts.push({ t: pts.length && p.t <= pts[pts.length - 1].t ? pts[pts.length - 1].t + 1 : p.t, v: p.v });
+    const change = pts[pts.length - 1].v - pts[0].v;
+    const pct = pts[0].v > 0.0049 ? (change / pts[0].v) * 100 : null;
+    const days = Math.round((now - start) / 86400000);
+    return { pts, start, end: pts[pts.length - 1].t, change, pct, label: days >= 7 ? "7 days" : days <= 1 ? "since yesterday" : `${days} days so far` };
+  }, [events, prices, totalUsd, haveUsd, done, horizon]);
+  const [hoverPt, setHoverPt] = useState<SeriesPt | null>(null);
+  useEffect(() => setHoverPt(null), [section, target]);
   const totalTx = info?.txCount ?? (txDone && txMap.current.size ? txMap.current.size : null);
 
   /* ----- actions ----- */
@@ -1078,6 +1266,7 @@ function ActivityInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
+        @keyframes endRing{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.8);opacity:0}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
@@ -1166,18 +1355,6 @@ function ActivityInner() {
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
-                        <div className="-mt-1 hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-2 lg:flex">
-                          {rows.map((r) => {
-                            const px = prices[r.sym] ?? (r.sym === "USDC" ? 1 : null);
-                            return (
-                              <span key={r.sym} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/[0.06] px-3 py-1.5 text-xs ${px === null ? "animate-pulse" : ""}`}>
-                                <span className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: r.color }} aria-hidden />
-                                <span className="text-slate-300">{r.sym}</span>
-                                <span className="font-semibold tabular-nums text-white" style={NUM}>{px === null ? "—" : fmtChipPrice(px)}</span>
-                              </span>
-                            );
-                          })}
-                        </div>
                         <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="sticky right-3 z-10 -mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
                           <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                         </button>
@@ -1186,9 +1363,27 @@ function ActivityInner() {
                       <div className="mt-8 text-center lg:text-left">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total value</p>
                         <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
-                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : haveUsd ? fmtUsd(totalUsd) : "—"}
+                          {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : hoverPt ? fmtUsd(hoverPt.v) : haveUsd ? fmtUsd(totalUsd) : "—"}
                         </p>
-                        <p className="mt-1.5 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                        <p className="mt-1.5 min-h-[1.25rem] whitespace-nowrap text-[13px] tabular-nums" style={NUM}>
+                          {hoverPt ? (
+                            <span className="text-slate-300">{new Date(hoverPt.t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                          ) : holdSeries && !loadingInfo ? (
+                            <>
+                              <span className={`font-semibold ${holdSeries.change > 0.0049 ? "text-emerald-300" : holdSeries.change < -0.0049 ? "text-red-300" : "text-slate-300"}`}>
+                                {holdSeries.change > 0.0049 ? "▲ " : holdSeries.change < -0.0049 ? "▼ " : ""}
+                                {signedUsd(holdSeries.change)}
+                                {holdSeries.pct !== null ? ` (${holdSeries.pct >= 0 ? "+" : "−"}${Math.abs(holdSeries.pct).toFixed(1)}%)` : ""}
+                              </span>
+                              <span className="text-slate-500"> · {holdSeries.label}</span>
+                            </>
+                          ) : null}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
+                      </div>
+
+                      <div className="mt-6">
+                        <HoldChart series={holdSeries} loading={loadingInfo || Object.keys(prices).length === 0} onHover={setHoverPt} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
