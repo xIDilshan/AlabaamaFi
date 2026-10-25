@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
@@ -622,54 +622,105 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
 };
 type WeekDay = { key: number; label: string; full: string; today: boolean; known: boolean };
 const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${fmtUsd(Math.abs(n))}`;
-const LINE_W = 384;
-const LINE_H = 84;
-const LINE_PAD_X = 18;
-const LINE_PAD_Y = 12;
+const DOT_W = 384;
+const DOT_H = 98;
+const DOT_PX = 18;
+const DOT_COLS = 50;
+const DOT_ROWS = 11;
+const DOT_TOP = 8;
+const DOT_BOT = 8;
+const dotX = (c: number) => DOT_PX + (c / (DOT_COLS - 1)) * (DOT_W - DOT_PX * 2);
+const dotY = (r: number) => DOT_TOP + (r / (DOT_ROWS - 1)) * (DOT_H - DOT_TOP - DOT_BOT);
 
 function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; loading: boolean }) {
-  const gid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
   const pts = days.map((d, k) => ({ d, k })).filter((p) => p.d.known);
   const ready = !loading && pts.length >= 2;
-  const x = (k: number) => LINE_PAD_X + (k / (days.length - 1)) * (LINE_W - LINE_PAD_X * 2);
   const vals = pts.map((p) => p.d.value);
   const lo = Math.min(...vals);
   const hi = Math.max(...vals);
-  const y = (v: number) => (hi - lo < 1e-9 ? LINE_H / 2 : LINE_H - LINE_PAD_Y - ((v - lo) / (hi - lo)) * (LINE_H - LINE_PAD_Y * 2));
   const first = vals[0] ?? 0;
   const last = vals[vals.length - 1] ?? 0;
   const change = last - first;
   const color = change > 0.0049 ? "#34d399" : change < -0.0049 ? "#f87171" : "#62d4ff";
-  const coords = pts.map((p) => ({ x: Number(x(p.k).toFixed(2)), y: Number(y(p.d.value).toFixed(2)) }));
-  let line = coords.length ? `M ${coords[0].x} ${coords[0].y}` : "";
-  for (let i = 1; i < coords.length; i++) {
-    const p = coords[i - 1];
-    const q = coords[i];
-    const mx = ((p.x + q.x) / 2).toFixed(2);
-    line += ` C ${mx} ${p.y} ${mx} ${q.y} ${q.x} ${q.y}`;
-  }
-  const area = coords.length ? `${line} L ${coords[coords.length - 1].x} ${LINE_H} L ${coords[0].x} ${LINE_H} Z` : "";
+  const rowOf = (v: number) => (hi - lo < 1e-9 ? Math.floor(DOT_ROWS / 2) : Math.round((1 - (v - lo) / (hi - lo)) * (DOT_ROWS - 1)));
+  const colOfDay = (k: number) => Math.round((k / (days.length - 1)) * (DOT_COLS - 1));
+
+  const art = useMemo(() => {
+    const bright: Set<number>[] = Array.from({ length: DOT_COLS }, () => new Set<number>());
+    const has: boolean[] = new Array(DOT_COLS).fill(false);
+    if (ready) {
+      const rowsAt: (number | null)[] = [];
+      for (let c = 0; c < DOT_COLS; c++) {
+        const kf = (c / (DOT_COLS - 1)) * (days.length - 1);
+        if (kf < pts[0].k - 1e-9 || kf > pts[pts.length - 1].k + 1e-9) {
+          rowsAt.push(null);
+          continue;
+        }
+        const i = pts.findIndex((_, j) => j < pts.length - 1 && pts[j].k <= kf && kf <= pts[j + 1].k);
+        let v = pts[pts.length - 1].d.value;
+        if (i >= 0) {
+          const t = (kf - pts[i].k) / (pts[i + 1].k - pts[i].k);
+          v = pts[i].d.value + (pts[i + 1].d.value - pts[i].d.value) * (t * t * (3 - 2 * t));
+        }
+        const r = rowOf(v);
+        rowsAt.push(r);
+        bright[c].add(r);
+        has[c] = true;
+      }
+      for (let c = 1; c < DOT_COLS; c++) {
+        const a0 = rowsAt[c - 1];
+        const a1 = rowsAt[c];
+        if (a0 === null || a1 === null || Math.abs(a1 - a0) < 2) continue;
+        const mid = Math.round((a0 + a1) / 2);
+        for (let r = Math.min(a1, mid); r <= Math.max(a1, mid); r++) bright[c].add(r);
+        for (let r = Math.min(a0, mid); r <= Math.max(a0, mid); r++) bright[c - 1].add(r);
+      }
+    }
+    const grid: ReactNode[] = [];
+    const fill: ReactNode[] = [];
+    const line: ReactNode[] = [];
+    let n = 0;
+    for (let c = 0; c < DOT_COLS; c++) {
+      const top = has[c] ? Math.min(...bright[c]) : DOT_ROWS;
+      const bottom = has[c] ? Math.max(...bright[c]) : -1;
+      for (let r = 0; r < DOT_ROWS; r++) {
+        if (r < top) grid.push(<circle key={`g${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="1.2" fill="#a9dfff" opacity="0.12" />);
+        else if (r > bottom) {
+          const depth = (r - bottom) / Math.max(1, DOT_ROWS - 1 - bottom);
+          fill.push(<circle key={`f${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="1.7" fill={color} opacity={Number((0.5 * (1 - 0.85 * depth)).toFixed(3))} />);
+        }
+      }
+      bright[c].forEach((r) => {
+        n++;
+        line.push(<circle key={`l${c}-${r}`} cx={dotX(c)} cy={dotY(r)} r="2.6" fill={color} style={{ animation: `dotPulse ${(2.4 + (n % 5) * 0.5).toFixed(1)}s ease-in-out ${((n * 0.37) % 3).toFixed(2)}s infinite` }} />);
+      });
+    }
+    return { grid, fill, line };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, days, color]);
+
   const onMove = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
     const r = e.currentTarget.getBoundingClientRect();
-    const fx = ((e.clientX - r.left) / r.width) * LINE_W;
+    const fx = ((e.clientX - r.left) / r.width) * DOT_W;
     let best = pts[0]?.k ?? 0;
-    for (const p of pts) if (Math.abs(x(p.k) - fx) < Math.abs(x(best) - fx)) best = p.k;
+    for (const p of pts) if (Math.abs(dotX(colOfDay(p.k)) - fx) < Math.abs(dotX(colOfDay(best)) - fx)) best = p.k;
     setHover(best);
   };
-  const hp = hover !== null && days[hover]?.known ? coords[pts.findIndex((p) => p.k === hover)] : null;
   const pct = first > 0.0049 ? (change / first) * 100 : null;
+  const shown = hover !== null && days[hover]?.known ? hover : null;
+  const endK = pts[pts.length - 1]?.k ?? 0;
 
   return (
     <div className="hidden w-full max-w-[24rem] lg:block">
       <div className="flex items-baseline justify-between gap-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Holdings · 7 days</p>
-        <p className="text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : hover !== null ? "#f1f5f9" : color }}>
-          {!ready ? "—" : hover !== null && days[hover] ? `${fmtUsd(days[hover].value)} · ${days[hover].full}` : `${signedUsd(change)}${pct !== null ? ` · ${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%` : ""}`}
+        <p className="text-sm font-bold leading-4 tabular-nums" style={{ ...NUM, color: !ready ? "#64748b" : shown !== null ? "#f1f5f9" : color }}>
+          {!ready ? "—" : shown !== null ? `${fmtUsd(days[shown].value)} · ${days[shown].full}` : `${signedUsd(change)}${pct !== null ? ` · ${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%` : ""}`}
         </p>
       </div>
       <svg
-        viewBox={`0 0 ${LINE_W} ${LINE_H}`}
+        viewBox={`0 0 ${DOT_W} ${DOT_H}`}
         className={`mt-3 block h-auto w-full ${loading ? "animate-pulse" : ""}`}
         style={{ touchAction: "pan-y" }}
         onPointerMove={ready ? onMove : undefined}
@@ -679,32 +730,27 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
         role="img"
         aria-label="Holdings over the last 7 days"
       >
-        <defs>
-          <linearGradient id={`hl-${gid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={color} stopOpacity="0.28" />
-            <stop offset="1" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {ready ? (
+        <g>{art.grid}</g>
+        <g>{art.fill}</g>
+        <g style={{ filter: `drop-shadow(0 0 2.5px ${color})` }}>{art.line}</g>
+        {ready && (
           <>
-            <path d={area} fill={`url(#hl-${gid})`} />
-            <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {hp ? (
-              <>
-                <line x1={hp.x} x2={hp.x} y1="0" y2={LINE_H} stroke="rgba(255,255,255,0.28)" strokeDasharray="3 3" />
-                <circle cx={hp.x} cy={hp.y} r="4" fill={color} stroke="#0b1220" strokeWidth="2" />
-              </>
-            ) : (
-              <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4" fill={color} stroke="#0b1220" strokeWidth="2" />
-            )}
+            {shown !== null && <line x1={dotX(colOfDay(shown))} x2={dotX(colOfDay(shown))} y1="0" y2={DOT_H} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />}
+            <circle
+              cx={dotX(colOfDay(shown ?? endK))}
+              cy={dotY(rowOf((shown !== null ? days[shown] : days[endK]).value))}
+              r="3.8"
+              fill={color}
+              stroke="#0b1220"
+              strokeWidth="1.6"
+              style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+            />
           </>
-        ) : (
-          <path d={`M ${LINE_PAD_X} ${LINE_H / 2} L ${LINE_W - LINE_PAD_X} ${LINE_H / 2}`} stroke="rgba(255,255,255,0.12)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 6" />
         )}
       </svg>
       <div className="relative mt-1 h-4">
         {days.map((d, k) => (
-          <span key={d.key} className={`absolute -translate-x-1/2 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`} style={{ left: `${(x(k) / LINE_W) * 100}%` }}>
+          <span key={d.key} className={`absolute -translate-x-1/2 text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`} style={{ left: `${(dotX(colOfDay(k)) / DOT_W) * 100}%` }}>
             {d.label}
           </span>
         ))}
@@ -713,32 +759,50 @@ function HoldLine({ days, loading }: { days: (WeekDay & { value: number })[]; lo
   );
 }
 
-function TxBars({ days, loading }: { days: (WeekDay & { total: number })[]; loading: boolean }) {
-  const known = days.filter((d) => d.known);
-  const sum = known.reduce((a, d) => a + d.total, 0);
-  const max = Math.max(1, ...known.map((d) => d.total));
+type HeatDay = { key: number; full: string; short: string; total: number; known: boolean; future: boolean; today: boolean };
+const HEAT = ["rgba(255,255,255,0.06)", "#1d4f91", "#2a6bd1", "#4a90f5", "#8cc0ff"];
+const heatLevel = (total: number, max: number) => (total <= 0 ? 0 : total / max <= 0.25 ? 1 : total / max <= 0.5 ? 2 : total / max <= 0.75 ? 3 : 4);
+
+function TxHeat({ weeks, loading }: { weeks: HeatDay[][]; loading: boolean }) {
+  const all = weeks.flat().filter((d) => d.known && !d.future);
+  const max = Math.max(1, ...all.map((d) => d.total));
+  const sum = all.reduce((a, d) => a + d.total, 0);
   return (
     <div className="hidden w-full max-w-[24rem] lg:block">
-      <div className={`flex h-12 items-end gap-1.5 ${loading ? "animate-pulse" : ""}`}>
-        {days.map((d) => {
-          const real = !loading && d.known && d.total > 0;
-          return (
-            <span
-              key={d.key}
-              title={loading ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`}
-              className="flex-1 rounded-[3px]"
-              style={{ height: real ? Math.max(6, (d.total / max) * 48) : 6, background: real ? "#378ADD" : "rgba(255,255,255,0.12)" }}
-            />
-          );
-        })}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Transactions · 4 weeks</p>
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <span>Less</span>
+          {[1, 2, 3, 4].map((l) => (
+            <span key={l} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: HEAT[l] }} />
+          ))}
+          <span>More</span>
+        </div>
       </div>
-      <div className="mt-1.5 grid grid-cols-7 gap-1.5 text-center">
-        {days.map((d) => (
-          <span key={d.key} className={`text-[11px] ${d.today ? "font-semibold text-white" : "text-slate-500"}`}>{d.label}</span>
+      <div className={`mt-3 grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] gap-1.5 ${loading ? "animate-pulse" : ""}`}>
+        <span />
+        {weeks[0].map((d) => (
+          <span key={d.short} className="text-center text-[11px] text-slate-500">{d.short}</span>
+        ))}
+        {weeks.map((week) => (
+          <Fragment key={week[0].key}>
+            <span className="self-center text-[10px] tabular-nums text-slate-500">{new Date(week[0].key).toLocaleDateString([], { month: "short", day: "2-digit" })}</span>
+            {week.map((d) => {
+              const lvl = loading || !d.known || d.future ? 0 : heatLevel(d.total, max);
+              return (
+                <span
+                  key={d.key}
+                  title={loading || d.future ? "" : d.known ? `${d.full}: ${d.total} transactions` : `${d.full}: older activity is still loading`}
+                  className={`h-6 rounded-md ${d.today ? "ring-1 ring-white/70" : ""} ${d.future ? "border border-dashed border-white/10" : ""}`}
+                  style={{ background: d.future ? "transparent" : !d.known ? "rgba(255,255,255,0.03)" : HEAT[lvl], boxShadow: lvl >= 3 ? `0 0 5px ${HEAT[lvl]}80` : undefined }}
+                />
+              );
+            })}
+          </Fragment>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-500">
-        Last 7 days · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
+      <p className="mt-3 text-xs text-slate-500">
+        Last 4 weeks · <span className="tabular-nums text-slate-300" style={NUM}>{loading ? "—" : pad2(sum)}</span> transactions
       </p>
     </div>
   );
@@ -1081,10 +1145,33 @@ function ActivityInner() {
       }),
     [weekDays, events, prices]
   );
-  const txWeek = useMemo(
-    () => weekDays.map((day) => ({ ...day, total: events.filter((e) => e.t >= day.key && e.t < day.end).length })),
-    [weekDays, events]
-  );
+  const heatWeeks = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const e of events) {
+      if (!e.t) continue;
+      const d = new Date(e.t);
+      const k = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    const now = new Date();
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 21);
+    return Array.from({ length: 4 }, (_, w) =>
+      Array.from({ length: 7 }, (_, i) => {
+        const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + w * 7 + i);
+        const start = day.getTime();
+        return {
+          key: start,
+          short: day.toLocaleDateString([], { weekday: "short" }),
+          full: day.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }),
+          total: counts.get(start) ?? 0,
+          known: done || horizon === 0 || start >= horizon,
+          future: start > today0,
+          today: start === today0,
+        } as HeatDay;
+      })
+    );
+  }, [events, done, horizon]);
 
   const groups = useMemo(() => {
     const out: { day: string; items: Ev[] }[] = [];
@@ -1252,6 +1339,7 @@ function ActivityInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
+        @keyframes dotPulse{0%,100%{opacity:.6}50%{opacity:1}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
@@ -1441,7 +1529,7 @@ function ActivityInner() {
                             {loadingInfo ? <span className="inline-block h-9 w-20 animate-pulse rounded-lg bg-white/[0.07]" /> : pad2(totalTx)}
                           </p>
                         </div>
-                        <TxBars days={txWeek} loading={txBusy} />
+                        <TxHeat weeks={heatWeeks} loading={txBusy} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
