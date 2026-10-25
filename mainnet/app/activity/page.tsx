@@ -426,6 +426,7 @@ const PORTFOLIO = [
 ];
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 const fmtUsd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtChipPrice = (p: number) => (p >= 10000 ? `$${(p / 1000).toFixed(1)}k` : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toFixed(4)}`);
 const fmtInt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
 const pad2 = (n: number | null) => (n === null ? "—" : n >= 0 && n < 10 ? `0${n}` : fmtInt(n));
 const hue = (a: string) => parseInt(a.slice(2, 8), 16) % 360;
@@ -1165,6 +1166,18 @@ function ActivityInner() {
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <SectionTitle icon={I.pie}>Portfolio</SectionTitle>
+                        <div className="-mt-1 hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-2 lg:flex">
+                          {rows.map((r) => {
+                            const px = prices[r.sym] ?? (r.sym === "USDC" ? 1 : null);
+                            return (
+                              <span key={r.sym} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/[0.06] px-3 py-1.5 text-xs ${px === null ? "animate-pulse" : ""}`}>
+                                <span className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: r.color }} aria-hidden />
+                                <span className="text-slate-300">{r.sym}</span>
+                                <span className="font-semibold tabular-nums text-white" style={NUM}>{px === null ? "—" : fmtChipPrice(px)}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
                         <button onClick={refreshCard} disabled={refreshing} aria-label="Refresh" title="Refresh" className="sticky right-3 z-10 -mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:cursor-default">
                           <span className={`inline-flex ${refreshing ? "animate-spin text-[#62d4ff]" : ""}`}><Svg d={I.refresh} /></span>
                         </button>
