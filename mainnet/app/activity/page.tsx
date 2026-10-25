@@ -617,6 +617,9 @@ const Donut = ({ slices, loading, focus, onFocus }: { slices: Slice[]; loading: 
     </div>
   );
 };
+type Range = "1D" | "7D" | "1M";
+const RANGES: Range[] = ["1D", "7D", "1M"];
+const RANGE_MS: Record<Range, number> = { "1D": 86400000, "7D": 7 * 86400000, "1M": 30 * 86400000 };
 type SeriesPt = { t: number; v: number };
 type HoldSeries = { pts: SeriesPt[]; start: number; end: number; change: number; pct: number | null; label: string };
 
@@ -665,7 +668,7 @@ const brandAt = (u: number) => {
 };
 type Layers = { line: HTMLCanvasElement; lineDim: HTMLCanvasElement; fill: HTMLCanvasElement; fillDim: HTMLCanvasElement; pts: { x: number; y: number; u: number }[] };
 
-function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; loading: boolean; onHover: (p: SeriesPt | null) => void }) {
+function HoldChart({ series, loading, range, onHover }: { series: HoldSeries | null; loading: boolean; range: Range; onHover: (p: SeriesPt | null) => void }) {
   const wrap = useRef<HTMLDivElement>(null);
   const cvs = useRef<HTMLCanvasElement>(null);
   const [w, setW] = useState(0);
@@ -948,9 +951,18 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
   const ticks: { x: number; label: string }[] = [];
   if (ready && series) {
     const d0 = new Date(series.start);
-    for (let m = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 1).getTime(); m < series.end; m += 86400000) {
-      const x = xOf(m);
-      if (x > 24 && x < w - 24) ticks.push({ x, label: new Date(m).toLocaleDateString([], { weekday: "short" }) });
+    if (range === "1D") {
+      for (let m = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate(), d0.getHours() + 1).getTime(); m < series.end; m += 3600000) {
+        if (new Date(m).getHours() % 4 !== 0) continue;
+        const x = xOf(m);
+        if (x > 24 && x < w - 24) ticks.push({ x, label: new Date(m).toLocaleTimeString([], { hour: "numeric" }) });
+      }
+    } else {
+      const stepDays = range === "1M" ? 5 : 1;
+      for (let m = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 1).getTime(); m < series.end; m += stepDays * 86400000) {
+        const x = xOf(m);
+        if (x > 24 && x < w - 24) ticks.push({ x, label: range === "1M" ? new Date(m).toLocaleDateString([], { month: "short", day: "numeric" }) : new Date(m).toLocaleDateString([], { weekday: "short" }) });
+      }
     }
   }
   return (
@@ -963,7 +975,7 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
         onPointerLeave={leave}
         onPointerCancel={leave}
         role="img"
-        aria-label="Holdings over the last 7 days"
+        aria-label="Holdings over time"
       >
         <canvas ref={cvs} className="pointer-events-none absolute left-0 top-0 block" style={{ width: w || 0, height: CHART_H }} />
       </div>
@@ -974,6 +986,64 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+const RANGE_LABEL: Record<Range, string> = { "1D": "1 day", "7D": "7 days", "1M": "1 month" };
+
+function RangeMenu({ range, onChange }: { range: Range; onChange: (r: Range) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", down);
+    window.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("pointerdown", down);
+      window.removeEventListener("keydown", key);
+    };
+  }, [open]);
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Chart time range"
+        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] py-1 pl-3 pr-2 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.1]"
+      >
+        {RANGE_LABEL[range]}
+        <span className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}><Svg d="m6 9 6 6 6-6" size={14} /></span>
+      </button>
+      {open && (
+        <ul role="listbox" className="absolute left-0 top-full z-30 mt-2 w-40 overflow-hidden rounded-2xl border border-white/10 bg-[#0a1220] p-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          {RANGES.map((r) => (
+            <li key={r}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={r === range}
+                onClick={() => {
+                  onChange(r);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-white/[0.07] ${r === range ? "font-semibold text-white" : "text-slate-300"}`}
+              >
+                {RANGE_LABEL[r]}
+                {r === range && <span className="text-[#62d4ff]"><Svg d="m5 12.5 4.5 4.5L19 7.5" size={16} /></span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -1303,11 +1373,12 @@ function ActivityInner() {
   });
   const totalUsd = rows.reduce((a, r) => a + (r.usd ?? 0), 0);
   const haveUsd = rows.some((r) => r.usd !== null);
+  const [range, setRange] = useState<Range>("1D");
   const holdSeries = useMemo((): HoldSeries | null => {
     if (!haveUsd) return null;
     const now = Date.now();
-    const weekStart = now - 7 * 86400000;
-    const start = Math.min(done ? weekStart : Math.max(weekStart, horizon), now - 3600000);
+    const wanted = now - RANGE_MS[range];
+    const start = Math.min(done ? wanted : Math.max(wanted, horizon), now - 3600000);
     const evs = events.filter((e) => e.t >= start).sort((a, b) => a.t - b.t);
     const nets = evs.map((e) => {
       let usd = 0;
@@ -1324,7 +1395,7 @@ function ActivityInner() {
       after[i] = acc;
       acc -= nets[i];
     }
-    const SAMPLES = 48;
+    const SAMPLES = range === "1M" ? 60 : 48;
     const step = (now - start) / SAMPLES;
     const pts: SeriesPt[] = [];
     let j = 0;
@@ -1335,11 +1406,13 @@ function ActivityInner() {
     }
     const change = pts[pts.length - 1].v - pts[0].v;
     const pct = pts[0].v > 0.0049 ? (change / pts[0].v) * 100 : null;
-    const days = Math.round((now - start) / 86400000);
-    return { pts, start, end: pts[pts.length - 1].t, change, pct, label: days >= 7 ? "7 days" : days <= 1 ? "since yesterday" : `${days} days so far` };
-  }, [events, prices, totalUsd, haveUsd, done, horizon]);
+    const partial = start > wanted + 3600000;
+    const label = partial ? `since ${RANGE_MS[range] <= 86400000 ? new Date(start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : new Date(start).toLocaleDateString([], { month: "short", day: "numeric" })}` : "";
+    return { pts, start, end: pts[pts.length - 1].t, change, pct, label };
+  }, [events, prices, totalUsd, haveUsd, done, horizon, range]);
   const [hoverPt, setHoverPt] = useState<SeriesPt | null>(null);
-  useEffect(() => setHoverPt(null), [section, target]);
+  useEffect(() => setHoverPt(null), [section, target, range]);
+  useEffect(() => setRange("1D"), [target]);
   const totalTx = info?.txCount ?? (txDone && txMap.current.size ? txMap.current.size : null);
 
   /* ----- actions ----- */
@@ -1574,25 +1647,32 @@ function ActivityInner() {
                         <p className="mt-1.5 text-4xl tabular-nums tracking-tight" style={{ ...NUM, fontWeight: 700 }}>
                           {loadingInfo ? <span className="inline-block h-9 w-28 animate-pulse rounded-lg bg-white/[0.07]" /> : hoverPt ? fmtUsd(hoverPt.v) : haveUsd ? fmtUsd(totalUsd) : "—"}
                         </p>
-                        <p className="mt-1.5 min-h-[1.25rem] whitespace-nowrap text-[13px] tabular-nums" style={NUM}>
+                        <div className="mt-2 hidden min-h-[1.75rem] items-center gap-2.5 lg:flex">
                           {hoverPt ? (
-                            <span className="text-slate-300">{new Date(hoverPt.t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                          ) : holdSeries && !loadingInfo ? (
+                            <p className="whitespace-nowrap text-[13px] tabular-nums text-slate-300" style={NUM}>
+                              {new Date(hoverPt.t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          ) : (
                             <>
-                              <span className={`font-semibold ${holdSeries.change > 0.0049 ? "text-emerald-300" : holdSeries.change < -0.0049 ? "text-red-300" : "text-slate-300"}`}>
-                                {holdSeries.change > 0.0049 ? "▲ " : holdSeries.change < -0.0049 ? "▼ " : ""}
-                                {signedUsd(holdSeries.change)}
-                                {holdSeries.pct !== null ? ` (${holdSeries.pct >= 0 ? "+" : "−"}${Math.abs(holdSeries.pct).toFixed(1)}%)` : ""}
-                              </span>
-                              <span className="text-slate-500"> · {holdSeries.label}</span>
+                              {holdSeries && !loadingInfo && (
+                                <p className="whitespace-nowrap text-[13px] tabular-nums" style={NUM}>
+                                  <span className={`font-semibold ${holdSeries.change > 0.0049 ? "text-emerald-300" : holdSeries.change < -0.0049 ? "text-red-300" : "text-slate-300"}`}>
+                                    {holdSeries.change > 0.0049 ? "▲ " : holdSeries.change < -0.0049 ? "▼ " : ""}
+                                    {signedUsd(holdSeries.change)}
+                                    {holdSeries.pct !== null ? ` (${holdSeries.pct >= 0 ? "+" : "−"}${Math.abs(holdSeries.pct).toFixed(1)}%)` : ""}
+                                  </span>
+                                  {holdSeries.label && <span className="text-slate-500"> · {holdSeries.label}</span>}
+                                </p>
+                              )}
+                              <RangeMenu range={range} onChange={setRange} />
                             </>
-                          ) : null}
-                        </p>
+                          )}
+                        </div>
                         <p className="mt-1 text-xs text-slate-500">USDC, EURC and cirBTC on Arc</p>
                       </div>
 
-                      <div className="mt-6">
-                        <HoldChart series={holdSeries} loading={loadingInfo || Object.keys(prices).length === 0} onHover={setHoverPt} />
+                      <div className="mt-6 hidden lg:block">
+                        <HoldChart series={holdSeries} loading={loadingInfo || Object.keys(prices).length === 0} range={range} onHover={setHoverPt} />
                       </div>
 
                       <div className="mt-6 grid grid-cols-1 items-center gap-10 lg:mt-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] lg:gap-16">
