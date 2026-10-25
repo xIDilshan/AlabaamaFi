@@ -654,8 +654,12 @@ function hermiteAt(xs: number[], ys: number[], m: number[], x: number) {
 
 const CHART_H = 150;
 const CHART_PAD = 6;
+const BRAND = ["#18bfff", "#2588ff", "#4262ff"];
+const SPARK_COLORS = ["169,223,255", "108,196,255", "57,196,255"];
+
 function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; loading: boolean; onHover: (p: SeriesPt | null) => void }) {
   const wrap = useRef<HTMLDivElement>(null);
+  const cvs = useRef<HTMLCanvasElement>(null);
   const [w, setW] = useState(0);
   const [hx, setHx] = useState<number | null>(null);
   useEffect(() => {
@@ -673,7 +677,6 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
   const pad = hi - lo > 1e-9 ? (hi - lo) * 0.15 : Math.max(hi * 0.05, 0.01);
   const yMin = Math.max(0, lo - pad);
   const yMax = hi + pad;
-  const color = !series ? "#62d4ff" : series.change > 0.0049 ? "#34d399" : series.change < -0.0049 ? "#f87171" : "#62d4ff";
   const inner = Math.max(1, w - CHART_PAD * 2);
   const xOf = (t: number) => CHART_PAD + ((t - (series?.start ?? 0)) / Math.max(1, (series?.end ?? 1) - (series?.start ?? 0))) * inner;
   const yOf = (v: number) => CHART_H - 8 - ((v - yMin) / Math.max(1e-9, yMax - yMin)) * (CHART_H - 8 - 10);
@@ -691,6 +694,84 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
   }
   const area = ready ? `${line} L ${xs[xs.length - 1].toFixed(1)} ${CHART_H} L ${xs[0].toFixed(1)} ${CHART_H} Z` : "";
   const gid = useId().replace(/:/g, "");
+
+  const geom = useRef({ xs: [] as number[], ys: [] as number[], m: [] as number[], ready: false });
+  geom.current = { xs, ys: ysPx, m: mY, ready };
+
+  useEffect(() => {
+    const canvas = cvs.current;
+    if (!canvas || w <= 0) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(CHART_H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let seed = 17;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const sparks = Array.from({ length: 44 }, () => ({ u: rnd(), phase: rnd(), speed: 0.1 + rnd() * 0.16, lift: 14 + rnd() * 36, drift: (rnd() - 0.5) * 18, size: 0.9 + rnd() * 1.5, col: SPARK_COLORS[Math.floor(rnd() * 3)], a: 0.65 + rnd() * 0.35 }));
+    const stars = Array.from({ length: 26 }, () => ({ u: rnd(), depth: 0.1 + rnd() * 0.8, phase: rnd() * 6.283, speed: 0.6 + rnd() * 1.2, size: 0.6 + rnd() * 1.1, col: SPARK_COLORS[Math.floor(rnd() * 2)] }));
+    const lineY = (x: number) => {
+      const g = geom.current;
+      return hermiteAt(g.xs, g.ys, g.m, Math.min(g.xs[g.xs.length - 1], Math.max(g.xs[0], x)));
+    };
+    const t0 = performance.now();
+    const draw = (now: number) => {
+      ctx.clearRect(0, 0, w, CHART_H);
+      const g = geom.current;
+      if (!g.ready || g.xs.length < 2) return;
+      const t = (now - t0) / 1000;
+      const x0 = g.xs[0];
+      const span = g.xs[g.xs.length - 1] - x0;
+      for (const s of stars) {
+        const x = x0 + s.u * span;
+        const y0 = lineY(x);
+        const y = y0 + 8 + s.depth * Math.max(0, CHART_H - y0 - 14);
+        const a = reduce ? 0.35 : 0.14 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+        ctx.fillStyle = `rgba(${s.col},${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, s.size, 0, 6.283);
+        ctx.fill();
+      }
+      for (const p of sparks) {
+        const life = reduce ? p.phase : (t * p.speed + p.phase) % 1;
+        const bx = x0 + p.u * span;
+        const x = bx + p.drift * life;
+        const y = lineY(bx) - 3 - p.lift * life;
+        const a = Math.sin(Math.PI * life) * p.a;
+        if (a <= 0.01) continue;
+        ctx.fillStyle = `rgba(${p.col},${(a * 0.18).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, p.size * 3, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = `rgba(${p.col},${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, 6.283);
+        ctx.fill();
+      }
+    };
+    let raf = 0;
+    let last = 0;
+    let visible = true;
+    const loop = (now: number) => {
+      raf = requestAnimationFrame(loop);
+      if (!visible || now - last < 33) return;
+      last = now;
+      draw(now);
+    };
+    if (reduce) draw(performance.now());
+    else raf = requestAnimationFrame(loop);
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+    });
+    io.observe(canvas);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, [w, ready, series]);
+
   const move = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
     if (!ready || !series) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -712,50 +793,65 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
       if (x > 24 && x < w - 24) ticks.push({ x, label: new Date(m).toLocaleDateString([], { weekday: "short" }) });
     }
   }
+  const ex = xs[xs.length - 1];
+  const ey = ysPx[ysPx.length - 1];
   return (
     <div ref={wrap} className="w-full min-w-0">
-      <svg
-        width={w || "100%"}
-        height={CHART_H}
-        className={`block ${loading ? "animate-pulse" : ""}`}
-        style={{ touchAction: "pan-y", visibility: w > 0 ? "visible" : "hidden" }}
-        onPointerMove={ready ? move : undefined}
-        onPointerDown={ready ? move : undefined}
-        onPointerLeave={leave}
-        onPointerCancel={leave}
-        role="img"
-        aria-label="Holdings over the last 7 days"
-      >
-        <defs>
-          <linearGradient id={`hc-${gid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={color} stopOpacity="0.3" />
-            <stop offset="1" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((f) => (
-          <line key={f} x1="0" x2={w} y1={CHART_H * f} y2={CHART_H * f} stroke="rgba(255,255,255,0.06)" strokeDasharray="2 6" />
-        ))}
-        {ready ? (
-          <>
-            <path d={area} fill={`url(#hc-${gid})`} />
-            <path d={line} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            {hx !== null && hv !== null ? (
-              <>
-                <line x1={hx} x2={hx} y1="0" y2={CHART_H} stroke="rgba(255,255,255,0.28)" strokeDasharray="3 3" />
-                <circle cx={hx} cy={yOf(hv)} r="5" fill={color} stroke="#0b1220" strokeWidth="2" />
-              </>
-            ) : (
-              <g>
-                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="9" fill={color} opacity="0.14" />
-                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="4.5" fill="none" stroke={color} strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />
-                <circle cx={xs[xs.length - 1]} cy={ysPx[ysPx.length - 1]} r="4.5" fill={color} stroke="#0b1220" strokeWidth="2" />
-              </g>
-            )}
-          </>
-        ) : (
-          <path d={`M ${CHART_PAD} ${CHART_H / 2} L ${Math.max(CHART_PAD, w - CHART_PAD)} ${CHART_H / 2}`} stroke="rgba(255,255,255,0.14)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 7" />
-        )}
-      </svg>
+      <div className="relative">
+        <svg
+          width={w || "100%"}
+          height={CHART_H}
+          className={`block ${loading ? "animate-pulse" : ""}`}
+          style={{ touchAction: "pan-y", visibility: w > 0 ? "visible" : "hidden" }}
+          onPointerMove={ready ? move : undefined}
+          onPointerDown={ready ? move : undefined}
+          onPointerLeave={leave}
+          onPointerCancel={leave}
+          role="img"
+          aria-label="Holdings over the last 7 days"
+        >
+          <defs>
+            <linearGradient id={`hs-${gid}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={w || 1} y2="0">
+              <stop offset="0" stopColor={BRAND[0]} />
+              <stop offset="0.55" stopColor={BRAND[1]} />
+              <stop offset="1" stopColor={BRAND[2]} />
+            </linearGradient>
+            <linearGradient id={`ha-${gid}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#2588ff" stopOpacity="0.32" />
+              <stop offset="0.6" stopColor="#18bfff" stopOpacity="0.08" />
+              <stop offset="1" stopColor="#18bfff" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line key={f} x1="0" x2={w} y1={CHART_H * f} y2={CHART_H * f} stroke="rgba(169,223,255,0.07)" strokeDasharray="2 6" />
+          ))}
+          {ready ? (
+            <>
+              <path d={area} fill={`url(#ha-${gid})`} />
+              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="9" strokeOpacity="0.1" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="5" strokeOpacity="0.18" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={line} pathLength={1} fill="none" stroke="#e6f6ff" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="0.07 0.93" style={{ opacity: 0, animation: "lineShine 7s linear infinite" }} />
+              {hx !== null && hv !== null ? (
+                <>
+                  <line x1={hx} x2={hx} y1="0" y2={CHART_H} stroke="rgba(169,223,255,0.35)" strokeDasharray="3 3" />
+                  <circle cx={hx} cy={yOf(hv)} r="9" fill="#18bfff" opacity="0.18" />
+                  <circle cx={hx} cy={yOf(hv)} r="4.5" fill="#e6f6ff" stroke="#2588ff" strokeWidth="2" />
+                </>
+              ) : (
+                <g>
+                  <circle cx={ex} cy={ey} r="11" fill="#18bfff" opacity="0.14" />
+                  <circle cx={ex} cy={ey} r="5" fill="none" stroke="#39c4ff" strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />
+                  <circle cx={ex} cy={ey} r="4.8" fill="#e6f6ff" stroke="#2588ff" strokeWidth="2" />
+                </g>
+              )}
+            </>
+          ) : (
+            <path d={`M ${CHART_PAD} ${CHART_H / 2} L ${Math.max(CHART_PAD, w - CHART_PAD)} ${CHART_H / 2}`} stroke="rgba(169,223,255,0.18)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 7" />
+          )}
+        </svg>
+        <canvas ref={cvs} aria-hidden className="pointer-events-none absolute left-0 top-0" style={{ width: w || 0, height: CHART_H }} />
+      </div>
       <div className="relative mt-1 h-4">
         {ticks.map((t) => (
           <span key={t.x} className="absolute -translate-x-1/2 text-[11px] text-slate-500" style={{ left: t.x }}>
@@ -1266,6 +1362,7 @@ function ActivityInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
+        @keyframes lineShine{0%{stroke-dashoffset:0;opacity:0}8%{opacity:.9}46%{stroke-dashoffset:-1;opacity:.9}54%{stroke-dashoffset:-1;opacity:0}100%{stroke-dashoffset:-1;opacity:0}}
         @keyframes endRing{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.8);opacity:0}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
