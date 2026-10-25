@@ -192,7 +192,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <div className="flex min-w-0 items-center gap-1">
               <Link href="/" onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
-                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
+                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-9 w-9 shrink-0 object-contain" />
               </Link>
 
               <button
