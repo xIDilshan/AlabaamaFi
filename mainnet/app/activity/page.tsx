@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
@@ -654,14 +654,21 @@ function hermiteAt(xs: number[], ys: number[], m: number[], x: number) {
 
 const CHART_H = 150;
 const CHART_PAD = 6;
-const BRAND = ["#18bfff", "#2588ff", "#4262ff"];
+const BRAND_RGB: [number, number, number][] = [[24, 191, 255], [37, 136, 255], [66, 98, 255]];
 const SPARK_COLORS = ["169,223,255", "108,196,255", "57,196,255"];
+const brandAt = (u: number) => {
+  const k = Math.min(1, Math.max(0, u));
+  const a = k < 0.55 ? BRAND_RGB[0] : BRAND_RGB[1];
+  const b = k < 0.55 ? BRAND_RGB[1] : BRAND_RGB[2];
+  const f = k < 0.55 ? k / 0.55 : (k - 0.55) / 0.45;
+  return `${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)}`;
+};
+type Layers = { line: HTMLCanvasElement; lineDim: HTMLCanvasElement; fill: HTMLCanvasElement; fillDim: HTMLCanvasElement; pts: { x: number; y: number; u: number }[] };
 
 function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; loading: boolean; onHover: (p: SeriesPt | null) => void }) {
   const wrap = useRef<HTMLDivElement>(null);
   const cvs = useRef<HTMLCanvasElement>(null);
   const [w, setW] = useState(0);
-  const [hx, setHx] = useState<number | null>(null);
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
@@ -684,19 +691,11 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
   const ysPx = pts.map((p) => yOf(p.v));
   const mY = ready ? monotoneSlopes(xs, ysPx) : [];
   const mV = ready ? monotoneSlopes(xs, vals) : [];
-  let line = "";
-  if (ready) {
-    line = `M ${xs[0].toFixed(1)} ${ysPx[0].toFixed(1)}`;
-    for (let i = 0; i < xs.length - 1; i++) {
-      const h = xs[i + 1] - xs[i];
-      line += ` C ${(xs[i] + h / 3).toFixed(1)} ${(ysPx[i] + (mY[i] * h) / 3).toFixed(1)} ${(xs[i + 1] - h / 3).toFixed(1)} ${(ysPx[i + 1] - (mY[i + 1] * h) / 3).toFixed(1)} ${xs[i + 1].toFixed(1)} ${ysPx[i + 1].toFixed(1)}`;
-    }
-  }
-  const area = ready ? `${line} L ${xs[xs.length - 1].toFixed(1)} ${CHART_H} L ${xs[0].toFixed(1)} ${CHART_H} Z` : "";
-  const gid = useId().replace(/:/g, "");
 
   const geom = useRef({ xs: [] as number[], ys: [] as number[], m: [] as number[], ready: false });
   geom.current = { xs, ys: ysPx, m: mY, ready };
+  const hxRef = useRef<number | null>(null);
+  const drawRef = useRef<((now: number) => void) | null>(null);
 
   useEffect(() => {
     const canvas = cvs.current;
@@ -710,22 +709,121 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let seed = 17;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const sparks = Array.from({ length: 44 }, () => ({ u: rnd(), phase: rnd(), speed: 0.1 + rnd() * 0.16, lift: 14 + rnd() * 36, drift: (rnd() - 0.5) * 18, size: 0.9 + rnd() * 1.5, col: SPARK_COLORS[Math.floor(rnd() * 3)], a: 0.65 + rnd() * 0.35 }));
-    const stars = Array.from({ length: 26 }, () => ({ u: rnd(), depth: 0.1 + rnd() * 0.8, phase: rnd() * 6.283, speed: 0.6 + rnd() * 1.2, size: 0.6 + rnd() * 1.1, col: SPARK_COLORS[Math.floor(rnd() * 2)] }));
+    const g0 = geom.current;
     const lineY = (x: number) => {
       const g = geom.current;
       return hermiteAt(g.xs, g.ys, g.m, Math.min(g.xs[g.xs.length - 1], Math.max(g.xs[0], x)));
     };
+
+    const newLayer = () => {
+      const c = document.createElement("canvas");
+      c.width = canvas.width;
+      c.height = canvas.height;
+      const x = c.getContext("2d") as CanvasRenderingContext2D;
+      x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { c, x };
+    };
+    let layers: Layers | null = null;
+    if (g0.ready && g0.xs.length >= 2) {
+      const x0 = g0.xs[0];
+      const span = g0.xs[g0.xs.length - 1] - x0;
+      const line = newLayer();
+      const lineDim = newLayer();
+      const fill = newLayer();
+      const fillDim = newLayer();
+      const lp: { x: number; y: number; u: number }[] = [];
+      let acc = 0;
+      let px = x0;
+      let py = lineY(x0);
+      lp.push({ x: px, y: py, u: 0 });
+      for (let x = x0 + 0.5; x <= x0 + span + 0.01; x += 0.5) {
+        const y = lineY(x);
+        acc += Math.hypot(x - px, y - py);
+        px = x;
+        py = y;
+        if (acc >= 4.2) {
+          lp.push({ x, y, u: (x - x0) / span });
+          acc = 0;
+        }
+      }
+      for (const p of lp) {
+        const jx = (rnd() - 0.5) * 0.7;
+        const jy = (rnd() - 0.5) * 0.7;
+        const col = brandAt(p.u);
+        line.x.fillStyle = `rgba(${col},0.13)`;
+        line.x.beginPath();
+        line.x.arc(p.x + jx, p.y + jy, 4.8, 0, 6.283);
+        line.x.fill();
+        line.x.fillStyle = `rgba(${col},0.96)`;
+        line.x.beginPath();
+        line.x.arc(p.x + jx, p.y + jy, 1.8, 0, 6.283);
+        line.x.fill();
+        lineDim.x.fillStyle = "rgba(148,163,184,0.36)";
+        lineDim.x.beginPath();
+        lineDim.x.arc(p.x + jx, p.y + jy, 1.6, 0, 6.283);
+        lineDim.x.fill();
+      }
+      for (let i = 0, x = x0; x <= x0 + span; i++, x += 8) {
+        const yl = lineY(x);
+        const u = (x - x0) / span;
+        const col = brandAt(u);
+        for (let y = yl + 10 + (i % 2) * 4; y < CHART_H - 3; y += 8) {
+          if (rnd() < 0.16) continue;
+          const depth = (y - yl) / Math.max(1, CHART_H - yl);
+          const a = 0.4 * Math.pow(1 - depth, 1.4);
+          if (a < 0.02) continue;
+          fill.x.fillStyle = `rgba(${col},${a.toFixed(3)})`;
+          fill.x.beginPath();
+          fill.x.arc(x, y, 1.2, 0, 6.283);
+          fill.x.fill();
+          fillDim.x.fillStyle = `rgba(148,163,184,${(a * 0.3).toFixed(3)})`;
+          fillDim.x.beginPath();
+          fillDim.x.arc(x, y, 1.1, 0, 6.283);
+          fillDim.x.fill();
+        }
+      }
+      layers = { line: line.c, lineDim: lineDim.c, fill: fill.c, fillDim: fillDim.c, pts: lp };
+    }
+
+    const sparks = Array.from({ length: 40 }, () => ({ u: rnd(), phase: rnd(), speed: 0.1 + rnd() * 0.16, lift: 14 + rnd() * 34, drift: (rnd() - 0.5) * 18, size: 0.9 + rnd() * 1.4, col: SPARK_COLORS[Math.floor(rnd() * 3)], a: 0.65 + rnd() * 0.35 }));
+    const stars = Array.from({ length: 24 }, () => ({ u: rnd(), depth: 0.1 + rnd() * 0.8, phase: rnd() * 6.283, speed: 0.6 + rnd() * 1.2, size: 0.7 + rnd() * 1.1, col: SPARK_COLORS[Math.floor(rnd() * 2)] }));
     const t0 = performance.now();
+
     const draw = (now: number) => {
       ctx.clearRect(0, 0, w, CHART_H);
-      const g = geom.current;
-      if (!g.ready || g.xs.length < 2) return;
       const t = (now - t0) / 1000;
+      const g = geom.current;
+      if (!layers || !g.ready || g.xs.length < 2) {
+        for (let x = CHART_PAD; x < w - CHART_PAD; x += 6) {
+          ctx.fillStyle = `rgba(148,163,184,${(0.1 + 0.2 * (0.5 + 0.5 * Math.sin(t * 2 + x * 0.05))).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(x, CHART_H / 2, 1.5, 0, 6.283);
+          ctx.fill();
+        }
+        return;
+      }
       const x0 = g.xs[0];
       const span = g.xs[g.xs.length - 1] - x0;
+      const hx = hxRef.current;
+      const cut = hx === null ? w : hx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cut, 0, w - cut, CHART_H);
+      ctx.clip();
+      ctx.drawImage(layers.fillDim, 0, 0, w, CHART_H);
+      ctx.drawImage(layers.lineDim, 0, 0, w, CHART_H);
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, cut, CHART_H);
+      ctx.clip();
+      ctx.drawImage(layers.fill, 0, 0, w, CHART_H);
+      ctx.drawImage(layers.line, 0, 0, w, CHART_H);
+      ctx.restore();
+
       for (const s of stars) {
         const x = x0 + s.u * span;
+        if (x > cut) continue;
         const y0 = lineY(x);
         const y = y0 + 8 + s.depth * Math.max(0, CHART_H - y0 - 14);
         const a = reduce ? 0.35 : 0.14 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
@@ -738,6 +836,7 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
         const life = reduce ? p.phase : (t * p.speed + p.phase) % 1;
         const bx = x0 + p.u * span;
         const x = bx + p.drift * life;
+        if (x > cut) continue;
         const y = lineY(bx) - 3 - p.lift * life;
         const a = Math.sin(Math.PI * life) * p.a;
         if (a <= 0.01) continue;
@@ -750,7 +849,67 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
         ctx.arc(x, y, p.size, 0, 6.283);
         ctx.fill();
       }
+      if (!reduce && hx === null) {
+        const cycle = t % 7;
+        if (cycle < 3.2) {
+          const head = cycle / 3.2;
+          for (const p of layers.pts) {
+            const d = Math.abs(p.u - head);
+            if (d > 0.05) continue;
+            const k = 1 - d / 0.05;
+            ctx.fillStyle = `rgba(230,246,255,${(0.9 * k).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 1.8 + 1.4 * k, 0, 6.283);
+            ctx.fill();
+          }
+        }
+      }
+      if (hx !== null) {
+        const hy = lineY(hx);
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = "rgba(169,223,255,0.35)";
+        ctx.beginPath();
+        ctx.moveTo(hx, 0);
+        ctx.lineTo(hx, CHART_H);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "rgba(24,191,255,0.2)";
+        ctx.beginPath();
+        ctx.arc(hx, hy, 10, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = "#e6f6ff";
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4.6, 0, 6.283);
+        ctx.fill();
+        ctx.strokeStyle = "#2588ff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        const ex = g.xs[g.xs.length - 1];
+        const ey = g.ys[g.ys.length - 1];
+        if (!reduce) {
+          const ph = (t % 2.2) / 2.2;
+          ctx.strokeStyle = `rgba(57,196,255,${(0.55 * (1 - ph)).toFixed(3)})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(ex, ey, 5 + 12 * ph, 0, 6.283);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(24,191,255,0.16)";
+        ctx.beginPath();
+        ctx.arc(ex, ey, 11, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = "#e6f6ff";
+        ctx.beginPath();
+        ctx.arc(ex, ey, 4.8, 0, 6.283);
+        ctx.fill();
+        ctx.strokeStyle = "#2588ff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     };
+    drawRef.current = draw;
     let raf = 0;
     let last = 0;
     let visible = true;
@@ -769,22 +928,23 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect();
+      drawRef.current = null;
     };
   }, [w, ready, series]);
 
-  const move = (e: { currentTarget: SVGSVGElement; clientX: number }) => {
+  const move = (e: { currentTarget: HTMLDivElement; clientX: number }) => {
     if (!ready || !series) return;
     const r = e.currentTarget.getBoundingClientRect();
     const x = Math.min(xs[xs.length - 1], Math.max(xs[0], e.clientX - r.left));
-    const v = Math.max(0, hermiteAt(xs, vals, mV, x));
-    setHx(x);
-    onHover({ t: series.start + ((x - CHART_PAD) / inner) * (series.end - series.start), v });
+    hxRef.current = x;
+    drawRef.current?.(performance.now());
+    onHover({ t: series.start + ((x - CHART_PAD) / inner) * (series.end - series.start), v: Math.max(0, hermiteAt(xs, vals, mV, x)) });
   };
   const leave = () => {
-    setHx(null);
+    hxRef.current = null;
+    drawRef.current?.(performance.now());
     onHover(null);
   };
-  const hv = hx !== null && ready ? Math.max(0, hermiteAt(xs, vals, mV, hx)) : null;
   const ticks: { x: number; label: string }[] = [];
   if (ready && series) {
     const d0 = new Date(series.start);
@@ -793,64 +953,19 @@ function HoldChart({ series, loading, onHover }: { series: HoldSeries | null; lo
       if (x > 24 && x < w - 24) ticks.push({ x, label: new Date(m).toLocaleDateString([], { weekday: "short" }) });
     }
   }
-  const ex = xs[xs.length - 1];
-  const ey = ysPx[ysPx.length - 1];
   return (
     <div ref={wrap} className="w-full min-w-0">
-      <div className="relative">
-        <svg
-          width={w || "100%"}
-          height={CHART_H}
-          className={`block ${loading ? "animate-pulse" : ""}`}
-          style={{ touchAction: "pan-y", visibility: w > 0 ? "visible" : "hidden" }}
-          onPointerMove={ready ? move : undefined}
-          onPointerDown={ready ? move : undefined}
-          onPointerLeave={leave}
-          onPointerCancel={leave}
-          role="img"
-          aria-label="Holdings over the last 7 days"
-        >
-          <defs>
-            <linearGradient id={`hs-${gid}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={w || 1} y2="0">
-              <stop offset="0" stopColor={BRAND[0]} />
-              <stop offset="0.55" stopColor={BRAND[1]} />
-              <stop offset="1" stopColor={BRAND[2]} />
-            </linearGradient>
-            <linearGradient id={`ha-${gid}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#2588ff" stopOpacity="0.32" />
-              <stop offset="0.6" stopColor="#18bfff" stopOpacity="0.08" />
-              <stop offset="1" stopColor="#18bfff" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[0.25, 0.5, 0.75].map((f) => (
-            <line key={f} x1="0" x2={w} y1={CHART_H * f} y2={CHART_H * f} stroke="rgba(169,223,255,0.07)" strokeDasharray="2 6" />
-          ))}
-          {ready ? (
-            <>
-              <path d={area} fill={`url(#ha-${gid})`} />
-              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="9" strokeOpacity="0.1" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="5" strokeOpacity="0.18" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={line} fill="none" stroke={`url(#hs-${gid})`} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={line} pathLength={1} fill="none" stroke="#e6f6ff" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="0.07 0.93" style={{ opacity: 0, animation: "lineShine 7s linear infinite" }} />
-              {hx !== null && hv !== null ? (
-                <>
-                  <line x1={hx} x2={hx} y1="0" y2={CHART_H} stroke="rgba(169,223,255,0.35)" strokeDasharray="3 3" />
-                  <circle cx={hx} cy={yOf(hv)} r="9" fill="#18bfff" opacity="0.18" />
-                  <circle cx={hx} cy={yOf(hv)} r="4.5" fill="#e6f6ff" stroke="#2588ff" strokeWidth="2" />
-                </>
-              ) : (
-                <g>
-                  <circle cx={ex} cy={ey} r="11" fill="#18bfff" opacity="0.14" />
-                  <circle cx={ex} cy={ey} r="5" fill="none" stroke="#39c4ff" strokeWidth="1.2" style={{ transformBox: "fill-box", transformOrigin: "center", opacity: 0, animation: "endRing 2.2s ease-out infinite" }} />
-                  <circle cx={ex} cy={ey} r="4.8" fill="#e6f6ff" stroke="#2588ff" strokeWidth="2" />
-                </g>
-              )}
-            </>
-          ) : (
-            <path d={`M ${CHART_PAD} ${CHART_H / 2} L ${Math.max(CHART_PAD, w - CHART_PAD)} ${CHART_H / 2}`} stroke="rgba(169,223,255,0.18)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 7" />
-          )}
-        </svg>
-        <canvas ref={cvs} aria-hidden className="pointer-events-none absolute left-0 top-0" style={{ width: w || 0, height: CHART_H }} />
+      <div
+        className="relative"
+        style={{ height: CHART_H, touchAction: "pan-y" }}
+        onPointerMove={ready ? move : undefined}
+        onPointerDown={ready ? move : undefined}
+        onPointerLeave={leave}
+        onPointerCancel={leave}
+        role="img"
+        aria-label="Holdings over the last 7 days"
+      >
+        <canvas ref={cvs} className="pointer-events-none absolute left-0 top-0 block" style={{ width: w || 0, height: CHART_H }} />
       </div>
       <div className="relative mt-1 h-4">
         {ticks.map((t) => (
@@ -1362,8 +1477,6 @@ function ActivityInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
         .fade-up{opacity:0;animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--delay,0ms)}
         @keyframes tabIn{from{opacity:0}to{opacity:1}}
-        @keyframes lineShine{0%{stroke-dashoffset:0;opacity:0}8%{opacity:.9}46%{stroke-dashoffset:-1;opacity:.9}54%{stroke-dashoffset:-1;opacity:0}100%{stroke-dashoffset:-1;opacity:0}}
-        @keyframes endRing{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.8);opacity:0}}
         .tab-in{animation:tabIn .25s ease-out both}
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
