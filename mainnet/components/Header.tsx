@@ -28,6 +28,9 @@ const navItems = [
 ];
 
 const DOCS_URL = "https://docs.alabaamafi.xyz";
+const SITE_URL = "https://alabaamafi.xyz";
+const APP_URL = "https://app.alabaamafi.xyz";
+const APP_PAGES = ["/send", "/swap", "/bridge", "/activity", "/faq"];
 const moreLinks = [
   { href: DOCS_URL, label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
   { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
@@ -89,6 +92,19 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const menuAddress = address ? `${address.slice(0, 10)}...${address.slice(-8)}` : "";
 
   const connectedWallet = useWalletIdentity(connector);
+
+  const [where, setWhere] = React.useState<"site" | "app" | "other">("other");
+
+  React.useEffect(() => {
+    const host = window.location.hostname;
+    setWhere(host === "alabaamafi.xyz" || host === "www.alabaamafi.xyz" ? "site" : host === "app.alabaamafi.xyz" ? "app" : "other");
+  }, []);
+
+  const to = (path: string) => {
+    if (where === "site" && APP_PAGES.includes(path)) return `${APP_URL}${path}`;
+    if (where === "app" && path === "/") return SITE_URL;
+    return path;
+  };
 
   React.useEffect(() => {
     const openWalletModal = () => {
@@ -191,7 +207,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <div className="relative z-50 flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
 
             <div className="flex min-w-0 items-center gap-1">
-              <Link href="/" onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
+              <Link href={to("/")} onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
                 <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-9 w-9 shrink-0 object-contain" />
               </Link>
 
@@ -253,7 +269,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             }}
           >
             <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
-              <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
+              <Link href={to("/")} onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
                 <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
                 <span className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
                   Alabaama<span className="text-[#159fff]">Fi</span>
@@ -285,7 +301,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={to(item.href)}
                     onClick={closeMobileMenu}
                     className={`group flex items-center gap-3.5 rounded-2xl px-3 py-2.5 transition-colors duration-200 ${
                       active ? "" : "hover:bg-white/[0.04]"
@@ -316,7 +332,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 return (
                   <Link
                     key={l.href}
-                    href={l.href}
+                    href={to(l.href)}
                     onClick={closeMobileMenu}
                     className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-semibold transition ${
                       active ? "border-[#2f8bff]/50 bg-[#159fff]/[0.12] text-white" : "border-white/10 bg-white/[0.045] text-white/75 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] hover:text-white"
@@ -367,7 +383,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="hidden md:block">
           <div className="flex min-h-[86px] items-center gap-6 px-7 lg:px-10 xl:px-12">
 
-            <Link href="/" className="flex shrink-0 items-center gap-3">
+            <Link href={to("/")} className="flex shrink-0 items-center gap-3">
               <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14" />
 
               <div className="text-left">
@@ -384,7 +400,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={to(item.href)}
                     style={{ fontWeight: 700 }}
                     className={`${manrope.className} relative rounded-xl px-3.5 py-3 text-sm font-bold transition-all duration-200 lg:px-4 ${
                       active ? "text-[#159fff]" : "text-white/55 hover:text-white"
