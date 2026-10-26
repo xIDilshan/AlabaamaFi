@@ -83,7 +83,7 @@ const SECTIONS: Sec[] = [
     id: "overview",
     group: "Get started",
     title: "Overview",
-    lead: "AlabaamaFi is a simple interface for Arc. Send, swap, bridge and follow your activity from one place, with your own wallet.",
+    lead: "AlabaamaFi is one place to move, manage and explore assets on Arc Network. Send, swap, bridge and follow your activity, all with your own wallet.",
     kw: "about introduction what is alabaamafi non-custodial",
     blocks: [
       { t: "p", c: <>Arc is Circle’s USDC-native, EVM-compatible Layer 1. AlabaamaFi puts the things you do most on Arc into four clear pages, so you can move money without learning a new tool for each job.</> },
@@ -958,7 +958,7 @@ export default function DocsPage() {
         <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
           <Link href={SITE} className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -972,7 +972,7 @@ export default function DocsPage() {
         <div className="hidden h-16 w-full items-center gap-4 px-6 md:grid md:grid-cols-[1fr_minmax(0,30rem)_1fr] lg:px-10 2xl:px-16">
           <Link href={SITE} className="flex shrink-0 items-center gap-2.5 justify-self-start" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
             <span className="text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -1069,7 +1069,7 @@ export default function DocsPage() {
                 <Link href={`${SITE}/faq`} className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-6 py-3 text-sm font-semibold text-white transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">Read the FAQ</Link>
               </div>
             </div>
-            <p className="mt-8 text-center text-xs text-slate-600">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+            <p className="mt-8 text-center text-xs text-slate-600">© {new Date().getFullYear()} AlabaamaFi. Your orbit for DeFi on Arc.</p>
           </article>
         </main>
 
@@ -1112,7 +1112,7 @@ export default function DocsPage() {
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
               <span className="flex items-center gap-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
                 <span className="text-base font-bold tracking-tight">Alabaama<span className="text-[#159fff]">Fi</span> <span className="font-medium text-slate-500">Docs</span></span>
               </span>
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
