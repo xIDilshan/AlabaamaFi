@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 const SITE = "https://app.alabaamafi.xyz";
+const WEBSITE = "https://alabaamafi.xyz";
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const OFFSET = 170;
@@ -99,7 +100,7 @@ const SECTIONS: Sec[] = [
           <><B>Clear numbers.</B> Every page shows what you pay, what you receive and what it costs before you confirm.</>,
         ],
       },
-      { t: "note", title: "Official links", c: <>The site is <A href={SITE}>app.alabaamafi.xyz</A>, the official X account is <A href={X_URL}>@Alabaama_Fi</A> and the community is on <A href={DISCORD_URL}>Discord</A>. Bookmark the site and be careful with look-alike links.</> },
+      { t: "note", title: "Official links", c: <>The website is <A href={WEBSITE}>alabaamafi.xyz</A> and the app, with Send, Swap, Bridge and Activity, is at <A href={SITE}>app.alabaamafi.xyz</A>. The official X account is <A href={X_URL}>@Alabaama_Fi</A> and the community is on <A href={DISCORD_URL}>Discord</A>. Bookmark both addresses and be careful with look-alike links.</> },
     ],
   },
   {
@@ -491,7 +492,7 @@ const SECTIONS: Sec[] = [
         t: "ul",
         items: [
           <><B>Never share your seed phrase or private key.</B> AlabaamaFi will never ask for them, not on the site, not in messages, not in replies.</>,
-          "Use only app.alabaamafi.xyz. Check the address bar before you connect a wallet.",
+          "Use only alabaamafi.xyz and app.alabaamafi.xyz. Check the address bar before you connect a wallet.",
           "Read what your wallet shows before you confirm. It is the final check.",
           "Start with a small amount on every new route, and double-check every address.",
           "Review and revoke token approvals you no longer need, with a revoke tool.",
@@ -582,7 +583,7 @@ const SECTIONS: Sec[] = [
     kw: "terms of service tos legal conditions liability disclaimer eligibility risks",
     blocks: [
       { t: "h3", id: "tos-1", c: "1. About these terms" },
-      { t: "p", c: "These Terms of Service apply to your use of the AlabaamaFi website and interface at app.alabaamafi.xyz (the “Interface”). “We”, “us” and “AlabaamaFi” mean the operators of the Interface. If you do not agree, do not use the Interface." },
+      { t: "p", c: "These Terms of Service apply to your use of the AlabaamaFi website and interface at alabaamafi.xyz and app.alabaamafi.xyz (the “Interface”). “We”, “us” and “AlabaamaFi” mean the operators of the Interface. If you do not agree, do not use the Interface." },
       { t: "h3", id: "tos-2", c: "2. What AlabaamaFi is" },
       { t: "p", c: "AlabaamaFi is a non-custodial software interface that helps you prepare transactions for the Arc network and related services. We do not hold, store or control your funds, keys or tokens, and we cannot reverse, cancel or recover a transaction. We are not a bank, an exchange, a broker, a custodian or an adviser." },
       { t: "h3", id: "tos-3", c: "3. Eligibility and lawful use" },
@@ -802,6 +803,10 @@ export default function DocsPage() {
   const next = SECTIONS[idx + 1];
   const currentSubs = current.blocks.filter((b): b is Extract<Block, { t: "h3" }> => b.t === "h3");
 
+  useEffect(() => {
+    document.title = `${current.title} | AlabaamaFi Docs`;
+  }, [current.title]);
+
   const go = useCallback((id: string) => {
     const r = resolve(id);
     if (!r) return;
@@ -811,7 +816,7 @@ export default function DocsPage() {
     setMSearch(false);
     setFocus(false);
     setQuery("");
-    history.replaceState(null, "", `#${id}`);
+    if (window.location.hash !== `#${id}`) history.pushState(null, "", `#${id}`);
     if (r.sub) setTimeout(() => document.getElementById(r.sub as string)?.scrollIntoView({ behavior: "smooth", block: "start" }), 90);
     else window.scrollTo({ top: 0 });
   }, []);
@@ -820,15 +825,19 @@ export default function DocsPage() {
     const apply = () => {
       const id = decodeURIComponent(window.location.hash.slice(1));
       const r = id ? resolve(id) : null;
-      if (!r) return;
-      setActiveSec(r.sec);
-      setActiveSub(r.sub);
-      if (r.sub) setTimeout(() => document.getElementById(r.sub as string)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      const sub = r ? r.sub : null;
+      setActiveSec(r ? r.sec : SECTIONS[0].id);
+      setActiveSub(sub);
+      if (sub) setTimeout(() => document.getElementById(sub)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
       else window.scrollTo({ top: 0 });
     };
     apply();
     window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
+    window.addEventListener("popstate", apply);
+    return () => {
+      window.removeEventListener("hashchange", apply);
+      window.removeEventListener("popstate", apply);
+    };
   }, []);
 
   useEffect(() => {
@@ -956,9 +965,9 @@ export default function DocsPage() {
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
         <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
-          <Link href={SITE} className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
+          <Link href={WEBSITE} className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 shrink-0 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -970,9 +979,9 @@ export default function DocsPage() {
         </div>
 
         <div className="hidden h-16 w-full items-center gap-4 px-6 md:grid md:grid-cols-[1fr_minmax(0,30rem)_1fr] lg:px-10 2xl:px-16">
-          <Link href={SITE} className="flex shrink-0 items-center gap-2.5 justify-self-start" aria-label="AlabaamaFi home">
+          <Link href={WEBSITE} className="flex shrink-0 items-center gap-2.5 justify-self-start" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
             <span className="text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -1006,7 +1015,7 @@ export default function DocsPage() {
           </div>
 
           <div className="flex items-center justify-end">
-            <Link href={SITE} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+            <Link href={WEBSITE} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
               <Svg d={I.home} size={16} /> Home
             </Link>
           </div>
@@ -1060,7 +1069,7 @@ export default function DocsPage() {
               <h2 className="text-xl font-semibold tracking-tight">Ready to try it?</h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">Head back to AlabaamaFi, or ask the community if something is unclear.</p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Link href={SITE} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition hover:brightness-110">
+                <Link href={WEBSITE} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(30,120,255,0.28)] transition hover:brightness-110">
                   <Svg d={I.home} size={16} sw={2} /> Back to Home
                 </Link>
                 <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-6 py-3 text-sm font-semibold text-white transition hover:border-[#2f8bff]/40 hover:bg-white/[0.08]">
@@ -1112,12 +1121,12 @@ export default function DocsPage() {
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
               <span className="flex items-center gap-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
                 <span className="text-base font-bold tracking-tight">Alabaama<span className="text-[#159fff]">Fi</span> <span className="font-medium text-slate-500">Docs</span></span>
               </span>
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
             </div>
-            <Link href={SITE} onClick={() => setDrawer(false)} className="mx-3 mt-3 flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+            <Link href={WEBSITE} onClick={() => setDrawer(false)} className="mx-3 mt-3 flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
               <Svg d={I.home} size={16} /> Home
             </Link>
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">{sideList(go)}</div>
