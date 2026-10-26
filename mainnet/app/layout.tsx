@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Providers from "@/lib/providers";
 import "./globals.css";
 
-const SITE = "https://app.alabaamafi.xyz";
+const SITE = "https://alabaamafi.xyz";
 const TITLE = "AlabaamaFi | Your orbit for DeFi on Arc";
 const DESCRIPTION =
   "One place to move, manage and explore assets on Arc Network. Swap, bridge and send tokens, and track any wallet's portfolio and activity.";
@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   applicationName: "AlabaamaFi",
   openGraph: {
     type: "website",
-    url: SITE,
     siteName: "AlabaamaFi",
     title: TITLE,
     description: DESCRIPTION,
