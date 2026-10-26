@@ -697,23 +697,6 @@ export default function SwapPage() {
   };
   useEffect(() => () => pillTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("alabaamafi:slippage");
-      if (raw) setSlip(JSON.parse(raw) as Slip);
-    } catch {
-      setSlip({ mode: "auto", custom: "1" });
-    }
-  }, []);
-  const saveSlip = (s: Slip) => {
-    setSlip(s);
-    try {
-      window.localStorage.setItem("alabaamafi:slippage", JSON.stringify(s));
-    } catch {
-      return;
-    }
-  };
-
   const customPct = parseFloat(slip.custom);
   const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
   const slippageBps = slip.mode === "custom" && customValid ? Math.round(customPct * 100) : autoBps(from, to);
@@ -1315,7 +1298,7 @@ export default function SwapPage() {
         <p className="mt-1 text-xs leading-5 text-slate-500">The most the price can move against you before the swap is cancelled.</p>
         <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-white/[0.05] p-1">
           {(["auto", "custom"] as const).map((m) => (
-            <button key={m} onClick={() => saveSlip({ ...slip, mode: m })} className={`rounded-full py-2 text-sm font-semibold capitalize transition ${slip.mode === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
+            <button key={m} onClick={() => setSlip({ ...slip, mode: m })} className={`rounded-full py-2 text-sm font-semibold capitalize transition ${slip.mode === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
               {m}
             </button>
           ))}
@@ -1328,7 +1311,7 @@ export default function SwapPage() {
           <div className="mt-3">
             <div className="flex flex-wrap gap-2">
               {SLIP_PRESETS.map((p) => (
-                <button key={p} onClick={() => saveSlip({ ...slip, custom: p })} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
+                <button key={p} onClick={() => setSlip({ ...slip, custom: p })} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
                   {p}%
                 </button>
               ))}
@@ -1338,7 +1321,7 @@ export default function SwapPage() {
                 value={slip.custom}
                 onChange={(e) => {
                   const v = e.target.value.replace(",", ".");
-                  if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) saveSlip({ ...slip, custom: v });
+                  if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) setSlip({ ...slip, custom: v });
                 }}
                 inputMode="decimal"
                 placeholder="Custom"
