@@ -208,7 +208,7 @@ function SpaceBackground() {
     let seed = 41;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const r1 = (n: number) => Math.round(n * 10) / 10;
-    const make = (count: number, color: string) => Array.from({ length: count }, () => `${r1(rnd() * 100)}vw ${r1(rnd() * 100)}vh 2.4px ${r1(rnd() * 0.8)}px ${color}`).join(",");
+    const make = (count: number, color: string) => Array.from({ length: count }, () => `${r1(rnd() * 100)}vw ${r1(rnd() * 100)}vh 6px ${r1(rnd() * 0.8)}px ${color}`).join(",");
     return { stars: Array.from({ length: 6 }, () => make(24, "#a9dfff")), dust: make(26, "#6cc4ff") };
   }, []);
   const TIMES = [4.2, 5.6, 6.8, 5.0, 7.6, 6.2];
