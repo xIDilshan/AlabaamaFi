@@ -5,10 +5,8 @@ import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import Header from "@/components/Header";
 
-// Same brand font as the home page.
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
-// Font for the wallet address (700) and the amount (600) typed in the card.
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
 
 /* ---------- Arc mainnet ---------- */
@@ -19,8 +17,6 @@ const ARC = {
   explorer: "https://explorer.arc.io",
 };
 
-// USDC on Arc: the native coin (18 decimals) also has an ERC-20 face at this address (6 decimals).
-// We send through the ERC-20 interface, so every amount below uses 6 decimals.
 const USDC = "0x3600000000000000000000000000000000000000";
 const DECIMALS = 6;
 
@@ -32,11 +28,11 @@ const BUTTON =
 const SECONDARY_BUTTON =
   "inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-7 py-4 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#39c4ff]";
 
-/* ---------- BigInt helpers (BigInt() calls instead of 1n literals, so any TS target works) ---------- */
+/* ---------- BigInt helpers ---------- */
 const ZERO = BigInt(0);
 const E6 = BigInt(1000000);
 const E12 = BigInt("1000000000000");
-const FEE_FLOOR = BigInt("20000000000"); // Arc: minimum maxFeePerGas is 20 gwei
+const FEE_FLOOR = BigInt("20000000000");
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -59,7 +55,7 @@ const pad32 = (hex: string) => hex.replace(/^0x/, "").toLowerCase().padStart(64,
 const shorten = (s: string, a = 6, b = 4) => (s.length > a + b + 2 ? `${s.slice(0, a)}…${s.slice(-b)}` : s);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/* ---------- wallet provider type (EIP-1193) ---------- */
+/* ---------- wallet provider type ---------- */
 type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, handler: (arg: unknown) => void) => void;
@@ -79,7 +75,6 @@ function SpaceBackground() {
   }, []);
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-     {/* change blur-[3px] to make the background more or less blurry */}
      <div className="absolute -inset-6 blur-[3px]">
       <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
       <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
@@ -121,8 +116,7 @@ const PasteIcon = () => (
   </svg>
 );
 
-/* ---------- logos ----------
-   Put usdc-logo.webp and arc-logo.png in mainnet/public/. If a file is missing, a built-in drawing is shown instead. */
+/* ---------- logos ---------- */
 const ARC_LOGO_SRC = "/arc-logo.png" as string;
 const USDC_LOGO_SRC = "/usdc-logo.webp" as string;
 
@@ -161,8 +155,6 @@ function ArcLogo({ size = 24 }: { size?: number }) {
   );
 }
 
-/* Plays once on success: the Send icon starts at the center of the card, draws in as glowing lines, flies away smoothly,
-   then a green glowing check mark appears at the top. (Needs a "relative" parent that covers the whole success area.) */
 function SendSuccessAnimation() {
   return (
     <>
@@ -176,7 +168,6 @@ function SendSuccessAnimation() {
         </div>
       </div>
 
-      {/* green glowing check mark only */}
       <div aria-hidden className="relative mx-auto h-32 w-32">
         <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0, willChange: "transform, opacity", animation: "checkPop .55s cubic-bezier(.2,1.3,.3,1) 1.85s forwards" }}>
           <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.9)) drop-shadow(0 0 18px rgba(52,211,153,0.55))" }}>
@@ -196,7 +187,6 @@ type Phase = "idle" | "signing" | "pending" | "done" | "failed";
 export default function SendPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Same wallet state as the header (wagmi): connect / disconnect / account change in the header updates this page instantly.
   const { address, isConnected, connector } = useAccount();
   const account = isConnected && address ? address : null;
   const [provider, setProvider] = useState<Eip1193 | undefined>(undefined);
@@ -205,21 +195,19 @@ export default function SendPage() {
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-  const [fee, setFee] = useState<bigint | null>(null); // in 6-decimal USDC units, rounded up
+  const [fee, setFee] = useState<bigint | null>(null);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [txHash, setTxHash] = useState("");
   const [message, setMessage] = useState("");
   const [sentSummary, setSentSummary] = useState({ amount: "", to: "", fee: "" });
 
-  /* header mobile menu blur */
   useEffect(() => {
     const onMenu = (e: Event) => setMobileMenuOpen((e as CustomEvent<boolean>).detail);
     window.addEventListener("mobile-menu-state", onMenu);
     return () => window.removeEventListener("mobile-menu-state", onMenu);
   }, []);
 
-  /* the connected wallet's own provider (MetaMask, Rabby, OKX, Brave, WalletConnect...) */
   useEffect(() => {
     let live = true;
     setProvider(undefined);
@@ -229,7 +217,6 @@ export default function SendPage() {
     return () => { live = false; };
   }, [connector]);
 
-  /* which network the wallet is on */
   useEffect(() => {
     if (!provider) return;
     const checkChain = (id: unknown) =>
@@ -239,7 +226,6 @@ export default function SendPage() {
     return () => provider.removeListener?.("chainChanged", checkChain);
   }, [provider]);
 
-  /* USDC balance (ERC-20 face, 6 decimals) */
   const loadBalance = useCallback(async () => {
     const eth = provider;
     if (!eth || !account || !chainOk) return setBalance(null);
@@ -258,13 +244,11 @@ export default function SendPage() {
     loadBalance();
   }, [loadBalance]);
 
-  /* derived values */
   const to = recipient.trim();
   const toValid = ADDRESS_RE.test(to);
   const units = parseUnits6(amount);
   const busy = phase === "signing" || phase === "pending";
 
-  /* network fee estimate (gas is paid in USDC) */
   useEffect(() => {
     setFee(null);
     const eth = provider;
@@ -279,10 +263,10 @@ export default function SendPage() {
         ]);
         let p = BigInt(price as string);
         if (p < FEE_FLOOR) p = FEE_FLOOR;
-        const wei = BigInt(gas as string) * p; // 18-decimal native USDC
+        const wei = BigInt(gas as string) * p;
         if (live) setFee((wei + E12 - BigInt(1)) / E12);
       } catch {
-        /* leave fee unknown */
+        return;
       }
     }, 400);
     return () => {
@@ -291,7 +275,6 @@ export default function SendPage() {
     };
   }, [account, chainOk, provider, to, toValid, units]);
 
-  /* validation */
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (!to) return { text: "Enter a recipient address", hard: false };
     if (!toValid) return { text: "Enter a valid address", hard: true };
@@ -305,7 +288,6 @@ export default function SendPage() {
     return null;
   }, [to, toValid, amount, units, balance, fee]);
 
-  /* actions */
   const switchToArc = async () => {
     const eth = provider;
     if (!eth) return;
@@ -329,7 +311,7 @@ export default function SendPage() {
 
   const setMax = () => {
     if (balance === null) return;
-    const buffer = fee ?? BigInt(10000); // keep ~0.01 USDC for gas if the fee isn't known yet
+    const buffer = fee ?? BigInt(10000);
     const max = balance > buffer ? balance - buffer : ZERO;
     setAmount(formatUnits6(max, 0).replace(/,/g, ""));
   };
@@ -338,7 +320,7 @@ export default function SendPage() {
     try {
       setRecipient((await navigator.clipboard.readText()).trim());
     } catch {
-      /* clipboard blocked */
+      return;
     }
   };
 
@@ -362,12 +344,10 @@ export default function SendPage() {
       setSentSummary({ amount: formatUnits6(units), to, fee: fee !== null ? formatUnits6(fee, 3) : "" });
       setPhase("pending");
 
-      // Arc has deterministic finality: one receipt = final, no confirmation counting.
       for (let i = 0; i < 120; i++) {
         const receipt = (await eth.request({ method: "eth_getTransactionReceipt", params: [hash] })) as { status?: string; gasUsed?: string; effectiveGasPrice?: string } | null;
         if (receipt) {
           if (receipt.status === "0x1") {
-            // real fee paid = gas used x gas price (18-decimal native USDC), shown in USDC
             if (receipt.gasUsed && receipt.effectiveGasPrice) {
               const wei = BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice);
               setSentSummary((prev) => ({ ...prev, fee: formatUnits6((wei + E12 - BigInt(1)) / E12, 3) }));
@@ -392,7 +372,6 @@ export default function SendPage() {
     }
   };
 
-  /* main button */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
   if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (chainOk === false) action = { label: "Switch to Arc Mainnet", onClick: switchToArc, disabled: false };
@@ -430,7 +409,7 @@ export default function SendPage() {
 
         <div className={`transition-[filter] duration-500 ${mobileMenuOpen ? "blur-md" : "blur-0"}`}>
           <section className={`pb-24 pt-10 sm:pt-14 lg:pb-32 lg:pt-16 ${CONTAINER}`}>
-            {/* title */}
+            {/* ---------- title ---------- */}
             <div className="fade-up mx-auto max-w-2xl text-center">
               <h1 className="text-[2.5rem] font-bold leading-[1.05] tracking-[-0.035em] sm:text-6xl">
                 Send <span className="bg-gradient-to-r from-[#18bfff] via-[#2588ff] to-[#4262ff] bg-clip-text text-transparent">USDC</span>
@@ -438,11 +417,10 @@ export default function SendPage() {
               <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-400 sm:text-lg">Move USDC to any wallet on Arc.</p>
             </div>
 
-            {/* card */}
+            {/* ---------- card ---------- */}
             <div className="fade-up relative mx-auto mt-10 w-full max-w-lg" style={{ "--delay": "150ms" } as CSSProperties}>
               <div className="absolute -inset-10 rounded-full bg-[#1675ff]/10 blur-3xl" />
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#050a16]/80 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-7">
-                {/* top bar (hidden on the success screen) */}
                 {phase !== "done" && (
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
                     <div>
@@ -469,7 +447,7 @@ export default function SendPage() {
                 )}
 
                 {phase === "done" ? (
-                  /* success */
+                  /* ---------- success ---------- */
                   <div className="relative py-4 text-center sm:py-6">
                     <SendSuccessAnimation />
                     <div className="fade-up" style={{ "--delay": "2000ms" } as CSSProperties}>
@@ -536,12 +514,10 @@ export default function SendPage() {
                       </Field>
                     </div>
 
-
                     <button onClick={action.onClick} disabled={action.disabled} className={`${BUTTON} mt-6`}>
                       {action.label}
                     </button>
 
-                    {/* hints / errors */}
                     <div className="mt-3 min-h-5 text-center text-sm" role="status">
                       {phase === "failed" && message ? (
                         <span className="text-red-300">{message}</span>
@@ -560,7 +536,7 @@ export default function SendPage() {
               </div>
             </div>
 
-            {/* reassurance */}
+            {/* ---------- notes ---------- */}
             <ul className="fade-up mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500" style={{ "--delay": "300ms" } as CSSProperties}>
               <li>Fees paid in USDC</li>
               <li>Final in under a second</li>
