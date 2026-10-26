@@ -63,7 +63,7 @@ const CATS: { id: Cat; blurb: string; icon: string }[] = [
 type Q = { cat: Cat; q: string; a: string; popular?: boolean; more?: { label: string; href: string } };
 const FAQ: Q[] = [
   /* ---- General ---- */
-  { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is a simple interface for Arc, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc, all in one place.", popular: true, more: { label: "Read the overview", href: `${DOCS_URL}/#overview` } },
+  { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is one place to move, manage and explore assets on Arc Network, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc.", popular: true, more: { label: "Read the overview", href: `${DOCS_URL}/#overview` } },
   { cat: "General", q: "Do I need to create an account?", a: "No. You just connect your own wallet. Your settings and your swap and bridge history are saved in your browser, on your device." },
   { cat: "General", q: "Does AlabaamaFi hold my funds?", a: "No. AlabaamaFi is non-custodial. Every action is signed in your own wallet, and the site never has your private keys or seed phrase.", popular: true },
   { cat: "General", q: "Is this the official site?", a: "The official site is app.alabaamafi.xyz, the official X account is @Alabaama_Fi and the community is on Discord. Bookmark the site and avoid links from messages or ads." },
@@ -248,7 +248,7 @@ export default function FaqPage() {
         <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 2xl:px-16">
           <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 shrink-0 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -416,7 +416,7 @@ export default function FaqPage() {
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
               <span className="flex items-center gap-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 object-contain" />
                 <span className="text-base font-bold tracking-tight">Alabaama<span className="text-[#159fff]">Fi</span> <span className="font-medium text-slate-500">Help</span></span>
               </span>
               <button onClick={() => setMenu(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
