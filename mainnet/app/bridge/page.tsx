@@ -596,9 +596,8 @@ export default function BridgePage() {
     try {
       const raw = window.localStorage.getItem("alabaamafi:bridge-settings");
       if (raw) {
-        const j = JSON.parse(raw) as { fast?: boolean; slip?: Slip };
+        const j = JSON.parse(raw) as { fast?: boolean };
         if (typeof j.fast === "boolean") setFast(j.fast);
-        if (j.slip) setSlip(j.slip);
       }
     } catch {
       return;
@@ -606,11 +605,10 @@ export default function BridgePage() {
   }, []);
   const saveSettings = (next: { fast?: boolean; slip?: Slip }) => {
     const f = next.fast ?? fast;
-    const s = next.slip ?? slip;
     setFast(f);
-    setSlip(s);
+    if (next.slip) setSlip(next.slip);
     try {
-      window.localStorage.setItem("alabaamafi:bridge-settings", JSON.stringify({ fast: f, slip: s }));
+      window.localStorage.setItem("alabaamafi:bridge-settings", JSON.stringify({ fast: f }));
     } catch {
       return;
     }
