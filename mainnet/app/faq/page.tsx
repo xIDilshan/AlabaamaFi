@@ -248,7 +248,7 @@ export default function FaqPage() {
         <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 2xl:px-16">
           <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" />
+            <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
               Alabaama<span className="text-[#159fff]">Fi</span>
             </span>
@@ -416,7 +416,7 @@ export default function FaqPage() {
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
               <span className="flex items-center gap-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/alabaamafi-logo.png" alt="" className="h-8 w-8 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="" className="h-8 w-8 object-contain" />
                 <span className="text-base font-bold tracking-tight">Alabaama<span className="text-[#159fff]">Fi</span> <span className="font-medium text-slate-500">Help</span></span>
               </span>
               <button onClick={() => setMenu(false)} aria-label="Close menu" className={iconBtn}><Svg d={I.close} /></button>
@@ -435,7 +435,7 @@ export default function FaqPage() {
       <footer className="border-t border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
 
         <div className="grid w-full grid-cols-1 items-center justify-items-center gap-5 px-4 py-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-6 sm:px-6 lg:px-10 2xl:px-16">
-          <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. A simple interface for Arc.</p>
+          <p className="order-3 text-center text-xs leading-5 text-slate-500 sm:order-1 sm:justify-self-start sm:text-left">© {new Date().getFullYear()} AlabaamaFi. Your orbit for DeFi on Arc.</p>
 
           <div className="order-1 flex items-center gap-1 sm:order-2">
             <a href={DISCORD_URL} target="_blank" rel="noreferrer" aria-label="AlabaamaFi on Discord" title="Discord" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-[#7dd3fc]"><DiscordLogo size={FOOTER_SOCIAL_PX} /></a>
