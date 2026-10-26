@@ -12,13 +12,11 @@ type WalletModalProps = {
 
 type ConnectorItem = ReturnType<typeof useConnect>["connectors"][number];
 
-/* the second card (the QR code, on a computer): `getUrl` is where "Get wallet" goes (left out for WalletConnect) */
 type QrView = { name: string; getUrl?: string };
 
-/* the one message shown for every connection problem (rejected, cancelled, came back from a wallet app without connecting...) */
 const ERROR_MESSAGE = "Something went wrong. Please try again.";
 
-/* ---------- where "Get wallet" goes (the Chrome Web Store page; other browsers get the wallet's own site) ---------- */
+/* ---------- get wallet links ---------- */
 const GET_WALLET = {
   metamask: {
     chrome: "https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
@@ -51,7 +49,6 @@ const Arrow = () => (
   </svg>
 );
 
-/* the header of each card: something small on the left, the title in the middle, the cross on the right (all on one line) */
 function CardHeader({ left, title, onClose }: { left: ReactNode; title: string; onClose: () => void }) {
   return (
     <div className="mb-4 grid min-h-[40px] grid-cols-[40px_1fr_40px] items-center">
@@ -74,9 +71,6 @@ const WalletGlyph = () => (
   </svg>
 );
 
-/* one wallet row: logo, name, arrow.
-   `dot` puts a green availability dot on the top corner of the logo. The logo sits in a fixed 36px box (centered, with no text-line gap),
-   so every logo lines up with its name and every name starts at the same place. */
 function Row({
   name,
   icon,
@@ -88,7 +82,7 @@ function Row({
   name: string;
   icon?: string;
   dot?: boolean;
-  installedWallet?: { name: string; icon?: string }; // for the Browser Wallet row: a wallet installed in this browser, shown in one of the four boxes
+  installedWallet?: { name: string; icon?: string };
   disabled?: boolean;
   onClick: () => void;
 }) {
@@ -128,12 +122,11 @@ export default function WalletModal({
     error: connectError,
   } = useConnect();
 
-  const [qr, setQr] = useState<QrView | null>(null); // null = the wallet list, otherwise the second card is shown
+  const [qr, setQr] = useState<QrView | null>(null);
   const [uri, setUri] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [localError, setLocalError] = useState("");
 
-  /* the window's height follows the card that is showing (so there is never an empty space under the list) */
   const listRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const [heights, setHeights] = useState<{ list: number; qr: number } | null>(null);
@@ -187,7 +180,6 @@ export default function WalletModal({
     });
   }, [connectors]);
 
-  /* the wallets installed in this browser that are not one of the four main wallets (they announce themselves, so wagmi lists each one) */
   const installedOthers = useMemo(() => {
     const main = new Set(
       [walletConnectConnector?.id, coinbaseConnector?.id, metaMaskConnector?.id, binanceConnector?.id, browserConnector?.id].filter(Boolean)
@@ -201,7 +193,6 @@ export default function WalletModal({
     });
   }, [connectors, walletConnectConnector, coinbaseConnector, metaMaskConnector, binanceConnector, browserConnector]);
 
-  /* the wallet shown in one box of the Browser Wallet icon: an installed wallet that is not already one of the four usual ones, else any installed wallet */
   const browserIconWallet = useMemo(() => {
     const usual = ["metamask", "brave", "rabby", "phantom"];
     const all = [...installedOthers, metaMaskConnector, binanceConnector].filter(Boolean) as ConnectorItem[];
@@ -212,12 +203,10 @@ export default function WalletModal({
   const hasEthereum =
     typeof window !== "undefined" && !!(window as unknown as { ethereum?: unknown }).ethereum;
 
-  // "Browser Wallet" only appears when the browser really has a wallet
   const showBrowserWallet =
     !!browserConnector &&
     (hasEthereum || installedOthers.length > 0 || !!metaMaskConnector || !!binanceConnector);
 
-  /* WalletConnect gives out its pairing link while it connects; the second card uses it */
   useEffect(() => {
     if (!walletConnectConnector) return;
     const onMessage = (m: { type: string; data?: unknown }) => {
@@ -229,7 +218,6 @@ export default function WalletModal({
     };
   }, [walletConnectConnector]);
 
-  /* start fresh each time the window is opened (and never stay "connecting") */
   useEffect(() => {
     setQr(null);
     setUri(null);
@@ -239,7 +227,6 @@ export default function WalletModal({
     else setHeights(null);
   }, [isOpen]);
 
-  /* measure both cards, so the window is exactly as tall as the one that shows */
   useLayoutEffect(() => {
     if (!isOpen || isConnected) return;
     const measure = () => {
@@ -254,7 +241,6 @@ export default function WalletModal({
     return () => ro.disconnect();
   }, [isOpen, isConnected]);
 
-  /* coming back from a wallet app (Coinbase, MetaMask...) without having connected: do not leave the window frozen on "connecting" */
   useEffect(() => {
     if (!isOpen) return;
     let timer: number | undefined;
@@ -305,7 +291,6 @@ export default function WalletModal({
     );
   };
 
-  /* slide to the second card and start the WalletConnect connection (the code / the wallet apps appear as soon as the link is ready) */
   const showQrCard = (view: QrView) => {
     if (!walletConnectConnector) return;
     reset();
@@ -316,8 +301,6 @@ export default function WalletModal({
     connect({ connector: walletConnectConnector }, { onSuccess: () => onClose() });
   };
 
-  /* "Browser Wallet": connect to the installed wallet that owns the browser's default connection (so its exact name and logo are known).
-     If none of them matches, the generic browser connection is used. */
   const handleBrowserWallet = async () => {
     if (!browserConnector) return;
     const eth = (window as unknown as { ethereum?: unknown }).ethereum;
@@ -329,13 +312,12 @@ export default function WalletModal({
           return;
         }
       } catch {
-        /* try the next one */
+        continue;
       }
     }
     handleConnect(browserConnector);
   };
 
-  /* phones: close this window and let WalletConnect open its own window (the real WalletConnect card) */
   const openWalletConnectWindow = () => {
     if (!walletConnectConnector) return;
     resetRef.current();
@@ -363,19 +345,16 @@ export default function WalletModal({
   };
 
   const handleMetaMaskClick = () => {
-    // MetaMask is installed (a computer, or inside the MetaMask app browser): connect right away
     if (metaMaskConnector) {
       handleConnect(metaMaskConnector);
       return;
     }
 
-    // a phone without MetaMask in the browser: open this site inside the MetaMask app
     if (isMobileDevice()) {
       openMetaMaskMobile();
       return;
     }
 
-    // a computer without MetaMask: slide to the QR card, with "Get wallet" for the Chrome Web Store
     showQrCard({ name: "MetaMask", getUrl: getWalletUrl("metamask") });
   };
 
@@ -400,7 +379,6 @@ export default function WalletModal({
   const showQr = qr !== null;
   const shownError = connectError ? ERROR_MESSAGE : localError;
 
-  /* the two cards sit side by side; the visible one slides in, the other slides out */
   const panelStyle = (visible: boolean, offset: "-100%" | "100%"): CSSProperties => ({
     transform: visible ? "translateX(0)" : `translateX(${offset})`,
     visibility: visible ? "visible" : "hidden",
@@ -415,7 +393,6 @@ export default function WalletModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/55 px-3 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
-      {/* a click on the dim area closes the window */}
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
       <div
@@ -426,13 +403,12 @@ export default function WalletModal({
           transition: heights ? "height .32s cubic-bezier(.32,.72,0,1)" : undefined,
         }}
       >
-        {/* CARD 1: the wallets */}
+        {/* ---------- wallet list ---------- */}
         <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(!showQr, "-100%")} aria-hidden={showQr}>
           <div ref={listRef} className="p-4 sm:p-5">
             <CardHeader left={<WalletGlyph />} title="Connect Wallet" onClose={onClose} />
 
             <div className="space-y-2">
-              {/* installed in this browser, above the main wallets: first every installed wallet, then "Browser Wallet" below them */}
               {installedOthers.map((connector) => (
                 <Row key={connector.uid} name={connector.name} icon={connector.icon} dot disabled={isPending} onClick={() => handleConnect(connector)} />
               ))}
@@ -443,7 +419,6 @@ export default function WalletModal({
 
               {hasInstalledGroup && <div className="!my-3 h-px bg-white/[0.07]" />}
 
-              {/* the four main wallets */}
               <Row name="MetaMask" dot={!!metaMaskConnector} disabled={isPending && !showQr} onClick={handleMetaMaskClick} />
 
               {walletConnectConnector && (
@@ -463,7 +438,7 @@ export default function WalletModal({
           </div>
         </div>
 
-        {/* CARD 2: the QR code with the wallet logo in its center, and "Get wallet" at the bottom (computers only) */}
+        {/* ---------- QR code ---------- */}
         <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
           <div ref={qrRef} className="p-4 sm:p-5">
             <CardHeader
@@ -479,7 +454,6 @@ export default function WalletModal({
             />
 
             <div className="flex flex-col items-center">
-              {/* the QR code, with the wallet's logo in the center */}
               <div className="relative rounded-2xl bg-white p-3">
                 {uri ? (
                   <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" />
