@@ -192,7 +192,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <div className="flex min-w-0 items-center gap-1">
               <Link href="/" onClick={closeMobileMenu} aria-label="AlabaamaFi home" className="flex h-12 w-9 shrink-0 items-center justify-center">
-                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-9 w-9 shrink-0 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-9 w-9 shrink-0 object-contain" />
               </Link>
 
               <button
@@ -254,7 +254,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           >
             <div className="flex min-h-[68px] items-center justify-between gap-2 px-4 sm:min-h-[74px] sm:px-6">
               <Link href="/" onClick={closeMobileMenu} className="flex min-w-0 items-center gap-2">
-                <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
+                <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-8 w-8 shrink-0 object-contain" />
                 <span className="truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
                   Alabaama<span className="text-[#159fff]">Fi</span>
                 </span>
@@ -368,7 +368,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <div className="flex min-h-[86px] items-center gap-6 px-7 lg:px-10 xl:px-12">
 
             <Link href="/" className="flex shrink-0 items-center gap-3">
-              <img src="/alabaamafi-logo.png" alt="AlabaamaFi" className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14" />
+              <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14" />
 
               <div className="text-left">
                 <h1 className="text-[25px] font-bold leading-none tracking-[-0.035em] lg:text-[29px]">
