@@ -203,7 +203,7 @@ const Svg = ({ d, size = 20 }: { d: string; size?: number }) => (
 
 const BtnText = ({ children }: { children: ReactNode }) => <span style={{ fontSize: "12px", lineHeight: 1, zoom: BTN_TEXT_PX / 12 }}>{children}</span>;
 
-function SpaceBackground() {
+function SpaceBackgroundLight() {
   const { stars, dust } = useMemo(() => {
     let seed = 41;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -222,6 +222,33 @@ function SpaceBackground() {
         <span key={i} className="absolute left-0 top-0 h-px w-px rounded-full" style={{ boxShadow: shadow, animation: `twinkle ${TIMES[i]}s ease-in-out ${DELAYS[i]}s infinite` }} />
       ))}
       <span className="absolute left-0 top-0 h-px w-px rounded-full" style={{ boxShadow: dust, opacity: 0.4 }} />
+    </div>
+  );
+}
+
+function SpaceBackground() {
+  const { stars, dust } = useMemo(() => {
+    let seed = 41;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    return {
+      stars: Array.from({ length: 140 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1 + rnd() * 1.8), d: r2(rnd() * 7), t: r2(3 + rnd() * 5) })),
+      dust: Array.from({ length: 26 }, (_, id) => ({ id, x: r2(rnd() * 100), y: r2(rnd() * 100), size: r2(1.5 + rnd() * 2), d: r2(rnd() * 14), t: r2(14 + rnd() * 14) })),
+    };
+  }, []);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute -inset-6 blur-[3px]">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#010205_0%,#020a1c_30%,#031126_60%,#010307_100%)]" />
+        <div className="absolute left-1/2 top-[8%] h-[55vw] w-[55vw] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(22,115,255,0.22),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloat 18s ease-in-out infinite" }} />
+        <div className="absolute -left-[25vw] top-[45%] h-[50vw] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(20,90,255,0.12),transparent_68%)] blur-3xl" style={{ animation: "backgroundFloatReverse 24s ease-in-out infinite" }} />
+        {stars.map((s) => (
+          <span key={s.id} className="absolute rounded-full bg-[#a9dfff]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, animation: `twinkle ${s.t}s ease-in-out ${s.d}s infinite` }} />
+        ))}
+        {dust.map((p) => (
+          <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1553,7 +1580,7 @@ function ActivityInner() {
         @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}.fade-up{opacity:1}}
       `}</style>
 
-      <SpaceBackground />
+      {target ? <SpaceBackgroundLight /> : <SpaceBackground />}
 
       <div className="relative z-10">
         <Header />
