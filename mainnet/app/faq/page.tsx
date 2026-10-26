@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
+const WEBSITE_URL = "https://alabaamafi.xyz";
 const X_URL = "https://x.com/Alabaama_Fi";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const DOCS_URL = "https://docs.alabaamafi.xyz";
@@ -66,7 +67,7 @@ const FAQ: Q[] = [
   { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is one place to move, manage and explore assets on Arc Network, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc.", popular: true, more: { label: "Read the overview", href: `${DOCS_URL}/#overview` } },
   { cat: "General", q: "Do I need to create an account?", a: "No. You just connect your own wallet. Your settings and your swap and bridge history are saved in your browser, on your device." },
   { cat: "General", q: "Does AlabaamaFi hold my funds?", a: "No. AlabaamaFi is non-custodial. Every action is signed in your own wallet, and the site never has your private keys or seed phrase.", popular: true },
-  { cat: "General", q: "Is this the official site?", a: "The official site is app.alabaamafi.xyz, the official X account is @Alabaama_Fi and the community is on Discord. Bookmark the site and avoid links from messages or ads." },
+  { cat: "General", q: "Is this the official site?", a: "The official website is alabaamafi.xyz and the app, with Send, Swap, Bridge and Activity, is at app.alabaamafi.xyz. The official X account is @Alabaama_Fi and the community is on Discord. Bookmark both addresses and avoid links from messages or ads." },
   { cat: "General", q: "Which pages does AlabaamaFi have?", a: "Home, Send, Swap, Bridge and Activity, plus these Docs and FAQ. Use the menu in the top corner to move between them." },
   { cat: "General", q: "Where can I read the terms of service?", a: "The Terms of Service are in the Docs, at the end of the page.", more: { label: "Open the Terms of Service", href: `${DOCS_URL}/#terms` } },
 
@@ -110,7 +111,7 @@ const FAQ: Q[] = [
   { cat: "Bridge", q: "Which Robinhood Chain routes can I use?", a: "Pick Robinhood Chain on either side of the Bridge page: Robinhood Chain to Arc, Arc to Robinhood Chain, or Robinhood Chain to and from another network. The widget shows only the routes LI.FI supports.", more: { label: "Robinhood Chain routes", href: `${DOCS_URL}/#robinhood` } },
   { cat: "Bridge", q: "Why did my USDC arrive as USDG on Robinhood Chain?", a: "USDC sent to Robinhood Chain often arrives as USDG, a different stablecoin issued by Paxos. Check the token you will receive in the quote before you confirm. If you need USDC again later, use a route that ends in USDC." },
   { cat: "Bridge", q: "Do I need a special coin for gas on Robinhood Chain?", a: "Robinhood Chain uses ETH for gas. If you bridge out of it, keep a little ETH there for the fee. When you bridge into it, the quote shows what you pay on the source network." },
-  { cat: "Bridge", q: "Is a Robinhood Chain route as safe as Circle’s bridge?", a: "It works differently. Circle’s bridge burns and mints native USDC. LI.FI routes use bridges and relayers that deliver your funds, so each has its own risks. Read the quote, the fees and the time, start with a small amount, and only use the site at app.alabaamafi.xyz." },
+  { cat: "Bridge", q: "Is a Robinhood Chain route as safe as Circle’s bridge?", a: "It works differently. Circle’s bridge burns and mints native USDC. LI.FI routes use bridges and relayers that deliver your funds, so each has its own risks. Read the quote, the fees and the time, start with a small amount, and only use alabaamafi.xyz and app.alabaamafi.xyz." },
   { cat: "Bridge", q: "The LI.FI widget does not work for my pair. What can I do?", a: "Try a different token or amount, or switch the two networks. If a pair still fails, use the “Open it in Jumper” link under the widget, which opens LI.FI’s own app with both networks chosen, or ask in our Discord." },
 
   /* ---- Activity ---- */
@@ -129,7 +130,7 @@ const FAQ: Q[] = [
   { cat: "Security", q: "Will AlabaamaFi ever ask for my seed phrase?", a: "Never. Not on the site, not in messages and not in replies. If anyone asks for it, it is a scam.", popular: true },
   { cat: "Security", q: "What data does AlabaamaFi store?", a: "Only your settings and your swap and bridge history, in your own browser. There are no accounts. The services behind the site, such as RPC providers, Circle, LI.FI, CoinGecko and the Arc explorer, can see requests like your IP address and wallet address, and everything on a blockchain is public.", more: { label: "Security and privacy", href: `${DOCS_URL}/#security` } },
   { cat: "Security", q: "What are token approvals?", a: "Some actions ask your wallet to approve a token, which lets a contract move that token up to the amount you approve. You can review and revoke approvals with a revoke tool." },
-  { cat: "Security", q: "How can I stay safe?", a: "Use only app.alabaamafi.xyz, never share your seed phrase, double-check every address, read what your wallet shows before you confirm, and start with a small amount on a new route." },
+  { cat: "Security", q: "How can I stay safe?", a: "Use only alabaamafi.xyz and app.alabaamafi.xyz, never share your seed phrase, double-check every address, read what your wallet shows before you confirm, and start with a small amount on a new route." },
   { cat: "Security", q: "Where can I get help or report a problem?", a: "Ask in our Discord or message @Alabaama_Fi on X, and include the page, the network and what you saw. Never post your seed phrase, and be careful with private messages from people you do not know." },
 ];
 
@@ -183,11 +184,36 @@ export default function FaqPage() {
   const inCat = useMemo(() => (cat ? all.filter((f) => f.cat === cat) : []), [all, cat]);
   const count = (c: Cat) => FAQ.filter((f) => f.cat === c).length;
 
+  useEffect(() => {
+    document.title = cat ? `${cat} - FAQ | AlabaamaFi` : "FAQ | AlabaamaFi";
+  }, [cat]);
+
+  useEffect(() => {
+    const apply = () => {
+      const h = decodeURIComponent(window.location.hash.slice(1));
+      setCat(CATS.find((c) => c.id.toLowerCase().replace(/\s+/g, "-") === h)?.id ?? null);
+      setQuery("");
+      setOpenId(null);
+      window.scrollTo({ top: 0 });
+    };
+    apply();
+    window.addEventListener("popstate", apply);
+    window.addEventListener("hashchange", apply);
+    return () => {
+      window.removeEventListener("popstate", apply);
+      window.removeEventListener("hashchange", apply);
+    };
+  }, []);
+
   const pick = (c: Cat | null) => {
     setCat(c);
     setQuery("");
     setOpenId(null);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      const hash = c ? `#${c.toLowerCase().replace(/\s+/g, "-")}` : "";
+      if (window.location.hash !== hash) history.pushState(null, "", window.location.pathname + window.location.search + hash);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
   const toggle = (id: string) => setOpenId((cur) => (cur === id ? null : id));
 
@@ -246,7 +272,7 @@ export default function FaqPage() {
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05080f]/90 backdrop-blur-xl">
         <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 2xl:px-16">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
+          <Link href={WEBSITE_URL} className="flex min-w-0 items-center gap-2.5" aria-label="AlabaamaFi home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/alabaamafi-logo.svg" alt="" className="h-9 w-9 shrink-0 object-contain" />
             <span className="truncate text-[17px] font-bold tracking-tight">
@@ -255,7 +281,7 @@ export default function FaqPage() {
             <span className="hidden rounded-md border border-white/10 bg-white/[0.05] px-2 py-0.5 text-xs font-semibold text-slate-300 sm:inline">Help Center</span>
           </Link>
 
-          <Link href="/" className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
+          <Link href={WEBSITE_URL} className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
             <Svg d={I.home} size={17} /> Home
           </Link>
         </div>
