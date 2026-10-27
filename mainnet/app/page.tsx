@@ -1172,11 +1172,11 @@ export default function Home() {
         <section id="showcase" className="relative pb-10 xl:mt-20 lg:pb-16">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-[80px] z-[1] hidden h-[205px] backdrop-blur-[6px] xl:block [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_39%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_39%,transparent)]"
+            className="pointer-events-none absolute inset-x-0 -top-[80px] hidden h-[205px] backdrop-blur-[6px] xl:block [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_39%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_39%,transparent)]"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-[40px] z-[1] h-[80px] backdrop-blur-[6px] lg:h-[110px] xl:hidden [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)]"
+            className="pointer-events-none absolute inset-x-0 -top-[40px] h-[80px] backdrop-blur-[6px] lg:h-[110px] xl:hidden [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)]"
           />
           <div
             className="relative overflow-hidden bg-[#050a16]/20 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_6%,#000_94%,transparent)]"
