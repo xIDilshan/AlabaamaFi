@@ -194,7 +194,7 @@ function Comets() {
             launch(make());
             if (Math.random() < 0.3) timers.push(window.setTimeout(() => alive && launch(make()), r(150, 700)));
           }
-          next(r(1600, 6000));
+          next(r(3000, 8000));
         }, ms)
       );
     };
