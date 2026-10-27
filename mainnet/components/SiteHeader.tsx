@@ -25,12 +25,9 @@ export default function SiteHeader() {
 
         <a
           href={LAUNCH_URL}
-          className={`${manrope.className} flex h-9 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-semibold leading-none tracking-normal md:h-12 md:px-6 md:text-sm ${launchButton}`}
+          className={`${manrope.className} flex h-9 shrink-0 items-center justify-center rounded-full px-4 text-[14px] font-semibold leading-none tracking-normal md:h-12 md:px-6 md:text-sm ${launchButton}`}
         >
-          <span>Launch app</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
+          Launch app
         </a>
       </div>
     </header>
