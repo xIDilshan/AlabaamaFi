@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, type AnchorHTMLAttributes, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { Inter, Manrope, Audiowide } from "next/font/google";
-import Header from "@/components/Header";
+import SiteHeader from "@/components/SiteHeader";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
@@ -20,6 +19,11 @@ const ARC = {
 };
 
 const DOCS_URL = "https://docs.alabaamafi.xyz";
+const APP_URL = "https://app.alabaamafi.xyz";
+
+function Link({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
+  return <a href={href.startsWith("/") ? `${APP_URL}${href}` : href} {...props} />;
+}
 const ADDR_MASK = "0x…xxxx";
 const SOCIAL = {
   x: "https://x.com/Alabaama_Fi",
@@ -67,8 +71,8 @@ const ICON_SETTINGS = "M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM7 10a
 const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
 
 const STEPS = [
-  { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
-  { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
+  { n: "01", title: "Add Arc to your wallet", text: "Add Arc Mainnet with one click, or copy the details below." },
+  { n: "02", title: "Launch the app", text: "Open the app and connect any EVM wallet." },
   { n: "03", title: "Make your move", text: "Send, swap, bridge, and track everything in one place." },
 ];
 
@@ -999,7 +1003,7 @@ export default function Home() {
 
   const addArcToWallet = async () => {
     const ethereum = (window as Window & { ethereum?: { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
-    if (!ethereum) return setWalletMsg("No EVM wallet detected.");
+    if (!ethereum) return setWalletMsg("No wallet found in this browser. Copy the details from the card instead.");
     try {
       await ethereum.request({
         method: "wallet_addEthereumChain",
@@ -1052,7 +1056,7 @@ export default function Home() {
       <SpaceBackground />
 
       <div className="relative z-10">
-        <Header />
+        <SiteHeader />
 
         {/* ---------------- HERO ---------------- */}
         <section className="relative">
