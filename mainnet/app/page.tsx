@@ -1125,7 +1125,7 @@ export default function Home() {
           </div>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[240px] backdrop-blur-[5px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_55%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_55%,transparent)]"
+            className="pointer-events-none absolute inset-x-0 -bottom-[20px] z-[1] h-[50px] backdrop-blur-[6px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_50%,transparent)] lg:-bottom-[40px] lg:h-[80px] xl:-bottom-[100px] xl:h-[140px]"
           />
 
           <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] xl:items-center ${CONTAINER}`}>
