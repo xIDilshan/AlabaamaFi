@@ -172,8 +172,8 @@ function Comets() {
     const r1 = (n: number) => Math.round(n * 10) / 10;
     return Array.from({ length: 7 }, (_, id) => ({
       id,
-      x: r1(38 + rnd() * 66),
-      y: r1(-6 + rnd() * 30),
+      x: id < 4 ? r1(28 + rnd() * 30) : r1(62 + rnd() * 38),
+      y: id < 4 ? r1(-8 + rnd() * 16) : r1(-10 + rnd() * 8),
       angle: r1(138 + rnd() * 16),
       len: Math.round(150 + rnd() * 130),
       dist: Math.round(640 + rnd() * 520),
@@ -185,7 +185,7 @@ function Comets() {
   return (
     <div
       aria-hidden
-      className="comet-layer pointer-events-none absolute inset-x-0 top-0 z-[5] hidden h-[720px] overflow-hidden lg:block [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)]"
+      className="comet-layer pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[720px] overflow-hidden lg:block [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)]"
     >
       {comets.map((c) => (
         <span key={c.id} className="absolute block h-0 w-0" style={{ left: `${c.x}%`, top: `${c.y}%`, transform: `rotate(${c.angle}deg)` }}>
