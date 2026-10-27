@@ -172,13 +172,13 @@ function Comets() {
     const r1 = (n: number) => Math.round(n * 10) / 10;
     return Array.from({ length: 7 }, (_, id) => ({
       id,
-      x: id < 4 ? r1(28 + rnd() * 30) : r1(62 + rnd() * 38),
-      y: id < 4 ? r1(-8 + rnd() * 16) : r1(-10 + rnd() * 8),
+      x: id % 2 === 0 ? r1(28 + rnd() * 30) : r1(62 + rnd() * 38),
+      y: id % 2 === 0 ? r1(-8 + rnd() * 16) : r1(-10 + rnd() * 8),
       angle: r1(138 + rnd() * 16),
       len: Math.round(150 + rnd() * 130),
       dist: Math.round(640 + rnd() * 520),
-      cycle: r1(8 + rnd() * 9),
-      delay: r1(rnd() * 12),
+      cycle: 49,
+      delay: r1(8 + id * 7 + rnd() * 2),
     }));
   }, []);
 
@@ -1047,6 +1047,27 @@ export default function Home() {
     }
   };
 
+  const heroRef = useRef<HTMLElement>(null);
+  const [showcaseOn, setShowcaseOn] = useState(false);
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const wide = window.matchMedia("(min-width: 1024px)");
+    let heroOnScreen = true;
+    const apply = () => setShowcaseOn(!wide.matches || !heroOnScreen);
+    const io = new IntersectionObserver(([e]) => {
+      heroOnScreen = e.isIntersecting;
+      apply();
+    });
+    io.observe(hero);
+    wide.addEventListener("change", apply);
+    apply();
+    return () => {
+      io.disconnect();
+      wide.removeEventListener("change", apply);
+    };
+  }, []);
+
   const [cueVisible, setCueVisible] = useState(false);
   useEffect(() => {
     const update = () => {
@@ -1078,7 +1099,7 @@ export default function Home() {
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         .comet{position:absolute;right:0;top:-1px;width:var(--len);height:2px;border-radius:2px;opacity:0;will-change:transform,opacity;background:linear-gradient(90deg,rgba(24,191,255,0),rgba(120,200,255,.5) 65%,rgba(235,248,255,.95))}
         .comet::after{content:"";position:absolute;right:-1px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px rgba(160,215,255,.9),0 0 16px 5px rgba(60,150,255,.55)}
-        @keyframes cometRun{0%{transform:translateX(0);opacity:0}2%{opacity:1}22%{transform:translateX(var(--dist));opacity:0}100%{transform:translateX(var(--dist));opacity:0}}
+        @keyframes cometRun{0%{transform:translateX(0);opacity:0}1%{opacity:1}5%{transform:translateX(var(--dist));opacity:0}100%{transform:translateX(var(--dist));opacity:0}}
         @keyframes scrollCue{0%{opacity:0;transform:translateY(-8px)}35%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
         .cue-arrow{display:block;opacity:.85;animation:scrollCue 2.4s ease-in-out infinite}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
@@ -1095,7 +1116,7 @@ export default function Home() {
         <SiteHeader />
 
         {/* ---------------- HERO ---------------- */}
-        <section className="relative">
+        <section ref={heroRef} className="relative">
           <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 opacity-70 md:opacity-100 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
             <HeroEarth />
           </div>
@@ -1151,7 +1172,7 @@ export default function Home() {
             style={{ WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)" }}
           >
             <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
-            <div className={`relative ${CONTAINER}`}>
+            <div className={`relative transition-opacity ${showcaseOn ? "opacity-100 duration-500" : "pointer-events-none opacity-0 duration-200"} ${CONTAINER}`}>
               {SHOWCASE.map((item, i) => (
                 <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
                   <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
