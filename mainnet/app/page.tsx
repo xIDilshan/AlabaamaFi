@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type AnchorHTMLAttributes, type ComponentType, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
+import Link from "next/link";
 import { Inter, Manrope, Audiowide } from "next/font/google";
-import SiteHeader from "@/components/SiteHeader";
+import Header from "@/components/Header";
 
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
@@ -19,11 +20,6 @@ const ARC = {
 };
 
 const DOCS_URL = "https://docs.alabaamafi.xyz";
-const APP_URL = "https://app.alabaamafi.xyz";
-
-function Link({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
-  return <a href={href.startsWith("/") ? `${APP_URL}${href}` : href} {...props} />;
-}
 const ADDR_MASK = "0x…xxxx";
 const SOCIAL = {
   x: "https://x.com/Alabaama_Fi",
@@ -71,8 +67,8 @@ const ICON_SETTINGS = "M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM7 10a
 const ICON_FAST = "M13 2 3 14h9l-1 8 10-12h-9l1-8z";
 
 const STEPS = [
-  { n: "01", title: "Add Arc to your wallet", text: "Add Arc Mainnet with one click, or copy the details below." },
-  { n: "02", title: "Launch the app", text: "Open the app and connect any EVM wallet." },
+  { n: "01", title: "Connect your wallet", text: "Use Connect Wallet in the header to link any EVM wallet." },
+  { n: "02", title: "Switch to Arc", text: "Add Arc Mainnet to your wallet with one click." },
   { n: "03", title: "Make your move", text: "Send, swap, bridge, and track everything in one place." },
 ];
 
@@ -159,62 +155,6 @@ function SpaceBackground() {
       ))}
       {dust.map((p) => (
         <span key={p.id} className="absolute rounded-full bg-[#6cc4ff]" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, animation: `floatUp ${p.t}s linear ${p.d}s infinite` }} />
-      ))}
-    </div>
-  );
-}
-
-/* ---------- COMETS ---------- */
-type CometSpec = { id: number; x: number; y: number; angle: number; len: number; dist: number; dur: number };
-
-function Comets() {
-  const [live, setLive] = useState<CometSpec[]>([]);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const wide = window.matchMedia("(min-width: 1024px)");
-    let alive = true;
-    let counter = 0;
-    const timers: number[] = [];
-    const r = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
-
-    const make = (): CometSpec => {
-      const centre = Math.random() < 0.5;
-      return { id: counter++, x: centre ? r(28, 58) : r(62, 100), y: centre ? r(-8, 8) : r(-10, -2), angle: r(138, 154), len: Math.round(r(150, 280)), dist: Math.round(r(640, 1160)), dur: r(2, 3.2) };
-    };
-    const launch = (spec: CometSpec) => {
-      setLive((p) => [...p.slice(-7), spec]);
-      timers.push(window.setTimeout(() => setLive((p) => p.filter((c) => c.id !== spec.id)), spec.dur * 1000 + 300));
-    };
-    const next = (ms: number) => {
-      timers.push(
-        window.setTimeout(() => {
-          if (!alive) return;
-          if (wide.matches && document.visibilityState === "visible") {
-            launch(make());
-            if (Math.random() < 0.1) timers.push(window.setTimeout(() => alive && launch(make()), r(150, 700)));
-          }
-          next(r(2400, 7000));
-        }, ms)
-      );
-    };
-    next(r(1800, 3000));
-
-    return () => {
-      alive = false;
-      timers.forEach((t) => window.clearTimeout(t));
-    };
-  }, []);
-
-  return (
-    <div
-      aria-hidden
-      className="comet-layer pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[720px] overflow-hidden lg:block [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)]"
-    >
-      {live.map((c) => (
-        <span key={c.id} className="absolute block h-0 w-0" style={{ left: `${c.x}%`, top: `${c.y}%`, transform: `rotate(${c.angle}deg)` }}>
-          <span className="comet" style={{ ["--len" as string]: `${c.len}px`, ["--dist" as string]: `${c.dist}px`, animation: `cometFly ${c.dur.toFixed(2)}s linear forwards` } as CSSProperties} />
-        </span>
       ))}
     </div>
   );
@@ -1059,7 +999,7 @@ export default function Home() {
 
   const addArcToWallet = async () => {
     const ethereum = (window as Window & { ethereum?: { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
-    if (!ethereum) return setWalletMsg("No wallet found in this browser. Copy the details from the card instead.");
+    if (!ethereum) return setWalletMsg("No EVM wallet detected.");
     try {
       await ethereum.request({
         method: "wallet_addEthereumChain",
@@ -1100,23 +1040,19 @@ export default function Home() {
         .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:-40% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
         @keyframes heroShine{0%{background-position:-40% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:140% 0;opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-        .comet{position:absolute;right:0;top:-1px;width:var(--len);height:2px;border-radius:2px;opacity:0;will-change:transform,opacity;background:linear-gradient(90deg,rgba(24,191,255,0),rgba(120,200,255,.5) 65%,rgba(235,248,255,.95))}
-        .comet::after{content:"";position:absolute;right:-1px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px rgba(160,215,255,.9),0 0 16px 5px rgba(60,150,255,.55)}
-        @keyframes cometFly{0%{transform:translateX(0);opacity:0}5%{opacity:1}100%{transform:translateX(var(--dist));opacity:0}}
         @keyframes scrollCue{0%{opacity:0;transform:translateY(-8px)}35%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
         .cue-arrow{display:block;opacity:.85;animation:scrollCue 2.4s ease-in-out infinite}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-right{transform:translateX(70px)}
         .reveal-left{transform:translateX(-70px)}
         .reveal-visible{opacity:1;transform:none}
-        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}.logo-part{animation:none!important}.logo-line{display:none}.logo-spin{animation:none!important}.comet-layer{display:none}}
+        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}.logo-part{animation:none!important}.logo-line{display:none}.logo-spin{animation:none!important}}
       `}</style>
 
       <SpaceBackground />
 
       <div className="relative z-10">
-        <Comets />
-        <SiteHeader />
+        <Header />
 
         {/* ---------------- HERO ---------------- */}
         <section className="relative">
@@ -1150,8 +1086,8 @@ export default function Home() {
 
               <Reveal delay={270}>
                 <div className="mt-9 flex flex-wrap gap-3">
-                  <Link href="/swap" className={`${BUTTON} max-sm:!px-5 max-sm:!py-3 max-sm:!text-[15px]`}>Start swapping</Link>
-                  <Link href="/bridge" className={`${SECONDARY_BUTTON} max-sm:!px-5 max-sm:!py-3 max-sm:!text-[15px]`}>Bridge to Arc</Link>
+                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
+                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
                 </div>
               </Reveal>
             </div>
