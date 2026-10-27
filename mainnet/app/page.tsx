@@ -192,9 +192,9 @@ function Comets() {
           if (!alive) return;
           if (wide.matches && document.visibilityState === "visible") {
             launch(make());
-            if (Math.random() < 0.3) timers.push(window.setTimeout(() => alive && launch(make()), r(150, 700)));
+            if (Math.random() < 0.1) timers.push(window.setTimeout(() => alive && launch(make()), r(150, 700)));
           }
-          next(r(3000, 8000));
+          next(r(2400, 7000));
         }, ms)
       );
     };
@@ -1123,6 +1123,10 @@ export default function Home() {
           <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-[250px] bottom-0 z-0 opacity-70 md:opacity-100 [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-170px),transparent)]">
             <HeroEarth />
           </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[240px] backdrop-blur-[5px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_55%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,#000_55%,transparent)]"
+          />
 
           <div className={`relative z-10 flex min-h-[480px] items-start md:min-h-[520px] lg:min-h-[560px] xl:items-center ${CONTAINER}`}>
             <div data-hero-body className="w-full pb-14 pt-8 text-left sm:pt-12 lg:pt-14 xl:pb-0">
@@ -1150,8 +1154,8 @@ export default function Home() {
 
               <Reveal delay={270}>
                 <div className="mt-9 flex flex-wrap gap-3">
-                  <Link href="/swap" className={BUTTON}>Start swapping</Link>
-                  <Link href="/bridge" className={SECONDARY_BUTTON}>Bridge to Arc</Link>
+                  <Link href="/swap" className={`${BUTTON} max-sm:!px-5 max-sm:!py-3 max-sm:!text-[15px]`}>Start swapping</Link>
+                  <Link href="/bridge" className={`${SECONDARY_BUTTON} max-sm:!px-5 max-sm:!py-3 max-sm:!text-[15px]`}>Bridge to Arc</Link>
                 </div>
               </Reveal>
             </div>
