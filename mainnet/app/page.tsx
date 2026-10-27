@@ -1145,7 +1145,7 @@ export default function Home() {
 
               <Reveal delay={180}>
                 <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">Your orbit for DeFi on Arc</p>
-                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Send, swap, bridge, and explore assets on Arc Mainnet through one simple interface.</p>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">One place to move, manage, and explore assets on Arc Mainnet.</p>
               </Reveal>
 
               <Reveal delay={270}>
