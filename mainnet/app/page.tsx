@@ -164,6 +164,38 @@ function SpaceBackground() {
   );
 }
 
+/* ---------- COMETS ---------- */
+function Comets() {
+  const comets = useMemo(() => {
+    let seed = 91;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    return Array.from({ length: 7 }, (_, id) => ({
+      id,
+      x: r1(38 + rnd() * 66),
+      y: r1(-6 + rnd() * 30),
+      angle: r1(138 + rnd() * 16),
+      len: Math.round(150 + rnd() * 130),
+      dist: Math.round(640 + rnd() * 520),
+      cycle: r1(8 + rnd() * 9),
+      delay: r1(rnd() * 12),
+    }));
+  }, []);
+
+  return (
+    <div
+      aria-hidden
+      className="comet-layer pointer-events-none absolute inset-x-0 top-0 z-[5] hidden h-[720px] overflow-hidden lg:block [-webkit-mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)] [mask-image:linear-gradient(to_bottom,#000_calc(100%-200px),transparent)]"
+    >
+      {comets.map((c) => (
+        <span key={c.id} className="absolute block h-0 w-0" style={{ left: `${c.x}%`, top: `${c.y}%`, transform: `rotate(${c.angle}deg)` }}>
+          <span className="comet" style={{ ["--len" as string]: `${c.len}px`, ["--dist" as string]: `${c.dist}px`, animation: `cometRun ${c.cycle}s linear ${c.delay}s infinite` } as CSSProperties} />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /* ---------- HERO EARTH ---------- */
 const EARTH_SECONDS_PER_TURN = 120;
 const EARTH_TILT = 0.35;
@@ -1044,18 +1076,22 @@ export default function Home() {
         .hero-shine{color:transparent;opacity:0;background-image:linear-gradient(105deg,transparent 0%,transparent 40%,rgba(255,255,255,.98) 50%,transparent 60%,transparent 100%);background-size:260% 100%;background-repeat:no-repeat;background-position:-40% 0;-webkit-background-clip:text;background-clip:text;animation:heroShine var(--shine-time,4.5s) cubic-bezier(.45,.05,.25,1) var(--shine-delay,6s) 1 both}
         @keyframes heroShine{0%{background-position:-40% 0;opacity:0}10%{opacity:1}90%{opacity:1}100%{background-position:140% 0;opacity:0}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+        .comet{position:absolute;right:0;top:-1px;width:var(--len);height:2px;border-radius:2px;opacity:0;will-change:transform,opacity;background:linear-gradient(90deg,rgba(24,191,255,0),rgba(120,200,255,.5) 65%,rgba(235,248,255,.95))}
+        .comet::after{content:"";position:absolute;right:-1px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px rgba(160,215,255,.9),0 0 16px 5px rgba(60,150,255,.55)}
+        @keyframes cometRun{0%{transform:translateX(0);opacity:0}2%{opacity:1}22%{transform:translateX(var(--dist));opacity:0}100%{transform:translateX(var(--dist));opacity:0}}
         @keyframes scrollCue{0%{opacity:0;transform:translateY(-8px)}35%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
         .cue-arrow{display:block;opacity:.85;animation:scrollCue 2.4s ease-in-out infinite}
         .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--delay,0ms)}
         .reveal-right{transform:translateX(70px)}
         .reveal-left{transform:translateX(-70px)}
         .reveal-visible{opacity:1;transform:none}
-        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}.logo-part{animation:none!important}.logo-line{display:none}.logo-spin{animation:none!important}}
+        @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.reveal{opacity:1;transform:none;transition:none}.logo-part{animation:none!important}.logo-line{display:none}.logo-spin{animation:none!important}.comet-layer{display:none}}
       `}</style>
 
       <SpaceBackground />
 
       <div className="relative z-10">
+        <Comets />
         <SiteHeader />
 
         {/* ---------------- HERO ---------------- */}
