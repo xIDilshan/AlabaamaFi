@@ -25,7 +25,7 @@ export default function SiteHeader() {
 
         <a
           href={LAUNCH_URL}
-          className={`${manrope.className} flex h-9 shrink-0 items-center justify-center rounded-full px-4 text-[14px] font-semibold leading-none tracking-normal md:h-12 md:px-6 md:text-sm ${launchButton}`}
+          className={`${manrope.className} flex h-10 shrink-0 items-center justify-center rounded-full px-5 text-[15px] font-semibold leading-none tracking-normal md:h-12 md:px-6 md:text-sm ${launchButton}`}
         >
           Launch app
         </a>
