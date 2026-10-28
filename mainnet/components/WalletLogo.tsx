@@ -1,33 +1,11 @@
 "use client";
 
-/*
-  Wallet logos and wallet names. Save as: components/WalletLogo.tsx
-  Used by the wallet picker (WalletModal) and by the connected wallet menu (Header).
-
-  Where each logo comes from, in this order:
-    1. your own file in mainnet/public/wallets/   (the list RULES below says which file belongs to which wallet)
-    2. the logo the wallet sends about itself (installed wallets do this)
-    3. @web3icons/react (wallets and exchanges)
-    4. a drawn wallet icon, or the first letter of the name
-*/
-
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useConnectors } from "wagmi";
 import type { Connector } from "wagmi";
+import { getIconSvg, putIconSvg, useIsoLayoutEffect } from "@/lib/iconCache";
 
-/* ---------------------------------------------------------------------
-   THE LOGO LIST
-   keys     words that appear in the wallet's name (lower case)
-   exact    names that must match exactly (for short names such as "core")
-   files    your own logo files in public/wallets/ (tried first)
-   wallet   the wallet's name in web3icons (used if there is no file)
-   exchange the exchange's name in web3icons (for Binance, Gate)
-   strip    true = try to remove the background tile from the web3icons logo (used for Rabby and Keplr).
-            If a wallet still shows a tile, put a logo with no background in public/wallets/ (the "files" entry) and it is used first.
-   variant  "mono" (default) draws only the wallet's logo in its own color, with no background tile.
-            "branded" uses the colors web3icons gives it. If a wallet looks wrong, switch it here.
-   glyph    show a drawn wallet icon until the logo file is uploaded
-   --------------------------------------------------------------------- */
+/* ---------- logo list ---------- */
 type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; variant?: "branded" | "mono"; strip?: boolean; glyph?: boolean; letter: string; color: string };
 
 const RULES: Rule[] = [
@@ -70,7 +48,7 @@ type AnyProvider = Record<string, unknown> | undefined | null;
 export function detectInjectedName(p: AnyProvider): string | null {
   if (!p) return null;
   const f = (k: string) => !!p[k];
-  if (f("isBraveWallet")) return "Brave Wallet"; // Brave also says "isMetaMask", so it is checked first
+  if (f("isBraveWallet")) return "Brave Wallet";
   if (f("isRabby")) return "Rabby";
   if (f("isOkxWallet") || f("isOKExWallet")) return "OKX Wallet";
   if (f("isBitget") || f("isBitKeep") || f("isBitgetWallet")) return "Bitget Wallet";
@@ -88,11 +66,10 @@ export function detectInjectedName(p: AnyProvider): string | null {
   if (f("isExodus")) return "Exodus";
   if (f("isBinance") || f("isBinanceWallet")) return "Binance Wallet";
   if (f("isGate") || f("isGateWallet")) return "Gate Wallet";
-  if (f("isMetaMask")) return "MetaMask"; // many wallets copy this flag, so it is checked last
+  if (f("isMetaMask")) return "MetaMask";
   return null;
 }
 
-/* wallet-specific names on `window`; if the connection is the very same object, that wallet is the one connected */
 const WALLET_GLOBALS: { path: string[]; name: string }[] = [
   { path: ["okxwallet"], name: "OKX Wallet" },
   { path: ["okxwallet", "ethereum"], name: "OKX Wallet" },
@@ -119,10 +96,6 @@ function nameFromGlobals(p: unknown): string | null {
   return null;
 }
 
-/** The real name and logo of the connected wallet.
-    A wallet picked from its own row already has its exact name and logo. For the generic "Browser Wallet" connection it looks for the wallet that owns the connection:
-    1. the installed wallet whose connection is the very same object, 2. a wallet-specific name on `window`, 3. the small flags the wallet sets about itself.
-    For WalletConnect it uses the name the mobile wallet gave. */
 export function useWalletIdentity(connector: Connector | undefined): { name: string; icon?: string } {
   const connectors = useConnectors();
   const connectorsRef = useRef(connectors);
@@ -148,7 +121,6 @@ export function useWalletIdentity(connector: Connector | undefined): { name: str
           if (meta?.name) setInfo({ name: meta.name, icon: meta.icons?.[0] });
           return;
         }
-        // 1. an installed wallet that announced this very connection
         for (const c of connectorsRef.current) {
           if (c.type !== "injected" || c.id === "injected") continue;
           try {
@@ -157,14 +129,13 @@ export function useWalletIdentity(connector: Connector | undefined): { name: str
               return;
             }
           } catch {
-            /* try the next one */
+            continue;
           }
         }
-        // 2. a wallet-specific name on window, then 3. the wallet's own flags
         const name = nameFromGlobals(p) ?? detectInjectedName(p) ?? "Browser Wallet";
         if (live) setInfo({ name, icon: connector.icon });
       } catch {
-        /* keep the name wagmi gave */
+        return;
       }
     })();
     return () => {
@@ -184,8 +155,6 @@ const loadIcons = () => {
   return iconsPromise;
 };
 
-/** Hides a background tile: the first shape of the logo, if it covers (almost) the whole drawing and other shapes remain on top of it.
-    If the tile and the logo are one single shape there is nothing to separate, and the logo is left as it is. */
 function stripBackground(svg: SVGSVGElement) {
   try {
     const vb = svg.viewBox?.baseVal;
@@ -199,7 +168,7 @@ function stripBackground(svg: SVGSVGElement) {
     const b = first.getBBox();
     if (b.width >= W * 0.88 && b.height >= H * 0.88) first.style.display = "none";
   } catch {
-    /* leave the logo as it is */
+    return;
   }
 }
 
@@ -221,6 +190,12 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
   const [hasSvg, setHasSvg] = useState(false);
   const holder = useRef<HTMLSpanElement>(null);
 
+  const cacheKey = `wallet:${name.toLowerCase().trim()}:${rule?.variant ?? "mono"}:${rule?.strip ? "s" : "n"}`;
+  const [cached, setCached] = useState<string | null>(null);
+  useIsoLayoutEffect(() => {
+    setCached(getIconSvg(cacheKey));
+  }, [cacheKey]);
+
   const useImg = imgIdx < imgs.length;
   const webLeft = !!mod && webIdx < webNames.length;
 
@@ -230,7 +205,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
   }, [imgs, webNames]);
 
   useEffect(() => {
-    if (useImg) return;
+    if (useImg || getIconSvg(cacheKey)) return;
     let live = true;
     loadIcons().then((m) => {
       if (live && m) setMod(m);
@@ -238,9 +213,8 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
     return () => {
       live = false;
     };
-  }, [useImg]);
+  }, [useImg, cacheKey]);
 
-  /* if a logo name is not in the package nothing is drawn; then the next name is tried */
   useEffect(() => {
     const el = holder.current;
     if (!mod || useImg || !el) return;
@@ -251,6 +225,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
         stripBackground(svg as unknown as SVGSVGElement);
       }
       setHasSvg(!!svg);
+      if (svg) putIconSvg(cacheKey, svg.outerHTML);
     };
     check();
     const mo = new MutationObserver(check);
@@ -262,7 +237,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
       mo.disconnect();
       clearTimeout(t);
     };
-  }, [mod, webIdx, useImg, rule]);
+  }, [mod, webIdx, useImg, rule, cacheKey]);
 
   const box = `relative inline-flex shrink-0 items-center justify-center overflow-hidden ${plain ? "rounded-[18%]" : "rounded-lg"} ${className}`;
   if (useImg) {
@@ -274,9 +249,13 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
     );
   }
   const Comp = mod ? (webKind === "exchange" ? mod.ExchangeIcon : mod.WalletIcon) : null;
+  const showSvg = hasSvg || !!cached;
   return (
-    <span className={box} style={{ width: size, height: size, background: hasSvg ? "transparent" : rule?.glyph ? "rgba(255,255,255,0.08)" : rule?.color ?? "#1978f5", color: "rgba(255,255,255,0.7)" }} aria-hidden>
-      {!hasSvg && (rule?.glyph ? <WalletGlyph size={size} /> : <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{(rule?.letter ?? name[0] ?? "W").toUpperCase()}</span>)}
+    <span className={box} style={{ width: size, height: size, background: showSvg ? "transparent" : rule?.glyph ? "rgba(255,255,255,0.08)" : rule?.color ?? "#1978f5", color: "rgba(255,255,255,0.7)" }} aria-hidden>
+      {!showSvg && (rule?.glyph ? <WalletGlyph size={size} /> : <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{(rule?.letter ?? name[0] ?? "W").toUpperCase()}</span>)}
+      {cached && !hasSvg && (
+        <span className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ color: rule?.color }} dangerouslySetInnerHTML={{ __html: cached }} />
+      )}
       {Comp && webLeft && (
         <span ref={holder} key={webNames[webIdx]} className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ opacity: hasSvg ? 1 : 0, color: rule?.color }}>
           <Comp name={webNames[webIdx]} variant={rule?.variant ?? "mono"} size={size} />
@@ -286,28 +265,23 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
   );
 }
 
-/* ---------------------------------------------------------------------
-   THE BROWSER WALLET ICON
-   Four wallet logos (colored icon only), each in its own small box, in a 2x2 grid.
-   The bottom right box shows ONE wallet that is installed in this browser (when there is one, even if several are installed). To change the other three, edit the names below.
-   --------------------------------------------------------------------- */
+/* ---------- browser wallet icon ---------- */
 const BROWSER_WALLET_LOGOS = ["MetaMask", "Brave Wallet", "Rabby", "Phantom"];
 
 type InstalledWallet = { name: string; icon?: string };
 const firstWord = (n: string) => n.toLowerCase().trim().split(/\s+/)[0];
 
-/** `installed` is ONE wallet that is installed in this browser: its logo takes the fourth box (bottom right), and the other three boxes keep the usual wallets. */
 export function BrowserWalletLogo({ size = 32, className = "", installed }: { size?: number; className?: string; installed?: InstalledWallet }) {
-  const gap = Math.max(2, Math.round(size * 0.06)); // the same space between the boxes sideways and up and down
-  const tile = (size - gap) / 2; // four boxes of the same size
+  const gap = Math.max(2, Math.round(size * 0.06));
+  const tile = (size - gap) / 2;
 
   const wallets: InstalledWallet[] = [];
   for (const n of BROWSER_WALLET_LOGOS) {
     if (wallets.length >= (installed ? 3 : 4)) break;
-    if (installed && firstWord(installed.name) === firstWord(n)) continue; // not twice
+    if (installed && firstWord(installed.name) === firstWord(n)) continue;
     wallets.push({ name: n });
   }
-  if (installed) wallets.push(installed); // the fourth box: bottom right
+  if (installed) wallets.push(installed);
 
   return (
     <span
@@ -324,7 +298,32 @@ export function BrowserWalletLogo({ size = 32, className = "", installed }: { si
   );
 }
 
-/** A wallet's logo. A "Browser Wallet" gets the four-logo icon above. */
+const WARM_NAMES = ["MetaMask", "WalletConnect", "Coinbase Wallet", "Binance Wallet", "Rabby", "Phantom", "Brave Wallet", "Trust Wallet", "OKX Wallet"];
+
+export function WalletLogoWarmup() {
+  const [names, setNames] = useState<string[]>([]);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setNames(
+        WARM_NAMES.filter((n) => {
+          const r = findRule(n);
+          if (r?.files?.length) return false;
+          return !getIconSvg(`wallet:${n.toLowerCase().trim()}:${r?.variant ?? "mono"}:${r?.strip ? "s" : "n"}`);
+        })
+      );
+    }, 1800);
+    return () => window.clearTimeout(t);
+  }, []);
+  if (!names.length) return null;
+  return (
+    <div aria-hidden className="pointer-events-none fixed -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+      {names.map((n) => (
+        <WalletLogoInner key={n} name={n} size={24} />
+      ))}
+    </div>
+  );
+}
+
 export function WalletLogo(props: { name: string; icon?: string; size?: number; className?: string; installed?: InstalledWallet }) {
   const n = (props.name || "").toLowerCase().trim();
   if (n === "browser wallet" || n === "injected") return <BrowserWalletLogo size={props.size} className={props.className} installed={props.installed} />;
