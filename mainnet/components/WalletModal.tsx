@@ -147,6 +147,7 @@ export default function WalletModal({
   const resetRef = useRef(reset);
   const isConnectedRef = useRef(isConnected);
   const isPendingRef = useRef(isPending);
+  const pendingRef = useRef("");
   useEffect(() => {
     resetRef.current = reset;
     isConnectedRef.current = isConnected;
@@ -260,12 +261,13 @@ export default function WalletModal({
     const onBack = () => {
       if (document.visibilityState !== "visible") return;
       window.clearTimeout(timer);
+      const wc = /walletconnect/i.test(pendingRef.current);
       timer = window.setTimeout(() => {
         if (isPendingRef.current && !isConnectedRef.current) {
           resetRef.current();
-          setLocalError(ERROR_MESSAGE);
+          setLocalError(wc ? ERROR_MESSAGE : "The connection was not finished. Check your wallet, then try again.");
         }
-      }, 2000);
+      }, wc ? 2000 : 6000);
     };
     document.addEventListener("visibilitychange", onBack);
     window.addEventListener("pageshow", onBack);
@@ -293,6 +295,7 @@ export default function WalletModal({
   };
 
   const handleConnect = (connector: ConnectorItem) => {
+    pendingRef.current = connector.id || "";
     setLocalError("");
     connect(
       { connector },
@@ -306,6 +309,7 @@ export default function WalletModal({
 
   const showQrCard = (view: QrView) => {
     if (!walletConnectConnector) return;
+    pendingRef.current = "walletconnect";
     reset();
     setLocalError("");
     setUri(null);
@@ -342,6 +346,7 @@ export default function WalletModal({
 
   const openWalletConnectWindow = () => {
     if (!walletConnectConnector) return;
+    pendingRef.current = "walletconnect";
     resetRef.current();
     setLocalError("");
     connect({ connector: walletConnectConnector });
@@ -400,6 +405,9 @@ export default function WalletModal({
   const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0;
   const showQr = qr !== null;
   const shownError = connectError ? friendlyError(connectError) : localError;
+  const ce = connectError as { name?: string; shortMessage?: string; message?: string } | null;
+  const detail = ce ? `${ce.name ?? "Error"}: ${String(ce.shortMessage ?? ce.message ?? "").replace(/\s+/g, " ").slice(0, 140)}` : "";
+  const noWallet = shownError.startsWith("No wallet was found");
 
   const panelStyle = (visible: boolean, offset: "-100%" | "100%"): CSSProperties => ({
     transform: visible ? "translateX(0)" : `translateX(${offset})`,
@@ -410,6 +418,15 @@ export default function WalletModal({
   const errorBox = shownError ? (
     <div className="mt-4 w-full rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
       <p className="break-words text-sm font-medium leading-5 text-red-400">{shownError}</p>
+      {detail && <p className="mt-1.5 break-words text-[11px] leading-4 text-red-300/50">{detail}</p>}
+      {noWallet && !showQr && walletConnectConnector && (
+        <button
+          onClick={() => (mobile ? openWalletConnectWindow() : showQrCard({ name: "WalletConnect" }))}
+          className="mt-3 flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#2b6cff]/30 bg-[#2b6cff]/10 px-4 text-sm font-semibold text-white transition hover:bg-[#2b6cff]/20"
+        >
+          Use WalletConnect instead
+        </button>
+      )}
     </div>
   ) : null;
 
