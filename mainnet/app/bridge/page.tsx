@@ -1,4 +1,4 @@
-g"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { Inter, Manrope } from "next/font/google";
