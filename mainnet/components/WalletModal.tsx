@@ -16,15 +16,6 @@ type QrView = { name: string; getUrl?: string };
 
 const ERROR_MESSAGE = "Something went wrong. Please try again.";
 
-const friendlyError = (error: unknown): string => {
-  const e = error as { name?: string; code?: number; message?: string; shortMessage?: string } | null;
-  const text = `${e?.name ?? ""} ${e?.shortMessage ?? ""} ${e?.message ?? ""}`;
-  if (e?.code === 4001 || /user rejected|rejected the request|user denied|user cancel/i.test(text)) return "You cancelled the request in your wallet.";
-  if (/ProviderNotFound|provider not found|no provider/i.test(text)) return "No wallet was found in this browser. Open this site inside your wallet's browser, or use WalletConnect.";
-  if (e?.code === -32002 || /already pending|already processing|request of type/i.test(text)) return "A request is already open in your wallet. Finish it there, then try again.";
-  return ERROR_MESSAGE;
-};
-
 /* ---------- get wallet links ---------- */
 const GET_WALLET = {
   metamask: {
@@ -38,6 +29,14 @@ const GET_WALLET = {
 };
 const getWalletUrl = (w: keyof typeof GET_WALLET) =>
   typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent) ? GET_WALLET[w].chrome : GET_WALLET[w].site;
+
+const isBraveProvider = (p: unknown) => {
+  try {
+    return !!(p as { isBraveWallet?: boolean } | undefined)?.isBraveWallet;
+  } catch {
+    return false;
+  }
+};
 
 const isMobileDevice = () => {
   if (typeof window === "undefined") {
@@ -265,7 +264,7 @@ export default function WalletModal({
       timer = window.setTimeout(() => {
         if (isPendingRef.current && !isConnectedRef.current) {
           resetRef.current();
-          setLocalError(wc ? ERROR_MESSAGE : "The connection was not finished. Check your wallet, then try again.");
+          setLocalError(ERROR_MESSAGE);
         }
       }, wc ? 2000 : 6000);
     };
@@ -294,7 +293,9 @@ export default function WalletModal({
     window.location.href = metamaskUrl;
   };
 
-  const handleConnect = (connector: ConnectorItem) => {
+  const isBrave = (c?: ConnectorItem) => /brave/i.test(`${c?.name ?? ""} ${c?.id ?? ""}`);
+
+  const handleConnect = (connector: ConnectorItem, fallback?: ConnectorItem) => {
     pendingRef.current = connector.id || "";
     setLocalError("");
     connect(
@@ -302,6 +303,12 @@ export default function WalletModal({
       {
         onSuccess: () => {
           onClose();
+        },
+        onError: (error) => {
+          if (fallback && /proxy|removeListener|non-configurable/i.test(String((error as Error)?.message ?? ""))) {
+            pendingRef.current = fallback.id || "";
+            connect({ connector: fallback }, { onSuccess: () => onClose() });
+          }
         },
       }
     );
@@ -326,22 +333,27 @@ export default function WalletModal({
         if (c.type !== "injected" || c.id === "injected") continue;
         try {
           if ((await c.getProvider()) === eth) {
-            handleConnect(c);
+            handleConnect(c, isBrave(c) ? browserConnector : undefined);
             return;
           }
         } catch {
           continue;
         }
       }
+      const braveAnnounced = installedOthers.find((c) => isBrave(c));
+      if (braveAnnounced && isBraveProvider(eth)) {
+        handleConnect(braveAnnounced, browserConnector);
+        return;
+      }
       handleConnect(browserConnector);
       return;
     }
     const announced = installedOthers[0] ?? metaMaskConnector ?? binanceConnector;
     if (announced) {
-      handleConnect(announced);
+      handleConnect(announced, isBrave(announced) ? browserConnector : undefined);
       return;
     }
-    setLocalError(friendlyError({ name: "ProviderNotFoundError" }));
+    setLocalError(ERROR_MESSAGE);
   };
 
   const openWalletConnectWindow = () => {
@@ -404,10 +416,7 @@ export default function WalletModal({
   const mobile = isMobileDevice();
   const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0;
   const showQr = qr !== null;
-  const shownError = connectError ? friendlyError(connectError) : localError;
-  const ce = connectError as { name?: string; shortMessage?: string; message?: string } | null;
-  const detail = ce ? `${ce.name ?? "Error"}: ${String(ce.shortMessage ?? ce.message ?? "").replace(/\s+/g, " ").slice(0, 140)}` : "";
-  const noWallet = shownError.startsWith("No wallet was found");
+  const shownError = connectError ? ERROR_MESSAGE : localError;
 
   const panelStyle = (visible: boolean, offset: "-100%" | "100%"): CSSProperties => ({
     transform: visible ? "translateX(0)" : `translateX(${offset})`,
@@ -418,15 +427,6 @@ export default function WalletModal({
   const errorBox = shownError ? (
     <div className="mt-4 w-full rounded-2xl border border-red-500/20 bg-red-500/5 p-3">
       <p className="break-words text-sm font-medium leading-5 text-red-400">{shownError}</p>
-      {detail && <p className="mt-1.5 break-words text-[11px] leading-4 text-red-300/50">{detail}</p>}
-      {noWallet && !showQr && walletConnectConnector && (
-        <button
-          onClick={() => (mobile ? openWalletConnectWindow() : showQrCard({ name: "WalletConnect" }))}
-          className="mt-3 flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#2b6cff]/30 bg-[#2b6cff]/10 px-4 text-sm font-semibold text-white transition hover:bg-[#2b6cff]/20"
-        >
-          Use WalletConnect instead
-        </button>
-      )}
     </div>
   ) : null;
 
@@ -449,7 +449,7 @@ export default function WalletModal({
 
             <div className="space-y-2">
               {installedOthers.map((connector) => (
-                <Row key={connector.uid} name={connector.name} icon={connector.icon} dot disabled={isPending} onClick={() => handleConnect(connector)} />
+                <Row key={connector.uid} name={connector.name} icon={connector.icon} dot disabled={isPending} onClick={() => handleConnect(connector, isBrave(connector) ? browserConnector : undefined)} />
               ))}
 
               {showBrowserWallet && browserConnector && (
