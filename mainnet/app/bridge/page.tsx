@@ -5,6 +5,7 @@ import { Inter, Manrope } from "next/font/google";
 import { useAccount } from "wagmi";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import { getIconSvg, putIconSvg, useIsoLayoutEffect } from "@/lib/iconCache";
 
 const brandFont = Inter({ subsets: ["latin"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
@@ -296,8 +297,14 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
   const attempts = view ? [...view.icons, "#chainId"] : [];
   const gaveUp = !!Icon && idx >= attempts.length;
 
+  const cacheKey = view ? `net:${view.key}:${view.white ? "mono" : "branded"}` : "";
+  const [cached, setCached] = useState<string | null>(null);
+  useIsoLayoutEffect(() => {
+    setCached(cacheKey ? getIconSvg(cacheKey) : null);
+  }, [cacheKey]);
+
   useEffect(() => {
-    if (!view?.icons.length) return;
+    if (!view?.icons.length || (cacheKey && getIconSvg(cacheKey))) return;
     let live = true;
     loadNetworkIcon().then((c) => {
       if (live && c) setIcon(() => c);
@@ -305,12 +312,16 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
     return () => {
       live = false;
     };
-  }, [view?.icons.length, view?.key]);
+  }, [view?.icons.length, view?.key, cacheKey]);
 
   useEffect(() => {
     const el = holder.current;
     if (!Icon || !el) return;
-    const check = () => setHasSvg(!!el.querySelector("svg"));
+    const check = () => {
+      const svg = el.querySelector("svg");
+      setHasSvg(!!svg);
+      if (svg && cacheKey) putIconSvg(cacheKey, svg.outerHTML);
+    };
     check();
     const mo = new MutationObserver(check);
     mo.observe(el, { childList: true, subtree: true });
@@ -321,20 +332,21 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
       mo.disconnect();
       clearTimeout(t);
     };
-  }, [Icon, idx]);
+  }, [Icon, idx, cacheKey]);
 
   if (!view) return <span className="shrink-0 rounded-full bg-white/10" style={{ width: size, height: size }} />;
 
+  const showSvg = hasSvg || !!cached;
   const white = view.white;
   const attempt = attempts[idx];
   const isWorld = norm(view.key) === "worldchain";
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full"
-      style={{ width: size, height: size, background: hasSvg ? "#101827" : view.key === "Arc" && !imgFailed ? "transparent" : isWorld ? "#101827" : view.color, border: hasSvg || isWorld ? "1px solid rgba(255,255,255,0.12)" : "none" }}
+      style={{ width: size, height: size, background: showSvg ? "#101827" : view.key === "Arc" && !imgFailed ? "transparent" : isWorld ? "#101827" : view.color, border: showSvg || isWorld ? "1px solid rgba(255,255,255,0.12)" : "none" }}
       aria-label={view.label}
     >
-      {!hasSvg &&
+      {!showSvg &&
         (view.key === "Arc" && !imgFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
@@ -343,6 +355,13 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
         ) : (
           <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{view.label[0]}</span>
         ))}
+      {cached && !hasSvg && (
+        <span
+          className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full"
+          style={{ padding: size * 0.15, color: white ? "#ffffff" : undefined }}
+          dangerouslySetInnerHTML={{ __html: cached }}
+        />
+      )}
       {Icon && !gaveUp && attempt && (
         <span
           ref={holder}
@@ -358,6 +377,26 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
         </span>
       )}
     </span>
+  );
+}
+
+function NetworkIconWarmup({ views }: { views: ChainView[] }) {
+  const [todo, setTodo] = useState<ChainView[]>([]);
+  const sig = views.map((v) => v?.key).join(",");
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setTodo(views.filter((v) => v && v.icons.length && !getIconSvg(`net:${v.key}:${v.white ? "mono" : "branded"}`)));
+    }, 1200);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
+  if (!todo.length) return null;
+  return (
+    <div aria-hidden className="pointer-events-none fixed -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+      {todo.map((v) => (
+        <ChainLogo key={v.key} view={v} size={24} />
+      ))}
+    </div>
   );
 }
 
@@ -1221,6 +1260,7 @@ export default function BridgePage() {
       `}</style>
 
       <SpaceBackground />
+      <NetworkIconWarmup views={list.map((k) => views[k])} />
 
       <div className="relative z-10">
         <Header />
