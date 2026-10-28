@@ -77,6 +77,12 @@ type HeaderProps = {
   onMenuClick?: () => void;
 };
 
+const WalletIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01" />
+  </svg>
+);
+
 export default function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname();
 
@@ -440,6 +446,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   onClick={handleWalletClick}
                   className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} ${where === "pending" ? "invisible" : ""} lg:px-6`}
                 >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                    {isConnected && !/^(browser wallet|injected|wallet)$/i.test(connectedWallet.name) ? (
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white">
+                        <WalletLogo name={connectedWallet.name} icon={connectedWallet.icon} size={18} />
+                      </span>
+                    ) : (
+                      <WalletIcon />
+                    )}
+                  </span>
+
                   <span>{isConnected ? shortAddress : "Connect Wallet"}</span>
 
                   {isConnected && (
