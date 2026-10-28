@@ -31,6 +31,7 @@ const DOCS_URL = "https://docs.alabaamafi.xyz";
 const SITE_URL = "https://alabaamafi.xyz";
 const APP_URL = "https://app.alabaamafi.xyz";
 const APP_PAGES = ["/send", "/swap", "/bridge", "/activity", "/faq"];
+const LAUNCH_URL = `${APP_URL}/swap`;
 const moreLinks = [
   { href: DOCS_URL, label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
   { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
@@ -93,7 +94,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   const connectedWallet = useWalletIdentity(connector);
 
-  const [where, setWhere] = React.useState<"site" | "app" | "other">("other");
+  const [where, setWhere] = React.useState<"pending" | "site" | "app" | "other">("pending");
 
   React.useEffect(() => {
     const host = window.location.hostname;
@@ -232,18 +233,24 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </button>
             </div>
 
-            <button
-              onClick={handleWalletClick}
-              className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton}`}
-            >
-              <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
+            {where === "site" ? (
+              <a href={LAUNCH_URL} className={`${manrope.className} flex h-9 shrink-0 items-center justify-center rounded-full px-3.5 font-semibold leading-none tracking-normal ${connectButton}`}>
+                <span style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>Launch app</span>
+              </a>
+            ) : (
+              <button
+                onClick={handleWalletClick}
+                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton} ${where === "pending" ? "invisible" : ""}`}
+              >
+                <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
-              {isConnected && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
-                  <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
+                {isConnected && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
+                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
 
           <div
@@ -276,21 +283,27 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 </span>
               </Link>
 
-              <button
-                onClick={() => {
-                  closeMobileMenu();
-                  handleWalletClick();
-                }}
-                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton}`}
-              >
-                <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
+              {where === "site" ? (
+                <a href={LAUNCH_URL} onClick={closeMobileMenu} className={`${manrope.className} flex h-9 shrink-0 items-center justify-center rounded-full px-3.5 font-semibold leading-none tracking-normal ${connectButton}`}>
+                  <span style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>Launch app</span>
+                </a>
+              ) : (
+                <button
+                  onClick={() => {
+                    closeMobileMenu();
+                    handleWalletClick();
+                  }}
+                  className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton} ${where === "pending" ? "invisible" : ""}`}
+                >
+                  <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
-                {isConnected && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
-                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
+                  {isConnected && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="shrink-0 text-white/70">
+                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              )}
             </div>
 
             <p className="px-6 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/30 sm:px-8">Menu</p>
@@ -381,9 +394,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* DESKTOP HEADER */}
 
         <div className="hidden md:block">
-          <div className="flex min-h-[86px] items-center gap-6 px-7 lg:px-10 xl:px-12">
+          <div className="flex min-h-[86px] items-center gap-6 px-7 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-10 xl:px-12">
 
-            <Link href={to("/")} className="flex shrink-0 items-center gap-3">
+            <Link href={to("/")} className="flex shrink-0 items-center gap-3 lg:justify-self-start">
               <img src="/alabaamafi-logo.svg" alt="AlabaamaFi" className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14" />
 
               <div className="text-left">
@@ -393,7 +406,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </div>
             </Link>
 
-            <nav className="ml-auto flex min-w-0 items-center justify-center gap-1 lg:gap-2">
+            <nav className="ml-auto flex min-w-0 items-center justify-center gap-1 lg:ml-0 lg:gap-2">
               {navItems.map((item) => {
                 const active = isActive(item.href);
 
@@ -416,19 +429,26 @@ export default function Header({ onMenuClick }: HeaderProps) {
               })}
             </nav>
 
-            <div className="ml-auto shrink-0">
-              <button
-                onClick={handleWalletClick}
-                className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} lg:px-6`}
-              >
-                <span>{isConnected ? shortAddress : "Connect Wallet"}</span>
+            <div className="ml-auto shrink-0 lg:ml-0 lg:justify-self-end">
+              {where === "site" ? (
+                <a href={LAUNCH_URL} className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} lg:px-6`}>
+                  <span>Launch app</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </a>
+              ) : (
+                <button
+                  onClick={handleWalletClick}
+                  className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} ${where === "pending" ? "invisible" : ""} lg:px-6`}
+                >
+                  <span>{isConnected ? shortAddress : "Connect Wallet"}</span>
 
-                {isConnected && (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-white/70">
-                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
+                  {isConnected && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-white/70">
+                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
