@@ -1,4 +1,4 @@
-g"use client";
+"use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
