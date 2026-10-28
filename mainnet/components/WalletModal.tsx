@@ -16,6 +16,15 @@ type QrView = { name: string; getUrl?: string };
 
 const ERROR_MESSAGE = "Something went wrong. Please try again.";
 
+const friendlyError = (error: unknown): string => {
+  const e = error as { name?: string; code?: number; message?: string; shortMessage?: string } | null;
+  const text = `${e?.name ?? ""} ${e?.shortMessage ?? ""} ${e?.message ?? ""}`;
+  if (e?.code === 4001 || /user rejected|rejected the request|user denied|user cancel/i.test(text)) return "You cancelled the request in your wallet.";
+  if (/ProviderNotFound|provider not found|no provider/i.test(text)) return "No wallet was found in this browser. Open this site inside your wallet's browser, or use WalletConnect.";
+  if (e?.code === -32002 || /already pending|already processing|request of type/i.test(text)) return "A request is already open in your wallet. Finish it there, then try again.";
+  return ERROR_MESSAGE;
+};
+
 /* ---------- get wallet links ---------- */
 const GET_WALLET = {
   metamask: {
@@ -121,6 +130,10 @@ export default function WalletModal({
     reset,
     error: connectError,
   } = useConnect();
+
+  useEffect(() => {
+    if (connectError) console.error("Wallet connection failed:", connectError);
+  }, [connectError]);
 
   const [qr, setQr] = useState<QrView | null>(null);
   const [uri, setUri] = useState<string | null>(null);
@@ -304,18 +317,27 @@ export default function WalletModal({
   const handleBrowserWallet = async () => {
     if (!browserConnector) return;
     const eth = (window as unknown as { ethereum?: unknown }).ethereum;
-    for (const c of connectors) {
-      if (c.type !== "injected" || c.id === "injected") continue;
-      try {
-        if (eth && (await c.getProvider()) === eth) {
-          handleConnect(c);
-          return;
+    if (eth) {
+      for (const c of connectors) {
+        if (c.type !== "injected" || c.id === "injected") continue;
+        try {
+          if ((await c.getProvider()) === eth) {
+            handleConnect(c);
+            return;
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        continue;
       }
+      handleConnect(browserConnector);
+      return;
     }
-    handleConnect(browserConnector);
+    const announced = installedOthers[0] ?? metaMaskConnector ?? binanceConnector;
+    if (announced) {
+      handleConnect(announced);
+      return;
+    }
+    setLocalError(friendlyError({ name: "ProviderNotFoundError" }));
   };
 
   const openWalletConnectWindow = () => {
@@ -377,7 +399,7 @@ export default function WalletModal({
   const mobile = isMobileDevice();
   const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0;
   const showQr = qr !== null;
-  const shownError = connectError ? ERROR_MESSAGE : localError;
+  const shownError = connectError ? friendlyError(connectError) : localError;
 
   const panelStyle = (visible: boolean, offset: "-100%" | "100%"): CSSProperties => ({
     transform: visible ? "translateX(0)" : `translateX(${offset})`,
