@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
 import { Inter, Manrope } from "next/font/google";
 import WalletModal from "@/components/WalletModal";
-import { WalletLogo, useWalletIdentity } from "@/components/WalletLogo";
+import { WalletLogo, WalletLogoWarmup, useWalletIdentity } from "@/components/WalletLogo";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -448,9 +448,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     {isConnected && !/^(browser wallet|injected|wallet)$/i.test(connectedWallet.name) ? (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white">
-                        <WalletLogo name={connectedWallet.name} icon={connectedWallet.icon} size={18} />
-                      </span>
+                      <WalletLogo name={connectedWallet.name} icon={connectedWallet.icon} size={24} />
                     ) : (
                       <WalletIcon />
                     )}
@@ -473,6 +471,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
       {/* CONNECT WALLET MODAL */}
 
       <WalletModal isOpen={showWallets} onClose={() => setShowWallets(false)} />
+
+      <WalletLogoWarmup />
 
       {/* CONNECTED WALLET MENU */}
 
