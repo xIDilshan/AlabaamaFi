@@ -8,7 +8,7 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 
 const SITE = "https://app.alabaamafi.xyz";
 const WEBSITE = "https://alabaamafi.xyz";
-const X_URL = "https://x.com/Alabaama_Fi";
+const X_URL = "https://x.com/AlabaamaFi_xyz";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const OFFSET = 170;
 const ARTICLE_WIDTH = "max-w-none";
@@ -100,7 +100,7 @@ const SECTIONS: Sec[] = [
           <><B>Clear numbers.</B> Every page shows what you pay, what you receive and what it costs before you confirm.</>,
         ],
       },
-      { t: "note", title: "Official links", c: <>The website is <A href={WEBSITE}>alabaamafi.xyz</A> and the app, with Send, Swap, Bridge and Activity, is at <A href={SITE}>app.alabaamafi.xyz</A>. The official X account is <A href={X_URL}>@Alabaama_Fi</A> and the community is on <A href={DISCORD_URL}>Discord</A>. Bookmark both addresses and be careful with look-alike links.</> },
+      { t: "note", title: "Official links", c: <>The website is <A href={WEBSITE}>alabaamafi.xyz</A> and the app, with Send, Swap, Bridge and Activity, is at <A href={SITE}>app.alabaamafi.xyz</A>. The official X account is <A href={X_URL}>@AlabaamaFi_xyz</A> and the community is on <A href={DISCORD_URL}>Discord</A>. Bookmark both addresses and be careful with look-alike links.</> },
     ],
   },
   {
@@ -556,7 +556,7 @@ const SECTIONS: Sec[] = [
         t: "ul",
         items: [
           <><B>Discord:</B> <A href={DISCORD_URL}>join the AlabaamaFi server</A> to ask questions and talk with other users.</>,
-          <><B>X:</B> follow <A href={X_URL}>@Alabaama_Fi</A> for news.</>,
+          <><B>X:</B> follow <A href={X_URL}>@AlabaamaFi_xyz</A> for news.</>,
           <><B>FAQ:</B> quick answers are in the <L href={`${SITE}/faq`}>FAQ</L>.</>,
         ],
       },
