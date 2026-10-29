@@ -26,7 +26,7 @@ function Link({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { hr
 }
 const ADDR_MASK = "0x…xxxx";
 const SOCIAL = {
-  x: "https://x.com/Alabaama_Fi",
+  x: "https://x.com/AlabaamaFi_xyz",
   discord: "https://discord.gg/NBKHmUfw",
   github: "https://github.com/xIDilshan/AlabaamaFi",
 };
