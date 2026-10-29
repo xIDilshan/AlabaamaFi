@@ -7,7 +7,7 @@ import { Inter } from "next/font/google";
 const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
 
 const WEBSITE_URL = "https://alabaamafi.xyz";
-const X_URL = "https://x.com/Alabaama_Fi";
+const X_URL = "https://x.com/AlabaamaFi_xyz";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const DOCS_URL = "https://docs.alabaamafi.xyz";
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
@@ -67,7 +67,7 @@ const FAQ: Q[] = [
   { cat: "General", q: "What is AlabaamaFi?", a: "AlabaamaFi is one place to move, manage and explore assets on Arc Network, Circle’s USDC-native Layer 1. You can send USDC, swap USDC, EURC and cirBTC, bridge USDC between Arc and other networks, and see everything your wallet has done on Arc.", popular: true, more: { label: "Read the overview", href: `${DOCS_URL}/#overview` } },
   { cat: "General", q: "Do I need to create an account?", a: "No. You just connect your own wallet. Your settings and your swap and bridge history are saved in your browser, on your device." },
   { cat: "General", q: "Does AlabaamaFi hold my funds?", a: "No. AlabaamaFi is non-custodial. Every action is signed in your own wallet, and the site never has your private keys or seed phrase.", popular: true },
-  { cat: "General", q: "Is this the official site?", a: "The official website is alabaamafi.xyz and the app, with Send, Swap, Bridge and Activity, is at app.alabaamafi.xyz. The official X account is @Alabaama_Fi and the community is on Discord. Bookmark both addresses and avoid links from messages or ads." },
+  { cat: "General", q: "Is this the official site?", a: "The official website is alabaamafi.xyz and the app, with Send, Swap, Bridge and Activity, is at app.alabaamafi.xyz. The official X account is @AlabaamaFi_xyz and the community is on Discord. Bookmark both addresses and avoid links from messages or ads." },
   { cat: "General", q: "Which pages does AlabaamaFi have?", a: "Home, Send, Swap, Bridge and Activity, plus these Docs and FAQ. Use the menu in the top corner to move between them." },
   { cat: "General", q: "Where can I read the terms of service?", a: "The Terms of Service are in the Docs, at the end of the page.", more: { label: "Open the Terms of Service", href: `${DOCS_URL}/#terms` } },
 
@@ -131,7 +131,7 @@ const FAQ: Q[] = [
   { cat: "Security", q: "What data does AlabaamaFi store?", a: "Only your settings and your swap and bridge history, in your own browser. There are no accounts. The services behind the site, such as RPC providers, Circle, LI.FI, CoinGecko and the Arc explorer, can see requests like your IP address and wallet address, and everything on a blockchain is public.", more: { label: "Security and privacy", href: `${DOCS_URL}/#security` } },
   { cat: "Security", q: "What are token approvals?", a: "Some actions ask your wallet to approve a token, which lets a contract move that token up to the amount you approve. You can review and revoke approvals with a revoke tool." },
   { cat: "Security", q: "How can I stay safe?", a: "Use only alabaamafi.xyz and app.alabaamafi.xyz, never share your seed phrase, double-check every address, read what your wallet shows before you confirm, and start with a small amount on a new route." },
-  { cat: "Security", q: "Where can I get help or report a problem?", a: "Ask in our Discord or message @Alabaama_Fi on X, and include the page, the network and what you saw. Never post your seed phrase, and be careful with private messages from people you do not know." },
+  { cat: "Security", q: "Where can I get help or report a problem?", a: "Ask in our Discord or message @AlabaamaFi_xyz on X, and include the page, the network and what you saw. Never post your seed phrase, and be careful with private messages from people you do not know." },
 ];
 
 /* ---------- pieces ---------- */
@@ -426,7 +426,7 @@ export default function FaqPage() {
               <a href={X_URL} target="_blank" rel="noreferrer" className="group rounded-[1.5rem] border border-white/[0.08] bg-white/[0.03] p-5 text-center transition hover:-translate-y-1 hover:border-[#2588ff]/50 sm:p-6">
                 <span className="mx-auto flex h-11 w-11 items-center justify-center text-[#62d4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" }}><XLogo size={24} /></span>
                 <p className="mt-3 text-base font-semibold">Follow on X</p>
-                <p className="mt-1 text-sm leading-5 text-slate-400">News and updates from @Alabaama_Fi.</p>
+                <p className="mt-1 text-sm leading-5 text-slate-400">News and updates from @AlabaamaFi_xyz.</p>
               </a>
             </div>
             <p className="mx-auto mt-8 max-w-md text-center text-xs leading-5 text-slate-600">Nobody from AlabaamaFi will ever ask for your seed phrase or private key.</p>
