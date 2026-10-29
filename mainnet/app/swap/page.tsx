@@ -240,7 +240,7 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
 }
 
 /* ---------- logos ---------- */
-const LOGO_SRC: Record<string, string> = { Arc: "/arc-logo.png", USDC: "/usdc-logo.webp", EURC: "/eurc-logo.png", cirBTC: "/cirbtc-logo.jpg" };
+const LOGO_SRC: Record<string, string> = { Arc: "/arc-logo.svg", USDC: "/usdc-logo.webp", EURC: "/eurc-logo.png", cirBTC: "/cirbtc-logo.jpg" };
 
 function Logo({ name, size = 24, fluid = false }: { name: "Arc" | Sym; size?: number; fluid?: boolean }) {
   const [failed, setFailed] = useState(false);
