@@ -349,7 +349,7 @@ function ChainLogo({ view, size = 28 }: { view: ChainView | undefined; size?: nu
       {!showSvg &&
         (view.key === "Arc" && !imgFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
+          <img src="/arc-logo.svg" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
         ) : isWorld ? (
           <GlobeMark size={size} />
         ) : (
