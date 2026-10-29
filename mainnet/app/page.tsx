@@ -640,7 +640,7 @@ function NetBadge({ size = 30 }: { size?: number }) {
       </span>
     );
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/arc-logo.png" alt="Arc" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" />;
+  return <img src="/arc-logo.svg" alt="Arc" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" />;
 }
 
 type NetIconComp = ComponentType<Record<string, unknown>>;
@@ -706,7 +706,7 @@ function ChainBadge({ name, size = 30 }: { name: BridgeChain; size?: number }) {
       {!hasSvg &&
         (name === "Arc" && !imgFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src="/arc-logo.png" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
+          <img src="/arc-logo.svg" alt="Arc" onError={() => setImgFailed(true)} className="h-full w-full rounded-full object-cover" />
         ) : (
           <span className="font-bold text-white" style={{ fontSize: size * 0.45 }}>{view.label[0]}</span>
         ))}
