@@ -117,7 +117,7 @@ const PasteIcon = () => (
 );
 
 /* ---------- logos ---------- */
-const ARC_LOGO_SRC = "/arc-logo.png" as string;
+const ARC_LOGO_SRC = "/arc-logo.svg" as string;
 const USDC_LOGO_SRC = "/usdc-logo.webp" as string;
 
 function UsdcLogo({ size = 24 }: { size?: number }) {
