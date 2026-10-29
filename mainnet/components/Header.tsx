@@ -36,7 +36,7 @@ const moreLinks = [
   { href: DOCS_URL, label: "Docs", icon: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" },
   { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
 ];
-const X_URL = "https://x.com/Alabaama_Fi";
+const X_URL = "https://x.com/AlabaamaFi_xyz";
 const DISCORD_URL = "https://discord.gg/NBKHmUfw";
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
 
