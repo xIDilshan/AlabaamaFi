@@ -9,8 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@circle-fin/adapter-viem-v2": "^1.19.0",
-    "@circle-fin/app-kit": "^1.16.0",
+    "@circle-fin/adapter-viem-v2": "^1.20.1",
+    "@circle-fin/app-kit": "^1.21.0",
     "@circle-fin/bridge-kit": "^1.15.1",
     "@circle-fin/swap-kit": "^1.6.1",
     "@coinbase/wallet-sdk": "^4.3.7",
