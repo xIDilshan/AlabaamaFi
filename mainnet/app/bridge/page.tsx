@@ -36,6 +36,7 @@ type ChainView = {
   rpcs: string[];
   explorer: (hash: string) => string;
   lifi?: boolean;
+  solana?: boolean;
 };
 
 type Fallback = { label: string; chainId: number; usdc: string; explorer: string; color: string; gas: string; icons: string[] };
@@ -56,8 +57,10 @@ const WHITE_LOGOS = new Set(["arc", "linea", "sonic", "worldchain"]);
 const ALLOWED_NORM = new Set(["arbitrum", "arc", "avalanche", "base", "codex", "ethereum", "hyperevm", "ink", "linea", "monad", "optimism", "opmainnet", "plume", "polygon", "polygonpos", "sei", "sonic", "unichain", "worldchain", "xdc"]);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
 const ICON_GUESS_N: Record<string, string[]> = Object.fromEntries(Object.entries(ICON_GUESS).map(([k, v]) => [norm(k), v]));
-const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea", "Robinhood"];
+const ORDER = ["Arc", "Ethereum", "Base", "Arbitrum", "Optimism", "Polygon", "Avalanche", "Unichain", "Linea", "Solana", "Robinhood"];
 const ROBINHOOD_KEY = "Robinhood";
+const SOLANA_KEY = "Solana";
+const SOLANA_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 const FORWARDER_DEST = ["Arc", "Arbitrum", "Avalanche", "Base", "Ethereum", "HyperEVM", "Ink", "Linea", "Monad", "Optimism", "Polygon", "Sei", "Sonic", "Unichain", "World_Chain"];
 
@@ -136,6 +139,21 @@ const timeAgo = (t: number) => {
 };
 const colorFor = (s: string) => `hsl(${Array.from(s).reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7)} 65% 50%)`;
 
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function isSolanaAddress(s: string): boolean {
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s)) return false;
+  let n = ZERO;
+  for (const ch of s) n = n * BigInt(58) + BigInt(B58.indexOf(ch));
+  let bytes = 0;
+  for (let t = n; t > ZERO; t = t / BigInt(256)) bytes++;
+  let zeros = 0;
+  for (const ch of s) {
+    if (ch !== "1") break;
+    zeros++;
+  }
+  return bytes + zeros === 32 && s !== "11111111111111111111111111111111";
+}
+
 /* ---------- wallet + App Kit types ---------- */
 type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -159,6 +177,7 @@ type KitLike = {
   estimateBridge: (p: BridgeArgs) => Promise<{ fees?: Fee[]; gasFees?: GasItem[] }>;
   bridge: (p: BridgeArgs) => Promise<BridgeRes>;
   retry?: (failed: BridgeRes, ctx: { from: unknown; to: unknown }) => Promise<BridgeRes>;
+  retryBridge?: (failed: BridgeRes, ctx: { from: unknown; to: unknown }) => Promise<BridgeRes>;
   on?: (event: string, handler: (e: unknown) => void) => void;
   off?: (event: string, handler: (e: unknown) => void) => void;
 };
@@ -498,6 +517,7 @@ function explain(e: unknown, fallback: string, gasCoin = "gas coin"): string {
     QUOTE_CHANGED: "The fees changed more than your slippage allows. Review the new amount and tap Bridge again.",
     TOO_SMALL: "This amount is too small to cover the bridge fees.",
     WRONG_NETWORK: "Switch your wallet to the network you are bridging from, then try again.",
+    NO_RETRY: "Resume isn't available right now. Check your wallet activity or the explorer.",
   };
   const trimmed = (err?.message ?? "").trim();
   if (known[trimmed]) return known[trimmed];
@@ -512,6 +532,7 @@ function explain(e: unknown, fallback: string, gasCoin = "gas coin"): string {
   if (/rate limit|429|too many requests/i.test(msg)) return "The service is busy. Wait a moment and try again.";
   if (/failed to fetch|HTTP request failed|network ?error|ECONN|fetch failed/i.test(msg)) return "Couldn't reach the network. Check your connection and try again.";
   if (/execution reverted|reverted/i.test(msg)) return "The network rejected the transaction. Try a different amount.";
+  if (/associated token|token account|\bATA\b|recipient setup/i.test(msg)) return "The receiving Solana wallet needs a USDC token account first. Receive a small amount of USDC there once, then try again.";
   return trimmed ? trimmed.slice(0, 160) : fallback;
 }
 
@@ -531,7 +552,7 @@ export default function BridgePage() {
   const [fast, setFast] = useState(true);
   const [slip, setSlip] = useState<Slip>({ mode: "auto", custom: "1" });
 
-  const [useOther, setUseOther] = useState(false);
+  const [useOtherPref, setUseOtherPref] = useState(false);
   const [otherAddr, setOtherAddr] = useState("");
   const [otherChecked, setOtherChecked] = useState(false);
 
@@ -593,6 +614,22 @@ export default function BridgePage() {
     };
     Object.keys(FALLBACK).forEach((k) => add(k, defs.find((d) => d.chain === k)));
     defs.filter((d) => !d.isTestnet && (d.type ?? "evm") === "evm").forEach((d) => add(d.chain, d));
+    const solDef = defs.find((d) => d.chain === SOLANA_KEY && !d.isTestnet);
+    if (solDef && solDef.forwarderSupported?.destination !== false) {
+      out[SOLANA_KEY] = {
+        key: SOLANA_KEY,
+        label: "Solana",
+        chainId: 0,
+        usdc: SOLANA_USDC_MINT,
+        gas: "SOL",
+        color: "#9945FF",
+        icons: ["solana"],
+        white: false,
+        rpcs: [],
+        explorer: (hash: string) => `https://solscan.io/tx/${hash}`,
+        solana: true,
+      };
+    }
     out[ROBINHOOD_KEY] = {
       key: ROBINHOOD_KEY,
       label: "Robinhood Chain",
@@ -616,6 +653,8 @@ export default function BridgePage() {
   const toView = views[toKey];
   const txUrl = (key: ChainKey, hash: string) => views[key]?.explorer(hash) ?? "#";
   const lifiMode = !!fromView?.lifi || !!toView?.lifi;
+  const toSolana = !!toView?.solana;
+  const useOther = useOtherPref || toSolana;
 
   const canFast = FAST_SOURCES.includes(fromKey);
   const useFast = fast && canFast;
@@ -623,13 +662,14 @@ export default function BridgePage() {
 
   const routeKey = `${fromKey}>${toKey}`;
   const defTo = defs.find((d) => d.chain === toKey)?.forwarderSupported?.destination;
-  const forwarder = (FORWARDER_DEST.includes(toKey) || defTo === true) && !fwdBlocked[routeKey];
+  const forwarder = toSolana || ((FORWARDER_DEST.includes(toKey) || defTo === true) && !fwdBlocked[routeKey]);
 
   const otherTrim = otherAddr.trim();
   const otherIsToken = list.some((k) => !!views[k]?.usdc && views[k].usdc.toLowerCase() === otherTrim.toLowerCase());
-  const otherValid = useOther && ADDR_RE.test(otherTrim) && !/^0x0{40}$/i.test(otherTrim) && !otherIsToken;
+  const otherFormatOk = toSolana ? isSolanaAddress(otherTrim) : ADDR_RE.test(otherTrim) && !/^0x0{40}$/i.test(otherTrim);
+  const otherValid = useOther && otherFormatOk && !otherIsToken;
   const recipient = useOther && otherValid ? otherTrim : account ?? "";
-  const customRecipient = useOther && otherValid && otherTrim.toLowerCase() !== (account ?? "").toLowerCase();
+  const customRecipient = useOther && otherValid && (toSolana || otherTrim.toLowerCase() !== (account ?? "").toLowerCase());
 
   useEffect(() => {
     try {
@@ -764,7 +804,7 @@ export default function BridgePage() {
     async (key: ChainKey, owner: string): Promise<bigint | null> => {
       try {
         const v = views[key];
-        if (!v || !v.usdc) return null;
+        if (!v || !v.usdc || v.solana) return null;
         const { erc20Abi } = await import("viem");
         const c = await getClient(key);
         return (await c.readContract({ address: v.usdc, abi: erc20Abi, functionName: "balanceOf", args: [owner] })) as bigint;
@@ -778,7 +818,7 @@ export default function BridgePage() {
   const bk = (k: ChainKey) => (account ? `${account.toLowerCase()}:${k}` : "");
   const loadOne = useCallback(
     async (k: ChainKey, live: () => boolean) => {
-      if (!account || !views[k]?.usdc) return;
+      if (!account || !views[k]?.usdc || views[k]?.solana) return;
       for (let attempt = 0; attempt < 3; attempt++) {
         const v = await readUsdc(k, account);
         if (!live()) return;
@@ -901,7 +941,7 @@ export default function BridgePage() {
         try {
           est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: destination(adapter, recipient), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
         } catch (e) {
-          if (forwarder && /forward|relay|unsupported|not supported/i.test((e as Error)?.message ?? "")) {
+          if (forwarder && !toSolana && /forward|relay|unsupported|not supported/i.test((e as Error)?.message ?? "")) {
             if (live) setFwdBlocked((p) => ({ ...p, [routeKey]: true }));
             return;
           }
@@ -981,7 +1021,7 @@ export default function BridgePage() {
 
   /* ---------- actions ---------- */
   const flip = () => {
-    if (busy) return;
+    if (busy || toSolana) return;
     setFromKey(toKey);
     setToKey(fromKey);
     setFlips((n) => n + 1);
@@ -989,13 +1029,23 @@ export default function BridgePage() {
     setMessage("");
   };
   const pickNetwork = (side: "from" | "to", key: ChainKey) => {
+    if (side === "from" && views[key]?.solana) return;
+    let nextFrom = fromKey;
+    let nextTo = toKey;
     if (side === "from") {
-      if (key === toKey) setToKey(fromKey);
-      setFromKey(key);
+      if (key === toKey) nextTo = fromKey;
+      nextFrom = key;
     } else {
-      if (key === fromKey) setFromKey(toKey);
-      setToKey(key);
+      if (key === fromKey) nextFrom = toKey;
+      nextTo = key;
     }
+    if (views[nextFrom]?.solana) nextFrom = nextTo === "Arc" ? "Ethereum" : "Arc";
+    if (!!views[nextTo]?.solana !== toSolana) {
+      setOtherAddr("");
+      setOtherChecked(false);
+    }
+    setFromKey(nextFrom);
+    setToKey(nextTo);
     setAmount("");
     setMessage("");
     setModal(null);
@@ -1100,7 +1150,7 @@ export default function BridgePage() {
     const burn = hashOf(/burn/i);
     const mint = hashOf(/mint/i);
     let got = quote?.receive != null ? fmtNum(quote.receive) : "—";
-    for (let i = 0; i < 8 && recipientRef.current; i++) {
+    for (let i = 0; i < 8 && recipientRef.current && !views[toKey]?.solana; i++) {
       const after = await readUsdc(toKey, recipientRef.current);
       if (before !== null && after !== null && after > before) {
         got = formatUnits6(after - before);
@@ -1173,7 +1223,7 @@ export default function BridgePage() {
       failedMarks();
       setMessage(explain(e, "The bridge could not be completed.", fromView?.gas));
       setPhase("failed");
-      setCanResume(!!failedRef.current && !!kit?.retry && stepsRef.current.find((s) => s.key === "burn")?.state === "done");
+      setCanResume(!!failedRef.current && !!(kit?.retryBridge || kit?.retry) && stepsRef.current.find((s) => s.key === "burn")?.state === "done");
     } finally {
       kit?.off?.("*", onKitEvent);
       executingRef.current = false;
@@ -1195,7 +1245,9 @@ export default function BridgePage() {
       const before = await readUsdc(toKey, recipientRef.current || account);
       kit.on?.("*", onKitEvent);
       executingRef.current = true;
-      const res = await kit.retry!(failed, { from: adapter, to: usedForwarder ? undefined : adapter });
+      const retryFn = kit.retryBridge ?? kit.retry;
+      if (!retryFn) throw new Error("NO_RETRY");
+      const res = await retryFn.call(kit, failed, { from: adapter, to: usedForwarder ? undefined : adapter });
       executingRef.current = false;
       failedRef.current = res.state === "success" ? null : res;
       await finish(res, before, fmtNum(Number(cleanAmount)));
@@ -1369,7 +1421,7 @@ export default function BridgePage() {
 
                 {/* ---------- FLIP ---------- */}
                 <div className="relative z-10 -my-3 flex justify-center">
-                  <button type="button" onClick={flip} disabled={busy} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
+                  <button type="button" onClick={flip} disabled={busy || toSolana} title={toSolana ? "Solana is receive-only for now" : undefined} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
                       <path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" />
                     </svg>
@@ -1380,7 +1432,7 @@ export default function BridgePage() {
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 sm:p-4">
                   <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                     <span>To</span>
-                    <span className="text-xs tabular-nums">{customRecipient ? `Recipient ${shortAddr(otherTrim)}` : ready && destBalance !== null ? `Balance ${formatUnits6(destBalance)} USDC` : "Balance —"}</span>
+                    <span className="text-xs tabular-nums">{customRecipient ? `Recipient ${shortAddr(otherTrim)}` : toSolana ? "Paste a Solana address" : ready && destBalance !== null ? `Balance ${formatUnits6(destBalance)} USDC` : "Balance —"}</span>
                   </div>
                   <div className="mt-2.5">
                     <ChainButton view={toView} onClick={() => setModal("to")} disabled={busy} />
@@ -1395,23 +1447,25 @@ export default function BridgePage() {
                 </div>
 
                 {/* ---------- SEND TO ANOTHER ADDRESS ---------- */}
-                <div className="mt-3 flex items-center justify-between gap-3 px-1">
-                  <span className="text-sm text-slate-400">Send to a different address</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={useOther}
-                    aria-label="Send to a different address"
-                    disabled={busy}
-                    onClick={() => {
-                      setUseOther((v) => !v);
-                      setOtherChecked(false);
-                    }}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-50 ${useOther ? "bg-[#1978f5]" : "bg-white/15"}`}
-                  >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${useOther ? "left-[22px]" : "left-0.5"}`} />
-                  </button>
-                </div>
+                {!toSolana && (
+                  <div className="mt-3 flex items-center justify-between gap-3 px-1">
+                    <span className="text-sm text-slate-400">Send to a different address</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={useOther}
+                      aria-label="Send to a different address"
+                      disabled={busy}
+                      onClick={() => {
+                        setUseOtherPref((v) => !v);
+                        setOtherChecked(false);
+                      }}
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-50 ${useOther ? "bg-[#1978f5]" : "bg-white/15"}`}
+                    >
+                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${useOther ? "left-[22px]" : "left-0.5"}`} />
+                    </button>
+                  </div>
+                )}
                 {useOther && (
                   <div className={`mt-3 rounded-2xl border bg-white/[0.035] p-3.5 sm:p-4 ${otherTrim && !otherValid ? "border-red-400/40" : "border-white/[0.07]"}`}>
                     <p className="text-[13px] font-medium text-slate-400">Recipient address on {toView?.label}</p>
@@ -1422,7 +1476,7 @@ export default function BridgePage() {
                         setOtherChecked(false);
                       }}
                       disabled={busy}
-                      placeholder="0x…"
+                      placeholder={toSolana ? "Solana wallet address" : "0x…"}
                       spellCheck={false}
                       autoComplete="off"
                       autoCapitalize="off"
@@ -1430,7 +1484,8 @@ export default function BridgePage() {
                       style={{ fontFamily: manrope.style.fontFamily, fontWeight: 700, fontSize: "1rem" }}
                       className="mt-2 w-full bg-transparent tracking-tight text-white outline-none placeholder:font-normal placeholder:text-slate-600 disabled:opacity-60"
                     />
-                    {otherTrim && !otherValid && <p className="mt-2 text-xs text-red-300">{otherIsToken ? "That is a USDC contract address, not a wallet." : "Enter a valid wallet address (0x… with 42 characters)."}</p>}
+                    {otherTrim && !otherValid && <p className="mt-2 text-xs text-red-300">{otherIsToken ? "That is a USDC contract address, not a wallet." : toSolana ? "Enter a valid Solana wallet address." : "Enter a valid wallet address (0x… with 42 characters)."}</p>}
+                    {toSolana && <p className="mt-2 text-xs leading-5 text-slate-500">Paste the receiving wallet's address, not a token account. That wallet must already hold USDC on Solana, or the transfer can fail.</p>}
                     {customRecipient && (
                       <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-slate-300">
                         <input type="checkbox" checked={otherChecked} onChange={(e) => setOtherChecked(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#1978f5]" />
@@ -1530,10 +1585,11 @@ export default function BridgePage() {
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Bridge complete</h2>
               <dl className="mt-6 space-y-3 text-left text-[15px]">
                 <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Sent</dt><dd className="font-semibold tabular-nums">{summary.amount} USDC</dd></div>
-                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Received</dt><dd className="font-semibold tabular-nums">{summary.received} USDC</dd></div>
+                <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Received</dt><dd className="font-semibold tabular-nums">{views[summary.to]?.solana ? "≈ " : ""}{summary.received} USDC</dd></div>
                 <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Route</dt><dd className="font-semibold">{views[summary.from]?.label} to {views[summary.to]?.label}</dd></div>
                 {summary.recipient && <div className="flex items-center justify-between gap-4"><dt className="text-slate-400">Recipient</dt><dd className="font-semibold tabular-nums">{shortAddr(summary.recipient)}</dd></div>}
               </dl>
+              {views[summary.to]?.solana && <p className="mt-4 text-xs leading-5 text-slate-500">Circle delivers on Solana. If the USDC is not in the wallet yet, check its activity on Solscan in a minute or two.</p>}
             </div>
           )}
 
@@ -1587,7 +1643,7 @@ export default function BridgePage() {
       {/* ---------- choose a network ---------- */}
       <Modal wide open={modal === "from" || modal === "to"} onClose={() => setModal(null)} title={modal === "from" ? "Bridge from" : "Bridge to"}>
         <ul className="space-y-1">
-          {list.map((k) => {
+          {list.filter((k) => !(modal === "from" && views[k]?.solana)).map((k) => {
             const side = modal === "from" ? "from" : "to";
             const current = side === "from" ? fromKey : toKey;
             const b = bals[bk(k)];
@@ -1598,6 +1654,8 @@ export default function BridgePage() {
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{views[k].label}</span>
                   {views[k].lifi ? (
                     <span className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#8fd4ff]">via LI.FI</span>
+                  ) : views[k].solana ? (
+                    <span className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#8fd4ff]">Receive only</span>
                   ) : (
                     <span className="shrink-0 text-sm tabular-nums text-slate-400">{account ? (b === undefined ? "…" : b === null ? "—" : `${formatUnits6(b)} USDC`) : ""}</span>
                   )}
