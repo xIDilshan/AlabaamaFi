@@ -6,6 +6,9 @@ import { useAccount } from "wagmi";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import { getIconSvg, putIconSvg, useIsoLayoutEffect } from "@/lib/iconCache";
+import SolanaWalletModal from "@/components/SolanaWalletModal";
+import { WalletLogo } from "@/components/WalletLogo";
+import { readSolanaLamports, readSolanaUsdc, type SolSession } from "@/lib/solanaWallets";
 
 const brandFont = Inter({ subsets: ["latin"], display: "swap" });
 const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700"], display: "swap" });
@@ -553,6 +556,10 @@ export default function BridgePage() {
   const [slip, setSlip] = useState<Slip>({ mode: "auto", custom: "1" });
 
   const [useOtherPref, setUseOtherPref] = useState(false);
+  const [sol, setSol] = useState<SolSession | null>(null);
+  const [solOpen, setSolOpen] = useState(false);
+  const [solUsdc, setSolUsdc] = useState<bigint | null>(null);
+  const [solLamports, setSolLamports] = useState<bigint | null>(null);
   const [otherAddr, setOtherAddr] = useState("");
   const [otherChecked, setOtherChecked] = useState(false);
 
@@ -583,6 +590,10 @@ export default function BridgePage() {
   const lockRef = useRef(false);
   const failedRef = useRef<BridgeRes | null>(null);
   const stepsRef = useRef<StepRow[]>([]);
+  const orderRef = useRef<StepKey[]>(STEP_ORDER);
+  const solAdapterRef = useRef<unknown>(null);
+  const solRef = useRef<SolSession | null>(null);
+  solRef.current = sol;
   const recipientRef = useRef<string>("");
 
   const customPct = parseFloat(slip.custom);
@@ -653,8 +664,10 @@ export default function BridgePage() {
   const toView = views[toKey];
   const txUrl = (key: ChainKey, hash: string) => views[key]?.explorer(hash) ?? "#";
   const lifiMode = !!fromView?.lifi || !!toView?.lifi;
+  const fromSolana = !!fromView?.solana;
   const toSolana = !!toView?.solana;
-  const useOther = useOtherPref || toSolana;
+  const forceOther = toSolana || (fromSolana && !account);
+  const useOther = useOtherPref || forceOther;
 
   const canFast = FAST_SOURCES.includes(fromKey);
   const useFast = fast && canFast;
@@ -758,7 +771,8 @@ export default function BridgePage() {
     };
   }, []);
 
-  const historyKey = account ? `alabaamafi:bridges:${account.toLowerCase()}` : null;
+  const historyOwner = fromSolana ? sol?.address ?? null : account;
+  const historyKey = historyOwner ? `alabaamafi:bridges:${fromSolana ? historyOwner : historyOwner.toLowerCase()}` : null;
   useEffect(() => {
     if (!historyKey) return setHistory([]);
     try {
@@ -843,7 +857,7 @@ export default function BridgePage() {
     loadOne(toKey, live);
     (async () => {
       try {
-        if (fromKey === "Arc") return;
+        if (fromKey === "Arc" || views[fromKey]?.solana) return;
         const v = await (await getClient(fromKey)).getBalance({ address: account });
         if (alive) setBals((p) => ({ ...p, [`${account.toLowerCase()}:${fromKey}:gas`]: v }));
       } catch {
@@ -867,9 +881,34 @@ export default function BridgePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modal, account, list, loadOne]);
 
-  const balance = bals[bk(fromKey)] ?? null;
+  const solAddress = sol?.address;
+  useEffect(() => {
+    if (!solAddress) {
+      setSolUsdc(null);
+      setSolLamports(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const [usdcNow, lamportsNow] = await Promise.all([readSolanaUsdc(solAddress), readSolanaLamports(solAddress)]);
+      if (!alive) return;
+      setSolUsdc(usdcNow);
+      setSolLamports(lamportsNow);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [solAddress, refreshTick]);
+  useEffect(
+    () => () => {
+      solRef.current?.stop();
+    },
+    []
+  );
+
+  const balance = fromSolana ? solUsdc : bals[bk(fromKey)] ?? null;
   const destBalance = bals[bk(toKey)] ?? null;
-  const gasBalance = fromKey === "Arc" ? balance : bals[`${bk(fromKey)}:gas`] ?? null;
+  const gasBalance = fromSolana ? solLamports : fromKey === "Arc" ? balance : bals[`${bk(fromKey)}:gas`] ?? null;
 
   const getAdapter = async (): Promise<unknown> => {
     if (!adapterRef.current) {
@@ -916,6 +955,19 @@ export default function BridgePage() {
     return adapterRef.current;
   };
 
+  useEffect(() => {
+    solAdapterRef.current = null;
+  }, [solAddress]);
+  const getSolanaAdapter = async (): Promise<unknown> => {
+    if (!sol) throw new Error("NO_WALLET");
+    if (!solAdapterRef.current) {
+      const { createSolanaAdapterFromProvider } = await import("@circle-fin/adapter-solana");
+      solAdapterRef.current = await createSolanaAdapterFromProvider({ provider: sol.provider } as never);
+    }
+    return solAdapterRef.current;
+  };
+  const getSourceAdapter = (): Promise<unknown> => (fromSolana ? getSolanaAdapter() : getAdapter());
+
   const destination = (adapter: unknown, to: string): Dest =>
     forwarder ? { recipientAddress: to, chain: toKey, useForwarder: true } : to.toLowerCase() === (account ?? "").toLowerCase() ? { adapter, chain: toKey } : { adapter, chain: toKey, recipientAddress: to };
 
@@ -925,18 +977,19 @@ export default function BridgePage() {
   const amountNum = cleanAmount && Number(cleanAmount) > 0 ? Number(cleanAmount) : 0;
   const busy = phase === "bridging";
   const ready = !!account;
-  const wrongNetwork = ready && walletChain !== null && !!fromView && walletChain !== fromView.chainId;
+  const srcReady = fromSolana ? !!sol : ready;
+  const wrongNetwork = !fromSolana && ready && walletChain !== null && !!fromView && walletChain !== fromView.chainId;
 
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
-    if (lifiMode || !ready || !provider || !units || units <= ZERO || !fromView || !toView || fromKey === toKey || (useOther && !otherValid)) return;
+    if (lifiMode || !srcReady || (!fromSolana && !provider) || !units || units <= ZERO || !fromView || !toView || fromKey === toKey || (useOther && !otherValid) || (fromSolana && !forwarder) || !recipient) return;
     let live = true;
     setQuoting(true);
     const t = setTimeout(async () => {
       try {
         const kit = await getKit();
-        const adapter = await getAdapter();
+        const adapter = await getSourceAdapter();
         let est: Awaited<ReturnType<KitLike["estimateBridge"]>>;
         try {
           est = await kit.estimateBridge({ from: { adapter, chain: fromKey }, to: destination(adapter, recipient), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } });
@@ -974,7 +1027,7 @@ export default function BridgePage() {
           gas.push({ amount: amt, token: tok });
         }
         let gasApprox = false;
-        if (!gas.length) {
+        if (!gas.length && !fromSolana) {
           try {
             const price = await (await getClient(fromKey)).getGasPrice();
             gas.push({ amount: (Number(price) * FALLBACK_GAS_UNITS) / 1e18, token: fromView.gas || "ETH" });
@@ -997,12 +1050,13 @@ export default function BridgePage() {
       setQuoting(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, provider, fromKey, toKey, cleanAmount, speed, account, views, forwarder, recipient, useOther, otherValid]);
+  }, [srcReady, provider, fromKey, toKey, cleanAmount, speed, account, views, forwarder, recipient, useOther, otherValid, solAddress]);
 
   /* ---------- validation ---------- */
   const reserve = fromKey === "Arc" ? ARC_GAS_RESERVE : ZERO;
   const problem = useMemo((): { text: string; hard: boolean } | null => {
     if (fromKey === toKey) return { text: "Choose two different networks", hard: true };
+    if (fromSolana && !forwarder) return { text: `Circle can't deliver to ${toView?.label ?? "that network"} from Solana yet`, hard: true };
     if (useOther) {
       if (!otherTrim) return { text: "Enter the recipient address", hard: false };
       if (otherIsToken) return { text: "That is a USDC contract address, not a wallet", hard: true };
@@ -1017,11 +1071,15 @@ export default function BridgePage() {
     if (fromKey !== "Arc" && gasBalance !== null && gasBalance === ZERO) return { text: `You need some ${fromView?.gas ?? "gas coin"} on ${fromView?.label ?? "this network"} for gas`, hard: true };
     if (quote && quote.receive !== null && quote.receive <= 0) return { text: "Amount is too small to cover the fees", hard: true };
     return null;
-  }, [amount, units, balance, reserve, fromKey, toKey, gasBalance, quote, fromView, useOther, otherTrim, otherIsToken, otherValid, customRecipient, otherChecked]);
+  }, [amount, units, balance, reserve, fromKey, toKey, gasBalance, quote, fromView, toView, fromSolana, forwarder, useOther, otherTrim, otherIsToken, otherValid, customRecipient, otherChecked]);
 
   /* ---------- actions ---------- */
   const flip = () => {
-    if (busy || toSolana) return;
+    if (busy) return;
+    if (fromSolana !== toSolana) {
+      setOtherAddr("");
+      setOtherChecked(false);
+    }
     setFromKey(toKey);
     setToKey(fromKey);
     setFlips((n) => n + 1);
@@ -1029,7 +1087,6 @@ export default function BridgePage() {
     setMessage("");
   };
   const pickNetwork = (side: "from" | "to", key: ChainKey) => {
-    if (side === "from" && views[key]?.solana) return;
     let nextFrom = fromKey;
     let nextTo = toKey;
     if (side === "from") {
@@ -1039,7 +1096,6 @@ export default function BridgePage() {
       if (key === fromKey) nextFrom = toKey;
       nextTo = key;
     }
-    if (views[nextFrom]?.solana) nextFrom = nextTo === "Arc" ? "Ethereum" : "Arc";
     if (!!views[nextTo]?.solana !== toSolana) {
       setOtherAddr("");
       setOtherChecked(false);
@@ -1055,6 +1111,21 @@ export default function BridgePage() {
     let v = half ? balance / BigInt(2) : balance;
     if (v + reserve > balance) v = balance > reserve ? balance - reserve : ZERO;
     setAmount(formatUnits6(v, 0).replace(/,/g, ""));
+  };
+
+  const disconnectSol = async () => {
+    const session = sol;
+    setSol(null);
+    setSolUsdc(null);
+    setSolLamports(null);
+    setAmount("");
+    try {
+      await session?.disconnect();
+    } catch {
+      return;
+    } finally {
+      session?.stop();
+    }
   };
 
   const switchWallet = async () => {
@@ -1112,10 +1183,10 @@ export default function BridgePage() {
     setRefreshTick((t) => t + 1);
   };
 
-  const startSteps = () => putSteps(STEP_ORDER.map((key, i) => ({ key, state: i === 0 ? "active" : "pending" })));
+  const startSteps = () => putSteps(orderRef.current.map((key, i) => ({ key, state: i === 0 ? "active" : "pending" })));
   const onKitEvent = (e: unknown) => {
     const ev = e as { method?: string; values?: { txHash?: string; state?: string; errorMessage?: string; error?: unknown } };
-    const idx = STEP_ORDER.indexOf(ev?.method as StepKey);
+    const idx = orderRef.current.indexOf(ev?.method as StepKey);
     if (idx < 0) return;
     const failed = ev.values?.state === "error" || !!ev.values?.errorMessage || !!ev.values?.error;
     const hash = ev.values?.txHash && TX_HASH_RE.test(ev.values.txHash) ? ev.values.txHash : undefined;
@@ -1179,9 +1250,10 @@ export default function BridgePage() {
   const failedMarks = () => putSteps(stepsRef.current.map((s) => (s.state === "active" ? { ...s, state: "error" } : s)));
 
   const bridge = async () => {
-    if (lockRef.current || !provider || !account || problem || !quote || !units || !recipient) return;
+    if (lockRef.current || (fromSolana ? !sol : !provider || !account) || problem || !quote || !units || !recipient) return;
     lockRef.current = true;
     recipientRef.current = recipient;
+    orderRef.current = fromSolana ? STEP_ORDER.filter((k) => k !== "approve") : STEP_ORDER;
     setPhase("bridging");
     setMessage("");
     setCanResume(false);
@@ -1189,14 +1261,19 @@ export default function BridgePage() {
     startSteps();
     let kit: KitLike | null = null;
     try {
-      const accts = (await provider.request({ method: "eth_accounts" })) as string[];
-      if (!accts?.[0] || accts[0].toLowerCase() !== account.toLowerCase()) throw new Error("ACCOUNT_CHANGED");
-      if (fromView && chainNum(await provider.request({ method: "eth_chainId" })) !== fromView.chainId) throw new Error("WRONG_NETWORK");
-      const balNow = await readUsdc(fromKey, account);
-      if (balNow !== null && units > balNow) throw new Error("NO_BALANCE");
+      if (fromSolana) {
+        const solNow = sol ? await readSolanaUsdc(sol.address) : null;
+        if (solNow !== null && units > solNow) throw new Error("NO_BALANCE");
+      } else if (provider && account) {
+        const accts = (await provider.request({ method: "eth_accounts" })) as string[];
+        if (!accts?.[0] || accts[0].toLowerCase() !== account.toLowerCase()) throw new Error("ACCOUNT_CHANGED");
+        if (fromView && chainNum(await provider.request({ method: "eth_chainId" })) !== fromView.chainId) throw new Error("WRONG_NETWORK");
+        const balNow = await readUsdc(fromKey, account);
+        if (balNow !== null && units > balNow) throw new Error("NO_BALANCE");
+      }
 
       kit = await getKit();
-      const adapter = await getAdapter();
+      const adapter = await getSourceAdapter();
       const params: BridgeArgs = { from: { adapter, chain: fromKey }, to: destination(adapter, recipient), amount: cleanAmount, token: "USDC", config: { transferSpeed: speed } };
       const fresh = await kit.estimateBridge(params);
       const freshFees = Array.isArray(fresh?.fees) ? fresh.fees : null;
@@ -1233,7 +1310,7 @@ export default function BridgePage() {
 
   const resume = async () => {
     const failed = failedRef.current;
-    if (lockRef.current || !failed || !provider || !account) return;
+    if (lockRef.current || !failed || (fromSolana ? !sol : !provider || !account)) return;
     lockRef.current = true;
     setPhase("bridging");
     setMessage("");
@@ -1241,8 +1318,8 @@ export default function BridgePage() {
     let kit: KitLike | null = null;
     try {
       kit = await getKit();
-      const adapter = await getAdapter();
-      const before = await readUsdc(toKey, recipientRef.current || account);
+      const adapter = await getSourceAdapter();
+      const before = await readUsdc(toKey, recipientRef.current || account || "");
       kit.on?.("*", onKitEvent);
       executingRef.current = true;
       const retryFn = kit.retryBridge ?? kit.retry;
@@ -1266,7 +1343,8 @@ export default function BridgePage() {
 
   /* ---------- main button ---------- */
   let action: { label: ReactNode; onClick: () => void; disabled: boolean };
-  if (!account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
+  if (fromSolana && !sol) action = { label: "Connect Solana wallet", onClick: () => setSolOpen(true), disabled: false };
+  else if (!fromSolana && !account) action = { label: "Connect wallet", onClick: () => {}, disabled: true };
   else if (busy) action = { label: <span className="flex items-center gap-3"><Spinner />Bridging</span>, onClick: () => {}, disabled: true };
   else if (wrongNetwork) action = { label: `Switch to ${fromView?.label}`, onClick: switchWallet, disabled: false };
   else action = { label: "Bridge", onClick: bridge, disabled: !!problem || !quote || quoting };
@@ -1388,11 +1466,45 @@ export default function BridgePage() {
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3.5 transition focus-within:border-[#2588ff]/60 focus-within:bg-white/[0.05] sm:p-4">
                   <div className="flex items-center justify-between gap-3 text-[13px] font-medium text-slate-400">
                     <span>From</span>
-                    <span className="text-xs tabular-nums">{ready && balance !== null ? `Balance ${formatUnits6(balance)} USDC` : "Balance —"}</span>
+                    <span className="text-xs tabular-nums">{srcReady && balance !== null ? `Balance ${formatUnits6(balance)} USDC` : "Balance —"}</span>
                   </div>
                   <div className="mt-2.5">
                     <ChainButton view={fromView} onClick={() => setModal("from")} disabled={busy} />
                   </div>
+                  {fromSolana && (
+                    <div className="mt-3">
+                      {sol ? (
+                        <>
+                          <div className="flex min-h-[52px] items-center justify-between gap-2 rounded-[14px] border border-white/[0.1] bg-white/[0.045] py-1 pl-3 pr-1">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <WalletLogo name={sol.name} icon={sol.icon} size={30} />
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold leading-5">{sol.name}</p>
+                                <p className="text-xs leading-4 tabular-nums text-slate-400">{shortAddr(sol.address)}</p>
+                              </div>
+                            </div>
+                            <button type="button" onClick={disconnectSol} disabled={busy} aria-label="Disconnect Solana wallet" title="Disconnect" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40">
+                              <Svg d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                            </button>
+                          </div>
+                          <div className="mt-2.5 flex items-center justify-between gap-3 text-[13px] text-slate-400">
+                            <span>SOL for network fees</span>
+                            <span className="flex items-center gap-2 tabular-nums text-white">
+                              {solLamports === null ? "…" : `${fmtGas(Number(solLamports) / 1e9)} SOL`}
+                              {solLamports !== null && (
+                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${solLamports >= BigInt(10000000) ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-400/15 text-amber-300"}`}>{solLamports >= BigInt(10000000) ? "Enough" : "Low"}</span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <button type="button" onClick={() => setSolOpen(true)} disabled={busy} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#2f8bff]/45 bg-[#2588ff]/10 text-sm font-semibold text-white transition hover:bg-[#2588ff]/20 disabled:opacity-50">
+                          <Svg d="M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2ZM16.5 14h.01" />
+                          Connect Solana wallet
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <input
                       value={amount}
@@ -1400,7 +1512,7 @@ export default function BridgePage() {
                         const v = e.target.value.replace(",", ".");
                         if (v === "" || /^\d*\.?\d{0,6}$/.test(v)) setAmount(v);
                       }}
-                      disabled={busy}
+                      disabled={busy || (fromSolana && !sol)}
                       inputMode="decimal"
                       placeholder="0.00"
                       autoComplete="off"
@@ -1413,15 +1525,15 @@ export default function BridgePage() {
                   <div className="mt-1.5 flex items-center justify-between gap-3">
                     <p className="text-sm text-slate-500 tabular-nums">{fmtUsd(amountNum)}</p>
                     <div className="flex gap-1.5">
-                      <Pill onClick={() => setFraction(true)} disabled={busy || !ready || balance === null}>50%</Pill>
-                      <Pill onClick={() => setFraction(false)} disabled={busy || !ready || balance === null}>Max</Pill>
+                      <Pill onClick={() => setFraction(true)} disabled={busy || !srcReady || balance === null}>50%</Pill>
+                      <Pill onClick={() => setFraction(false)} disabled={busy || !srcReady || balance === null}>Max</Pill>
                     </div>
                   </div>
                 </div>
 
                 {/* ---------- FLIP ---------- */}
                 <div className="relative z-10 -my-3 flex justify-center">
-                  <button type="button" onClick={flip} disabled={busy || toSolana} title={toSolana ? "Solana is receive-only for now" : undefined} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
+                  <button type="button" onClick={flip} disabled={busy} aria-label="Switch direction" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] bg-[#071025] text-[#55c5ff] shadow-lg transition hover:border-[#2f8bff]/50 hover:text-white disabled:opacity-50 sm:h-10 sm:w-10">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .4s ease", transform: `rotate(${flips * 180}deg)` }}>
                       <path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" />
                     </svg>
@@ -1447,7 +1559,7 @@ export default function BridgePage() {
                 </div>
 
                 {/* ---------- SEND TO ANOTHER ADDRESS ---------- */}
-                {!toSolana && (
+                {!forceOther && (
                   <div className="mt-3 flex items-center justify-between gap-3 px-1">
                     <span className="text-sm text-slate-400">Send to a different address</span>
                     <button
@@ -1486,6 +1598,7 @@ export default function BridgePage() {
                     />
                     {otherTrim && !otherValid && <p className="mt-2 text-xs text-red-300">{otherIsToken ? "That is a USDC contract address, not a wallet." : toSolana ? "Enter a valid Solana wallet address." : "Enter a valid wallet address (0x… with 42 characters)."}</p>}
                     {toSolana && <p className="mt-2 text-xs leading-5 text-slate-500">Paste the receiving wallet's address, not a token account. That wallet must already hold USDC on Solana, or the transfer can fail.</p>}
+                    {fromSolana && !account && <p className="mt-2 text-xs leading-5 text-slate-500">Connect an EVM wallet to use its address, or paste one.</p>}
                     {customRecipient && (
                       <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-slate-300">
                         <input type="checkbox" checked={otherChecked} onChange={(e) => setOtherChecked(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#1978f5]" />
@@ -1549,13 +1662,15 @@ export default function BridgePage() {
               <div className="mt-3 min-h-5 text-center text-sm" role="status">
                 {notice ? (
                   <span className="text-red-300">{notice}</span>
+                ) : fromSolana && !sol && !busy ? (
+                  <span className="text-slate-500">Connect a Solana wallet to continue.</span>
                 ) : wrongNetwork && !busy ? (
                   <span className="text-slate-500">Your wallet is on another network. Switch to {fromView?.label} to bridge.</span>
-                ) : !busy && ready && problem && (amount || problem.hard || useOther) ? (
+                ) : !busy && srcReady && problem && (amount || problem.hard || useOther) ? (
                   <span className={problem.hard ? "text-red-300" : "text-slate-500"}>{problem.text}</span>
-                ) : !busy && ready && quoteError ? (
+                ) : !busy && srcReady && quoteError ? (
                   <span className="text-red-300">{quoteError}</span>
-                ) : !busy && ready && quoting ? (
+                ) : !busy && srcReady && quoting ? (
                   <span className="text-slate-500">Getting your quote…</span>
                 ) : null}
               </div>
@@ -1643,7 +1758,7 @@ export default function BridgePage() {
       {/* ---------- choose a network ---------- */}
       <Modal wide open={modal === "from" || modal === "to"} onClose={() => setModal(null)} title={modal === "from" ? "Bridge from" : "Bridge to"}>
         <ul className="space-y-1">
-          {list.filter((k) => !(modal === "from" && views[k]?.solana)).map((k) => {
+          {list.map((k) => {
             const side = modal === "from" ? "from" : "to";
             const current = side === "from" ? fromKey : toKey;
             const b = bals[bk(k)];
@@ -1655,7 +1770,7 @@ export default function BridgePage() {
                   {views[k].lifi ? (
                     <span className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#8fd4ff]">via LI.FI</span>
                   ) : views[k].solana ? (
-                    <span className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-[#8fd4ff]">Receive only</span>
+                    <span className="shrink-0 text-sm tabular-nums text-slate-400">{sol ? (solUsdc === null ? "…" : `${formatUnits6(solUsdc)} USDC`) : ""}</span>
                   ) : (
                     <span className="shrink-0 text-sm tabular-nums text-slate-400">{account ? (b === undefined ? "…" : b === null ? "—" : `${formatUnits6(b)} USDC`) : ""}</span>
                   )}
@@ -1713,67 +1828,4 @@ export default function BridgePage() {
       {/* ---------- Fast transfer ---------- */}
       <Modal open={modal === "fast"} onClose={() => setModal(null)} title="Fast transfer">
         <div className="flex items-center gap-3">
-          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06] ${useFast ? "text-[#39c4ff]" : "text-slate-400"}`} style={useFast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" } : undefined}>
-            <Svg d={ICON_FAST} size={22} />
-          </span>
-          <p className="text-sm font-semibold">{fast ? "Fast transfer is on" : "Fast transfer is off"}</p>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-slate-300">
-          Fast transfer uses Circle&apos;s CCTP Fast Transfer. Your USDC arrives on the other network in seconds instead of waiting about 15 minutes for the first network to finalize.
-        </p>
-        <ul className="mt-3 space-y-1.5 text-xs leading-5 text-slate-400">
-          <li>It adds a small fee, taken from the USDC you receive.</li>
-          <li>With Fast off, Standard transfer is used: no Fast fee, but slower.</li>
-          <li>If the Fast fee goes above your slippage limit, the transfer falls back to Standard.</li>
-          <li>Fast works when sending from networks such as Ethereum, Base, Arbitrum, OP Mainnet, Unichain and Linea. From Arc, Avalanche and Polygon the standard transfer is already fast.</li>
-          {!canFast && <li className="text-amber-300">The network you are sending from ({fromView?.label}) doesn&apos;t need Fast.</li>}
-        </ul>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => {
-              saveSettings({ fast: true });
-              setModal(null);
-            }}
-            className={BUTTON}
-          >
-            Enable
-          </button>
-          <button
-            onClick={() => {
-              saveSettings({ fast: false });
-              setModal(null);
-            }}
-            className={SECONDARY_BUTTON}
-          >
-            Disable
-          </button>
-        </div>
-      </Modal>
-
-      {/* ---------- history ---------- */}
-      <Modal open={modal === "history"} onClose={() => setModal(null)} title="Bridge history">
-        {!account ? (
-          <p className="py-6 text-center text-sm text-slate-500">Connect your wallet to see your bridges.</p>
-        ) : history.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">No bridges yet. Bridges you make here will show up in this list.</p>
-        ) : (
-          <ul className="space-y-1">
-            {history.map((h) => (
-              <li key={h.id}>
-                <a href={h.burn ? txUrl(h.from, h.burn) : "#"} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-white/[0.06]">
-                  <span className="flex -space-x-2"><ChainLogo view={views[h.from]} size={26} /><ChainLogo view={views[h.to]} size={26} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold tabular-nums">{h.amount} USDC</span>
-                    <span className="block truncate text-xs text-slate-500">{views[h.from]?.label} to {views[h.to]?.label} · received {h.received}{h.recipient ? ` · to ${shortAddr(h.recipient)}` : ""}</span>
-                  </span>
-                  <span className="text-xs text-slate-500">{timeAgo(h.t)}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-        {account && <p className="mt-4 border-t border-white/[0.06] pt-4 text-xs text-slate-500">Shows bridges made on this device.</p>}
-      </Modal>
-    </main>
-  );
-}
+          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06] ${useFast ? "text-[#39c4ff]" : "text-slate-400"}`} style={useFast ? { filter: "drop-shadow(0 0 6px rgba(57,196,255,0.9))" } 
