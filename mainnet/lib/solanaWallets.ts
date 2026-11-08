@@ -13,6 +13,32 @@ const WC_METADATA = {
   icons: ["https://app.alabaamafi.xyz/alabaamafi-logo.png"],
 };
 
+const PUBLIC_SOLANA_HOSTS = /(^|\.)solana\.com$|^solana-rpc\.publicnode\.com$/;
+
+export function installSolanaRpcRedirect() {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { __alabaamafiSolanaFetch?: boolean; fetch: typeof fetch };
+  if (w.__alabaamafiSolanaFetch) return;
+  w.__alabaamafiSolanaFetch = true;
+  const original = w.fetch.bind(window);
+  w.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    try {
+      const raw = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+      const target = new URL(raw, window.location.href);
+      const method = (init?.method ?? (typeof input === "object" && "method" in input ? (input as Request).method : "GET")).toUpperCase();
+      if (method === "POST" && PUBLIC_SOLANA_HOSTS.test(target.hostname)) {
+        const proxy = new URL(SOLANA_RPC_PROXY, window.location.href).href;
+        return typeof input === "object" && !(input instanceof URL) ? original(new Request(proxy, input as Request)) : original(proxy, init);
+      }
+    } catch {
+      return original(input, init);
+    }
+    return original(input, init);
+  };
+}
+
+installSolanaRpcRedirect();
+
 type StdAccount = { address: string; publicKey: Uint8Array; chains?: readonly string[] };
 type StdWallet = {
   name: string;
@@ -394,18 +420,18 @@ export const SOLANA_WALLET_LINKS: Record<string, { site: string; chrome: string;
   backpack: { site: "https://backpack.app/downloads", chrome: "https://chromewebstore.google.com/detail/backpack/aflkmfhebedbjioipglgcbcmnbpgliof", browse: (u, o) => `https://backpack.app/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
 };
 
-export type WcWallet = { id: string; name: string; image?: string; native?: string; universal?: string };
+export type WcWallet = { id: string; name: string; image?: string; native?: string; universal?: string; fallback?: boolean };
 
 const WC_FALLBACK: WcWallet[] = [
-  { id: "phantom", name: "Phantom", native: "phantom://" },
-  { id: "solflare", name: "Solflare", native: "solflare://" },
-  { id: "backpack", name: "Backpack", native: "backpack://" },
-  { id: "trust", name: "Trust Wallet", native: "trust://" },
+  { id: "phantom", name: "Phantom", native: "phantom://", fallback: true },
+  { id: "solflare", name: "Solflare", native: "solflare://", fallback: true },
+  { id: "backpack", name: "Backpack", native: "backpack://", fallback: true },
+  { id: "trust", name: "Trust Wallet", native: "trust://", fallback: true },
 ];
 
 export async function fetchSolanaWcWallets(): Promise<WcWallet[]> {
   try {
-    type Listing = { id?: string; name?: string; image_id?: string; mobile?: { native?: string; universal?: string } };
+    type Listing = { id?: string; name?: string; image_id?: string; image_url?: { md?: string; sm?: string; lg?: string }; mobile?: { native?: string; universal?: string } };
     const list: WcWallet[] = [];
     for (let page = 1; page <= 3; page++) {
       const url = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${WC_PROJECT_ID}&chains=${encodeURIComponent(SOLANA_WC_CHAIN)}&entries=100&page=${page}`;
@@ -418,7 +444,7 @@ export async function fetchSolanaWcWallets(): Promise<WcWallet[]> {
         list.push({
           id: l.id ?? l.name,
           name: l.name,
-          image: l.image_id ? `https://explorer-api.walletconnect.com/v3/logo/md/${l.image_id}?projectId=${WC_PROJECT_ID}` : undefined,
+          image: l.image_url?.md || (l.image_id ? `https://explorer-api.walletconnect.com/v3/logo/md/${l.image_id}?projectId=${WC_PROJECT_ID}` : undefined),
           native: l.mobile?.native || undefined,
           universal: l.mobile?.universal || undefined,
         });
