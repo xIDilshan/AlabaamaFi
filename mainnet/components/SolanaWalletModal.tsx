@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { WalletLogo } from "@/components/WalletLogo";
-import { connectSolanaWallet, SOLANA_WALLET_LINKS, startSolanaWalletConnect, useSolanaWallets, type SolSession, type SolWallet } from "@/lib/solanaWallets";
+import { connectSolanaWallet, fetchSolanaWcWallets, SOLANA_WALLET_LINKS, startSolanaWalletConnect, useSolanaWallets, wcDeepLink, type SolSession, type SolWallet, type WcWallet } from "@/lib/solanaWallets";
 
 type SolanaWalletModalProps = {
   isOpen: boolean;
@@ -17,6 +17,7 @@ type QrView = { name: string; getUrl?: string };
 const ERROR_MESSAGE = "Something went wrong. Please try again.";
 const FIXED = ["Phantom", "Solflare", "Backpack"];
 const isMobileDevice = () => typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isChromium = () => typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent);
 
 const ROW_CLASS =
   "flex min-h-[58px] w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#0a0c10] px-3.5 py-2.5 text-left transition-colors duration-200 hover:border-[#2b6cff]/25 hover:bg-[#0d1117] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
@@ -81,6 +82,7 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
   const [qr, setQr] = useState<QrView | null>(null);
   const [uri, setUri] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [wcWallets, setWcWallets] = useState<WcWallet[] | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(
@@ -120,6 +122,8 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
     setUri(null);
     setCopied(false);
     setQr(view);
+    setWcWallets(null);
+    if (isMobileDevice() && view.name === "WalletConnect") fetchSolanaWcWallets().then(setWcWallets);
     const flow = startSolanaWalletConnect(onSession);
     cancelRef.current = flow.cancel;
     flow.uri.then(setUri);
@@ -156,7 +160,7 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
     const link = SOLANA_WALLET_LINKS[name.toLowerCase()];
     if (!link) return;
     if (isMobileDevice()) window.location.href = link.browse(window.location.href, window.location.origin);
-    else showQr({ name, getUrl: link.site });
+    else showQr({ name, getUrl: isChromium() ? link.chrome : link.site });
   };
 
   if (!isOpen) return null;
@@ -212,6 +216,41 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
               onClose={close}
             />
 
+            {mobile && qr.name === "WalletConnect" ? (
+              <div className="flex flex-col">
+                <p className="mb-3 text-center text-sm text-white/50">Choose a Solana wallet to open</p>
+                <div className="space-y-2">
+                  {wcWallets === null
+                    ? [0, 1, 2].map((i) => <div key={i} className="h-[58px] animate-pulse rounded-2xl bg-white/[0.04]" />)
+                    : wcWallets.map((w) => (
+                        <button
+                          key={w.id}
+                          disabled={!uri}
+                          onClick={() => {
+                            if (uri) window.location.href = wcDeepLink(w, uri);
+                          }}
+                          className={ROW_CLASS}
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+                              <WalletLogo name={w.name} icon={w.image} size={30} />
+                            </div>
+                            <p className="truncate text-[15px] font-semibold leading-none">{w.name}</p>
+                          </div>
+                          <Arrow />
+                        </button>
+                      ))}
+                </div>
+                <button
+                  onClick={copyLink}
+                  disabled={!uri}
+                  className="mt-4 flex min-h-[48px] items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-sm font-semibold text-white/80 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
+                >
+                  {copied ? "Copied" : "Copy link"}
+                </button>
+                {errorBox}
+              </div>
+            ) : (
             <div className="flex flex-col items-center">
               <div className="relative rounded-2xl bg-white p-3">
                 {uri ? <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" /> : <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />}
@@ -236,17 +275,6 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
                   {copied ? "Copied" : "Copy link"}
                 </button>
 
-                {mobile && uri && (
-                  <button
-                    onClick={() => {
-                      window.location.href = uri;
-                    }}
-                    className="flex min-h-[48px] items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-sm font-semibold text-white/80 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white"
-                  >
-                    Open wallet app
-                  </button>
-                )}
-
                 {qr.getUrl && (
                   <a
                     href={qr.getUrl}
@@ -261,6 +289,7 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
 
               {errorBox}
             </div>
+            )}
           </div>
         )}
       </div>
