@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";hhh
+import { useEffect, useState } from "react";
 
 export const SOLANA_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const SOLANA_RPCS = ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"];
