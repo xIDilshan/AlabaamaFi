@@ -147,12 +147,18 @@ export function makeProvider(wallet: StdWallet, account: StdAccount, web3: Web3L
     return { signature: out.signature, publicKey };
   };
 
+  const address = account.address;
+  const accounts = [{ address, publicKey: account.publicKey }];
   return {
     isWalletStandard: true,
     isConnected: true,
+    connected: true,
     publicKey,
-    connect: async () => ({ publicKey }),
+    address,
+    accounts,
+    connect: async () => ({ publicKey, address, accounts }),
     disconnect: async () => undefined,
+    getAddress: async () => address,
     signTransaction,
     signAllTransactions,
     signAndSendTransaction,
@@ -248,12 +254,17 @@ export function makeWalletConnectProvider(client: WcClient, topic: string, addre
     return { signature: base58Decode(result.signature), publicKey };
   };
 
+  const accounts = [{ address, publicKey }];
   return {
     isWalletConnect: true,
     isConnected: true,
+    connected: true,
     publicKey,
-    connect: async () => ({ publicKey }),
+    address,
+    accounts,
+    connect: async () => ({ publicKey, address, accounts }),
     disconnect: async () => undefined,
+    getAddress: async () => address,
     signTransaction,
     signAllTransactions,
     signMessage,
@@ -377,8 +388,52 @@ export async function readSolanaLamports(owner: string): Promise<bigint | null> 
   }
 }
 
-export const SOLANA_WALLET_LINKS: Record<string, { site: string; browse: (url: string, origin: string) => string }> = {
-  phantom: { site: "https://phantom.app/download", browse: (u, o) => `https://phantom.app/ul/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
-  solflare: { site: "https://solflare.com/download", browse: (u, o) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
-  backpack: { site: "https://backpack.app/downloads", browse: (u, o) => `https://backpack.app/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
+export const SOLANA_WALLET_LINKS: Record<string, { site: string; chrome: string; browse: (url: string, origin: string) => string }> = {
+  phantom: { site: "https://phantom.app/download", chrome: "https://chromewebstore.google.com/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa", browse: (u, o) => `https://phantom.app/ul/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
+  solflare: { site: "https://solflare.com/download", chrome: "https://chromewebstore.google.com/detail/solflare-wallet/bhhhlbepdkbapadjdnnojkbgioiodbic", browse: (u, o) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
+  backpack: { site: "https://backpack.app/downloads", chrome: "https://chromewebstore.google.com/detail/backpack/aflkmfhebedbjioipglgcbcmnbpgliof", browse: (u, o) => `https://backpack.app/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
 };
+
+export type WcWallet = { id: string; name: string; image?: string; native?: string; universal?: string };
+
+const WC_FALLBACK: WcWallet[] = [
+  { id: "phantom", name: "Phantom", native: "phantom://" },
+  { id: "solflare", name: "Solflare", native: "solflare://" },
+  { id: "backpack", name: "Backpack", native: "backpack://" },
+  { id: "trust", name: "Trust Wallet", native: "trust://" },
+];
+
+export async function fetchSolanaWcWallets(): Promise<WcWallet[]> {
+  try {
+    const url = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${WC_PROJECT_ID}&chains=${encodeURIComponent(SOLANA_WC_CHAIN)}&entries=40&page=1`;
+    const r = await fetch(url);
+    if (!r.ok) return WC_FALLBACK;
+    type Listing = { id?: string; name?: string; image_id?: string; mobile?: { native?: string; universal?: string } };
+    const j = (await r.json()) as { listings?: Record<string, Listing> };
+    const list: WcWallet[] = [];
+    for (const l of Object.values(j.listings ?? {})) {
+      if (!l?.name || (!l.mobile?.native && !l.mobile?.universal)) continue;
+      list.push({
+        id: l.id ?? l.name,
+        name: l.name,
+        image: l.image_id ? `https://explorer-api.walletconnect.com/v3/logo/md/${l.image_id}?projectId=${WC_PROJECT_ID}` : undefined,
+        native: l.mobile?.native || undefined,
+        universal: l.mobile?.universal || undefined,
+      });
+    }
+    return list.length ? list : WC_FALLBACK;
+  } catch {
+    return WC_FALLBACK;
+  }
+}
+
+export function wcDeepLink(wallet: WcWallet, uri: string): string {
+  const encoded = encodeURIComponent(uri);
+  if (wallet.universal) return `${wallet.universal.replace(/\/+$/, "")}/wc?uri=${encoded}`;
+  if (wallet.native) {
+    let base = wallet.native.includes("://") ? wallet.native : `${wallet.native.replace(/[:/]/g, "")}://`;
+    if (!base.endsWith("/")) base += "/";
+    return `${base}wc?uri=${encoded}`;
+  }
+  return uri;
+}
