@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 
 export const SOLANA_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const SOLANA_RPCS = ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"];
+export const SOLANA_RPC_PROXY = "/api/solana-rpc";
+export const SOLANA_WC_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+
+const WC_PROJECT_ID = "6672b2a513af880372a1ca90167637f2";
+const WC_METADATA = {
+  name: "AlabaamaFi",
+  description: "One place to move, manage and explore assets on Arc Network.",
+  url: "https://app.alabaamafi.xyz",
+  icons: ["https://app.alabaamafi.xyz/alabaamafi-logo.png"],
+};
 
 type StdAccount = { address: string; publicKey: Uint8Array; chains?: readonly string[] };
 type StdWallet = {
@@ -44,6 +54,34 @@ export function base58Encode(bytes: Uint8Array): string {
   }
   return out;
 }
+
+export function base58Decode(text: string): Uint8Array {
+  let n = BigInt(0);
+  for (const ch of text) {
+    const i = B58.indexOf(ch);
+    if (i < 0) throw new Error("BAD_BASE58");
+    n = n * BigInt(58) + BigInt(i);
+  }
+  const out: number[] = [];
+  while (n > BigInt(0)) {
+    out.unshift(Number(n % BigInt(256)));
+    n = n / BigInt(256);
+  }
+  for (const ch of text) {
+    if (ch === "1") out.unshift(0);
+    else break;
+  }
+  return Uint8Array.from(out);
+}
+
+const toBase64 = (bytes: Uint8Array) => {
+  let text = "";
+  bytes.forEach((b) => {
+    text += String.fromCharCode(b);
+  });
+  return btoa(text);
+};
+const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
 
 const isSolanaWallet = (w: StdWallet) =>
   Array.isArray(w.chains) &&
@@ -164,9 +202,137 @@ export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolS
   return build(account);
 }
 
+type WcSession = { topic: string; peer?: { metadata?: { name?: string; icons?: string[] } }; namespaces: Record<string, { accounts: string[] }> };
+type WcClient = {
+  connect: (input: { requiredNamespaces: Record<string, { methods: string[]; chains: string[]; events: string[] }> }) => Promise<{ uri?: string; approval: () => Promise<WcSession> }>;
+  request: (input: { topic: string; chainId: string; request: { method: string; params: unknown } }) => Promise<unknown>;
+  disconnect: (input: { topic: string; reason: { code: number; message: string } }) => Promise<void>;
+  on: (event: string, cb: (e: { topic: string }) => void) => void;
+  off: (event: string, cb: (e: { topic: string }) => void) => void;
+};
+
+export function makeWalletConnectProvider(client: WcClient, topic: string, address: string, web3: Web3Like & { PublicKey: new (value: string) => unknown }) {
+  const publicKey = new web3.PublicKey(address);
+  type Tx = { serialize: (options?: unknown) => Uint8Array; addSignature: (key: unknown, signature: Uint8Array) => void };
+  const toBytes = (tx: unknown) => (tx as Tx).serialize({ requireAllSignatures: false, verifySignatures: false });
+  const isVersioned = (tx: unknown) => !!tx && typeof tx === "object" && "version" in (tx as object);
+
+  const signTransaction = async (tx: unknown) => {
+    const result = (await client.request({
+      topic,
+      chainId: SOLANA_WC_CHAIN,
+      request: { method: "solana_signTransaction", params: { transaction: toBase64(toBytes(tx)) } },
+    })) as { signature?: string; transaction?: string };
+    if (result?.transaction) {
+      const bytes = fromBase64(result.transaction);
+      return isVersioned(tx) ? web3.VersionedTransaction.deserialize(bytes) : web3.Transaction.from(bytes);
+    }
+    if (result?.signature) {
+      (tx as Tx).addSignature(publicKey, base58Decode(result.signature));
+      return tx;
+    }
+    throw new Error("The wallet did not return a signed transaction.");
+  };
+  const signAllTransactions = async (txs: unknown[]) => {
+    const done: unknown[] = [];
+    for (const tx of txs) done.push(await signTransaction(tx));
+    return done;
+  };
+  const signMessage = async (message: Uint8Array) => {
+    const result = (await client.request({
+      topic,
+      chainId: SOLANA_WC_CHAIN,
+      request: { method: "solana_signMessage", params: { message: base58Encode(message), pubkey: address } },
+    })) as { signature?: string };
+    if (!result?.signature) throw new Error("The wallet did not return a signature.");
+    return { signature: base58Decode(result.signature), publicKey };
+  };
+
+  return {
+    isWalletConnect: true,
+    isConnected: true,
+    publicKey,
+    connect: async () => ({ publicKey }),
+    disconnect: async () => undefined,
+    signTransaction,
+    signAllTransactions,
+    signMessage,
+    on: () => undefined,
+    off: () => undefined,
+    removeListener: () => undefined,
+  };
+}
+
+export function startSolanaWalletConnect(onChange: (session: SolSession | null) => void) {
+  let cancelled = false;
+  let resolveUri: (uri: string) => void = () => undefined;
+  const uri = new Promise<string>((resolve) => {
+    resolveUri = resolve;
+  });
+
+  const session = (async (): Promise<SolSession> => {
+    const [signModule, web3] = await Promise.all([import("@walletconnect/sign-client"), import("@solana/web3.js")]);
+    type Initable = { init: (options: unknown) => Promise<unknown> };
+    const pick = (value: unknown): Initable | undefined => {
+      const v = value as { init?: unknown; default?: unknown } | undefined;
+      if (v && typeof v.init === "function") return v as Initable;
+      return v && v.default ? pick(v.default) : undefined;
+    };
+    const holder = signModule as unknown as { default?: unknown; SignClient?: unknown };
+    const SignClient = pick(holder.default) ?? pick(holder.SignClient) ?? pick(holder);
+    if (!SignClient) throw new Error("WC_UNAVAILABLE");
+    const client = (await SignClient.init({ projectId: WC_PROJECT_ID, metadata: WC_METADATA, customStoragePrefix: "alabaamafi-solana" })) as unknown as WcClient;
+    if (cancelled) throw new Error("CANCELLED");
+
+    const pairing = await client.connect({ requiredNamespaces: { solana: { methods: ["solana_signTransaction", "solana_signMessage"], chains: [SOLANA_WC_CHAIN], events: [] } } });
+    if (pairing.uri) resolveUri(pairing.uri);
+    const wc = await pairing.approval();
+
+    const hangUp = () => client.disconnect({ topic: wc.topic, reason: { code: 6000, message: "User disconnected." } }).catch(() => undefined);
+    if (cancelled) {
+      await hangUp();
+      throw new Error("CANCELLED");
+    }
+    const account = wc.namespaces.solana?.accounts?.[0];
+    const address = account ? account.split(":").pop() : undefined;
+    if (!address) {
+      await hangUp();
+      throw new Error("NO_ACCOUNT");
+    }
+
+    const gone = (e: { topic: string }) => {
+      if (e.topic === wc.topic) onChange(null);
+    };
+    client.on("session_delete", gone);
+    client.on("session_expire", gone);
+
+    return {
+      name: wc.peer?.metadata?.name || "WalletConnect",
+      icon: wc.peer?.metadata?.icons?.[0],
+      address,
+      provider: makeWalletConnectProvider(client, wc.topic, address, web3 as unknown as Web3Like),
+      disconnect: async () => {
+        await hangUp();
+      },
+      stop: () => {
+        client.off("session_delete", gone);
+        client.off("session_expire", gone);
+      },
+    };
+  })();
+
+  return {
+    uri,
+    session,
+    cancel: () => {
+      cancelled = true;
+    },
+  };
+}
+
 async function rpc(method: string, params: unknown[]): Promise<unknown> {
   let last: unknown;
-  for (const url of SOLANA_RPCS) {
+  for (const url of [SOLANA_RPC_PROXY, ...SOLANA_RPCS]) {
     try {
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
       if (!r.ok) {
