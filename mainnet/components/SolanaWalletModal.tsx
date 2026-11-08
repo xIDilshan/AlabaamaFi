@@ -34,6 +34,14 @@ const WalletGlyph = () => (
   </svg>
 );
 
+const WaveBadge = () => (
+  <span aria-hidden="true" className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#3b99fc]/50 text-[#3b99fc]">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+      <path d="M5 10.5c3.9-3.8 10.1-3.8 14 0M8 13.6c2.2-2.1 5.8-2.1 8 0M10.9 16.6c.7-.6 1.5-.6 2.2 0" />
+    </svg>
+  </span>
+);
+
 function BrowserTiles({ tiles }: { tiles: Tile[] }) {
   return (
     <span aria-hidden className="grid shrink-0 grid-cols-2 grid-rows-2 gap-[2px]" style={{ width: 34, height: 34 }}>
@@ -83,6 +91,8 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
   const [uri, setUri] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [wcWallets, setWcWallets] = useState<WcWallet[] | null>(null);
+  const [mobileQr, setMobileQr] = useState(false);
+  const [search, setSearch] = useState("");
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(
@@ -122,6 +132,8 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
     setUri(null);
     setCopied(false);
     setQr(view);
+    setMobileQr(false);
+    setSearch("");
     setWcWallets(null);
     if (isMobileDevice() && view.name === "WalletConnect") fetchSolanaWcWallets().then(setWcWallets);
     const flow = startSolanaWalletConnect(onSession);
@@ -138,6 +150,10 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
   };
 
   const backToList = () => {
+    if (mobileQr) {
+      setMobileQr(false);
+      return;
+    }
     cancelRef.current?.();
     cancelRef.current = null;
     setQr(null);
@@ -173,6 +189,76 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
       <p className="break-words text-sm font-medium leading-5 text-red-400">{error}</p>
     </div>
   ) : null;
+
+  if (qr && qr.name === "WalletConnect" && mobile && !mobileQr) {
+    const q = search.trim().toLowerCase();
+    const shown = (wcWallets ?? []).filter((w) => !q || w.name.toLowerCase().includes(q));
+    return (
+      <div className="fixed inset-0 z-[97] flex items-center justify-center bg-black/55 px-3 py-4 backdrop-blur-[2px]">
+        <div className="absolute inset-0" onClick={close} aria-hidden="true" />
+
+        <div className="relative flex max-h-[86vh] w-full max-w-md flex-col overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#141414] p-4 shadow-2xl shadow-black/60" role="dialog" aria-modal="true" aria-label="Choose a Solana wallet">
+          <div className="grid grid-cols-[44px_1fr_44px] items-center">
+            <button onClick={backToList} aria-label="Back to the wallet list" className="flex h-11 w-11 items-center justify-center rounded-full text-white/55 transition hover:bg-white/[0.05] hover:text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m15 6-6 6 6 6" />
+              </svg>
+            </button>
+            <h3 className="text-center text-lg font-medium">All Wallets</h3>
+            <button onClick={close} aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-full text-lg text-white/70 transition hover:bg-white/[0.05] hover:text-white">
+              ✕
+            </button>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-white/50 focus-within:border-white/20">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search wallet" aria-label="Search wallet" autoComplete="off" className="min-w-0 flex-1 bg-transparent text-[16px] text-white outline-none placeholder:text-white/40" />
+            </label>
+            <button onClick={() => setMobileQr(true)} aria-label="Show QR code" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2b6cff]/15 text-[#4d8dff] transition hover:bg-[#2b6cff]/25">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4" />
+              </svg>
+            </button>
+          </div>
+
+          <p className="mt-2 min-h-[16px] px-1 text-xs text-white/40">{uri ? "Solana wallets only" : "Preparing the connection…"}</p>
+
+          <div className="mt-1 min-h-0 flex-1 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-2.5 pb-1">
+              {wcWallets === null
+                ? Array.from({ length: 9 }, (_, i) => <div key={i} className="h-[112px] animate-pulse rounded-2xl bg-white/[0.04]" />)
+                : shown.map((w) => (
+                    <button
+                      key={w.id}
+                      disabled={!uri}
+                      onClick={() => {
+                        if (uri) window.location.href = wcDeepLink(w, uri);
+                      }}
+                      className="flex min-w-0 flex-col items-center gap-2 rounded-2xl bg-white/[0.05] px-2 pb-3 pt-4 transition hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-60"
+                    >
+                      <WalletLogo name={w.name} icon={w.image} size={56} className="!rounded-2xl" />
+                      <span className="flex w-full min-w-0 items-center justify-center gap-1.5">
+                        <span className="truncate text-[15px] font-medium">{w.name}</span>
+                        <WaveBadge />
+                      </span>
+                    </button>
+                  ))}
+            </div>
+            {wcWallets !== null && shown.length === 0 && <p className="py-8 text-center text-sm text-white/40">No Solana wallet found</p>}
+          </div>
+
+          {errorBox}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[97] flex items-center justify-center overflow-y-auto bg-black/55 px-3 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
@@ -216,41 +302,6 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
               onClose={close}
             />
 
-            {mobile && qr.name === "WalletConnect" ? (
-              <div className="flex flex-col">
-                <p className="mb-3 text-center text-sm text-white/50">Choose a Solana wallet to open</p>
-                <div className="space-y-2">
-                  {wcWallets === null
-                    ? [0, 1, 2].map((i) => <div key={i} className="h-[58px] animate-pulse rounded-2xl bg-white/[0.04]" />)
-                    : wcWallets.map((w) => (
-                        <button
-                          key={w.id}
-                          disabled={!uri}
-                          onClick={() => {
-                            if (uri) window.location.href = wcDeepLink(w, uri);
-                          }}
-                          className={ROW_CLASS}
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center">
-                              <WalletLogo name={w.name} icon={w.image} size={30} />
-                            </div>
-                            <p className="truncate text-[15px] font-semibold leading-none">{w.name}</p>
-                          </div>
-                          <Arrow />
-                        </button>
-                      ))}
-                </div>
-                <button
-                  onClick={copyLink}
-                  disabled={!uri}
-                  className="mt-4 flex min-h-[48px] items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 text-sm font-semibold text-white/80 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
-                >
-                  {copied ? "Copied" : "Copy link"}
-                </button>
-                {errorBox}
-              </div>
-            ) : (
             <div className="flex flex-col items-center">
               <div className="relative rounded-2xl bg-white p-3">
                 {uri ? <QRCodeSVG value={uri} size={208} level="H" bgColor="#ffffff" fgColor="#000000" /> : <div className="h-[208px] w-[208px] animate-pulse rounded-lg bg-black/10" />}
@@ -289,7 +340,6 @@ export default function SolanaWalletModal({ isOpen, onClose, onSession }: Solana
 
               {errorBox}
             </div>
-            )}
           </div>
         )}
       </div>
