@@ -43,6 +43,49 @@ function originOk(req: Request) {
   }
 }
 
+type Attempt = { source: "private" | "public"; status: number | "error" };
+
+async function askSolana(body: string): Promise<{ text: string | null; answeredBy: "private" | "public" | null; failed: Attempt[] }> {
+  const servers: { url: string; source: "private" | "public" }[] = [
+    ...(process.env.SOLANA_RPC_URL ? [{ url: process.env.SOLANA_RPC_URL, source: "private" as const }] : []),
+    ...PUBLIC_RPCS.map((url) => ({ url, source: "public" as const })),
+  ];
+  const failed: Attempt[] = [];
+  for (const server of servers) {
+    try {
+      const r = await fetch(server.url, { method: "POST", headers: { "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(12000), cache: "no-store" });
+      if (!r.ok) {
+        failed.push({ source: server.source, status: r.status });
+        continue;
+      }
+      return { text: await r.text(), answeredBy: server.source, failed };
+    } catch {
+      failed.push({ source: server.source, status: "error" });
+    }
+  }
+  return { text: null, answeredBy: null, failed };
+}
+
+export async function GET() {
+  const started = Date.now();
+  const { text, answeredBy, failed } = await askSolana(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSlot" }));
+  let slot: number | null = null;
+  try {
+    const result = (JSON.parse(text ?? "null") as { result?: unknown } | null)?.result;
+    slot = typeof result === "number" ? result : null;
+  } catch {
+    slot = null;
+  }
+  return reply({
+    privateRpcUrlSet: !!process.env.SOLANA_RPC_URL,
+    working: slot !== null,
+    answeredBy,
+    slot,
+    ms: Date.now() - started,
+    failedBefore: failed.map((f) => `${f.source} ${f.status}`),
+  });
+}
+
 export async function POST(req: Request) {
   if (!originOk(req)) return reply({ error: "forbidden" }, 403);
 
@@ -63,15 +106,10 @@ export async function POST(req: Request) {
     if (typeof method !== "string" || !ALLOWED.has(method)) return reply({ error: "method not allowed" }, 403);
   }
 
-  const upstreams = [process.env.SOLANA_RPC_URL, ...PUBLIC_RPCS].filter((u): u is string => !!u);
-  for (const url of upstreams) {
-    try {
-      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: text, signal: AbortSignal.timeout(12000), cache: "no-store" });
-      if (!r.ok) continue;
-      return new Response(await r.text(), { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-    } catch {
-      continue;
-    }
-  }
-  return reply({ error: "upstream unavailable" }, 502);
+  const { text: answer, failed } = await askSolana(text);
+  if (answer !== null) return new Response(answer, { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+
+  const id = !Array.isArray(body) && body && typeof body === "object" ? (body as { id?: unknown }).id ?? null : null;
+  const why = failed.map((f) => `${f.source} ${f.status}`).join(", ");
+  return reply({ jsonrpc: "2.0", id, error: { code: -32000, message: `Solana RPC unavailable (${why || "no server"})` } }, 502);
 }
