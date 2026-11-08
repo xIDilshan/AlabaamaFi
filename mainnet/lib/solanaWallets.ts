@@ -405,21 +405,25 @@ const WC_FALLBACK: WcWallet[] = [
 
 export async function fetchSolanaWcWallets(): Promise<WcWallet[]> {
   try {
-    const url = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${WC_PROJECT_ID}&chains=${encodeURIComponent(SOLANA_WC_CHAIN)}&entries=40&page=1`;
-    const r = await fetch(url);
-    if (!r.ok) return WC_FALLBACK;
     type Listing = { id?: string; name?: string; image_id?: string; mobile?: { native?: string; universal?: string } };
-    const j = (await r.json()) as { listings?: Record<string, Listing> };
     const list: WcWallet[] = [];
-    for (const l of Object.values(j.listings ?? {})) {
-      if (!l?.name || (!l.mobile?.native && !l.mobile?.universal)) continue;
-      list.push({
-        id: l.id ?? l.name,
-        name: l.name,
-        image: l.image_id ? `https://explorer-api.walletconnect.com/v3/logo/md/${l.image_id}?projectId=${WC_PROJECT_ID}` : undefined,
-        native: l.mobile?.native || undefined,
-        universal: l.mobile?.universal || undefined,
-      });
+    for (let page = 1; page <= 3; page++) {
+      const url = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${WC_PROJECT_ID}&chains=${encodeURIComponent(SOLANA_WC_CHAIN)}&entries=100&page=${page}`;
+      const r = await fetch(url);
+      if (!r.ok) break;
+      const j = (await r.json()) as { listings?: Record<string, Listing> };
+      const listings = Object.values(j.listings ?? {});
+      for (const l of listings) {
+        if (!l?.name || (!l.mobile?.native && !l.mobile?.universal)) continue;
+        list.push({
+          id: l.id ?? l.name,
+          name: l.name,
+          image: l.image_id ? `https://explorer-api.walletconnect.com/v3/logo/md/${l.image_id}?projectId=${WC_PROJECT_ID}` : undefined,
+          native: l.mobile?.native || undefined,
+          universal: l.mobile?.universal || undefined,
+        });
+      }
+      if (listings.length < 100) break;
     }
     return list.length ? list : WC_FALLBACK;
   } catch {
