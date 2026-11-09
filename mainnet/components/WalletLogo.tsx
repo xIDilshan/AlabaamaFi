@@ -6,7 +6,7 @@ import type { Connector } from "wagmi";
 import { getIconSvg, putIconSvg, useIsoLayoutEffect } from "@/lib/iconCache";
 
 /* ---------- logo list ---------- */
-type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; variant?: "branded" | "mono"; strip?: boolean; glyph?: boolean; letter: string; color: string };
+type Rule = { keys: string[]; exact?: string[]; files?: string[]; wallet?: string[]; exchange?: string[]; token?: string[]; variant?: "branded" | "mono"; strip?: boolean; glyph?: boolean; letter: string; color: string };
 
 const RULES: Rule[] = [
   { keys: ["brave"], files: ["/wallets/brave.svg"], letter: "B", color: "#fb542b" },
@@ -35,6 +35,7 @@ const RULES: Rule[] = [
   { keys: ["enkrypt"], wallet: ["enkrypt"], letter: "E", color: "#7b3fe4" },
   { keys: ["keplr"], files: ["/wallets/keplr.png"], wallet: ["keplr"], variant: "branded", strip: true, letter: "K", color: "#3b82f6" },
   { keys: ["backpack"], wallet: ["backpack"], letter: "B", color: "#e33e3f" },
+  { keys: ["jupiter"], token: ["JUP"], variant: "branded", letter: "J", color: "#2a8f6a" },
   { keys: ["browser wallet", "injected"], glyph: true, letter: "B", color: "#1978f5" },
 ];
 
@@ -148,7 +149,7 @@ export function useWalletIdentity(connector: Connector | undefined): { name: str
 
 /* ---------- the logo ---------- */
 type IconComp = ComponentType<Record<string, unknown>>;
-type IconModule = { WalletIcon: IconComp; ExchangeIcon: IconComp };
+type IconModule = { WalletIcon: IconComp; ExchangeIcon: IconComp; TokenIcon: IconComp };
 let iconsPromise: Promise<IconModule | null> | null = null;
 const loadIcons = () => {
   if (!iconsPromise) iconsPromise = import("@web3icons/react/dynamic").then((m) => m as unknown as IconModule).catch(() => null);
@@ -181,8 +182,8 @@ const WalletGlyph = ({ size }: { size: number }) => (
 function WalletLogoInner({ name, icon, size = 32, className = "", plain = false }: { name: string; icon?: string; size?: number; className?: string; plain?: boolean }) {
   const rule = useMemo(() => findRule(name), [name]);
   const imgs = useMemo(() => [...(rule?.files ?? []), icon].filter((x): x is string => !!x), [rule, icon]);
-  const webKind: "wallet" | "exchange" = rule?.exchange ? "exchange" : "wallet";
-  const webNames = useMemo(() => rule?.exchange ?? rule?.wallet ?? [name.toLowerCase()], [rule, name]);
+  const webKind: "wallet" | "exchange" | "token" = rule?.token ? "token" : rule?.exchange ? "exchange" : "wallet";
+  const webNames = useMemo(() => rule?.token ?? rule?.exchange ?? rule?.wallet ?? [name.toLowerCase()], [rule, name]);
 
   const [imgIdx, setImgIdx] = useState(0);
   const [mod, setMod] = useState<IconModule | null>(null);
@@ -248,7 +249,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
       </span>
     );
   }
-  const Comp = mod ? (webKind === "exchange" ? mod.ExchangeIcon : mod.WalletIcon) : null;
+  const Comp = mod ? (webKind === "token" ? mod.TokenIcon : webKind === "exchange" ? mod.ExchangeIcon : mod.WalletIcon) : null;
   const showSvg = hasSvg || !!cached;
   return (
     <span className={box} style={{ width: size, height: size, background: showSvg ? "transparent" : rule?.glyph ? "rgba(255,255,255,0.08)" : rule?.color ?? "#1978f5", color: "rgba(255,255,255,0.7)" }} aria-hidden>
@@ -258,7 +259,7 @@ function WalletLogoInner({ name, icon, size = 32, className = "", plain = false 
       )}
       {Comp && webLeft && (
         <span ref={holder} key={webNames[webIdx]} className="absolute inset-0 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" style={{ opacity: hasSvg ? 1 : 0, color: rule?.color }}>
-          <Comp name={webNames[webIdx]} variant={rule?.variant ?? "mono"} size={size} />
+          <Comp {...(webKind === "token" ? { symbol: webNames[webIdx] } : { name: webNames[webIdx] })} variant={rule?.variant ?? "mono"} size={size} />
         </span>
       )}
     </span>
