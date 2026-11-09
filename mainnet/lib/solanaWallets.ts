@@ -5,6 +5,37 @@ export const SOLANA_RPCS = ["https://api.mainnet-beta.solana.com", "https://sola
 export const SOLANA_RPC_PROXY = "/api/solana-rpc";
 export const SOLANA_WC_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
+const SOL_LAST = "alabaamafi:solana-wallet";
+type Remembered = { kind: "standard"; name: string } | { kind: "walletconnect" };
+
+const remember = (value: Remembered) => {
+  try {
+    window.localStorage.setItem(SOL_LAST, JSON.stringify(value));
+  } catch {
+    return;
+  }
+};
+
+export function forgetSolanaWallet() {
+  try {
+    window.localStorage.removeItem(SOL_LAST);
+  } catch {
+    return;
+  }
+}
+
+const recall = (): Remembered | null => {
+  try {
+    const raw = window.localStorage.getItem(SOL_LAST);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<Remembered> | null;
+    if (v?.kind === "standard" && typeof (v as { name?: unknown }).name === "string") return v as Remembered;
+    return v?.kind === "walletconnect" ? { kind: "walletconnect" } : null;
+  } catch {
+    return null;
+  }
+};
+
 const WC_PROJECT_ID = "6672b2a513af880372a1ca90167637f2";
 const WC_METADATA = {
   name: "AlabaamaFi",
@@ -237,13 +268,14 @@ export function makeProvider(wallet: StdWallet, account: StdAccount, web3: Web3L
   };
 }
 
-export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolSession | null) => void): Promise<SolSession> {
+export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolSession | null) => void, silent = false): Promise<SolSession> {
   const web3 = (await import("@solana/web3.js")) as unknown as Web3Like;
-  const connectFeature = w.raw.features["standard:connect"] as { connect: () => Promise<{ accounts: readonly StdAccount[] }> };
-  const result = await connectFeature.connect();
+  const connectFeature = w.raw.features["standard:connect"] as { connect: (input?: { silent?: boolean }) => Promise<{ accounts: readonly StdAccount[] }> };
+  const result = await connectFeature.connect(silent ? { silent: true } : undefined);
   const pick = (list: readonly StdAccount[]) => list.find((a) => !a.chains || a.chains.some((c) => c.startsWith("solana:"))) ?? list[0];
   const account = pick(result.accounts) ?? pick(w.raw.accounts);
   if (!account) throw new Error("NO_ACCOUNT");
+  remember({ kind: "standard", name: w.name });
 
   let current = account.address;
   let off: (() => void) | undefined;
@@ -254,7 +286,11 @@ export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolS
     provider: makeProvider(w.raw, a, web3),
     disconnect: async () => {
       const feature = w.raw.features["standard:disconnect"] as { disconnect: () => Promise<void> } | undefined;
-      await feature?.disconnect();
+      try {
+        await feature?.disconnect();
+      } finally {
+        forgetSolanaWallet();
+      }
     },
     stop: () => off?.(),
   });
@@ -265,6 +301,7 @@ export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolS
     const next = pick(p.accounts);
     if (!next) {
       off?.();
+      forgetSolanaWallet();
       onChange(null);
       return;
     }
@@ -278,6 +315,7 @@ export async function connectSolanaWallet(w: SolWallet, onChange: (session: SolS
 
 type WcSession = { topic: string; peer?: { metadata?: { name?: string; icons?: string[] } }; namespaces: Record<string, { accounts: string[] }> };
 type WcClient = {
+  session: { getAll: () => (WcSession & { expiry?: number })[] };
   connect: (input: { requiredNamespaces: Record<string, { methods: string[]; chains: string[]; events: string[] }> }) => Promise<{ uri?: string; approval: () => Promise<WcSession> }>;
   request: (input: { topic: string; chainId: string; request: { method: string; params: unknown } }) => Promise<unknown>;
   disconnect: (input: { topic: string; reason: { code: number; message: string } }) => Promise<void>;
@@ -342,6 +380,48 @@ export function makeWalletConnectProvider(client: WcClient, topic: string, addre
   };
 }
 
+async function loadWalletConnect(): Promise<{ client: WcClient; web3: Web3Like }> {
+  const [signModule, web3] = await Promise.all([import("@walletconnect/sign-client"), import("@solana/web3.js")]);
+  type Initable = { init: (options: unknown) => Promise<unknown> };
+  const pick = (value: unknown): Initable | undefined => {
+    const v = value as { init?: unknown; default?: unknown } | undefined;
+    if (v && typeof v.init === "function") return v as Initable;
+    return v && v.default ? pick(v.default) : undefined;
+  };
+  const holder = signModule as unknown as { default?: unknown; SignClient?: unknown };
+  const SignClient = pick(holder.default) ?? pick(holder.SignClient) ?? pick(holder);
+  if (!SignClient) throw new Error("WC_UNAVAILABLE");
+  const client = (await SignClient.init({ projectId: WC_PROJECT_ID, metadata: WC_METADATA, customStoragePrefix: "alabaamafi-solana" })) as unknown as WcClient;
+  return { client, web3: web3 as unknown as Web3Like };
+}
+
+function buildWalletConnectSession(client: WcClient, wc: WcSession, address: string, web3: Web3Like, onChange: (session: SolSession | null) => void): SolSession {
+  const hangUp = () => client.disconnect({ topic: wc.topic, reason: { code: 6000, message: "User disconnected." } }).catch(() => undefined);
+  const gone = (e: { topic: string }) => {
+    if (e.topic !== wc.topic) return;
+    forgetSolanaWallet();
+    onChange(null);
+  };
+  client.on("session_delete", gone);
+  client.on("session_expire", gone);
+  remember({ kind: "walletconnect" });
+
+  return {
+    name: wc.peer?.metadata?.name || "WalletConnect",
+    icon: wc.peer?.metadata?.icons?.[0],
+    address,
+    provider: makeWalletConnectProvider(client, wc.topic, address, web3),
+    disconnect: async () => {
+      forgetSolanaWallet();
+      await hangUp();
+    },
+    stop: () => {
+      client.off("session_delete", gone);
+      client.off("session_expire", gone);
+    },
+  };
+}
+
 export function startSolanaWalletConnect(onChange: (session: SolSession | null) => void) {
   let cancelled = false;
   let resolveUri: (uri: string) => void = () => undefined;
@@ -350,17 +430,7 @@ export function startSolanaWalletConnect(onChange: (session: SolSession | null) 
   });
 
   const session = (async (): Promise<SolSession> => {
-    const [signModule, web3] = await Promise.all([import("@walletconnect/sign-client"), import("@solana/web3.js")]);
-    type Initable = { init: (options: unknown) => Promise<unknown> };
-    const pick = (value: unknown): Initable | undefined => {
-      const v = value as { init?: unknown; default?: unknown } | undefined;
-      if (v && typeof v.init === "function") return v as Initable;
-      return v && v.default ? pick(v.default) : undefined;
-    };
-    const holder = signModule as unknown as { default?: unknown; SignClient?: unknown };
-    const SignClient = pick(holder.default) ?? pick(holder.SignClient) ?? pick(holder);
-    if (!SignClient) throw new Error("WC_UNAVAILABLE");
-    const client = (await SignClient.init({ projectId: WC_PROJECT_ID, metadata: WC_METADATA, customStoragePrefix: "alabaamafi-solana" })) as unknown as WcClient;
+    const { client, web3 } = await loadWalletConnect();
     if (cancelled) throw new Error("CANCELLED");
 
     const pairing = await client.connect({ requiredNamespaces: { solana: { methods: ["solana_signTransaction", "solana_signMessage"], chains: [SOLANA_WC_CHAIN], events: [] } } });
@@ -378,26 +448,7 @@ export function startSolanaWalletConnect(onChange: (session: SolSession | null) 
       await hangUp();
       throw new Error("NO_ACCOUNT");
     }
-
-    const gone = (e: { topic: string }) => {
-      if (e.topic === wc.topic) onChange(null);
-    };
-    client.on("session_delete", gone);
-    client.on("session_expire", gone);
-
-    return {
-      name: wc.peer?.metadata?.name || "WalletConnect",
-      icon: wc.peer?.metadata?.icons?.[0],
-      address,
-      provider: makeWalletConnectProvider(client, wc.topic, address, web3 as unknown as Web3Like),
-      disconnect: async () => {
-        await hangUp();
-      },
-      stop: () => {
-        client.off("session_delete", gone);
-        client.off("session_expire", gone);
-      },
-    };
+    return buildWalletConnectSession(client, wc, address, web3, onChange);
   })();
 
   return {
@@ -407,6 +458,46 @@ export function startSolanaWalletConnect(onChange: (session: SolSession | null) 
       cancelled = true;
     },
   };
+}
+
+export async function restoreSolanaSession(onChange: (session: SolSession | null) => void): Promise<SolSession | null> {
+  const saved = recall();
+  if (!saved) return null;
+  try {
+    if (saved.kind === "walletconnect") {
+      const { client, web3 } = await loadWalletConnect();
+      const wc = client.session.getAll().find((x) => !!x.namespaces?.solana?.accounts?.length && (x.expiry === undefined || x.expiry * 1000 > Date.now()));
+      const address = wc?.namespaces.solana.accounts[0]?.split(":").pop();
+      if (!wc || !address) {
+        forgetSolanaWallet();
+        return null;
+      }
+      return buildWalletConnectSession(client, wc, address, web3, onChange);
+    }
+
+    const { getWallets } = await import("@wallet-standard/app");
+    const api = getWallets();
+    const find = () => (api.get() as unknown as StdWallet[]).filter(isSolanaWallet).find((w) => w.name === saved.name);
+    let wallet = find();
+    if (!wallet) {
+      wallet = await new Promise<StdWallet | undefined>((resolve) => {
+        const timer = setTimeout(() => {
+          off();
+          resolve(undefined);
+        }, 2000);
+        const off = api.on("register", () => {
+          const found = find();
+          if (!found) return;
+          clearTimeout(timer);
+          off();
+          resolve(found);
+        });
+      });
+    }
+    return wallet ? await connectSolanaWallet(toWallet(wallet), onChange, true) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function rpc(method: string, params: unknown[]): Promise<unknown> {
