@@ -1103,7 +1103,7 @@ export default function BridgePage() {
     if (units <= ZERO) return { text: "Enter an amount", hard: false };
     if (balance !== null && units > balance) return { text: "Insufficient balance", hard: true };
     if (reserve > ZERO && balance !== null && units + reserve > balance) return { text: "Keep a little USDC for the network fee", hard: true };
-    if (fromKey !== "Arc" && gasBalance !== null && gasBalance === ZERO) return { text: `You need some ${fromView?.gas ?? "gas coin"} on ${fromView?.label ?? "this network"} for gas`, hard: true };
+    if (fromKey !== "Arc" && gasBalance !== null && gasBalance === ZERO) return { text: `You need some ${fromView?.gas ?? "gas coin"} on ${fromView?.label ?? "this network"} for the network fee`, hard: true };
     if (quote && quote.receive !== null && quote.receive <= 0) return { text: "Amount is too small to cover the fees", hard: true };
     return null;
   }, [amount, units, balance, reserve, fromKey, toKey, gasBalance, quote, fromView, toView, fromSolana, toSolana, sol, forwarder, solFee, useOther, otherTrim, otherIsToken, otherValid, customRecipient, otherChecked]);
@@ -1645,7 +1645,7 @@ export default function BridgePage() {
                     <dd className="text-right text-slate-300 tabular-nums">{slipPct}%{slip.mode === "auto" || !customValid ? " (Auto)" : ""}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="text-slate-500">Gas fee</dt>
+                    <dt className="text-slate-500">Network fee</dt>
                     <dd className="text-right text-slate-300 tabular-nums">{gasText}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
