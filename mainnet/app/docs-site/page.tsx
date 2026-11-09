@@ -9,7 +9,7 @@ const brandFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700
 const SITE = "https://app.alabaamafi.xyz";
 const WEBSITE = "https://alabaamafi.xyz";
 const X_URL = "https://x.com/AlabaamaFi_xyz";
-const DISCORD_URL = "https://discord.gg/NBKHmUfw";
+const DISCORD_URL = "https://discord.gg/cnCqaZMz";
 const OFFSET = 170;
 const ARTICLE_WIDTH = "max-w-none";
 const UPDATED = "October 15, 2026";
@@ -72,7 +72,7 @@ const GlowIcon = ({ d, size = 24 }: { d: string; size?: number }) => (
 const PAGES = [
   { name: "Send", d: PAGE_ICONS.send, href: `${SITE}/send`, text: "Send USDC to any wallet address on Arc." },
   { name: "Swap", d: PAGE_ICONS.swap, href: `${SITE}/swap`, text: "Swap USDC, EURC and cirBTC on Arc with a clear rate and minimum received." },
-  { name: "Bridge", d: PAGE_ICONS.bridge, href: `${SITE}/bridge`, text: "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP." },
+  { name: "Bridge", d: PAGE_ICONS.bridge, href: `${SITE}/bridge`, text: "Move USDC between Arc and other networks, including Solana, or between two other networks, with Circle’s CCTP." },
   { name: "Activity", d: PAGE_ICONS.activity, href: `${SITE}/activity`, text: "See everything your wallet has done on Arc, newest first." },
 ];
 const Code = ({ children }: { children: ReactNode }) => <code className="rounded-md bg-white/[0.07] px-1.5 py-0.5 text-[13px] text-[#9fe0ff] [overflow-wrap:anywhere]">{children}</code>;
@@ -94,8 +94,8 @@ const SECTIONS: Sec[] = [
       {
         t: "ul",
         items: [
-          <><B>Non-custodial.</B> You connect your own EVM wallet and approve every action in it. AlabaamaFi never holds your funds and never sees your private keys.</>,
-          <><B>No account.</B> There is nothing to sign up for. Your settings and your swap and bridge history stay in your own browser.</>,
+          <><B>Non-custodial.</B> You connect your own wallet, an EVM wallet or a Solana wallet for Solana routes on the Bridge page, and approve every action in it. AlabaamaFi never holds your funds and never sees your private keys.</>,
+          <><B>No account.</B> There is nothing to sign up for. Your settings, your swap and bridge history and the name of the Solana wallet you last used stay in your own browser.</>,
           <><B>Built on trusted services.</B> Swaps and bridges use Circle’s App Kit, Activity reads Arc’s official explorer, and Robinhood Chain routes use LI.FI.</>,
           <><B>Clear numbers.</B> Every page shows what you pay, what you receive and what it costs before you confirm.</>,
         ],
@@ -113,7 +113,7 @@ const SECTIONS: Sec[] = [
       {
         t: "steps",
         items: [
-          <><B>Get a wallet.</B> Any EVM wallet works, for example MetaMask, Rabby, OKX Wallet, Brave Wallet, Coinbase Wallet, or any wallet that supports WalletConnect. Write your seed phrase on paper and keep it offline. Never share it.</>,
+          <><B>Get a wallet.</B> Any EVM wallet works, for example MetaMask, Rabby, OKX Wallet, Brave Wallet, Coinbase Wallet, or any wallet that supports WalletConnect. To bridge to or from Solana you also need a Solana wallet, such as Phantom, Solflare, Backpack or Jupiter Wallet. Write your seed phrase on paper and keep it offline. Never share it.</>,
           <><B>Open AlabaamaFi and connect.</B> Go to <A href={SITE}>app.alabaamafi.xyz</A> and tap <em>Connect Wallet</em> in the top corner. Choose your wallet and approve the connection.</>,
           <><B>Add Arc Mainnet.</B> On the home page tap <em>Add Arc Mainnet</em>, or enter the details by hand from the <a href="#networks" className="font-medium text-[#65caff] hover:text-white">Networks and tokens</a> section.</>,
           <><B>Get some USDC on Arc.</B> USDC is also Arc’s gas token, so you need a little to do anything. You can bridge it in from another network on the Bridge page, receive it from another wallet, or withdraw it from an exchange that supports Arc (check the network name before you withdraw).</>,
@@ -140,13 +140,13 @@ const SECTIONS: Sec[] = [
     kw: "concepts glossary usdc gas finality decimals slippage cctp approvals hash explorer",
     blocks: [
       { t: "h3", id: "usdc-gas", c: "USDC is the gas token" },
-      { t: "p", c: "On most networks you need a separate coin to pay fees. On Arc the fee is paid in USDC, so one balance covers both what you send and what it costs. The page keeps a little USDC aside for the fee when you press Max." },
+      { t: "p", c: "The network fee, also called gas, is what you pay the network to process a transaction. On most networks you need a separate coin for it, such as ETH, POL, AVAX or SOL. On Arc the fee is paid in USDC, so one balance covers both what you send and what it costs. The page keeps a little USDC aside for the fee when you press Max." },
       { t: "h3", id: "two-faces", c: "USDC has two faces on Arc" },
       { t: "p", c: <>USDC on Arc is the native coin (18 decimals) and also has an ERC-20 interface at <Code>0x3600…0000</Code> (6 decimals). AlabaamaFi uses the ERC-20 interface, so amounts always have up to 6 decimals.</> },
       { t: "h3", id: "finality", c: "Fast finality" },
       { t: "p", c: "Arc finalizes transactions in under a second. When your wallet reports the transaction as done, it is final. There is no waiting for extra confirmations." },
       { t: "h3", id: "slippage", c: "Slippage" },
-      { t: "p", c: "In a swap, slippage is how far the price may move against you before the swap is cancelled. In a bridge there is no price to move, so slippage only limits how much the fees may change before the bridge starts." },
+      { t: "p", c: "In a swap, slippage is how far the price may move against you before the swap is cancelled. A bridge has no slippage setting, because bridging USDC does not trade tokens and there is no price to move. If the fees change a lot before a bridge starts, the page stops and shows the new amount." },
       { t: "h3", id: "burn-mint", c: "Burn and mint (CCTP)" },
       { t: "p", c: "Circle’s Cross-Chain Transfer Protocol burns your USDC on the first network and mints the same amount of native USDC on the second one. It is not a wrapped token, and there is no pool that can run dry." },
       { t: "h3", id: "approvals", c: "Approvals" },
@@ -277,13 +277,13 @@ const SECTIONS: Sec[] = [
     id: "bridge",
     group: "Guides",
     title: "Bridge",
-    lead: "Move USDC between Arc and other networks, or between two other networks, with Circle’s CCTP.",
-    kw: "bridge cctp usdc networks fast transfer standard forwarder delivery fee slippage recipient resume progress road ethereum base arbitrum",
+    lead: "Move USDC between Arc and other networks, including Solana, or between two other networks, with Circle’s CCTP.",
+    kw: "bridge cctp usdc networks solana sol fast transfer standard forwarder delivery network fee refresh search recipient resume progress pending still on its way road ethereum base arbitrum",
     blocks: [
       { t: "h3", id: "bridge-how", c: "How the bridge works" },
       { t: "p", c: "The bridge uses Circle’s CCTP. Your USDC is burned on the first network, Circle confirms it, and the same amount of native USDC is minted on the second network. Fees are taken from the amount you receive or paid in gas, and the page shows them before you start." },
       { t: "h3", id: "bridge-networks", c: "Networks" },
-      { t: "p", c: <>The list matches the networks on <A href="https://bridge.usdc.com">bridge.usdc.com</A> that work with an EVM wallet, and it comes from Circle’s own SDK. Every network is clickable on both sides, Arc included, and the picker shows your USDC balance on each.</> },
+      { t: "p", c: <>The list comes from Circle’s own SDK and matches the networks on <A href="https://bridge.usdc.com">bridge.usdc.com</A>. It covers EVM networks and Solana. Every network is clickable on both sides, Arc included, and the picker shows your USDC balance on each. Use the search box at the top of the picker to find a network.</> },
       {
         t: "table",
         head: ["Network", "Receive without a wallet prompt", "Fast transfer from here"],
@@ -299,6 +299,7 @@ const SECTIONS: Sec[] = [
           ["Linea", "Yes", "Yes"],
           ["World Chain", "Yes", "Yes"],
           ["Ink", "Yes", "Yes"],
+          ["Solana", "Yes, Circle delivers (the wallet needs a USDC account)", "Yes"],
           ["Codex", "No, one extra confirmation", "Yes"],
           ["Plume", "No, one extra confirmation", "Yes"],
           ["HyperEVM, Monad, Sei, Sonic", "Yes", "Standard only"],
@@ -312,7 +313,7 @@ const SECTIONS: Sec[] = [
           <>Open <L href={`${SITE}/bridge`}>Bridge</L>.</>,
           <>Choose <B>From</B> and <B>To</B>. For example, Ethereum to Arc. The arrows button between them reverses the direction.</>,
           <>Enter the USDC amount. Your balance on the first network is shown, with <em>50%</em> and <em>Max</em> buttons.</>,
-          <>Wait for the quote. The <em>To</em> box shows what you will receive after fees.</>,
+          <>Wait for the quote. The <em>To</em> box shows what you will receive after fees, and the quote refreshes by itself every 15 seconds.</>,
           <>If the button says <B>Switch to …</B>, your wallet is on a different network. Tap it to switch to the network you are sending from.</>,
           <>Tap <B>Bridge</B> and confirm each prompt in your wallet.</>,
           <>Watch the progress card. When it ends you see <B>Bridge complete</B> with the amount sent, the amount received and a link to the explorer.</>,
@@ -323,17 +324,18 @@ const SECTIONS: Sec[] = [
         t: "table",
         head: ["Line", "What it means"],
         rows: [
-          [<B key="1">Slippage</B>, "How much the fees may change before the bridge starts. Auto is 0.5%."],
-          [<B key="2">Gas fee</B>, "The network fee on the network you send from. Shown in its coin, with the dollar value in brackets, for example 0.00021 ETH ($0.74). On Arc it is shown in dollars."],
+          [<B key="1">SOL for network fees</B>, "Solana only. Shows how much SOL your wallet has and whether it is Enough or Insufficient. If it is Insufficient, add a little SOL before you bridge."],
+          [<B key="2">Network fee</B>, "The fee on the network you send from. Shown in its coin, with the dollar value in brackets, for example 0.00021 ETH ($0.74). On Arc it is shown in dollars. From Solana it is about 0.0039 SOL: a small fee plus a small deposit Solana takes to store the transfer."],
           [<B key="3">Estimated time</B>, "Circle’s published time for your route, in seconds or minutes."],
-          [<B key="4">Fast transfer</B>, "On when Fast is turned on and available. Shows its small fee."],
-          [<B key="5">Bridge fee</B>, "Shown when Fast is off or not available."],
+          [<B key="4">Fast transfer</B>, "Shown only when Fast is turned on and available. Shows its small fee."],
+          [<B key="5">Bridge fee</B>, "Shown only when it is more than zero. A standard transfer usually has none."],
           [<B key="6">Delivery fee</B>, "The small fee for Circle to deliver the USDC on the receiving network for you."],
           [<B key="7">Recipient</B>, "Shown only if you send to a different address."],
         ],
       },
+      { t: "p", c: "While a quote is open it refreshes by itself every 15 seconds. The numbers dim for a moment and then show the new values. Right before the bridge starts, the page checks the fee once more." },
       { t: "h3", id: "bridge-fast", c: "Fast transfer or Standard" },
-      { t: "p", c: <>The lightning-bolt icon next to Settings turns <B>Fast transfer</B> on or off, and glows when it is on. Fast delivers your USDC in seconds, for a small fee taken from what you receive. Standard waits for the first network to finalize. Fast exists only on some source networks, and on Arc, Avalanche and Polygon the standard transfer is already fast.</> },
+      { t: "p", c: <>The lightning-bolt icon next to History turns <B>Fast transfer</B> on or off, and glows when it is on. Fast delivers your USDC in seconds, for a small fee taken from what you receive. Standard waits for the first network to finalize. Fast exists only on some source networks, and on Arc, Avalanche and Polygon the standard transfer is already fast.</> },
       {
         t: "table",
         head: ["Sending from", "Fast", "Standard"],
@@ -341,21 +343,36 @@ const SECTIONS: Sec[] = [
           ["Ethereum", "about 20 sec", "about 15–19 min"],
           ["Base, Arbitrum, OP Mainnet, Unichain", "about 8 sec", "about 15–19 min"],
           ["Linea", "about 8 sec", "about 6–32 hours"],
+          ["Solana", "about 8 sec", "about 25 sec"],
           ["Avalanche, Polygon", "not needed", "about 8 sec"],
           ["Arc", "not needed", "about 1 sec"],
         ],
       },
-      { t: "p", c: "These are Circle’s published confirmation times. Wallet confirmations add a little. If the Fast fee rises above your slippage limit, the transfer falls back to Standard." },
+      { t: "p", c: "These are Circle’s published confirmation times. Wallet confirmations add a little. If the Fast fee rises before your transfer starts, it falls back to Standard." },
       { t: "h3", id: "bridge-forwarder", c: "Why you confirm only once" },
-      { t: "p", c: "For most networks, Circle’s Forwarding Service delivers the USDC on the receiving network for you. You only confirm on the network you send from, and you never switch networks to “claim” anything. The price is a small delivery fee, shown in the quote. Where it is not available, the page tells you that receiving needs one extra confirmation." },
+      { t: "p", c: "For most networks, Circle’s Forwarding Service delivers the USDC on the receiving network for you. You only confirm on the network you send from, and you never switch networks to “claim” anything. The price is a small delivery fee, shown in the quote. Where it is not available, the page tells you that receiving needs one extra confirmation. Delivery to Solana always uses the forwarder." },
       { t: "h3", id: "bridge-other-address", c: "Send to a different address" },
-      { t: "p", c: "Turn on Send to a different address to deliver the USDC to another wallet on the receiving network. The page rejects invalid addresses and USDC contract addresses, and you must tick a box confirming the address is correct before you can bridge. Make sure the owner can use that address on the receiving network." },
+      { t: "p", c: "Turn on Send to a different address to deliver the USDC to another wallet on the receiving network. For Solana, paste a Solana address. The page rejects invalid addresses and USDC contract addresses, and you must tick a box confirming the address is correct before you can bridge. Make sure the owner can use that address on the receiving network." },
+      { t: "h3", id: "bridge-solana", c: "Bridging with Solana" },
+      { t: "p", c: "You can bridge USDC from Solana to other networks, and from other networks to Solana. Solana routes use a Solana wallet next to your EVM wallet." },
+      {
+        t: "ul",
+        items: [
+          <><B>From Solana.</B> Choose Solana as <em>From</em> and tap <em>Connect Solana wallet</em> on the main button. The card lists the Solana wallets your browser already has first, with a green dot, then Browser Wallet, then Phantom, Solflare, Backpack and Jupiter Wallet if you do not have them yet. On a phone, open AlabaamaFi inside your Solana wallet’s built-in browser. After you connect, the page shows your USDC balance, and your address with a red disconnect icon.</>,
+          <><B>Where the USDC goes.</B> To your connected EVM wallet. If none is connected, paste an address and tick the box that confirms it is correct.</>,
+          <><B>The network fee.</B> A Solana transfer costs about 0.0039 SOL: a small network fee plus a small deposit that Solana takes to store the transfer. The quote shows <em>SOL for network fees</em> as Enough or Insufficient. Keep at least about 0.005 SOL in the wallet.</>,
+          <><B>Fast transfer.</B> It works from Solana. Fast takes about 8 seconds and Standard about 25 seconds.</>,
+          <><B>To Solana.</B> Choose Solana as <em>To</em>. Connect a Solana wallet with the blue <em>Connect Solana wallet</em> button next to the network, or turn on <em>Send to a different address</em> and paste any Solana address. With a connected wallet you also see its USDC balance. Circle delivers the USDC for you.</>,
+          <><B>A USDC account is needed.</B> On Solana, a wallet keeps each token in its own token account. If the receiving wallet has never held USDC, receive a small amount there once first, or the delivery can fail.</>,
+          <><B>Your wallet is remembered.</B> The page saves the name of the Solana wallet you used, in your browser, and reconnects it when you come back, for example after a visit to the Swap page. Tap the red disconnect icon to forget it.</>,
+        ],
+      },
       { t: "h3", id: "bridge-progress", c: "The progress card" },
       { t: "p", c: "A card shows the route as a glowing road with four steps. The line lights up as each step finishes." },
       {
         t: "ul",
         items: [
-          <><B>Approve</B> lets the bridge contract use your USDC. It is skipped if you already approved enough.</>,
+          <><B>Approve</B> lets the bridge contract use your USDC. It is skipped if you already approved enough, and there is no Approve step from Solana.</>,
           <><B>Send</B> burns your USDC on the first network.</>,
           <><B>Circle confirms</B> the transfer.</>,
           <><B>Deliver</B>: the USDC is minted on the receiving network, by Circle’s forwarder or with one more confirmation from you.</>,
@@ -363,7 +380,8 @@ const SECTIONS: Sec[] = [
       },
       { t: "h3", id: "bridge-stuck", c: "If a bridge stops halfway" },
       { t: "p", c: "A step that fails is marked with a red cross, and the card says whether any USDC has left your wallet. If it has, do not send it again. Tap Resume bridge when it appears, or check your wallet activity and the explorer. Keep the page open until a bridge finishes, especially with Standard transfers." },
-      { t: "note", tone: "tip", title: "Tips", c: "You need a little of the first network’s gas coin (ETH, POL, AVAX and so on) to start a bridge, and the page warns you if you have none. Fast costs a little more but is much quicker. The History icon lists bridges made on this device." },
+      { t: "p", c: "If the card says Still on its way, in amber, your USDC has left and Circle is still delivering it. That is not a failure. The page keeps waiting for up to about 8 minutes with Fast and about 25 minutes with Standard. Once your USDC has left, you can hide the card and tap View progress to open it again. The transfer shows in History as waiting for delivery, and in Activity when it arrives. Do not send it again." },
+      { t: "note", tone: "tip", title: "Tips", c: "You need a little of the first network’s fee coin (ETH, POL, AVAX, SOL and so on) to start a bridge, and the page warns you if you have none. Fast costs a little more but is much quicker. The History icon lists bridges made on this device, including ones still waiting for delivery." },
     ],
   },
   {
@@ -433,7 +451,7 @@ const SECTIONS: Sec[] = [
         t: "table",
         head: ["Fee", "When", "Who gets it"],
         rows: [
-          [<B key="1">Network fee (gas)</B>, "Every transaction. On Arc it is paid in USDC. On other networks it is paid in that network’s coin.", "The network"],
+          [<B key="1">Network fee (gas)</B>, "Every transaction. On Arc it is paid in USDC. On other networks it is paid in that network’s coin, such as ETH or SOL.", "The network"],
           [<B key="2">Fast fee</B>, "Bridge with Fast transfer turned on.", "Circle’s Fast Transfer service"],
           [<B key="3">Delivery fee</B>, "Bridge to a network where Circle’s Forwarding Service delivers for you.", "Circle’s forwarder"],
           [<B key="4">Swap pricing</B>, "Swaps. Any service fee is already inside the quoted rate and minimum received.", "The swap service"],
@@ -443,7 +461,7 @@ const SECTIONS: Sec[] = [
       { t: "h3", id: "fees-finality", c: "Finality" },
       { t: "p", c: "Arc finalizes transactions in under a second, so one receipt means the transaction is final. Other networks finalize at their own pace, which is why a Standard bridge from them can take a while." },
       { t: "h3", id: "fees-estimates", c: "Estimates and exact fees" },
-      { t: "p", c: "Fees in a quote are estimates from the current gas price. Your wallet shows the exact fee when you confirm, and Send shows the real fee after the transaction is final." },
+      { t: "p", c: "Fees in a quote are estimates from the current gas price. Your wallet shows the exact fee when you confirm, and Send shows the real fee after the transaction is final. From Solana the fee is about 0.0039 SOL, which includes a small deposit Solana takes to store the transfer." },
     ],
   },
   {
@@ -511,9 +529,9 @@ const SECTIONS: Sec[] = [
       {
         t: "ul",
         items: [
-          "Your settings and your swap and bridge history are saved in your browser, on your device. Clearing browser data removes them.",
+          "Your settings, your swap and bridge history and the name of the Solana wallet you last connected (never keys) are saved in your browser, on your device. Clearing browser data removes them.",
           "AlabaamaFi has no accounts and no database of wallet activity.",
-          "The services behind the site, such as RPC providers, Circle, LI.FI, CoinGecko and the Arc explorer, can see requests such as your IP address and wallet address. Everything on a blockchain is public.",
+          "The services behind the site, such as RPC providers (including a Solana RPC provider), Circle, LI.FI, CoinGecko and the Arc explorer, can see requests such as your IP address and wallet address. Everything on a blockchain is public.",
         ],
       },
       { t: "note", tone: "warn", title: "Not financial advice", c: "AlabaamaFi is an interface, not an adviser. Using DeFi involves risk, including smart-contract risk, price movement and mistakes. Only use money you are comfortable risking." },
@@ -524,7 +542,7 @@ const SECTIONS: Sec[] = [
     group: "Safety and help",
     title: "Troubleshooting",
     lead: "Quick fixes for the most common problems.",
-    kw: "troubleshooting problem error fix wallet wrong network balance dash quote stuck pending chart unavailable",
+    kw: "troubleshooting problem error fix wallet wrong network balance dash quote stuck pending still on its way solana sol chart unavailable",
     blocks: [
       {
         t: "table",
@@ -537,6 +555,9 @@ const SECTIONS: Sec[] = [
           [<B key="5">No quote on Swap or Bridge</B>, "Check the amount and balance, wait a few seconds, and try again. A busy service can fail for a moment."],
           [<B key="6">“The price moved”</B>, "Nothing was spent. Review the new numbers and tap Swap again."],
           [<B key="7">Bridge looks stuck</B>, "Keep the page open. Standard transfers from some networks take 15 minutes or more. If USDC already left, do not resend. Use Resume bridge or check the explorer."],
+          [<B key="11">“Still on its way”</B>, "Your USDC has left and Circle is still delivering it. Wait a few minutes, do not send again, and check Activity. You can hide the card and tap View progress to open it again."],
+          [<B key="12">“Not enough SOL for network fees”</B>, "Add a little SOL to your Solana wallet. Keep at least about 0.005 SOL for a bridge."],
+          [<B key="13">The Solana wallet is not connected after I change pages</B>, "The page reconnects a Solana wallet you used before. If your wallet asks again, tap Connect Solana wallet and approve."],
           [<B key="8">Wallet prompt did not appear</B>, "Open your wallet manually. Some wallets show the request only inside the wallet app."],
           [<B key="9">An old transaction is missing in Activity</B>, "History loads in pages. Scroll down or tap Load more. A brand-new transaction can take a moment to appear."],
           [<B key="10">Chart is unavailable</B>, "Prices and charts come from a service with request limits. Wait a minute and try again. Swapping is not affected."],
