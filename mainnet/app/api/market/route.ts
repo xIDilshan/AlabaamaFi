@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
 
-/*
-  Market data for the Swap page (price, 24h change, market cap, 24h volume, charts).
-  Runs on the server, so the CoinGecko key stays secret and answers are cached.
-  Key (optional): COINGECKO_API_KEY in .env.local and in Vercel.
-
-  Version 4: ranges 1H, 4H, 1D, 7D, 1M, 3M, 1Y, line / candle charts, and gas coin prices (type=native).
-  Test: /api/market?type=chart&kind=candle&token=EURC&range=3M  should answer {"candles":[...]}
-*/
-
 const CG = "https://api.coingecko.com/api/v3";
 const KEY = process.env.COINGECKO_API_KEY;
 
-// cirBTC on Ethereum. CoinGecko tracks it by this address.
 const ETH_CIRBTC = "0x72dfb2e44f59c5ad2bafe84314e5b99a7cd5075e";
 
 const STATS = "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true";
@@ -26,7 +16,6 @@ const RANGES: Record<string, { hours?: number; days?: number }> = {
   "3M": { days: 90 },
   "1Y": { days: 365 },
 };
-// older pages sent ?days=1|7|30|90|365
 const DAYS_TO_RANGE: Record<string, string> = { "1": "1D", "7": "7D", "30": "1M", "90": "3M", "365": "1Y" };
 
 async function cg(path: string, revalidate: number) {
@@ -50,7 +39,6 @@ function downsample<T>(items: T[], max = 140): T[] {
   return Array.from({ length: max }, (_, i) => items[Math.round(i * step)]);
 }
 
-/** Candles from a price line: each candle goes from the previous price to this one. */
 function toCandles(points: [number, number][]) {
   const out: [number, number, number, number, number][] = [];
   for (let i = 1; i < points.length; i++) {
@@ -80,7 +68,6 @@ export async function GET(request: Request) {
     const headers = { "Cache-Control": `public, s-maxage=${spec.hours ? 60 : 300}, stale-while-revalidate=900` };
     const revalidate = spec.hours ? 60 : 300;
 
-    // [path, note, how to read the answer]
     const sources: { path: string; note?: string; ohlc?: boolean }[] = [];
     if (spec.hours) {
       const to = Math.floor(Date.now() / 1000);
@@ -123,20 +110,21 @@ export async function GET(request: Request) {
           }
         }
       } catch {
-        /* try the next source */
+        continue;
       }
     }
     return NextResponse.json({ error: "unavailable" }, { status: 502 });
   }
 
-  /* ---- gas coin prices (for the Bridge page: ETH, POL, AVAX in dollars) ---- */
+  /* ---- gas coin prices (for the Bridge page: ETH, POL, AVAX, SOL in dollars) ---- */
   if (type === "native") {
     try {
-      const d = await cg("/simple/price?ids=ethereum,polygon-ecosystem-token,avalanche-2&vs_currencies=usd", 60);
+      const d = await cg("/simple/price?ids=ethereum,polygon-ecosystem-token,avalanche-2,solana&vs_currencies=usd", 60);
       const native: Record<string, number> = {};
       if (typeof d?.ethereum?.usd === "number") native.ETH = d.ethereum.usd;
       if (typeof d?.["polygon-ecosystem-token"]?.usd === "number") native.POL = d["polygon-ecosystem-token"].usd;
       if (typeof d?.["avalanche-2"]?.usd === "number") native.AVAX = d["avalanche-2"].usd;
+      if (typeof d?.solana?.usd === "number") native.SOL = d.solana.usd;
       return NextResponse.json({ native }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } });
     } catch {
       return NextResponse.json({ native: {} }, { status: 502 });
@@ -159,7 +147,6 @@ export async function GET(request: Request) {
   const prices = {
     USDC: row(s["usd-coin"]),
     EURC: row(s["euro-coin"]),
-    // If cirBTC isn't priced yet, use Bitcoin's price (it is backed 1:1 by BTC) without market cap / volume.
     cirBTC: cirRow ?? (btcRow ? { ...btcRow, marketCap: null, volume24h: null, note: "Priced from BTC" } : null),
   };
 
