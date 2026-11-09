@@ -550,6 +550,14 @@ export async function readSolanaLamports(owner: string): Promise<bigint | null> 
 export const SOLANA_WALLET_LINKS: Record<string, { site: string; chrome: string; browse: (url: string, origin: string) => string }> = {
   phantom: { site: "https://phantom.app/download", chrome: "https://chromewebstore.google.com/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa", browse: (u, o) => `https://phantom.app/ul/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
   solflare: { site: "https://solflare.com/download", chrome: "https://chromewebstore.google.com/detail/solflare-wallet/bhhhlbepdkbapadjdnnojkbgioiodbic", browse: (u, o) => `https://solflare.com/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
+  "jupiter wallet": {
+    site: "https://jup.ag/wallet",
+    chrome: "https://chromewebstore.google.com/detail/jupiter-wallet/iledlaeogohbilgbfhmbgkgmpplbfboh",
+    browse: () =>
+      typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? "https://apps.apple.com/us/app/jupiter-mobile-solana-wallet/id6484069059"
+        : "https://play.google.com/store/apps/details?id=ag.jup.jupiter.android",
+  },
   backpack: { site: "https://backpack.app/downloads", chrome: "https://chromewebstore.google.com/detail/backpack/aflkmfhebedbjioipglgcbcmnbpgliof", browse: (u, o) => `https://backpack.app/ul/v1/browse/${encodeURIComponent(u)}?ref=${encodeURIComponent(o)}` },
 };
 
@@ -599,4 +607,21 @@ export function wcDeepLink(wallet: WcWallet, uri: string): string {
     return `${base}wc?uri=${encoded}`;
   }
   return uri;
+}
+
+export const SOLANA_MAIN_WALLETS = [
+  { name: "Phantom", key: "phantom" },
+  { name: "Solflare", key: "solflare" },
+  { name: "Backpack", key: "backpack" },
+  { name: "Jupiter Wallet", key: "jupiter" },
+];
+
+export function arrangeSolanaWallets<T extends { name: string }>(wallets: readonly T[]) {
+  const rank = (w: T) => {
+    const i = SOLANA_MAIN_WALLETS.findIndex((m) => w.name.toLowerCase().includes(m.key));
+    return i < 0 ? SOLANA_MAIN_WALLETS.length : i;
+  };
+  const installed = [...wallets].sort((a, b) => rank(a) - rank(b));
+  const missing = SOLANA_MAIN_WALLETS.filter((m) => !wallets.some((w) => w.name.toLowerCase().includes(m.key)));
+  return { installed, missing };
 }
