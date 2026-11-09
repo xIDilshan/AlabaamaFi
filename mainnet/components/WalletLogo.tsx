@@ -35,6 +35,7 @@ const RULES: Rule[] = [
   { keys: ["enkrypt"], wallet: ["enkrypt"], letter: "E", color: "#7b3fe4" },
   { keys: ["keplr"], files: ["/wallets/keplr.png"], wallet: ["keplr"], variant: "branded", strip: true, letter: "K", color: "#3b82f6" },
   { keys: ["backpack"], wallet: ["backpack"], letter: "B", color: "#e33e3f" },
+  { keys: ["solflare"], wallet: ["solflare"], variant: "branded", letter: "S", color: "#f5c518" },
   { keys: ["jupiter"], token: ["JUP"], variant: "branded", letter: "J", color: "#2a8f6a" },
   { keys: ["browser wallet", "injected"], glyph: true, letter: "B", color: "#1978f5" },
 ];
