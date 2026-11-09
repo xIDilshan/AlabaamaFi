@@ -15,20 +15,62 @@ const WC_METADATA = {
 
 const PUBLIC_SOLANA_HOSTS = /(^|\.)solana\.com$|^solana-rpc\.publicnode\.com$/;
 
+const SOLANA_RPC_METHODS = new Set([
+  "getAccountInfo",
+  "getBalance",
+  "getBlockHeight",
+  "getBlockTime",
+  "getEpochInfo",
+  "getFeeForMessage",
+  "getGenesisHash",
+  "getHealth",
+  "getLatestBlockhash",
+  "getMinimumBalanceForRentExemption",
+  "getMultipleAccounts",
+  "getRecentPrioritizationFees",
+  "getSignatureStatuses",
+  "getSignaturesForAddress",
+  "getSlot",
+  "getTokenAccountBalance",
+  "getTokenAccountsByOwner",
+  "getTokenSupply",
+  "getTransaction",
+  "getTransactionCount",
+  "getVersion",
+  "isBlockhashValid",
+  "sendTransaction",
+  "simulateTransaction",
+]);
+
+export function looksLikeSolanaRpc(body: string): boolean {
+  try {
+    const parsed = JSON.parse(body) as unknown;
+    const calls = Array.isArray(parsed) ? parsed : [parsed];
+    return calls.length > 0 && calls.every((c) => !!c && typeof c === "object" && SOLANA_RPC_METHODS.has(String((c as { method?: unknown }).method)));
+  } catch {
+    return false;
+  }
+}
+
 export function installSolanaRpcRedirect() {
   if (typeof window === "undefined") return;
   const w = window as unknown as { __alabaamafiSolanaFetch?: boolean; fetch: typeof fetch };
   if (w.__alabaamafiSolanaFetch) return;
   w.__alabaamafiSolanaFetch = true;
   const original = w.fetch.bind(window);
-  w.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+  w.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     try {
+      const isRequest = typeof input === "object" && !(input instanceof URL);
       const raw = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
       const target = new URL(raw, window.location.href);
-      const method = (init?.method ?? (typeof input === "object" && "method" in input ? (input as Request).method : "GET")).toUpperCase();
-      if (method === "POST" && PUBLIC_SOLANA_HOSTS.test(target.hostname)) {
-        const proxy = new URL(SOLANA_RPC_PROXY, window.location.href).href;
-        return typeof input === "object" && !(input instanceof URL) ? original(new Request(proxy, input as Request)) : original(proxy, init);
+      const method = (init?.method ?? (isRequest ? (input as Request).method : "GET")).toUpperCase();
+      if (method === "POST" && target.origin !== window.location.origin) {
+        let text: string | null = typeof init?.body === "string" ? init.body : null;
+        if (text === null && isRequest && !init?.body) text = await (input as Request).clone().text();
+        if (PUBLIC_SOLANA_HOSTS.test(target.hostname) || (text !== null && looksLikeSolanaRpc(text))) {
+          const proxy = new URL(SOLANA_RPC_PROXY, window.location.href).href;
+          return isRequest ? original(new Request(proxy, input as Request)) : original(proxy, init);
+        }
       }
     } catch {
       return original(input, init);
