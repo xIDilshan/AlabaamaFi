@@ -35,6 +35,9 @@ const TOKENS: Record<Sym, { name: string; address: string; decimals: number }> =
 
 /* ---------- safety limits ---------- */
 const PRICE_DRIFT = 0.005;
+const PILL_FOLD_MS = 650;
+const PILL_CIRCLE_MS = 750;
+const PILL_UNFOLD_MS = 800;
 const SWAP_GAS_ESTIMATE = 300000;
 const FEE_FLOOR = BigInt("20000000000");
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
@@ -568,6 +571,7 @@ function ChartPanel({ sym, setSym, market, compact = false }: { sym: Sym; setSym
 function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: string }) {
   const isDone = stage === "done-circle" || stage === "done-open";
   const open = stage === "swap-open" || stage === "done-open";
+  const foldMs = stage === "done-open" ? PILL_UNFOLD_MS : stage === "swap-fold" ? PILL_FOLD_MS : 500;
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex -translate-y-1/2 justify-center" role="status" aria-live="polite">
       <a
@@ -581,7 +585,7 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
         <span className="flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
           {isDone ? (
             <svg key="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 5px rgba(52,211,153,0.9))" }}>
-              <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .45s ease-out .1s forwards" }} />
+              <path d="m5 12.5 4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" style={{ animation: "checkDraw .6s ease-out .1s forwards" }} />
             </svg>
           ) : (
             <span key="swap" className="text-[#39c4ff]" style={{ filter: "drop-shadow(0 0 6px rgba(57,196,255,0.8))" }}>
@@ -591,7 +595,7 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
         </span>
         <span
           className="grid overflow-hidden"
-          style={{ gridTemplateColumns: open ? "1fr" : "0fr", opacity: open ? 1 : 0, transition: "grid-template-columns .5s cubic-bezier(.3,.8,.3,1), opacity .35s ease" }}
+          style={{ gridTemplateColumns: open ? "1fr" : "0fr", opacity: open ? 1 : 0, transition: `grid-template-columns ${foldMs}ms cubic-bezier(.3,.8,.3,1), opacity ${Math.round(foldMs * 0.7)}ms ease` }}
         >
           <span className="block min-w-0 overflow-hidden whitespace-nowrap pr-4">{isDone ? "Swap succeeded" : "Swapping"}</span>
         </span>
@@ -658,10 +662,19 @@ export default function SwapPage() {
   const [marketFailed, setMarketFailed] = useState(false);
   const [history, setHistory] = useState<SwapRecord[]>([]);
   const [slip, setSlip] = useState<Slip>({ mode: "auto", custom: "1" });
+  const [slipView, setSlipView] = useState<"auto" | "custom">("auto");
+  const [draftCustom, setDraftCustom] = useState("1");
+  const [quoteTick, setQuoteTick] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const kitRef = useRef<KitLike | null>(null);
   const adapterRef = useRef<unknown>(null);
   const swapLock = useRef(false);
+  const silentRef = useRef(false);
+  const canRefreshRef = useRef(false);
+  const prevQuoteKeyRef = useRef("");
+  const refreshStartRef = useRef(0);
+  const refreshNowRef = useRef<() => void>(() => undefined);
 
   const pillRef = useRef<PillStage>(null);
   const pillTimers = useRef<number[]>([]);
@@ -690,16 +703,37 @@ export default function SwapPage() {
     clearPillTimers();
     const wasShown = pillRef.current === "swap-circle" || pillRef.current === "swap-open";
     if (wasShown) setStage("swap-fold");
-    const t1 = wasShown ? 500 : 0;
+    const t1 = wasShown ? PILL_FOLD_MS : 0;
     later(() => setStage("done-circle"), t1);
-    later(() => setStage("done-open"), t1 + 550);
-    later(() => setStage(null), t1 + 550 + 9000);
+    later(() => setStage("done-open"), t1 + PILL_CIRCLE_MS);
+    later(() => setStage(null), t1 + PILL_CIRCLE_MS + PILL_UNFOLD_MS + 9000);
   };
   useEffect(() => () => pillTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
   const customPct = parseFloat(slip.custom);
   const customValid = Number.isFinite(customPct) && customPct >= 0.01 && customPct <= 50;
   const slippageBps = slip.mode === "custom" && customValid ? Math.round(customPct * 100) : autoBps(from, to);
+  const draftPct = parseFloat(draftCustom);
+  const draftValid = Number.isFinite(draftPct) && draftPct >= 0.01 && draftPct <= 50;
+  const openSettings = () => {
+    setSlipView(slip.mode);
+    setDraftCustom(slip.custom);
+    setModal("settings");
+  };
+  const pickMode = (m: "auto" | "custom") => {
+    setSlipView(m);
+    if (m === "auto") setSlip((p) => ({ ...p, mode: "auto" }));
+  };
+  const cancelCustom = () => {
+    setSlipView(slip.mode);
+    setDraftCustom(slip.custom);
+    setModal(null);
+  };
+  const applyCustom = () => {
+    if (!draftValid) return;
+    setSlip({ mode: "custom", custom: draftCustom });
+    setModal(null);
+  };
 
   const historyKey = account ? `alabaamafi:swaps:${account.toLowerCase()}` : null;
   useEffect(() => {
@@ -832,13 +866,20 @@ export default function SwapPage() {
   const balance = balances[from];
   const busy = phase === "swapping";
   const ready = !!account && chainOk === true;
+  canRefreshRef.current = !!quote && !quoting && phase === "idle" && modal === null && !marketOpen;
 
+  const quoteKey = `${ready}|${!!provider}|${from}|${to}|${cleanAmount}|${slippageBps}|${account}`;
   useEffect(() => {
-    setQuote(null);
-    setQuoteError("");
+    const silent = silentRef.current && prevQuoteKeyRef.current === quoteKey;
+    silentRef.current = false;
+    prevQuoteKeyRef.current = quoteKey;
+    if (!silent) {
+      setQuote(null);
+      setQuoteError("");
+    }
     if (!ready || !units || units <= ZERO) return;
     let live = true;
-    setQuoting(true);
+    if (!silent) setQuoting(true);
     const t = setTimeout(async () => {
       try {
         const kit = await getKit();
@@ -852,22 +893,45 @@ export default function SwapPage() {
         });
         if (live) setQuote({ out: est.estimatedOutput.amount, min: est.stopLimit.amount });
       } catch (e) {
-        if (live) setQuoteError(explain(e, "Couldn't get a price right now."));
+        if (live && !silent) setQuoteError(explain(e, "Couldn't get a price right now."));
       } finally {
-        if (live) setQuoting(false);
+        if (live && !silent) setQuoting(false);
+        if (silent) window.setTimeout(() => setRefreshing(false), Math.max(0, 1000 - (Date.now() - refreshStartRef.current)));
       }
-    }, 500);
+    }, silent ? 0 : 500);
     return () => {
       live = false;
       clearTimeout(t);
-      setQuoting(false);
+      if (!silent) setQuoting(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, from, to, cleanAmount, slippageBps, provider, account]);
+  }, [ready, from, to, cleanAmount, slippageBps, provider, account, quoteTick]);
+
+  refreshNowRef.current = () => {
+    refreshStartRef.current = Date.now();
+    setRefreshing(true);
+    silentRef.current = true;
+    setQuoteTick((n) => n + 1);
+    loadBalances();
+  };
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (!canRefreshRef.current || document.visibilityState !== "visible") return;
+      refreshNowRef.current();
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, []);
+  useEffect(() => {
+    if (!refreshing) return;
+    const t = window.setTimeout(() => setRefreshing(false), 8000);
+    return () => window.clearTimeout(t);
+  }, [refreshing]);
 
   useEffect(() => {
-    setNetFee(null);
-    if (!provider || !quote) return;
+    if (!provider || !quote) {
+      setNetFee(null);
+      return;
+    }
     let live = true;
     provider
       .request({ method: "eth_gasPrice" })
@@ -1019,6 +1083,15 @@ export default function SwapPage() {
       }
       if (receipt.status !== "0x1") throw new Error("TX_REVERTED");
 
+      const paid = `${tidy(cleanAmount, fromDec)} ${from}`;
+      setPillUrl(url);
+      showDone();
+      setPhase("idle");
+      setAmount("");
+      setQuote(null);
+      setMessage("");
+      loadBalances();
+
       let got = tidy(result.amountOut ?? quote.out, toDec);
       let warn = "";
       const after = await readBalance(to);
@@ -1028,15 +1101,7 @@ export default function SwapPage() {
         const minUnits = parseUnits(trimDecimals(quote.min, toDec), toDec);
         if (minUnits !== null && recv < minUnits) warn = "You received less than the minimum shown. Please check the transaction on the explorer.";
       }
-
-      const paid = `${tidy(cleanAmount, fromDec)} ${from}`;
-      setPillUrl(url);
-      showDone();
-      setPhase("idle");
-      setAmount("");
-      setQuote(null);
-      setMessage(warn);
-      loadBalances();
+      if (warn) setMessage(warn);
       if (historyKey) {
         const next = [{ id: result.txHash, t: Date.now(), from, to, paid, got: `${got} ${to}`, url }, ...history].slice(0, 50);
         setHistory(next);
@@ -1126,7 +1191,7 @@ export default function SwapPage() {
                     <IconButton label="Price chart" onClick={() => { setChartSym(to); setShowChart((v) => !v); }} className="hidden min-[900px]:flex">
                       <span className={showChart ? "text-[#39c4ff]" : ""}><Svg d={ICON_CHART} /></span>
                     </IconButton>
-                    <IconButton label="Settings" onClick={() => setModal("settings")}>
+                    <IconButton label="Settings" onClick={openSettings}>
                       <Svg d={ICON_SETTINGS} />
                     </IconButton>
                   </div>
@@ -1188,7 +1253,7 @@ export default function SwapPage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <div
-                        className={`min-w-0 flex-1 truncate tabular-nums tracking-tight ${quote ? "text-white" : "text-slate-700"}`}
+                        className={`min-w-0 flex-1 truncate tabular-nums tracking-tight transition-opacity duration-300 ${refreshing ? "opacity-40" : ""} ${quote ? "text-white" : "text-slate-700"}`}
                         style={{ fontSize: amountFont, fontWeight: 600, lineHeight: 1.1, fontFamily: manrope.style.fontFamily }}
                       >
                         {quote ? tidy(quote.out, toDec) : quoting ? "…" : "0.00"}
@@ -1196,7 +1261,7 @@ export default function SwapPage() {
                       <TokenButton sym={to} onClick={() => setModal("to")} disabled={busy} />
                     </div>
                     <div className="mt-1.5">
-                      <p className="text-sm text-slate-500 tabular-nums">{fmtUsd(getUsd)}</p>
+                      <p className={`text-sm text-slate-500 tabular-nums transition-opacity duration-300 ${refreshing ? "opacity-40" : ""}`}>{fmtUsd(getUsd)}</p>
                     </div>
                   </div>
 
@@ -1205,7 +1270,7 @@ export default function SwapPage() {
 
                 {/* ---------- PRICE INFO ---------- */}
                 {quote && (
-                  <dl className="mt-4 space-y-2 px-1 text-[13px] sm:mt-5 sm:text-sm">
+                  <dl className={`mt-4 space-y-2 px-1 text-[13px] transition-opacity duration-300 sm:mt-5 sm:text-sm ${refreshing ? "opacity-40" : ""}`}>
                     {rate !== null && (
                       <div className="flex justify-between gap-4">
                         <dt className="text-slate-500">Rate</dt>
@@ -1252,7 +1317,7 @@ export default function SwapPage() {
                 </div>
 
                 {phase === "failed" && (
-                  <button onClick={() => { setPhase("idle"); setMessage(""); }} className={`${SECONDARY_BUTTON} mt-3`}>Try again</button>
+                  <button onClick={() => { setPhase("idle"); setMessage(""); setQuoteTick((n) => n + 1); }} className={`${SECONDARY_BUTTON} mt-3`}>Try again</button>
                 )}
 
                 {/* ---------- MOBILE MARKET VIEW ---------- */}
@@ -1298,12 +1363,12 @@ export default function SwapPage() {
         <p className="mt-1 text-xs leading-5 text-slate-500">The most the price can move against you before the swap is cancelled.</p>
         <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-white/[0.05] p-1">
           {(["auto", "custom"] as const).map((m) => (
-            <button key={m} onClick={() => setSlip({ ...slip, mode: m })} className={`rounded-full py-2 text-sm font-semibold capitalize transition ${slip.mode === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
+            <button key={m} onClick={() => pickMode(m)} className={`rounded-full py-2 text-sm font-semibold capitalize transition ${slipView === m ? "bg-gradient-to-r from-[#12b9ff] via-[#1978f5] to-[#273ee8] text-white" : "text-slate-400 hover:text-white"}`}>
               {m}
             </button>
           ))}
         </div>
-        {slip.mode === "auto" ? (
+        {slipView === "auto" ? (
           <p className="mt-3 text-xs leading-5 text-slate-400">
             Auto uses <span className="font-semibold text-white">{autoBps(from, to) / 100}%</span> for this pair: 0.5% for USDC and EURC, 1% whenever cirBTC is involved.
           </p>
@@ -1311,17 +1376,17 @@ export default function SwapPage() {
           <div className="mt-3">
             <div className="flex flex-wrap gap-2">
               {SLIP_PRESETS.map((p) => (
-                <button key={p} onClick={() => setSlip({ ...slip, custom: p })} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(slip.custom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
+                <button key={p} onClick={() => setDraftCustom(p)} className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${parseFloat(draftCustom) === parseFloat(p) ? "bg-[#1978f5]/30 text-[#8fd4ff]" : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"}`}>
                   {p}%
                 </button>
               ))}
             </div>
-            <div className={`mt-3 flex items-center rounded-2xl border bg-white/[0.035] px-4 py-3 ${customValid || !slip.custom ? "border-white/[0.07]" : "border-red-400/40"}`}>
+            <div className={`mt-3 flex items-center rounded-2xl border bg-white/[0.035] px-4 py-3 ${draftValid || !draftCustom ? "border-white/[0.07]" : "border-red-400/40"}`}>
               <input
-                value={slip.custom}
+                value={draftCustom}
                 onChange={(e) => {
                   const v = e.target.value.replace(",", ".");
-                  if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) setSlip({ ...slip, custom: v });
+                  if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) setDraftCustom(v);
                 }}
                 inputMode="decimal"
                 placeholder="Custom"
@@ -1331,9 +1396,17 @@ export default function SwapPage() {
               />
               <span className="text-slate-400">%</span>
             </div>
-            <p className={`mt-2 text-xs leading-5 ${!customValid ? "text-red-300" : customPct > 5 || customPct < 0.1 ? "text-amber-300" : "text-slate-500"}`}>
-              {!customValid ? "Enter a value from 0.01% to 50%. Auto is used until then." : customPct > 5 ? "High slippage: you could receive much less than expected." : customPct < 0.1 ? "Very low slippage: the swap may fail if the price moves." : `You'll receive at least ${(100 - customPct).toFixed(2)}% of the estimated amount.`}
+            <p className={`mt-2 text-xs leading-5 ${!draftValid ? "text-red-300" : draftPct > 5 || draftPct < 0.1 ? "text-amber-300" : "text-slate-500"}`}>
+              {!draftValid ? "Enter a value from 0.01% to 50%." : draftPct > 5 ? "High slippage: you could receive much less than expected." : draftPct < 0.1 ? "Very low slippage: the swap may fail if the price moves." : `You'll receive at least ${(100 - draftPct).toFixed(2)}% of the estimated amount.`}
             </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={cancelCustom} className={SECONDARY_BUTTON}>
+                Cancel
+              </button>
+              <button type="button" onClick={applyCustom} disabled={!draftValid} className={BUTTON}>
+                Done
+              </button>
+            </div>
           </div>
         )}
       </Modal>
