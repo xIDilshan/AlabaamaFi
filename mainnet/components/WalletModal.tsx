@@ -414,7 +414,7 @@ export default function WalletModal({
   }
 
   const mobile = isMobileDevice();
-  const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0;
+  const hasInstalledGroup = showBrowserWallet || installedOthers.length > 0 || !!metaMaskConnector || !!binanceConnector;
   const showQr = qr !== null;
   const shownError = connectError ? ERROR_MESSAGE : localError;
 
@@ -437,17 +437,21 @@ export default function WalletModal({
       <div
         className="relative my-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/[0.07] bg-[#040506] shadow-2xl shadow-black/60"
         style={{
-          height: heights ? (showQr ? heights.qr : heights.list) : undefined,
+          height: heights ? (showQr ? heights.qr : heights.list) + 2 : undefined,
           maxHeight: "calc(100vh - 2rem)",
           transition: heights ? "height .32s cubic-bezier(.32,.72,0,1)" : undefined,
         }}
       >
         {/* ---------- wallet list ---------- */}
-        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(!showQr, "-100%")} aria-hidden={showQr}>
+        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={panelStyle(!showQr, "-100%")} aria-hidden={showQr}>
           <div ref={listRef} className="p-4 sm:p-5">
             <CardHeader left={<WalletGlyph />} title="Connect Wallet" onClose={onClose} />
 
             <div className="space-y-2">
+              {metaMaskConnector && <Row name="MetaMask" dot disabled={isPending && !showQr} onClick={handleMetaMaskClick} />}
+
+              {binanceConnector && <Row name="Binance Wallet" dot disabled={isPending && !showQr} onClick={handleBinanceClick} />}
+
               {installedOthers.map((connector) => (
                 <Row key={connector.uid} name={connector.name} icon={connector.icon} dot disabled={isPending} onClick={() => handleConnect(connector, isBrave(connector) ? browserConnector : undefined)} />
               ))}
@@ -458,7 +462,7 @@ export default function WalletModal({
 
               {hasInstalledGroup && <div className="!my-3 h-px bg-white/[0.07]" />}
 
-              <Row name="MetaMask" dot={!!metaMaskConnector} disabled={isPending && !showQr} onClick={handleMetaMaskClick} />
+              {!metaMaskConnector && <Row name="MetaMask" disabled={isPending && !showQr} onClick={handleMetaMaskClick} />}
 
               {walletConnectConnector && (
                 <Row name="WalletConnect" dot={mobile} onClick={() => (mobile ? openWalletConnectWindow() : showQrCard({ name: "WalletConnect" }))} />
@@ -468,8 +472,8 @@ export default function WalletModal({
                 <Row name="Coinbase Wallet" dot disabled={isPending} onClick={() => handleConnect(coinbaseConnector)} />
               )}
 
-              {(walletConnectConnector || binanceConnector) && (
-                <Row name="Binance Wallet" dot={!!binanceConnector} disabled={isPending && !showQr} onClick={handleBinanceClick} />
+              {walletConnectConnector && !binanceConnector && (
+                <Row name="Binance Wallet" disabled={isPending && !showQr} onClick={handleBinanceClick} />
               )}
             </div>
 
@@ -478,7 +482,7 @@ export default function WalletModal({
         </div>
 
         {/* ---------- QR code ---------- */}
-        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
+        <div className="absolute inset-x-0 top-0 max-h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={panelStyle(showQr, "100%")} aria-hidden={!showQr}>
           <div ref={qrRef} className="p-4 sm:p-5">
             <CardHeader
               left={
