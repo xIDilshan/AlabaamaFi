@@ -37,7 +37,7 @@ const moreLinks = [
   { href: "/faq", label: "FAQ", icon: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" },
 ];
 const X_URL = "https://x.com/AlabaamaFi_xyz";
-const DISCORD_URL = "https://discord.gg/NBKHmUfw";
+const DISCORD_URL = "https://discord.gg/cnCqaZMz";
 const GITHUB_URL = "https://github.com/xIDilshan/AlabaamaFi";
 
 const XLogo = ({ size = 16 }: { size?: number }) => (
@@ -72,6 +72,9 @@ const socials = [
 
 const connectButton =
   "bg-gradient-to-r from-[#13b8ff] via-[#1688f5] to-[#263be8] text-white shadow-[0_8px_30px_rgba(19,145,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_12px_38px_rgba(19,145,255,0.32)] active:translate-y-0";
+
+const connectedButton =
+  "border border-white/10 bg-white/[0.045] text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] active:translate-y-0";
 
 type HeaderProps = {
   onMenuClick?: () => void;
@@ -246,7 +249,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             ) : (
               <button
                 onClick={handleWalletClick}
-                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton} ${where === "pending" ? "invisible" : ""}`}
+                className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${isConnected ? connectedButton : connectButton} ${where === "pending" ? "invisible" : ""}`}
               >
                 <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -299,7 +302,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     closeMobileMenu();
                     handleWalletClick();
                   }}
-                  className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${connectButton} ${where === "pending" ? "invisible" : ""}`}
+                  className={`${manrope.className} flex h-9 max-w-[100px] shrink-0 items-center justify-center gap-1 rounded-full px-2.5 text-[9px] font-semibold leading-none tracking-normal sm:max-w-none sm:px-3.5 sm:text-[10px] ${isConnected ? connectedButton : connectButton} ${where === "pending" ? "invisible" : ""}`}
                 >
                   <span className="truncate" style={{ fontSize: "12px", zoom: CONNECT_TEXT_PX / 12 }}>{isConnected ? mobileShortAddress : "Connect"}</span>
 
@@ -444,7 +447,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               ) : (
                 <button
                   onClick={handleWalletClick}
-                  className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${connectButton} ${where === "pending" ? "invisible" : ""} lg:px-6`}
+                  className={`${manrope.className} flex min-h-[48px] items-center gap-2.5 rounded-full px-5 text-sm font-semibold tracking-normal ${isConnected ? connectedButton : connectButton} ${where === "pending" ? "invisible" : ""} lg:px-6`}
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     {isConnected && !/^(browser wallet|injected|wallet)$/i.test(connectedWallet.name) ? (
