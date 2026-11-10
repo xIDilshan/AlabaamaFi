@@ -74,7 +74,7 @@ const connectButton =
   "bg-gradient-to-r from-[#13b8ff] via-[#1688f5] to-[#263be8] text-white shadow-[0_8px_30px_rgba(19,145,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_12px_38px_rgba(19,145,255,0.32)] active:translate-y-0";
 
 const connectedButton =
-  "border border-white/10 bg-white/[0.045] text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-white/[0.08] active:translate-y-0";
+  "border border-white/10 bg-[#4da3ff]/[0.15] text-white backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2f8bff]/40 hover:bg-[#4da3ff]/[0.22] active:translate-y-0";
 
 type HeaderProps = {
   onMenuClick?: () => void;
