@@ -38,9 +38,21 @@ const PRICE_DRIFT = 0.005;
 const PILL_FOLD_MS = 650;
 const PILL_CIRCLE_MS = 750;
 const PILL_UNFOLD_MS = 800;
+const PILL_STAY_MS = 3000;
 const SWAP_GAS_ESTIMATE = 300000;
 const FEE_FLOOR = BigInt("20000000000");
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
+const APPROVE_SELECTOR = "0x095ea7b3";
+const MAX_ALLOWANCE_HEX = "f".repeat(64);
+
+function widenApproval(tx: { to?: string; data?: string; input?: string }): { isApprove: boolean; data?: string } {
+  const data = (tx.data ?? tx.input ?? "").toLowerCase();
+  if (!data.startsWith(APPROVE_SELECTOR)) return { isApprove: false };
+  const to = (tx.to ?? "").toLowerCase();
+  const ours = SYMS.some((s) => TOKENS[s].address.toLowerCase() === to);
+  if (!ours || data.length !== 138) return { isApprove: true };
+  return { isApprove: true, data: data.slice(0, 74) + MAX_ALLOWANCE_HEX };
+}
 
 const CONTAINER = "w-full px-4 sm:px-8 lg:px-10";
 
@@ -129,7 +141,7 @@ type SwapArgs = {
   tokenIn: string;
   tokenOut: string;
   amountIn: string;
-  config?: { slippageBps?: number };
+  config?: { slippageBps?: number; allowanceStrategy?: "approve" | "permit"; batchTransactions?: boolean };
 };
 type KitLike = {
   getSupportedChains: () => unknown;
@@ -142,6 +154,7 @@ type Market = Partial<Record<Sym, MarketRow | null>>;
 type SwapRecord = { id: string; t: number; from: Sym; to: Sym; paid: string; got: string; url: string };
 type Slip = { mode: "auto" | "custom"; custom: string };
 
+const SWAP_ALLOWANCE = { allowanceStrategy: "approve" as const, batchTransactions: false };
 const autoBps = (a: Sym, b: Sym) => (a === "cirBTC" || b === "cirBTC" ? 100 : 50);
 const SLIP_PRESETS = ["0.1", "0.5", "1", "3", "5"];
 
@@ -597,7 +610,7 @@ function StatusPill({ stage, url }: { stage: Exclude<PillStage, null>; url: stri
           className="grid overflow-hidden"
           style={{ gridTemplateColumns: open ? "1fr" : "0fr", opacity: open ? 1 : 0, transition: `grid-template-columns ${foldMs}ms cubic-bezier(.3,.8,.3,1), opacity ${Math.round(foldMs * 0.7)}ms ease` }}
         >
-          <span className="block min-w-0 overflow-hidden whitespace-nowrap pr-4">{isDone ? "Swap succeeded" : "Swapping"}</span>
+          <span className="block min-w-0 overflow-hidden whitespace-nowrap pr-4" style={{ fontWeight: 600 }}>{isDone ? "Swap succeeded" : "Swapping"}</span>
         </span>
       </a>
     </div>
@@ -706,7 +719,7 @@ export default function SwapPage() {
     const t1 = wasShown ? PILL_FOLD_MS : 0;
     later(() => setStage("done-circle"), t1);
     later(() => setStage("done-open"), t1 + PILL_CIRCLE_MS);
-    later(() => setStage(null), t1 + PILL_CIRCLE_MS + PILL_UNFOLD_MS + 9000);
+    later(() => setStage(null), t1 + PILL_CIRCLE_MS + PILL_UNFOLD_MS + PILL_STAY_MS);
   };
   useEffect(() => () => pillTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
@@ -808,12 +821,16 @@ export default function SwapPage() {
       const raw = provider as Eip1193;
       const watched = {
         request: async (args: { method: string; params?: unknown[] }) => {
-          const result = await raw.request(args);
+          let sent = args;
+          let isSwapTx = false;
           if (args.method === "eth_sendTransaction") {
-            const tx = (args.params?.[0] ?? {}) as { data?: string; input?: string };
-            const data = (tx.data ?? tx.input ?? "").toLowerCase();
-            if (!data.startsWith("0x095ea7b3")) confirmRef.current?.();
+            const tx = (args.params?.[0] ?? {}) as { to?: string; data?: string; input?: string };
+            const wide = widenApproval(tx);
+            isSwapTx = !wide.isApprove;
+            if (wide.data) sent = { ...args, params: [{ ...tx, data: wide.data, ...(tx.input !== undefined ? { input: wide.data } : {}) }, ...(args.params?.slice(1) ?? [])] };
           }
+          const result = await raw.request(sent);
+          if (isSwapTx) confirmRef.current?.();
           return result;
         },
         on: raw.on?.bind(raw),
@@ -889,7 +906,7 @@ export default function SwapPage() {
           tokenIn: from,
           tokenOut: to,
           amountIn: cleanAmount,
-          config: { slippageBps },
+          config: { slippageBps, ...SWAP_ALLOWANCE },
         });
         if (live) setQuote({ out: est.estimatedOutput.amount, min: est.stopLimit.amount });
       } catch (e) {
@@ -918,7 +935,7 @@ export default function SwapPage() {
     const id = window.setInterval(() => {
       if (!canRefreshRef.current || document.visibilityState !== "visible") return;
       refreshNowRef.current();
-    }, 15000);
+    }, 10000);
     return () => window.clearInterval(id);
   }, []);
   useEffect(() => {
@@ -1054,7 +1071,7 @@ export default function SwapPage() {
 
       const kit = await getKit();
       const adapter = await getAdapter();
-      const params: SwapArgs = { from: { adapter, chain: KIT_CHAIN }, tokenIn: from, tokenOut: to, amountIn: cleanAmount, config: { slippageBps } };
+      const params: SwapArgs = { from: { adapter, chain: KIT_CHAIN }, tokenIn: from, tokenOut: to, amountIn: cleanAmount, config: { slippageBps, ...SWAP_ALLOWANCE } };
       const fresh = await kit.estimateSwap(params);
       const shown = Number(quote.out);
       const now = Number(fresh.estimatedOutput.amount);
@@ -1208,7 +1225,8 @@ export default function SwapPage() {
                       <input
                         value={amount}
                         onChange={(e) => {
-                          const v = e.target.value.replace(",", ".");
+                          let v = e.target.value.replace(",", ".");
+                          if (v.startsWith(".")) v = `0${v}`;
                           if (v === "" || new RegExp(`^\\d*\\.?\\d{0,${fromDec}}$`).test(v)) setAmount(v);
                         }}
                         disabled={busy}
@@ -1385,7 +1403,8 @@ export default function SwapPage() {
               <input
                 value={draftCustom}
                 onChange={(e) => {
-                  const v = e.target.value.replace(",", ".");
+                  let v = e.target.value.replace(",", ".");
+                  if (v.startsWith(".")) v = `0${v}`;
                   if (v === "" || /^\d{0,2}\.?\d{0,2}$/.test(v)) setDraftCustom(v);
                 }}
                 inputMode="decimal"
