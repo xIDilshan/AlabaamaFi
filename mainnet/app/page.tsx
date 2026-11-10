@@ -27,7 +27,7 @@ function Link({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { hr
 const ADDR_MASK = "0x…xxxx";
 const SOCIAL = {
   x: "https://x.com/AlabaamaFi_xyz",
-  discord: "https://discord.gg/NBKHmUfw",
+  discord: "https://discord.gg/cnCqaZMz",
   github: "https://github.com/xIDilshan/AlabaamaFi",
 };
 
@@ -862,7 +862,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
             <div className="mt-1.5"><span className="text-sm text-slate-500">$99.80</span></div>
           </Box>
         </div>
-        <Rows rows={[["Rate", "1 USDC ≈ 0.8641 EURC"], ["Minimum received", "85.97 EURC"], ["Slippage", "0.5% (Auto)"]]} />
+        <Rows rows={[["Rate", "1 USDC ≈ 0.8641 EURC"], ["Minimum received", "85.97 EURC"], ["Slippage", "0.5% (Auto)"], ["Network fee", "≈ 0.003 USDC"]]} />
         <MainBtn>Swap</MainBtn>
       </Shell>
     );
@@ -876,7 +876,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
             <p className="text-xs text-slate-500">Route</p>
             <p className="mt-1.5 flex items-center gap-2 text-sm font-medium"><ChainBadge name="Ethereum" size={20} />Ethereum <span className="text-slate-500">to</span> <ChainBadge name="Arc" size={20} />Arc</p>
           </div>
-          <div className="flex items-center gap-1"><IconDot d={ICON_ACTIVITY} /><IconDot d={ICON_SETTINGS} /><IconDot d={ICON_FAST} glow /></div>
+          <div className="flex items-center gap-1"><IconDot d={ICON_ACTIVITY} /><IconDot d={ICON_FAST} glow /></div>
         </div>
         <div className="mt-4">
           <Box>
@@ -901,7 +901,7 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
             </div>
           </Box>
         </div>
-        <Rows rows={[["Slippage", "0.5% (Auto)"], ["Gas fee", "0.00021 ETH ($0.74)"], ["Estimated time", "~20 sec"], ["Fast transfer", "On · fee 0.02 USDC"]]} />
+        <Rows rows={[["Network fee", "0.00021 ETH ($0.74)"], ["Estimated time", "~20 sec"], ["Fast transfer", "On · fee 0.02 USDC"], ["Delivery fee", "0.20 USDC"]]} />
         <MainBtn>Bridge</MainBtn>
       </Shell>
     );
@@ -921,27 +921,27 @@ function Preview({ kind }: { kind: "send" | "swap" | "bridge" | "activity" }) {
       <GlowTitle d={ICON_LIST}>Activity</GlowTitle>
       <div className="mt-3 flex gap-1 overflow-hidden">
         {filters.map((f, i) => (
-          <span key={f} className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium ${i === 0 ? "bg-white/[0.12] text-white" : "text-slate-400"}`}>{f}</span>
+          <span key={f} className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium ${i === 0 ? "bg-white/[0.12] text-white" : "text-slate-400"} ${i === filters.length - 1 ? "hidden min-[420px]:block" : ""}`}>{f}</span>
         ))}
       </div>
       <h3 className="mt-3 border-b border-white/[0.08] px-2 pb-2 pt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Today</h3>
       <ul className="divide-y divide-white/[0.06]">
         {rows.map((r) => (
-          <li key={r.title} className="flex items-start gap-3.5 px-2 py-3">
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center ${r.tint}`} style={{ filter: "drop-shadow(0 0 5px currentColor)" }}>
+          <li key={r.title} className="flex items-start gap-2.5 px-1 py-3 sm:gap-3.5 sm:px-2">
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center sm:h-10 sm:w-10 ${r.tint}`} style={{ filter: "drop-shadow(0 0 5px currentColor)" }}>
               <Icon d={r.icon} size={22} sw={1.8} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[15px] font-semibold">{r.title}</span>
+              <span className="block text-[15px] font-semibold leading-5 sm:truncate">{r.title}</span>
               {r.who && (
                 <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-slate-400">
                   <span className="truncate">{r.who}</span>
                   {/^(To|From|Contract)/.test(r.who) && <span className="shrink-0 text-slate-500"><Icon d={ICON_COPY} size={13} /></span>}
                 </span>
               )}
-              <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-                <span>Tx hash</span>
-                <span className="tabular-nums text-slate-300">{r.hash}</span>
+              <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                <span className="hidden min-[400px]:inline">Tx hash</span>
+                <span className="truncate tabular-nums text-slate-300">{r.hash}</span>
                 <span className="shrink-0"><Icon d={ICON_COPY} size={13} /></span>
               </span>
             </span>
@@ -1145,7 +1145,7 @@ export default function Home() {
 
               <Reveal delay={180}>
                 <p className="mt-6 text-xl font-normal tracking-tight text-[#aab2d5] sm:text-2xl">Your orbit for DeFi on Arc</p>
-                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">One place to move, manage, and explore assets on Arc Mainnet.</p>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">One place to move, manage, and explore assets on Arc Network.</p>
               </Reveal>
 
               <Reveal delay={270}>
@@ -1185,18 +1185,18 @@ export default function Home() {
             <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
             <div className={`relative ${CONTAINER}`}>
               {SHOWCASE.map((item, i) => (
-                <div key={item.kind} className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
-                  <Reveal className={`${i % 2 ? "lg:order-2" : ""} text-center lg:text-left`}>
+                <div key={item.kind} className="grid grid-cols-1 items-center gap-10 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
+                  <Reveal className={`${i % 2 ? "lg:order-2" : ""} min-w-0 text-center lg:text-left`}>
                     <p className={EYEBROW}>{`0${i + 1} · ${item.label}`}</p>
                     <h2 className={H2}>{item.pre}<span className={GRAD}>{item.hi}</span>{item.post}</h2>
                     <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400 sm:text-lg lg:mx-0">{item.text}</p>
                   </Reveal>
-                  <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
+                  <Reveal delay={120} className={`${i % 2 ? "lg:order-1" : ""} min-w-0`}>
                     <Link
                       href={`/${item.kind}`}
                       aria-label={`Open ${item.label}`}
                       title={`Open ${item.label}`}
-                      className="block rounded-[2rem] outline-none transition duration-500 hover:-translate-y-1.5 focus-visible:ring-2 focus-visible:ring-[#39c4ff]"
+                      className="block min-w-0 rounded-[2rem] outline-none transition duration-500 hover:-translate-y-1.5 focus-visible:ring-2 focus-visible:ring-[#39c4ff]"
                     >
                       <Preview kind={item.kind} />
                     </Link>
